@@ -16,6 +16,7 @@ dependencies:
   sqflite: ^2.3.0
   path: ^1.8.3
   shared_preferences: ^2.2.0
+  path_provider: ^2.0.0
   
   # Privacy & Utils
   encrypt: ^5.0.1

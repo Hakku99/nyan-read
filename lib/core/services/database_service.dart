@@ -82,4 +82,21 @@ class DatabaseService {
     // 0 = false, 1 = true
     return await db.query('books', where: 'is_private = ?', whereArgs: [isPrivate ? 1 : 0]);
   }
+
+  // --- Bookmarks CRUD ---
+
+  Future<void> insertBookmark(Map<String, dynamic> bookmarkData) async {
+    final db = await database;
+    await db.insert('bookmarks', bookmarkData, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<List<Map<String, dynamic>>> getBookmarks(String bookId) async {
+    final db = await database;
+    return await db.query('bookmarks', where: 'book_id = ?', whereArgs: [bookId], orderBy: 'page_index ASC');
+  }
+
+  Future<void> deleteBookmark(String id) async {
+    final db = await database;
+    await db.delete('bookmarks', where: 'id = ?', whereArgs: [id]);
+  }
 }

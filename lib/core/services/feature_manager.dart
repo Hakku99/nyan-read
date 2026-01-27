@@ -15,16 +15,29 @@ class FeatureManager extends ChangeNotifier {
   bool _adsEnabled = true;
   bool _privacyShelfEnabled = false;
   bool _ttsEnabled = false;
+  bool _isPrivateShelfUnlocked = false;
 
   AppMode get currentMode => _currentMode;
   bool get adsEnabled => _adsEnabled;
   bool get privacyShelfEnabled => _privacyShelfEnabled;
   bool get ttsEnabled => _ttsEnabled;
+  bool get isPro => _currentMode == AppMode.pro;
+  bool get isPrivateShelfUnlocked => _isPrivateShelfUnlocked;
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     final isPro = prefs.getBool('is_pro_mode') ?? false;
     _setMode(isPro ? AppMode.pro : AppMode.free);
+  }
+
+  void unlockPrivateShelf() {
+    _isPrivateShelfUnlocked = true;
+    notifyListeners();
+  }
+
+  void lockPrivateShelf() {
+    _isPrivateShelfUnlocked = false;
+    notifyListeners();
   }
 
   void toggleMode(AppMode mode) {
