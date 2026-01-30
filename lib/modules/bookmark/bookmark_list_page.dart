@@ -60,7 +60,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
               
               return ListTile(
                 leading: const Icon(Icons.bookmark, color: Colors.pink),
-                title: Text("Page ${page + 1}"),
+                title: Text(page > 0 ? "Page ${page + 1}" : "Bookmark"),
                 subtitle: note.isNotEmpty ? Text(note) : null,
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -73,8 +73,8 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
                   ],
                 ),
                 onTap: () {
-                   // Return the page index to the reader
-                   Navigator.pop(context, page);
+                   // Return the full bookmark map to the reader
+                   Navigator.pop(context, bm);
                 },
               );
             },
