@@ -21,6 +21,24 @@ class EpubReaderEngine implements ReaderEngine {
   }
 
   @override
+  void setConfig(ReaderConfig config) {
+    // EpubView handles its own styling usually, or we need to rebuild it with builders.
+    // For MVP, we might not support dynamic font change inside EpubView easily without rebuilding.
+  }
+
+  @override
+  double? getProgress() {
+    // Parsing CFI to percentage is complex without EpubController exposing it directly.
+    return 0.0; 
+  }
+
+  @override
+  Future<void> seekToProgress(double progress) async {
+    // TODO: Implement EPUB seeking based on spine/progress mapping.
+    debugPrint("EPUB seeking not yet supported.");
+  }
+
+  @override
   Widget buildReader(BuildContext context) {
     _init();
     return EpubView(

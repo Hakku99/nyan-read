@@ -20,19 +20,25 @@ class ReaderController extends ChangeNotifier {
   double _lineHeight = 1.5;
   double _brightness = 1.0; 
   Color _backgroundColor = const Color(0xFFFAF9F6);
+  Color _textColor = Colors.black87;
   Timer? _reminderTimer;
+  Timer? _progressTimer;
   int _readSeconds = 0;
-  bool _showControls = false; // Hidden by default for better immersion
+  bool _showControls = false; 
+  double _currentProgress = 0.0;
 
   ReaderController(this.book) {
     engine = ReaderEngineFactory.create(book);
+    _updateEngineConfig();
   }
 
   double get fontSize => _fontSize;
   double get lineHeight => _lineHeight;
   double get brightness => _brightness;
   Color get backgroundColor => _backgroundColor;
+  Color get textColor => _textColor;
   bool get showControls => _showControls;
+  double get currentProgress => _currentProgress;
 
   void init() {
     _reminderTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -43,24 +49,53 @@ class ReaderController extends ChangeNotifier {
     });
   }
 
+  void _updateEngineConfig() {
+    // Auto-contrast text color: Strict White for dark mode, Strict Black for light mode
+    _textColor = _backgroundColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+
+    engine.setConfig(ReaderConfig(
+      backgroundColor: _backgroundColor,
+      textColor: _textColor,
+      fontSize: _fontSize,
+      lineHeight: _lineHeight,
+    ));
+  }
+
   bool get shouldShowReminder => _readSeconds > 0 && _readSeconds % 3600 == 0;
 
   void toggleControls() {
     _showControls = !_showControls;
+    if (_showControls) {
+      _syncProgress();
+      _progressTimer = Timer.periodic(const Duration(seconds: 1), (_) => _syncProgress());
+    } else {
+      _progressTimer?.cancel();
+    }
     notifyListeners();
+  }
+
+  void _syncProgress() {
+    final p = engine.getProgress() ?? 0.0;
+    if (p != _currentProgress) {
+      _currentProgress = p;
+      notifyListeners();
+    }
+  }
+
+  Future<void> seekTo(double val) async {
+    _currentProgress = val;
+    notifyListeners(); // Optimistic update
+    await engine.seekToProgress(val);
   }
 
   Future<void> addBookmark(BuildContext context) async {
     final position = engine.getCurrentPosition();
-    if (position == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Cannot determine position")));
-      return;
-    }
+    if (position == null) return;
 
     final bookmark = {
       'id': const Uuid().v4(),
       'book_id': book.id,
-      'page_index': 0, // Legacy support, mostly irrelevant now
+      'page_index': 0, 
       'position_type': book.format,
       'position_payload': position.toJson(),
       'note': '',
@@ -74,7 +109,7 @@ class ReaderController extends ChangeNotifier {
   }
 
   Future<void> restorePosition(Map<String, dynamic> bookmarkData) async {
-    final type = bookmarkData['position_type'] ?? book.format;
+    final type = (bookmarkData['position_type'] ?? book.format).toString().toLowerCase();
     final payload = bookmarkData['position_payload'];
     
     if (payload == null) return;
@@ -99,22 +134,31 @@ class ReaderController extends ChangeNotifier {
 
   void setFontSize(double size) {
     _fontSize = size;
+    _updateEngineConfig();
     notifyListeners();
   }
 
   void setLineHeight(double height) {
     _lineHeight = height;
+    _updateEngineConfig();
     notifyListeners();
   }
 
   void setBackground(Color color) {
     _backgroundColor = color;
+    _updateEngineConfig();
+    notifyListeners();
+  }
+
+  void setBrightness(double b) {
+    _brightness = b;
     notifyListeners();
   }
 
   @override
   void dispose() {
     _reminderTimer?.cancel();
+    _progressTimer?.cancel();
     engine.dispose();
     super.dispose();
   }
@@ -157,7 +201,23 @@ class ReaderPage extends StatelessWidget {
                     color: controller.backgroundColor,
                     width: double.infinity,
                     height: double.infinity,
-                    child: controller.engine.buildReader(context),
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        textTheme: Theme.of(context).textTheme.apply(
+                          bodyColor: controller.textColor,
+                          displayColor: controller.textColor,
+                        ),
+                        iconTheme: IconThemeData(color: controller.textColor),
+                      ),
+                      child: controller.engine.buildReader(context),
+                    ),
+                  ),
+                ),
+
+                // Brightness Overlay (Dimmer)
+                IgnorePointer(
+                  child: Container(
+                    color: Colors.black.withOpacity(1.0 - controller.brightness),
                   ),
                 ),
                 
@@ -195,46 +255,111 @@ class ReaderPage extends StatelessWidget {
                 // Bottom Toolbar
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 200),
-                  bottom: controller.showControls ? 0 : -200,
+                  bottom: controller.showControls ? 0 : -350,
                   left: 0, right: 0,
                   child: Container(
-                    color: theme.cardColor,
-                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 2)],
+                    ),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Font Size (Visual only for now, engine needs to listen)
-                        if (book.format == 'txt') ...[
-                          Row(
-                            children: [
-                              const Text("A", style: TextStyle(fontSize: 14)),
-                              Expanded(
-                                child: Slider(
-                                  value: controller.fontSize,
-                                  min: 12,
-                                  max: 32,
-                                  onChanged: controller.setFontSize,
-                                ),
+                        // Progress
+                        Row(
+                          children: [
+                             SizedBox(
+                               width: 40, 
+                               child: Text("${(controller.currentProgress * 100).toInt()}%", style: const TextStyle(fontSize: 12))
+                             ),
+                             Expanded(
+                               child: Slider(
+                                 value: controller.currentProgress,
+                                 min: 0.0, max: 1.0,
+                                 onChanged: (val) => controller.seekTo(val),
+                               ),
+                             ),
+                          ],
+                        ),
+                        
+                        // Brightness
+                        Row(
+                          children: [
+                            const Icon(Icons.brightness_low, size: 20),
+                            Expanded(
+                              child: Slider(
+                                value: controller.brightness,
+                                min: 0.2, 
+                                max: 1.0,
+                                onChanged: controller.setBrightness,
                               ),
-                              const Text("A", style: TextStyle(fontSize: 24)),
-                            ],
-                          ),
-                        ],
+                            ),
+                            const Icon(Icons.brightness_high, size: 20),
+                          ],
+                        ),
+                        
+                        const Divider(),
+
+                        // Font Controls
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                             // Size
+                             Row(
+                               children: [
+                                 const Icon(Icons.text_fields, size: 18),
+                                 IconButton(
+                                   icon: const Icon(Icons.remove),
+                                   onPressed: () => controller.setFontSize(controller.fontSize - 1),
+                                   visualDensity: VisualDensity.compact,
+                                 ),
+                                 Text(controller.fontSize.toStringAsFixed(0)),
+                                 IconButton(
+                                   icon: const Icon(Icons.add),
+                                   onPressed: () => controller.setFontSize(controller.fontSize + 1),
+                                   visualDensity: VisualDensity.compact,
+                                 ),
+                               ],
+                             ),
+                             // Height
+                             Row(
+                               children: [
+                                 const Icon(Icons.format_line_spacing, size: 18),
+                                 IconButton(
+                                   icon: const Icon(Icons.remove),
+                                   onPressed: () => controller.setLineHeight(controller.lineHeight - 0.1),
+                                   visualDensity: VisualDensity.compact,
+                                 ),
+                                 Text(controller.lineHeight.toStringAsFixed(1)),
+                                 IconButton(
+                                   icon: const Icon(Icons.add),
+                                   onPressed: () => controller.setLineHeight(controller.lineHeight + 0.1),
+                                   visualDensity: VisualDensity.compact,
+                                 ),
+                               ],
+                             ),
+                          ],
+                        ),
+                        
                         const SizedBox(height: 10),
+                        
                         // Background Colors
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _colorBtn(controller, const Color(0xFFFAF9F6)),
-                              const SizedBox(width: 10),
-                              _colorBtn(controller, const Color(0xFFFFF8E1)),
-                              const SizedBox(width: 10),
-                              _colorBtn(controller, const Color(0xFFE0F7FA)),
-                              const SizedBox(width: 10),
-                              _colorBtn(controller, const Color(0xFFF3E5F5)),
-                              const SizedBox(width: 10),
-                              _colorBtn(controller, const Color(0xFF263238), isDark: true),
+                              _colorBtn(controller, const Color(0xFFFAF9F6)), 
+                              const SizedBox(width: 12),
+                              _colorBtn(controller, const Color(0xFFFFF8E1)), 
+                              const SizedBox(width: 12),
+                              _colorBtn(controller, const Color(0xFFE0F7FA)), 
+                              const SizedBox(width: 12),
+                              _colorBtn(controller, const Color(0xFF2E2A3A), isDark: true), 
+                              const SizedBox(width: 12),
+                              _colorBtn(controller, const Color(0xFF000000), isDark: true), 
                             ],
                           ),
                         )
@@ -254,11 +379,12 @@ class ReaderPage extends StatelessWidget {
     return GestureDetector(
       onTap: () => c.setBackground(color),
       child: Container(
-        width: 40, height: 40,
+        width: 44, height: 44,
         decoration: BoxDecoration(
           color: color,
-          border: Border.all(color: Colors.grey),
+          border: Border.all(color: Colors.grey.withOpacity(0.5)),
           shape: BoxShape.circle,
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, 2))],
         ),
         child: c.backgroundColor == color 
             ? Icon(Icons.check, color: isDark ? Colors.white : Colors.black) 

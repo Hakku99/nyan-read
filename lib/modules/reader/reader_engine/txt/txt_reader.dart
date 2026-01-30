@@ -16,7 +16,43 @@ class TxtReaderEngine implements ReaderEngine {
   bool _isLoading = true;
   String? _error;
 
+  ReaderConfig _config = const ReaderConfig(
+    backgroundColor: Colors.white,
+    textColor: Colors.black,
+    fontSize: 18,
+    lineHeight: 1.5,
+  );
+
+  // We need a way to notify the widget to rebuild when config changes.
+  // Since ReaderEngine is not a widget, we can use a ValueNotifier or Stream.
+  // Or, we can let ReaderController handle the rebuild of the parent, and we just store the config.
+  // But buildReader is called once. The widget returned by buildReader should listen to something.
+  final ValueNotifier<ReaderConfig> _configNotifier = ValueNotifier(
+     const ReaderConfig(
+        backgroundColor: Colors.white,
+        textColor: Colors.black,
+        fontSize: 18,
+        lineHeight: 1.5,
+     )
+  );
+
   TxtReaderEngine(this.book);
+
+  @override
+  void setConfig(ReaderConfig config) {
+    _config = config;
+    _configNotifier.value = config;
+  }
+
+  @override
+  double? getProgress() {
+    if (_lines.isEmpty) return 0.0;
+    final pos = getCurrentPosition();
+    if (pos is TxtReadingPosition) {
+      return pos.paragraphIndex / _lines.length;
+    }
+    return 0.0;
+  }
 
   Future<void> _loadContent() async {
     try {
@@ -28,7 +64,6 @@ class TxtReaderEngine implements ReaderEngine {
       }
       
       final content = await compute(_readAsString, file);
-      // Simple split. Future improvement: Paragraph analysis.
       _lines = content.split('\n'); 
       _isLoading = false;
     } catch (e) {
@@ -43,9 +78,6 @@ class TxtReaderEngine implements ReaderEngine {
 
   @override
   Widget buildReader(BuildContext context) {
-    // We use a FutureBuilder wrapper internally if loading state isn't managed by parent
-    // However, since buildReader is called once, we can use a StatefulWidget wrapper 
-    // or just a FutureBuilder here.
     return FutureBuilder(
         future: _isLoading ? _loadContent() : null,
         builder: (context, snapshot) {
@@ -53,20 +85,29 @@ class TxtReaderEngine implements ReaderEngine {
              return const Center(child: CircularProgressIndicator());
           }
           
-          if (_error != null) {
-            return Center(child: Text(_error!));
-          }
-
-          return _buildList(context);
+          return ValueListenableBuilder<ReaderConfig>(
+            valueListenable: _configNotifier,
+            builder: (context, config, child) {
+              if (_error != null) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      _error!,
+                      style: TextStyle(color: config.textColor, fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                );
+              }
+              return _buildList(context, config);
+            },
+          );
         },
       );
   }
 
-  Widget _buildList(BuildContext context) {
-    // In a real app, this should consume the settings from ReaderController/Provider
-    // For now we use the context's theme which should be set by ThemeManager
-    final theme = Theme.of(context);
-    
+  Widget _buildList(BuildContext context, ReaderConfig config) {
     return ScrollablePositionedList.builder(
       itemCount: _lines.length,
       itemScrollController: _itemScrollController,
@@ -78,9 +119,11 @@ class TxtReaderEngine implements ReaderEngine {
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
           child: Text(
             line,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: 18, 
-              height: 1.6,
+            style: TextStyle(
+              fontSize: config.fontSize, 
+              height: config.lineHeight,
+              color: config.textColor,
+              fontFamily: 'Roboto',
             ),
           ),
         );
@@ -91,6 +134,8 @@ class TxtReaderEngine implements ReaderEngine {
   @override
   Future<void> goToPosition(ReadingPosition position) async {
     if (position is TxtReadingPosition) {
+       // Wait for list to be attached if needed
+       // For MVP we assume it's attached if content is loaded
        if (_itemScrollController.isAttached) {
          _itemScrollController.jumpTo(index: position.paragraphIndex);
        }
@@ -98,9 +143,17 @@ class TxtReaderEngine implements ReaderEngine {
   }
 
   @override
+  Future<void> seekToProgress(double progress) async {
+    if (_lines.isEmpty) return;
+    if (_itemScrollController.isAttached) {
+      final index = (progress * (_lines.length - 1)).round();
+      _itemScrollController.jumpTo(index: index);
+    }
+  }
+
+  @override
   ReadingPosition? getCurrentPosition() {
     if (!_itemPositionsListener.itemPositions.value.isNotEmpty) return null;
-    // Get the first item that is visible
     final firstVisible = _itemPositionsListener.itemPositions.value
         .where((item) => item.itemLeadingEdge < 1)
         .reduce((a, b) => a.itemLeadingEdge > b.itemLeadingEdge ? a : b)
@@ -110,5 +163,7 @@ class TxtReaderEngine implements ReaderEngine {
   }
 
   @override
-  void dispose() {}
+  void dispose() {
+    _configNotifier.dispose();
+  }
 }

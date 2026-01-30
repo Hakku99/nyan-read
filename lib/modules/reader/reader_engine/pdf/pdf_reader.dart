@@ -21,6 +21,18 @@ class PdfReaderEngine implements ReaderEngine {
   }
 
   @override
+  void setConfig(ReaderConfig config) {
+    // PDF doesn't support reflow text styling.
+  }
+
+  @override
+  double? getProgress() {
+    final count = _pdfController.pagesCount;
+    if (count == null || count == 0) return 0.0;
+    return _pdfController.page / count;
+  }
+
+  @override
   Widget buildReader(BuildContext context) {
     _init();
     return PdfView(
@@ -34,6 +46,14 @@ class PdfReaderEngine implements ReaderEngine {
     if (position is PdfReadingPosition) {
        _pdfController.jumpToPage(position.pageNumber);
     }
+  }
+
+  @override
+  Future<void> seekToProgress(double progress) async {
+    final count = _pdfController.pagesCount;
+    if (count == null || count == 0) return;
+    final page = (progress * (count - 1)).round() + 1; // 1-based
+    _pdfController.jumpToPage(page);
   }
 
   @override

@@ -83,7 +83,7 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     primary: Color(0xFFF7B7C8),
     surface: Color(0xFFFFF8F2),
     background: Color(0xFFF4F4F4),
-    textPrimary: Color(0xFF333333),
+    textPrimary: Colors.black, // Strict Black
     textSecondary: Color(0xFF757575),
     accent: Color(0xFF8ED1B2),
     divider: Color(0xFFE0E0E0),
@@ -95,7 +95,7 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     primary: Color(0xFF2E2A3A),
     surface: Color(0xFF3B3550),
     background: Color(0xFF1E1B2E),
-    textPrimary: Color(0xFFE0E0E0),
+    textPrimary: Colors.white, // Strict White
     textSecondary: Color(0xFFAAAAAA),
     accent: Color(0xFF7DB7D9),
     divider: Color(0xFF424242),
@@ -104,11 +104,11 @@ final Map<ThemePreset, NyanTheme> themePresets = {
   ThemePreset.sepiaWarm: const NyanTheme(
     preset: ThemePreset.sepiaWarm,
     name: "Sepia Warm",
-    primary: Color(0xFFD7CCC8), // Brown 100
-    surface: Color(0xFFEFEBE9), // Brown 50
-    background: Color(0xFFF5F5DC), // Beige
-    textPrimary: Color(0xFF5D4037), // Brown 700
-    textSecondary: Color(0xFF8D6E63), // Brown 400
+    primary: Color(0xFFD7CCC8), 
+    surface: Color(0xFFEFEBE9), 
+    background: Color(0xFFF5F5DC), 
+    textPrimary: Colors.black, // Strict Black (was Brown)
+    textSecondary: Color(0xFF8D6E63), 
     accent: Color(0xFF8D6E63),
     divider: Color(0xFFBCAAA4),
     brightness: Brightness.light,
