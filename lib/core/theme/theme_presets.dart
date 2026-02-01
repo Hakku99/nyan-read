@@ -43,7 +43,7 @@ class NyanTheme {
         onPrimary: brightness == Brightness.dark ? textPrimary : Colors.white,
         secondary: accent,
         onSecondary: Colors.white,
-        error: Colors.redAccent,
+        error: brightness == Brightness.dark ? const Color(0xFFCF6679) : Colors.redAccent, // Softer red for dark mode
         onError: Colors.white,
         surface: surface,
         onSurface: textPrimary,
@@ -61,9 +61,33 @@ class NyanTheme {
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: accent, // Use Accent color for buttons (Unlock/Cancel)
+          textStyle: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
       dividerTheme: DividerThemeData(
         color: divider,
         thickness: 1,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.1),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: divider),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: divider),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: accent, width: 2),
+        ),
+        labelStyle: TextStyle(color: textSecondary),
+        hintStyle: TextStyle(color: textSecondary.withOpacity(0.7)),
       ),
       textTheme: TextTheme(
         bodyLarge: TextStyle(color: textPrimary, fontSize: 18, height: 1.6), // Reader text
@@ -84,9 +108,9 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     surface: Color(0xFFFFF8F2),
     background: Color(0xFFF4F4F4),
     textPrimary: Colors.black, // Strict Black
-    textSecondary: Color(0xFF757575),
-    accent: Color(0xFF8ED1B2),
-    divider: Color(0xFFE0E0E0),
+    textSecondary: Color(0xFF555555), // Darker Grey for better contrast
+    accent: Color(0xFFFF8A9D),
+    divider: Color(0xFFFF8A9D), // Darker divider
     brightness: Brightness.light,
   ),
   ThemePreset.midnightBlue: const NyanTheme(
@@ -96,9 +120,9 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     surface: Color(0xFF3B3550),
     background: Color(0xFF1E1B2E),
     textPrimary: Colors.white, // Strict White
-    textSecondary: Color(0xFFAAAAAA),
-    accent: Color(0xFF7DB7D9),
-    divider: Color(0xFF424242),
+    textSecondary: Color(0xFFE0E0E0), // Lighter Grey for better contrast
+    accent: Color(0xFFFFFFFF),
+    divider: Color(0xFF555555),
     brightness: Brightness.dark,
   ),
   ThemePreset.sepiaWarm: const NyanTheme(
@@ -107,10 +131,10 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     primary: Color(0xFFD7CCC8), 
     surface: Color(0xFFEFEBE9), 
     background: Color(0xFFF5F5DC), 
-    textPrimary: Colors.black, // Strict Black (was Brown)
-    textSecondary: Color(0xFF8D6E63), 
+    textPrimary: Colors.black, // Strict Black
+    textSecondary: Color(0xFF5D4037), // Dark Brown
     accent: Color(0xFF8D6E63),
-    divider: Color(0xFFBCAAA4),
+    divider: Color(0xFF8D6E63),
     brightness: Brightness.light,
   ),
 };

@@ -27,9 +27,9 @@ class MascotManager {
     }
   }
 
-  Widget render(MascotScene scene, {double size = 100}) {
+  Widget render(MascotScene scene, {double size = 100, Color? color}) {
     final type = getMascotForScene(scene);
-    return _MascotWidget(type: type, scene: scene, size: size);
+    return _MascotWidget(type: type, scene: scene, size: size, color: color);
   }
 }
 
@@ -37,24 +37,29 @@ class _MascotWidget extends StatelessWidget {
   final MascotType type;
   final MascotScene scene;
   final double size;
+  final Color? color;
 
   const _MascotWidget({
     required this.type,
     required this.scene,
     required this.size,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     // Placeholder using Icons and Colors since we don't have assets yet
     IconData icon;
-    Color color;
+    Color effectiveColor;
 
-    if (type == MascotType.typeA) {
-      color = const Color(0xFFF7B7C8); // Pink
+    if (color != null) {
+      effectiveColor = color!;
+      icon = (type == MascotType.typeA) ? Icons.pets : Icons.nightlight_round;
+    } else if (type == MascotType.typeA) {
+      effectiveColor = const Color(0xFFF7B7C8); // Pink
       icon = Icons.pets; // Cat paw
     } else {
-      color = const Color(0xFF7DB7D9); // Blue
+      effectiveColor = const Color(0xFF7DB7D9); // Blue
       icon = Icons.nightlight_round; // Moon/Night
     }
 
@@ -69,15 +74,15 @@ class _MascotWidget extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: effectiveColor.withOpacity(0.2),
         shape: BoxShape.circle,
-        border: Border.all(color: color, width: 2),
+        border: Border.all(color: effectiveColor, width: 2),
       ),
       child: Center(
         child: Icon(
           icon,
           size: size * 0.5,
-          color: color,
+          color: effectiveColor,
         ),
       ),
     );

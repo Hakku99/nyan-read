@@ -50,8 +50,23 @@ class ReaderController extends ChangeNotifier {
   }
 
   void _updateEngineConfig() {
-    // Auto-contrast text color: Strict White for dark mode, Strict Black for light mode
-    _textColor = _backgroundColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+    // Defined Preset Colors
+    const lightSet = [
+      Color(0xFFFAF9F6), // Off-white
+      Color(0xFFFFF8E1), // Light Yellow
+      Color(0xFFE0F7FA), // Light Cyan
+    ];
+    
+    // Check strict sets first
+    if (lightSet.contains(_backgroundColor)) {
+      _textColor = Colors.black;
+    } else if (_backgroundColor == const Color(0xFF2E2A3A) || _backgroundColor == const Color(0xFF000000)) {
+      // Midnight Blue or Black
+      _textColor = Colors.white;
+    } else {
+      // Fallback luminance check
+      _textColor = _backgroundColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+    }
 
     engine.setConfig(ReaderConfig(
       backgroundColor: _backgroundColor,

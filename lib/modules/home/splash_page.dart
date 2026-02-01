@@ -31,7 +31,7 @@ class _SplashPageState extends State<SplashPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            MascotManager().render(MascotScene.splash, size: 150)
+            MascotManager().render(MascotScene.splash, size: 150, color: Colors.white)
                 .animate()
                 .fade(duration: 800.ms)
                 .scale(duration: 800.ms),

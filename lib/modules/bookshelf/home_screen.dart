@@ -190,8 +190,10 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 children: [
                   TabBar(
-                    labelColor: Theme.of(context).colorScheme.primary,
-                    indicatorColor: Theme.of(context).colorScheme.primary,
+                    labelColor: Theme.of(context).colorScheme.secondary,
+                    unselectedLabelColor: Theme.of(context).textTheme.bodyMedium?.color,
+                    indicatorColor: Theme.of(context).colorScheme.secondary,
+                    indicatorWeight: 4, // Thickness of border bottom of current active tab
                     tabs: [
                       const Tab(text: "Public Shelf"),
                       if (showPrivacyTab)

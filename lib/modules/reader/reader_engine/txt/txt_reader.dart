@@ -90,11 +90,16 @@ class TxtReaderEngine implements ReaderEngine {
             builder: (context, config, child) {
               if (_error != null) {
                 return Center(
-                  child: Padding(
+                  child: Container(
                     padding: const EdgeInsets.all(16.0),
+                    alignment: Alignment.center,
                     child: Text(
                       _error!,
-                      style: TextStyle(color: config.textColor, fontSize: 16),
+                      style: TextStyle(
+                        color: config.textColor, // Uses dynamic text color from controller
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
