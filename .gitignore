@@ -1,45 +1,82 @@
-# Miscellaneous
+# =========================
+# Miscellaneous & System
+# =========================
 *.class
 *.log
 *.pyc
 *.swp
 .DS_Store
 .atom/
-.build/
 .buildlog/
 .history
 .svn/
-.swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
+# =========================
+# IntelliJ / Android Studio
+# =========================
 *.iml
 *.ipr
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# =========================
+# VS Code
+# =========================
+.vscode/
+# 如果你想共享 launch.json (调试配置)，就把上面这行删掉，把下面的取消注释
+# .vscode/settings.json
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# =========================
+# Flutter / Dart Core
+# =========================
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
-/coverage/
 
-# Symbolication related
-app.*.symbols
+# =========================
+# Android (AI 减负重灾区)
+# =========================
+# Gradle 缓存，这个文件夹通常有几百 MB，Gemini 索引它会累死
+**/android/.gradle/
+**/android/captures/
+**/android/local.properties
+**/android/**/generated/
+**/android/**/intermediates/
+**/android/**/tmp/
 
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
+# 你的旧配置保留，但其实上面的 intermediates 已经涵盖了大部分
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# =========================
+# iOS / macOS (CocoaPods)
+# =========================
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# 极其重要：Pods 文件夹里全是第三方库源码，必须屏蔽，否则 AI 会索引别人的代码
+**/ios/Pods/
+**/macos/Pods/
+
+# =========================
+# Windows / Linux / Web (临时文件)
+# =========================
+# 桌面端的临时文件文件夹，必须屏蔽
+**/windows/flutter/ephemeral/
+**/linux/flutter/ephemeral/
+**/web/build/
+
+# =========================
+# Symbols & Obfuscation
+# =========================
+app.*.symbols
+app.*.map.json
