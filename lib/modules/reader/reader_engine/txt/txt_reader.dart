@@ -39,6 +39,22 @@ class TxtReaderEngine implements ReaderEngine {
   TxtReaderEngine(this.book);
 
   @override
+  Future<void> initialize() async {
+    final file = File(book.filePath);
+    if (!await file.exists()) {
+      throw const FileSystemException("File not found");
+    }
+    
+    try {
+      final content = await compute(_readAsString, file);
+      _lines = content.split('\n');
+      _isLoading = false;
+    } catch (e) {
+      throw FormatException("Failed to parse TXT file: $e");
+    }
+  }
+
+  @override
   void setConfig(ReaderConfig config) {
     _config = config;
     _configNotifier.value = config;
@@ -54,62 +70,22 @@ class TxtReaderEngine implements ReaderEngine {
     return 0.0;
   }
 
-  Future<void> _loadContent() async {
-    try {
-      final file = File(book.filePath);
-      if (!await file.exists()) {
-        _error = "File not found: ${book.filePath}";
-        _isLoading = false;
-        return;
-      }
-      
-      final content = await compute(_readAsString, file);
-      _lines = content.split('\n'); 
-      _isLoading = false;
-    } catch (e) {
-      _error = "Error loading TXT: $e";
-      _isLoading = false;
-    }
-  }
-
   static Future<String> _readAsString(File file) async {
     return await file.readAsString();
   }
 
   @override
   Widget buildReader(BuildContext context) {
-    return FutureBuilder(
-        future: _isLoading ? _loadContent() : null,
-        builder: (context, snapshot) {
-          if (_isLoading && snapshot.connectionState != ConnectionState.done) {
-             return const Center(child: CircularProgressIndicator());
-          }
-          
-          return ValueListenableBuilder<ReaderConfig>(
-            valueListenable: _configNotifier,
-            builder: (context, config, child) {
-              if (_error != null) {
-                return Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(16.0),
-                    alignment: Alignment.center,
-                    child: Text(
-                      _error!,
-                      style: TextStyle(
-                        color: config.textColor, // Uses dynamic text color from controller
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                );
-              }
-              return _buildList(context, config);
-            },
-          );
-        },
-      );
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    return ValueListenableBuilder<ReaderConfig>(
+      valueListenable: _configNotifier,
+      builder: (context, config, child) {
+        return _buildList(context, config);
+      },
+    );
   }
 
   Widget _buildList(BuildContext context, ReaderConfig config) {

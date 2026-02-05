@@ -18,6 +18,12 @@ class NyanTheme {
   final Color divider;
   final Brightness brightness;
 
+  // Error Theme Colors
+  final Color errorBackgroundColor;
+  final Color errorPrimaryTextColor;
+  final Color errorSecondaryTextColor;
+  final Color errorAccentColor;
+
   const NyanTheme({
     required this.preset,
     required this.name,
@@ -29,6 +35,10 @@ class NyanTheme {
     required this.accent,
     required this.divider,
     required this.brightness,
+    required this.errorBackgroundColor,
+    required this.errorPrimaryTextColor,
+    required this.errorSecondaryTextColor,
+    required this.errorAccentColor,
   });
 
   ThemeData get themeData {
@@ -112,6 +122,11 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     accent: Color(0xFFFF8A9D),
     divider: Color(0xFFFF8A9D), // Darker divider
     brightness: Brightness.light,
+    // Error Theme - Soft Pink/Red on White
+    errorBackgroundColor: Color(0xFFFFF0F0),
+    errorPrimaryTextColor: Color(0xFF8B0000),
+    errorSecondaryTextColor: Color(0xFFB71C1C),
+    errorAccentColor: Color(0xFFFFCDD2),
   ),
   ThemePreset.midnightBlue: const NyanTheme(
     preset: ThemePreset.midnightBlue,
@@ -124,6 +139,11 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     accent: Color(0xFFFFFFFF),
     divider: Color(0xFF555555),
     brightness: Brightness.dark,
+    // Error Theme - Soft Red on Dark
+    errorBackgroundColor: Color(0xFF2B2020),
+    errorPrimaryTextColor: Color(0xFFFFCDD2),
+    errorSecondaryTextColor: Color(0xFFE57373),
+    errorAccentColor: Color(0xFFEF9A9A),
   ),
   ThemePreset.sepiaWarm: const NyanTheme(
     preset: ThemePreset.sepiaWarm,
@@ -136,5 +156,10 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     accent: Color(0xFF8D6E63),
     divider: Color(0xFF8D6E63),
     brightness: Brightness.light,
+    // Error Theme - Soft Brown/Red on Sepia
+    errorBackgroundColor: Color(0xFFFAF0E6),
+    errorPrimaryTextColor: Color(0xFF5D4037),
+    errorSecondaryTextColor: Color(0xFF8D6E63),
+    errorAccentColor: Color(0xFFD7CCC8),
   ),
 };

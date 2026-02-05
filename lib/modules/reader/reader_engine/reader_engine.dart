@@ -19,6 +19,10 @@ class ReaderConfig {
 }
 
 abstract class ReaderEngine {
+  /// Initializes the engine (loads file, parses content, etc).
+  /// Should throw specific exceptions on failure.
+  Future<void> initialize();
+
   /// Builds the widget that renders the book content.
   Widget buildReader(BuildContext context);
 

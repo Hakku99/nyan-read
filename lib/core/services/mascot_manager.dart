@@ -11,6 +11,7 @@ enum MascotScene {
   readingReminder,
   nightMode,
   update,
+  error,
 }
 
 class MascotManager {
@@ -20,6 +21,7 @@ class MascotManager {
       case MascotScene.splash:
       case MascotScene.emptyShelf:
       case MascotScene.readingReminder:
+      case MascotScene.error:
         return MascotType.typeA;
       case MascotScene.nightMode:
       case MascotScene.update:
@@ -68,6 +70,8 @@ class _MascotWidget extends StatelessWidget {
       icon = Icons.inbox;
     } else if (scene == MascotScene.readingReminder) {
       icon = Icons.access_alarm;
+    } else if (scene == MascotScene.error) {
+      icon = Icons.error_outline;
     }
 
     return Container(

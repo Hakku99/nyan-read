@@ -12,12 +12,23 @@ class PdfReaderEngine implements ReaderEngine {
 
   PdfReaderEngine(this.book);
 
-  void _init() {
+  @override
+  Future<void> initialize() async {
     if (_isInit) return;
-    _pdfController = PdfController(
-      document: PdfDocument.openFile(book.filePath),
-    );
-    _isInit = true;
+    
+    final file = File(book.filePath);
+    if (!await file.exists()) {
+       throw const FileSystemException("File not found");
+    }
+
+    try {
+      _pdfController = PdfController(
+        document: PdfDocument.openFile(book.filePath),
+      );
+      _isInit = true;
+    } catch (e) {
+      throw FormatException("Failed to open PDF: $e");
+    }
   }
 
   @override
@@ -27,6 +38,8 @@ class PdfReaderEngine implements ReaderEngine {
 
   @override
   double? getProgress() {
+    // Check if initialized to avoid error
+    if (!_isInit) return 0.0;
     final count = _pdfController.pagesCount;
     if (count == null || count == 0) return 0.0;
     return _pdfController.page / count;
@@ -34,7 +47,7 @@ class PdfReaderEngine implements ReaderEngine {
 
   @override
   Widget buildReader(BuildContext context) {
-    _init();
+    if (!_isInit) return const Center(child: CircularProgressIndicator());
     return PdfView(
       controller: _pdfController,
       scrollDirection: Axis.vertical,

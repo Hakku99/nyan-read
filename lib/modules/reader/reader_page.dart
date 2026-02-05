@@ -9,8 +9,11 @@ import 'reader_engine/reader_factory.dart';
 import 'reader_engine/epub/epub_position.dart';
 import 'reader_engine/txt/txt_position.dart';
 import 'reader_engine/pdf/pdf_position.dart';
+import 'reader_error.dart';
+import 'widgets/reader_error_view.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 class ReaderController extends ChangeNotifier {
   final Book book;
@@ -26,6 +29,7 @@ class ReaderController extends ChangeNotifier {
   int _readSeconds = 0;
   bool _showControls = false; 
   double _currentProgress = 0.0;
+  ReaderErrorState? _errorState;
 
   ReaderController(this.book) {
     engine = ReaderEngineFactory.create(book);
@@ -39,14 +43,51 @@ class ReaderController extends ChangeNotifier {
   Color get textColor => _textColor;
   bool get showControls => _showControls;
   double get currentProgress => _currentProgress;
+  ReaderErrorState? get errorState => _errorState;
 
   void init() {
+    _startTimer();
+    _loadBook();
+  }
+
+  void _startTimer() {
+    _reminderTimer?.cancel();
     _reminderTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _readSeconds++;
       if (_readSeconds > 0 && _readSeconds % 3600 == 0) {
         notifyListeners(); 
       }
     });
+  }
+
+  Future<void> _loadBook() async {
+    try {
+      _errorState = null;
+      notifyListeners();
+      await engine.initialize();
+      notifyListeners();
+    } catch (e, stack) {
+      ReaderErrorType type = ReaderErrorType.unknown;
+      final errorStr = e.toString().toLowerCase();
+      
+      if (e is FileSystemException || errorStr.contains('file not found')) {
+        type = ReaderErrorType.fileNotFound;
+      } else if (e is FormatException || errorStr.contains('format')) {
+        type = ReaderErrorType.parseFailed;
+      } else if (errorStr.contains('unsupported')) {
+        type = ReaderErrorType.unsupportedFormat;
+      }
+
+      _errorState = ReaderErrorState(
+        type: type,
+        technicalMessage: "$e\n$stack",
+      );
+      notifyListeners();
+    }
+  }
+
+  void retry() {
+    _loadBook();
   }
 
   void _updateEngineConfig() {
@@ -58,9 +99,9 @@ class ReaderController extends ChangeNotifier {
     ];
     
     // Check strict sets first
-    if (lightSet.contains(_backgroundColor)) {
+    if (lightSet.any((c) => c.value == _backgroundColor.value)) {
       _textColor = Colors.black;
-    } else if (_backgroundColor == const Color(0xFF2E2A3A) || _backgroundColor == const Color(0xFF000000)) {
+    } else if (_backgroundColor.value == 0xFF2E2A3A || _backgroundColor.value == 0xFF000000) {
       // Midnight Blue or Black
       _textColor = Colors.white;
     } else {
@@ -192,6 +233,17 @@ class ReaderPage extends StatelessWidget {
         builder: (context, controller, child) {
           final theme = Theme.of(context);
           
+          if (controller.errorState != null) {
+            return Scaffold(
+              backgroundColor: theme.scaffoldBackgroundColor, // Or let the View handle it
+              body: ReaderErrorView(
+                errorState: controller.errorState!,
+                onBack: () => Navigator.pop(context),
+                onRetry: controller.retry,
+              ),
+            );
+          }
+
           if (controller.shouldShowReminder) {
              WidgetsBinding.instance.addPostFrameCallback((_) {
                 showDialog(

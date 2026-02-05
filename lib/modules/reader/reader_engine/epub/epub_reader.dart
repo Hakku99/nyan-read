@@ -12,12 +12,23 @@ class EpubReaderEngine implements ReaderEngine {
 
   EpubReaderEngine(this.book);
 
-  void _init() {
+  @override
+  Future<void> initialize() async {
     if (_isInit) return;
-    _epubController = EpubController(
-      document: EpubDocument.openFile(File(book.filePath)),
-    );
-    _isInit = true;
+    
+    final file = File(book.filePath);
+    if (!await file.exists()) {
+       throw const FileSystemException("File not found");
+    }
+
+    try {
+      _epubController = EpubController(
+        document: EpubDocument.openFile(file),
+      );
+      _isInit = true;
+    } catch (e) {
+      throw FormatException("Failed to open EPUB: $e");
+    }
   }
 
   @override
@@ -40,7 +51,7 @@ class EpubReaderEngine implements ReaderEngine {
 
   @override
   Widget buildReader(BuildContext context) {
-    _init();
+    if (!_isInit) return const Center(child: CircularProgressIndicator());
     return EpubView(
       controller: _epubController,
       onDocumentLoaded: (document) {
