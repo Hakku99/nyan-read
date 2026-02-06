@@ -22,9 +22,30 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   // To trigger rebuilds of the Futures
   int _refreshKey = 0;
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initially length 1, updated in build if needed?
+    // Actually, we need to know if private shelf is unlocked to set length.
+    // The previous implementation used DefaultTabController which handles this dynamically.
+    // To keep it simple and robust, we will check FeatureManager in build to init/update controller.
+    // However, TabController length cannot change. Safe bet: always 2, but only show 1 if locked?
+    // Or just use a simple variable to track "current tab index" and sync with DefaultTabController?
+    // Syncing with DefaultTabController is hard.
+    // Let's use a valid approach: Re-create TabController when tabs change.
+    _tabController = TabController(length: 1, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   void _refreshShelf() {
     setState(() {
@@ -42,20 +63,34 @@ class _HomeScreenState extends State<HomeScreen> {
       final originalFile = File(result.files.single.path!);
       final appDir = await getApplicationDocumentsDirectory();
       final fileName = path.basename(originalFile.path);
-      final savedFile = await originalFile.copy(path.join(appDir.path, fileName));
+      final savedFile =
+          await originalFile.copy(path.join(appDir.path, fileName));
+
+      // Determine privacy based on current tab
+      // If we are on the second tab (index 1), it's private.
+      // But we need to make sure the second tab IS the private shelf.
+      final featureManager = context.read<FeatureManager>();
+      final isPrivateShelfUnlocked =
+          featureManager.isPro && featureManager.isPrivateShelfUnlocked;
+
+      // If private shelf is not visible, we can't be on it.
+      // If it is visible, check tab index.
+      final isPrivate = isPrivateShelfUnlocked && _tabController.index == 1;
 
       final book = Book(
         id: const Uuid().v4(),
-        title: path.basenameWithoutExtension(fileName), // Simple title derivation
+        title: path.basenameWithoutExtension(fileName),
         author: "Unknown",
         filePath: savedFile.path,
         format: path.extension(fileName).replaceAll('.', ''),
-        isPrivate: false, // Default to public
+        isPrivate: isPrivate,
       );
 
       await DatabaseService().insertBook(book.toMap());
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Book Imported!")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                "Book Imported to ${isPrivate ? 'Private' : 'Public'} Shelf!")));
         _refreshShelf();
       }
     }
@@ -68,7 +103,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (fm.isPrivateShelfUnlocked) {
       // Lock it
       fm.lockPrivateShelf();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Privacy Shelf Locked")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Privacy Shelf Locked")));
+      // Force switch back to public tab if we were on private
+      _tabController.animateTo(0);
     } else {
       // Unlock flow
       final hasPass = await privacyService.hasPassword();
@@ -82,6 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // ... (Dialog methods remain largely the same, skipped for brevity in this tool call, see instruction)
   void _showSetPasswordDialog(BuildContext context) {
     final passController = TextEditingController();
     final confirmController = TextEditingController();
@@ -93,26 +132,35 @@ class _HomeScreenState extends State<HomeScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: passController, decoration: const InputDecoration(labelText: "Password"), obscureText: true),
-            TextField(controller: confirmController, decoration: const InputDecoration(labelText: "Confirm Password"), obscureText: true),
+            TextField(
+                controller: passController,
+                decoration: const InputDecoration(labelText: "Password"),
+                obscureText: true),
+            TextField(
+                controller: confirmController,
+                decoration:
+                    const InputDecoration(labelText: "Confirm Password"),
+                obscureText: true),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
           TextButton(
-            onPressed: () async {
-              if (passController.text.isNotEmpty && passController.text == confirmController.text) {
-                await PrivacyLockService().setPassword(passController.text);
-                if (mounted) {
-                  Navigator.pop(ctx);
-                  _showEnterPasswordDialog(context); // Auto prompt to enter after setting? Or just unlock? Let's prompt.
+              onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(
+              onPressed: () async {
+                if (passController.text.isNotEmpty &&
+                    passController.text == confirmController.text) {
+                  await PrivacyLockService().setPassword(passController.text);
+                  if (mounted) {
+                    Navigator.pop(ctx);
+                    _showEnterPasswordDialog(context);
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Passwords do not match")));
                 }
-              } else {
-                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
-              }
-            }, 
-            child: const Text("Save")
-          ),
+              },
+              child: const Text("Save")),
         ],
       ),
     );
@@ -125,27 +173,29 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text("Unlock Privacy Shelf"),
         content: TextField(
-          controller: passController, 
-          decoration: const InputDecoration(labelText: "Password"), 
+          controller: passController,
+          decoration: const InputDecoration(labelText: "Password"),
           obscureText: true,
           autofocus: true,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
           TextButton(
-            onPressed: () async {
-              final isValid = await PrivacyLockService().verifyPassword(passController.text);
-              if (mounted) {
-                Navigator.pop(ctx);
-                if (isValid) {
-                  context.read<FeatureManager>().unlockPrivateShelf();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Invalid Password")));
+              onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(
+              onPressed: () async {
+                final isValid = await PrivacyLockService()
+                    .verifyPassword(passController.text);
+                if (mounted) {
+                  Navigator.pop(ctx);
+                  if (isValid) {
+                    context.read<FeatureManager>().unlockPrivateShelf();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Invalid Password")));
+                  }
                 }
-              }
-            }, 
-            child: const Text("Unlock")
-          ),
+              },
+              child: const Text("Unlock")),
         ],
       ),
     );
@@ -154,10 +204,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final featureManager = context.watch<FeatureManager>();
-    // final themeManager = context.watch<ThemeManager>(); // Used via Theme.of(context) generally
 
     // Logic: Only show Privacy Tab if Pro AND Unlocked
-    final showPrivacyTab = featureManager.isPro && featureManager.isPrivateShelfUnlocked;
+    final showPrivacyTab =
+        featureManager.isPro && featureManager.isPrivateShelfUnlocked;
+    final targetTabLength = showPrivacyTab ? 2 : 1;
+
+    // Dispose and recreate if length changes
+    if (_tabController.length != targetTabLength) {
+      _tabController.dispose();
+      _tabController = TabController(length: targetTabLength, vsync: this);
+      // If we reduced tabs, we are likely already at 0, but good to ensure
+      if (_tabController.index >= targetTabLength) {
+        _tabController.index = 0;
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -166,51 +227,48 @@ class _HomeScreenState extends State<HomeScreen> {
           // Lock/Unlock Button
           if (featureManager.isPro)
             IconButton(
-              icon: Icon(featureManager.isPrivateShelfUnlocked ? Icons.lock_open : Icons.lock),
+              icon: Icon(featureManager.isPrivateShelfUnlocked
+                  ? Icons.lock_open
+                  : Icons.lock),
               onPressed: () => _handlePrivacyLock(context),
-              tooltip: featureManager.isPrivateShelfUnlocked ? "Lock Privacy Shelf" : "Unlock Privacy Shelf",
+              tooltip: featureManager.isPrivateShelfUnlocked
+                  ? "Lock Privacy Shelf"
+                  : "Unlock Privacy Shelf",
             ),
-          
+
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())).then((_) => setState((){})), // Refresh on return
+            onPressed: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const SettingsPage()))
+                .then((_) => setState(() {})), // Refresh on return
           )
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: Theme.of(context).colorScheme.secondary,
+          unselectedLabelColor: Theme.of(context).textTheme.bodyMedium?.color,
+          indicatorColor: Theme.of(context).colorScheme.secondary,
+          indicatorWeight: 4,
+          tabs: [
+            const Tab(text: "Public Shelf"),
+            if (showPrivacyTab) const Tab(text: "Private Shelf"),
+          ],
+        ),
       ),
       body: Column(
         children: [
           // Ads Stub
           if (!featureManager.isPro && featureManager.adsEnabled)
-             AdsUI.showBanner(context),
+            AdsUI.showBanner(context),
 
           // Tabs
           Expanded(
-            child: DefaultTabController(
-              length: showPrivacyTab ? 2 : 1,
-              child: Column(
-                children: [
-                  TabBar(
-                    labelColor: Theme.of(context).colorScheme.secondary,
-                    unselectedLabelColor: Theme.of(context).textTheme.bodyMedium?.color,
-                    indicatorColor: Theme.of(context).colorScheme.secondary,
-                    indicatorWeight: 4, // Thickness of border bottom of current active tab
-                    tabs: [
-                      const Tab(text: "Public Shelf"),
-                      if (showPrivacyTab)
-                        const Tab(text: "Private Shelf"),
-                    ],
-                  ),
-                  Expanded(
-                    child: TabBarView(
-                      children: [
-                        _buildShelf(context, isPrivate: false),
-                        if (showPrivacyTab)
-                          _buildShelf(context, isPrivate: true),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildShelf(context, isPrivate: false),
+                if (showPrivacyTab) _buildShelf(context, isPrivate: true),
+              ],
             ),
           ),
         ],
@@ -224,13 +282,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildShelf(BuildContext context, {required bool isPrivate}) {
     return FutureBuilder<List<Map<String, dynamic>>>(
-      key: ValueKey("shelf_${isPrivate}_$_refreshKey"), // Force rebuild on refresh
+      key: ValueKey("shelf_${isPrivate}_$_refreshKey"),
       future: DatabaseService().getBooks(isPrivate: isPrivate),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         final books = snapshot.data ?? [];
 
         if (books.isEmpty) {
@@ -260,9 +318,8 @@ class _HomeScreenState extends State<HomeScreen> {
             final book = Book.fromMap(bookData);
             return GestureDetector(
               onTap: () {
-                 Navigator.push(context, MaterialPageRoute(
-                   builder: (_) => ReaderPage(book: book)
-                 ));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => ReaderPage(book: book)));
               },
               child: Card(
                 child: Column(
@@ -272,7 +329,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      child: Text(book.title, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
+                      child: Text(book.title,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis),
                     ),
                   ],
                 ),

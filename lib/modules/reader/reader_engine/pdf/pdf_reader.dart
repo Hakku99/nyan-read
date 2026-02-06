@@ -15,10 +15,10 @@ class PdfReaderEngine implements ReaderEngine {
   @override
   Future<void> initialize() async {
     if (_isInit) return;
-    
+
     final file = File(book.filePath);
     if (!await file.exists()) {
-       throw const FileSystemException("File not found");
+      throw const FileSystemException("File not found");
     }
 
     try {
@@ -57,7 +57,7 @@ class PdfReaderEngine implements ReaderEngine {
   @override
   Future<void> goToPosition(ReadingPosition position) async {
     if (position is PdfReadingPosition) {
-       _pdfController.jumpToPage(position.pageNumber);
+      _pdfController.jumpToPage(position.pageNumber);
     }
   }
 
@@ -72,6 +72,37 @@ class PdfReaderEngine implements ReaderEngine {
   @override
   ReadingPosition? getCurrentPosition() {
     return PdfReadingPosition(pageNumber: _pdfController.page);
+  }
+
+  @override
+  Future<List<dynamic>> getChapters() async {
+    if (!_isInit) return [];
+
+    try {
+      // PDF章节提取通常基于文档大纲/书签
+      // pdfx包可能不直接支持大纲提取,这里返回基于页码的简单章节
+      final count = _pdfController.pagesCount;
+      if (count == null || count == 0) return [];
+
+      // 为PDF创建基于页码的简单章节
+      // 实际应用中可以使用PDF元数据或OCR来提取真实章节
+      final chapters = <Map<String, dynamic>>[];
+
+      // 每10页创建一个章节标记(可配置)
+      const pagesPerChapter = 10;
+      for (int i = 1; i <= count; i += pagesPerChapter) {
+        chapters.add({
+          'title': 'Page $i',
+          'index': chapters.length,
+          'pageNumber': i,
+        });
+      }
+
+      return chapters;
+    } catch (e) {
+      debugPrint('Error extracting PDF chapters: $e');
+      return [];
+    }
   }
 
   @override

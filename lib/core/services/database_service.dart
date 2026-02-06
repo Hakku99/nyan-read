@@ -21,7 +21,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -30,7 +30,13 @@ class DatabaseService {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE bookmarks ADD COLUMN position_type TEXT');
-      await db.execute('ALTER TABLE bookmarks ADD COLUMN position_payload TEXT');
+      await db
+          .execute('ALTER TABLE bookmarks ADD COLUMN position_payload TEXT');
+    }
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE books ADD COLUMN last_position_type TEXT');
+      await db
+          .execute('ALTER TABLE books ADD COLUMN last_position_payload TEXT');
     }
   }
 
@@ -48,7 +54,9 @@ class DatabaseService {
         total_pages INTEGER,
         current_progress REAL DEFAULT 0,
         last_read_at INTEGER,
-        added_at INTEGER
+        added_at INTEGER,
+        last_position_type TEXT,
+        last_position_payload TEXT
       )
     ''');
 
@@ -84,29 +92,75 @@ class DatabaseService {
 
   Future<void> insertBook(Map<String, dynamic> bookData) async {
     final db = await database;
-    await db.insert('books', bookData, conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert('books', bookData,
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<Map<String, dynamic>>> getBooks({bool isPrivate = false}) async {
     final db = await database;
     // 0 = false, 1 = true
-    return await db.query('books', where: 'is_private = ?', whereArgs: [isPrivate ? 1 : 0]);
+    return await db.query('books',
+        where: 'is_private = ?', whereArgs: [isPrivate ? 1 : 0]);
   }
 
   // --- Bookmarks CRUD ---
 
   Future<void> insertBookmark(Map<String, dynamic> bookmarkData) async {
     final db = await database;
-    await db.insert('bookmarks', bookmarkData, conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert('bookmarks', bookmarkData,
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<Map<String, dynamic>>> getBookmarks(String bookId) async {
     final db = await database;
-    return await db.query('bookmarks', where: 'book_id = ?', whereArgs: [bookId], orderBy: 'page_index ASC');
+    return await db.query('bookmarks',
+        where: 'book_id = ?', whereArgs: [bookId], orderBy: 'page_index ASC');
   }
 
   Future<void> deleteBookmark(String id) async {
     final db = await database;
     await db.delete('bookmarks', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // --- Reading Position Management ---
+
+  /// 更新书籍的最后阅读位置
+  Future<void> updateBookPosition(
+      String bookId, String positionType, String positionPayload) async {
+    final db = await database;
+    await db.update(
+      'books',
+      {
+        'last_position_type': positionType,
+        'last_position_payload': positionPayload,
+        'last_read_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
+  }
+
+  /// 获取书籍的最后阅读位置
+  Future<Map<String, dynamic>?> getBookPosition(String bookId) async {
+    final db = await database;
+    final results = await db.query(
+      'books',
+      columns: ['last_position_type', 'last_position_payload'],
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
+
+    if (results.isEmpty) return null;
+
+    final row = results.first;
+    if (row['last_position_type'] == null ||
+        row['last_position_payload'] == null) {
+      return null;
+    }
+
+    return {
+      'position_type': row['last_position_type'],
+      'position_payload': row['last_position_payload'],
+    };
   }
 }

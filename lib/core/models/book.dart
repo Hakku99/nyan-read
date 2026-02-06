@@ -7,6 +7,8 @@ class Book {
   final bool isPrivate;
   final int totalPages;
   final double currentProgress;
+  final String? lastPositionType;
+  final String? lastPositionPayload;
 
   Book({
     required this.id,
@@ -17,6 +19,8 @@ class Book {
     this.isPrivate = false,
     this.totalPages = 0,
     this.currentProgress = 0.0,
+    this.lastPositionType,
+    this.lastPositionPayload,
   });
 
   Map<String, dynamic> toMap() {
@@ -29,6 +33,8 @@ class Book {
       'is_private': isPrivate ? 1 : 0,
       'total_pages': totalPages,
       'current_progress': currentProgress,
+      'last_position_type': lastPositionType,
+      'last_position_payload': lastPositionPayload,
     };
   }
 
@@ -42,6 +48,8 @@ class Book {
       isPrivate: map['is_private'] == 1,
       totalPages: map['total_pages'] ?? 0,
       currentProgress: map['current_progress'] ?? 0.0,
+      lastPositionType: map['last_position_type'],
+      lastPositionPayload: map['last_position_payload'],
     );
   }
 }
