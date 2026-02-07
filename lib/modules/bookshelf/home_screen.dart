@@ -379,10 +379,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Theme.of(context).colorScheme.secondary,
-          unselectedLabelColor: Theme.of(context).textTheme.bodyMedium?.color,
-          indicatorColor: Theme.of(context).colorScheme.secondary,
-          indicatorWeight: 4,
+          labelColor: Theme.of(context).colorScheme.primary,
+          unselectedLabelColor: Theme.of(context).textTheme.bodySmall?.color,
+          indicatorColor: Theme.of(context).colorScheme.primary,
+          indicatorWeight: 3,
           tabs: [
             const Tab(text: "Public Shelf"),
             if (showPrivacyTab) const Tab(text: "Private Shelf"),
@@ -472,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.book, size: 40, color: Colors.pink),
+                const Icon(Icons.book, size: 40), // IconTheme controls color
                 const SizedBox(height: 8),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -526,7 +526,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: Row(
                 children: [
                   // Book icon
-                  const Icon(Icons.book, size: 40, color: Colors.pink),
+                  Icon(Icons.book,
+                      size: 40,
+                      color:
+                          Theme.of(context).colorScheme.primary), // Use Primary
                   const SizedBox(width: 16),
 
                   // Book info
@@ -548,7 +551,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           '${book.author} • ${book.format.toUpperCase()}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: Theme.of(context).textTheme.bodySmall?.color,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -558,9 +561,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             Expanded(
                               child: LinearProgressIndicator(
                                 value: progress,
-                                backgroundColor: Colors.grey[300],
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                    Colors.pink),
+                                backgroundColor: Theme.of(context)
+                                    .dividerColor
+                                    .withOpacity(0.3),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    Theme.of(context).colorScheme.primary),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -584,7 +589,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         lastReadText,
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.grey[500],
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.color
+                              ?.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -630,7 +639,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
+                leading: Icon(Icons.delete,
+                    color: Theme.of(context).colorScheme.error),
                 title: const Text('Delete Book'),
                 onTap: () {
                   Navigator.pop(context);
@@ -697,7 +707,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.error),
                   child: const Text('Delete'),
                 ),
               ],

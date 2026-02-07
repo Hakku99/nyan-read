@@ -75,32 +75,100 @@ class TxtReaderEngine implements ReaderEngine {
   }
 
   int _initialIndex = 0;
+  bool _hasRestoredPosition = false;
 
   @override
   Widget buildReader(BuildContext context) {
+    debugPrint(
+        "DEBUG: TxtReader.buildReader called - isLoading=$_isLoading, lines=${_lines.length}");
+
     if (_isLoading) {
+      debugPrint("DEBUG: Returning loading indicator");
       return const Center(child: CircularProgressIndicator());
     }
 
-    return ValueListenableBuilder<ReaderConfig>(
-      valueListenable: _configNotifier,
-      builder: (context, config, child) {
-        return _buildList(context, config);
-      },
+    if (_lines.isEmpty) {
+      debugPrint("DEBUG: Lines is empty! Returning error message");
+      return const Center(child: Text("No content loaded"));
+    }
+
+    debugPrint(
+        "DEBUG: Building ValueListenableBuilder with ${_lines.length} lines");
+    return SizedBox.expand(
+      child: ValueListenableBuilder<ReaderConfig>(
+        valueListenable: _configNotifier,
+        builder: (context, config, child) {
+          debugPrint(
+              "DEBUG: ValueListenableBuilder building with config: fontSize=${config.fontSize}, bg=${config.backgroundColor}");
+          return _buildList(context, config);
+        },
+      ),
     );
   }
 
   Widget _buildList(BuildContext context, ReaderConfig config) {
+    debugPrint(
+        "DEBUG: _buildList called - initialIndex=$_initialIndex, hasRestored=$_hasRestoredPosition");
+
+    // Schedule position restoration after first frame if needed
+    if (_initialIndex > 0 && !_hasRestoredPosition) {
+      _hasRestoredPosition = true;
+      debugPrint(
+          "DEBUG: Scheduling position restoration to index $_initialIndex");
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        debugPrint(
+            "DEBUG: PostFrameCallback executing - isAttached=${_itemScrollController.isAttached}");
+        if (_itemScrollController.isAttached) {
+          _itemScrollController.jumpTo(index: _initialIndex);
+          debugPrint("DEBUG: Jumped to index $_initialIndex");
+        }
+      });
+    }
+
+    debugPrint(
+        "DEBUG: Creating ScrollablePositionedList with ${_lines.length} items");
+
     return ScrollablePositionedList.builder(
-      initialScrollIndex: _initialIndex, // Use stored initial index
       itemCount: _lines.length,
       itemScrollController: _itemScrollController,
       itemPositionsListener: _itemPositionsListener,
+      initialScrollIndex: _initialIndex,
       itemBuilder: (context, index) {
+        // Debug only first few items to avoid spam
+        if (index < 5) {
+          debugPrint("DEBUG: itemBuilder called for index $index");
+        }
+
         final line = _lines[index].trim();
-        if (line.isEmpty) return const SizedBox(height: 10);
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+
+        // Calculate padding based on position
+        EdgeInsets itemPadding = const EdgeInsets.symmetric(horizontal: 24.0);
+
+        // Add top padding to first item
+        if (index == 0) {
+          itemPadding = itemPadding.copyWith(top: 16.0);
+          debugPrint(
+              "DEBUG: First item - line='${line.length > 20 ? line.substring(0, 20) : line}...', textColor=${config.textColor}, bgColor=${config.backgroundColor}");
+        }
+
+        // Add bottom padding to last item (critical for clearing bottom bar)
+        if (index == _lines.length - 1) {
+          itemPadding = itemPadding.copyWith(bottom: 120.0);
+        }
+
+        // Paragraph spacing
+        final bottomMargin = config.fontSize * 0.6;
+        itemPadding =
+            itemPadding.copyWith(bottom: itemPadding.bottom + bottomMargin);
+
+        if (line.isEmpty) {
+          if (index < 5) debugPrint("DEBUG: Item $index is empty line");
+          return SizedBox(height: bottomMargin);
+        }
+
+        return Container(
+          color: config.backgroundColor,
+          padding: itemPadding,
           child: Text(
             line,
             style: TextStyle(
@@ -123,6 +191,7 @@ class TxtReaderEngine implements ReaderEngine {
       } else {
         // Queue it for initial build
         _initialIndex = position.paragraphIndex;
+        _hasRestoredPosition = false; // Reset flag so restoration happens
       }
     }
   }
@@ -146,12 +215,14 @@ class TxtReaderEngine implements ReaderEngine {
       return TxtReadingPosition(paragraphIndex: _initialIndex);
     }
 
-    final firstVisible = _itemPositionsListener.itemPositions.value
-        .where((item) => item.itemLeadingEdge < 1)
-        .reduce((a, b) => a.itemLeadingEdge > b.itemLeadingEdge ? a : b)
-        .index;
+    final positions = _itemPositionsListener.itemPositions.value.toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
 
-    return TxtReadingPosition(paragraphIndex: firstVisible);
+    if (positions.isEmpty) {
+      return TxtReadingPosition(paragraphIndex: _initialIndex);
+    }
+
+    return TxtReadingPosition(paragraphIndex: positions.first.index);
   }
 
   @override

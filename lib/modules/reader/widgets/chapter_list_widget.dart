@@ -6,6 +6,7 @@ class ChapterListWidget extends StatelessWidget {
   final List<dynamic> chapters;
   final int? currentChapterIndex;
   final double currentProgress;
+  final ScrollController? scrollController;
   final Function(int index, dynamic chapterData) onChapterTap;
 
   const ChapterListWidget({
@@ -13,6 +14,7 @@ class ChapterListWidget extends StatelessWidget {
     required this.chapters,
     this.currentChapterIndex,
     required this.currentProgress,
+    this.scrollController,
     required this.onChapterTap,
   }) : super(key: key);
 
@@ -83,7 +85,9 @@ class ChapterListWidget extends StatelessWidget {
           Flexible(
             child: Scrollbar(
               thumbVisibility: true,
+              controller: scrollController,
               child: ListView.builder(
+                controller: scrollController,
                 shrinkWrap: true,
                 itemCount: chapters.length,
                 padding: const EdgeInsets.symmetric(vertical: 8),

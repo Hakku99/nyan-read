@@ -1,22 +1,30 @@
 import 'package:flutter/material.dart';
 
 enum ThemePreset {
-  sakuraLight,
-  midnightBlue,
+  creamLight,
+  sumiDark,
   sepiaWarm,
 }
 
 class NyanTheme {
   final ThemePreset preset;
   final String name;
-  final Color primary;
+  final Color primary; // Primary Accent (Matcha)
   final Color surface;
   final Color background;
   final Color textPrimary;
   final Color textSecondary;
-  final Color accent;
+  final Color textMuted; // New
+  final Color accent; // Secondary Accent (Wood/Beige)
   final Color divider;
+  final Color borderColor; // New
   final Brightness brightness;
+
+  // New Semantic Colors
+  final Color primaryButtonColor;
+  final Color successColor;
+  final Color warningColor;
+  final Color infoColor;
 
   // Error Theme Colors
   final Color errorBackgroundColor;
@@ -32,9 +40,15 @@ class NyanTheme {
     required this.background,
     required this.textPrimary,
     required this.textSecondary,
+    required this.textMuted,
     required this.accent,
     required this.divider,
+    required this.borderColor,
     required this.brightness,
+    required this.primaryButtonColor,
+    required this.successColor,
+    required this.warningColor,
+    required this.infoColor,
     required this.errorBackgroundColor,
     required this.errorPrimaryTextColor,
     required this.errorSecondaryTextColor,
@@ -53,27 +67,33 @@ class NyanTheme {
         onPrimary: brightness == Brightness.dark ? textPrimary : Colors.white,
         secondary: accent,
         onSecondary: Colors.white,
-        error: brightness == Brightness.dark ? const Color(0xFFCF6679) : Colors.redAccent, // Softer red for dark mode
+        error: brightness == Brightness.dark
+            ? const Color(0xFFCF6679)
+            : Colors.redAccent, // Softer red for dark mode
         onError: Colors.white,
         surface: surface,
         onSurface: textPrimary,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: primary,
-        foregroundColor: brightness == Brightness.dark ? textPrimary : Colors.white,
+        backgroundColor: background, // Melt into background
+        foregroundColor: textPrimary,
         elevation: 0,
-        iconTheme: IconThemeData(
-          color: brightness == Brightness.dark ? textPrimary : Colors.white,
-        ),
+        centerTitle: true,
+        iconTheme: IconThemeData(color: textPrimary),
+        scrolledUnderElevation: 0,
       ),
       cardTheme: CardThemeData(
         color: surface,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0, // Flat design
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: divider, width: 1), // Subtle border
+        ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: accent, // Use Accent color for buttons (Unlock/Cancel)
+          foregroundColor: primary,
           textStyle: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
@@ -83,7 +103,9 @@ class NyanTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.1),
+        fillColor: surface,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: divider),
@@ -94,16 +116,20 @@ class NyanTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: accent, width: 2),
+          borderSide: BorderSide(color: primary, width: 1.5),
         ),
         labelStyle: TextStyle(color: textSecondary),
         hintStyle: TextStyle(color: textSecondary.withOpacity(0.7)),
       ),
       textTheme: TextTheme(
-        bodyLarge: TextStyle(color: textPrimary, fontSize: 18, height: 1.6), // Reader text
-        bodyMedium: TextStyle(color: textPrimary),
-        bodySmall: TextStyle(color: textSecondary),
-        titleLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
+        bodyLarge: TextStyle(color: textPrimary, fontSize: 16),
+        bodyMedium: TextStyle(color: textPrimary, fontSize: 14),
+        bodySmall: TextStyle(color: textSecondary, fontSize: 12),
+        titleLarge: TextStyle(
+            color: textPrimary,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            letterSpacing: -0.5),
       ),
       iconTheme: IconThemeData(color: textPrimary),
     );
@@ -111,52 +137,75 @@ class NyanTheme {
 }
 
 final Map<ThemePreset, NyanTheme> themePresets = {
-  ThemePreset.sakuraLight: const NyanTheme(
-    preset: ThemePreset.sakuraLight,
-    name: "Sakura Light",
-    primary: Color(0xFFF7B7C8),
-    surface: Color(0xFFFFF8F2),
-    background: Color(0xFFF4F4F4),
-    textPrimary: Colors.black, // Strict Black
-    textSecondary: Color(0xFF555555), // Darker Grey for better contrast
-    accent: Color(0xFFFF8A9D),
-    divider: Color(0xFFFF8A9D), // Darker divider
+  ThemePreset.creamLight: const NyanTheme(
+    preset: ThemePreset.creamLight,
+    name: "Cream Light",
+    primary: Color(0xFF8E9775),
+    surface: Color(0xFFF2F0EB),
+    background: Color(0xFFFDFCF8),
+    textPrimary: Color(0xFF4A453E),
+    textSecondary: Color(0xFF8C867B),
+    textMuted: Color(0xFFB0ACA5),
+    accent: Color(0xFFD4A373),
+    divider: Color(0xFFE6E2D8),
+    borderColor: Color(0xFFE6E2D8),
     brightness: Brightness.light,
-    // Error Theme - Soft Pink/Red on White
+    primaryButtonColor: Color(0xFF8E9775),
+    successColor: Color(0xFF6B8E23),
+    warningColor: Color(0xFFD4A373),
+    infoColor: Color(0xFF7FABAC),
     errorBackgroundColor: Color(0xFFFFF0F0),
-    errorPrimaryTextColor: Color(0xFF8B0000),
-    errorSecondaryTextColor: Color(0xFFB71C1C),
+    errorPrimaryTextColor: Color(0xFFC62828),
+    errorSecondaryTextColor: Color(0xFFD32F2F),
     errorAccentColor: Color(0xFFFFCDD2),
   ),
-  ThemePreset.midnightBlue: const NyanTheme(
-    preset: ThemePreset.midnightBlue,
-    name: "Midnight Blue",
-    primary: Color(0xFF2E2A3A),
-    surface: Color(0xFF3B3550),
-    background: Color(0xFF1E1B2E),
-    textPrimary: Colors.white, // Strict White
-    textSecondary: Color(0xFFE0E0E0), // Lighter Grey for better contrast
-    accent: Color(0xFFFFFFFF),
-    divider: Color(0xFF555555),
+
+  ThemePreset.sumiDark: const NyanTheme(
+    preset: ThemePreset.sumiDark,
+    name: "Sumi Dark",
+    primary: Color(0xFFB5BEA0), // Light Matcha
+    surface: Color(0xFF262422), // Dark Wood/Charcoal
+    background: Color(0xFF1C1B1A), // Warm Charcoal
+    textPrimary: Color(0xFFE6E2D8), // Cream White
+    textSecondary: Color(0xFFA8A29A), // Warm Grey
+    textMuted: Color(0xFF706B65),
+    accent: Color(0xFFD4A373), // Soft Wood
+    divider: Color(0xFF3E3B38),
+    borderColor: Color(0xFF3E3B38),
     brightness: Brightness.dark,
-    // Error Theme - Soft Red on Dark
+
+    primaryButtonColor: Color(0xFFB5BEA0),
+    successColor: Color(0xFF8FBC8F),
+    warningColor: Color(0xFFD4A373),
+    infoColor: Color(0xFF7FABAC),
+
     errorBackgroundColor: Color(0xFF2B2020),
     errorPrimaryTextColor: Color(0xFFFFCDD2),
     errorSecondaryTextColor: Color(0xFFE57373),
     errorAccentColor: Color(0xFFEF9A9A),
   ),
+
+  // Keeping Sepia as a variation of Cream (maybe slightly warmer/darker)
   ThemePreset.sepiaWarm: const NyanTheme(
     preset: ThemePreset.sepiaWarm,
     name: "Sepia Warm",
-    primary: Color(0xFFD7CCC8), 
-    surface: Color(0xFFEFEBE9), 
-    background: Color(0xFFF5F5DC), 
-    textPrimary: Colors.black, // Strict Black
-    textSecondary: Color(0xFF5D4037), // Dark Brown
+    primary: Color(0xFF8D6E63),
+    surface: Color(0xFFEFEBE9),
+    background: Color(0xFFF5F5DC),
+    textPrimary: Color(0xFF3E2723), // Dark Brown
+    textSecondary: Color(0xFF5D4037),
+    textMuted: Color(0xFFA1887F),
     accent: Color(0xFF8D6E63),
-    divider: Color(0xFF8D6E63),
+    divider: Color(0xFFD7CCC8),
+    borderColor: Color(0xFFD7CCC8),
     brightness: Brightness.light,
-    // Error Theme - Soft Brown/Red on Sepia
+
+    primaryButtonColor: Color(0xFF8D6E63),
+    successColor: Color(0xFF558B2F),
+    warningColor: Color(0xFFEF6C00),
+    infoColor: Color(0xFF0277BD),
+
+    // Error Theme
     errorBackgroundColor: Color(0xFFFAF0E6),
     errorPrimaryTextColor: Color(0xFF5D4037),
     errorSecondaryTextColor: Color(0xFF8D6E63),

@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'theme_presets.dart';
 
 class ThemeManager extends ChangeNotifier {
-  ThemePreset _currentPreset = ThemePreset.sakuraLight;
+  ThemePreset _currentPreset = ThemePreset.creamLight;
 
   ThemePreset get currentPreset => _currentPreset;
 
@@ -18,10 +18,19 @@ class ThemeManager extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final presetName = prefs.getString('theme_preset');
     if (presetName != null) {
-      try {
-        _currentPreset = ThemePreset.values.firstWhere((e) => e.toString() == presetName);
-      } catch (e) {
-        _currentPreset = ThemePreset.sakuraLight;
+      if (presetName.contains('sakuraLight')) {
+        _currentPreset = ThemePreset.creamLight;
+        setPreset(_currentPreset); // Save migration
+      } else if (presetName.contains('midnightBlue')) {
+        _currentPreset = ThemePreset.sumiDark;
+        setPreset(_currentPreset); // Save migration
+      } else {
+        try {
+          _currentPreset =
+              ThemePreset.values.firstWhere((e) => e.toString() == presetName);
+        } catch (e) {
+          _currentPreset = ThemePreset.creamLight;
+        }
       }
     }
     notifyListeners();

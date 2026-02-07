@@ -26,23 +26,23 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
   Widget build(BuildContext context) {
     // Find the NyanTheme from ThemePresets that matches the current theme if possible,
     // or we can just access it from the current context if we had a ThemeProvider.
-    // However, ReaderPage sets the theme dynamically in its build. 
+    // However, ReaderPage sets the theme dynamically in its build.
     // We should rely on a passed theme or look it up.
     // The requirement says "Error UI 不使用 Reader 背景色", and "必须使用专用 ErrorTheme".
     // We can lookup the current ThemePreset based on context or just use hardcoded style from NyanTheme.
     // Since ReaderPage might be wrapping us in a Theme, but we want a specific Error Theme.
     // We'll iterate the presets to find the matching one, or just use a default safe one if not found.
     // Actually, we can get the colors from the Theme extension if we had one, but we added them to NyanTheme.
-    
+
     // HACK: Since we don't have easy access to the current NyanTheme object (it's not in the context directly, only ThemeData is),
     // we will try to find the NyanTheme that matches the scaffoldBackgroundColor or primary color.
     // OR, better, we pass the NyanTheme to this widget.
     // But for now, let's assume we can find it.
-    
+
     final currentScaffoldColor = Theme.of(context).scaffoldBackgroundColor;
     final nyanTheme = themePresets.values.firstWhere(
       (t) => t.background == currentScaffoldColor,
-      orElse: () => themePresets[ThemePreset.sakuraLight]!,
+      orElse: () => themePresets[ThemePreset.creamLight]!,
     );
 
     final errorBg = nyanTheme.errorBackgroundColor;
@@ -59,7 +59,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           MascotManager().render(
-            MascotScene.error, 
+            MascotScene.error,
             size: 120,
             color: errorPrimary,
           ),
@@ -75,7 +75,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
             ),
           ),
           const SizedBox(height: 48),
-          
+
           // Actions
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -103,38 +103,38 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
 
           // Technical Details (Hidden by default)
           if (widget.errorState.technicalMessage != null) ...[
-             const SizedBox(height: 32),
-             GestureDetector(
-               onTap: () => setState(() => _showDetails = !_showDetails),
-               child: Text(
-                 _showDetails ? "隐藏技术细节" : "显示技术细节",
-                 style: TextStyle(
-                   color: errorSecondary.withOpacity(0.5),
-                   fontSize: 12,
-                   decoration: TextDecoration.underline,
-                 ),
-               ),
-             ),
-             if (_showDetails) ...[
-               const SizedBox(height: 16),
-               Container(
-                 padding: const EdgeInsets.all(12),
-                 decoration: BoxDecoration(
-                   color: Colors.black.withOpacity(0.05),
-                   borderRadius: BorderRadius.circular(8),
-                   border: Border.all(color: errorSecondary.withOpacity(0.1)),
-                 ),
-                 width: double.infinity,
-                 child: Text(
-                   widget.errorState.technicalMessage!,
-                   style: TextStyle(
-                     fontFamily: 'Courier', // Monospace
-                     fontSize: 11,
-                     color: errorSecondary,
-                   ),
-                 ),
-               ),
-             ]
+            const SizedBox(height: 32),
+            GestureDetector(
+              onTap: () => setState(() => _showDetails = !_showDetails),
+              child: Text(
+                _showDetails ? "隐藏技术细节" : "显示技术细节",
+                style: TextStyle(
+                  color: errorSecondary.withOpacity(0.5),
+                  fontSize: 12,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+            if (_showDetails) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: errorSecondary.withOpacity(0.1)),
+                ),
+                width: double.infinity,
+                child: Text(
+                  widget.errorState.technicalMessage!,
+                  style: TextStyle(
+                    fontFamily: 'Courier', // Monospace
+                    fontSize: 11,
+                    color: errorSecondary,
+                  ),
+                ),
+              ),
+            ]
           ]
         ],
       ),
