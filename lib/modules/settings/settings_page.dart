@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/theme_manager.dart';
 import '../../core/services/feature_manager.dart';
 import '../../core/services/reader_preferences_service.dart';
+import '../../core/services/bookshelf_preferences_service.dart';
 import '../../modules/tts/tts_ui.dart';
 // import '../../modules/ads/ads_ui.dart';
 import '../../core/theme/theme_presets.dart';
@@ -119,6 +120,31 @@ class SettingsPage extends StatelessWidget {
               ],
               onChanged: (val) {},
             ),
+          ),
+
+          const Divider(),
+
+          // Data Management
+          const ListTile(
+            title: Text(
+              'Data Management',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          StatefulBuilder(
+            builder: (context, setState) {
+              final bookshelfPrefs = BookshelfPreferencesService.instance;
+              return SwitchListTile(
+                title: const Text('Delete Files on Remove'),
+                subtitle:
+                    const Text('Also delete local files when deleting books'),
+                value: bookshelfPrefs.deleteFilesOnRemove,
+                onChanged: (val) async {
+                  await bookshelfPrefs.setDeleteFilesOnRemove(val);
+                  setState(() {});
+                },
+              );
+            },
           ),
 
           const Divider(),

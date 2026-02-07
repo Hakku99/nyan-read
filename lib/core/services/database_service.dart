@@ -96,11 +96,43 @@ class DatabaseService {
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<List<Map<String, dynamic>>> getBooks({bool isPrivate = false}) async {
+  Future<List<Map<String, dynamic>>> getBooks({
+    bool isPrivate = false,
+    String orderBy = 'last_read_at DESC',
+  }) async {
     final db = await database;
     // 0 = false, 1 = true
-    return await db.query('books',
-        where: 'is_private = ?', whereArgs: [isPrivate ? 1 : 0]);
+    return await db.query(
+      'books',
+      where: 'is_private = ?',
+      whereArgs: [isPrivate ? 1 : 0],
+      orderBy: orderBy,
+    );
+  }
+
+  Future<Map<String, dynamic>?> getBookById(String bookId) async {
+    final db = await database;
+    final results = await db.query(
+      'books',
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
+    return results.isEmpty ? null : results.first;
+  }
+
+  Future<void> deleteBook(String bookId) async {
+    final db = await database;
+    await db.delete('books', where: 'id = ?', whereArgs: [bookId]);
+  }
+
+  Future<void> updateBookPrivacy(String bookId, bool isPrivate) async {
+    final db = await database;
+    await db.update(
+      'books',
+      {'is_private': isPrivate ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
   }
 
   // --- Bookmarks CRUD ---

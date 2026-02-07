@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'core/services/feature_manager.dart';
 import 'core/services/database_service.dart';
 import 'core/services/reader_preferences_service.dart';
+import 'core/services/bookshelf_preferences_service.dart';
 import 'core/theme/theme_manager.dart';
 import 'modules/home/splash_page.dart';
 import 'modules/admin/admin_panel.dart';
@@ -18,6 +19,8 @@ void main() async {
   await themeManager.init();
   final readerPrefs = ReaderPreferencesService.instance;
   await readerPrefs.initialize();
+  final bookshelfPrefs = BookshelfPreferencesService.instance;
+  await bookshelfPrefs.initialize();
 
   runApp(
     MultiProvider(

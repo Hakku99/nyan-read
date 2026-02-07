@@ -14,7 +14,6 @@ import 'reader_error.dart';
 import 'widgets/reader_error_view.dart';
 import 'widgets/chapter_list_widget.dart';
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
