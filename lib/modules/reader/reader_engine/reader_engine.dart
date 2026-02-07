@@ -50,6 +50,12 @@ abstract class ReaderEngine {
   /// Returns empty list if chapters cannot be extracted.
   Future<List<dynamic>> getChapters();
 
+  /// Navigates to the next page/screen.
+  Future<void> nextPage();
+
+  /// Navigates to the previous page/screen.
+  Future<void> previousPage();
+
   /// Called when the reader is disposed.
   void dispose();
 }

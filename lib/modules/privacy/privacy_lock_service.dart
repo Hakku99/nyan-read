@@ -1,27 +1,59 @@
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
+import '../../core/services/pin_service.dart';
+import 'pin_overlay_page.dart';
 
 class PrivacyLockService {
-  static const String _prefKeyHash = 'privacy_password_hash';
+  final _pinService = PinService.instance;
 
+  /// Check if a PIN has been set up
   Future<bool> hasPassword() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey(_prefKeyHash);
+    return await _pinService.hasPinSet();
   }
 
+  /// Verify password (kept for backward compatibility, delegates to PIN)
   Future<bool> verifyPassword(String input) async {
-    final prefs = await SharedPreferences.getInstance();
-    final storedHash = prefs.getString(_prefKeyHash);
-    if (storedHash == null) return false;
-
-    final inputHash = sha256.convert(utf8.encode(input)).toString();
-    return inputHash == storedHash;
+    if (input.length == 4 && RegExp(r'^\d{4}$').hasMatch(input)) {
+      return await _pinService.verifyPin(input);
+    }
+    return false;
   }
 
+  /// Set password (kept for backward compatibility, delegates to PIN)
   Future<void> setPassword(String password) async {
-    final prefs = await SharedPreferences.getInstance();
-    final hash = sha256.convert(utf8.encode(password)).toString();
-    await prefs.setString(_prefKeyHash, hash);
+    if (password.length == 4 && RegExp(r'^\d{4}$').hasMatch(password)) {
+      await _pinService.setPin(password);
+    }
+  }
+
+  /// Show PIN setup overlay
+  Future<bool> showPinSetup(BuildContext context) async {
+    final result = await Navigator.of(context).push<bool>(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const PinOverlayPage(mode: PinOverlayMode.setup),
+        opaque: false,
+        barrierDismissible: false,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
+    return result ?? false;
+  }
+
+  /// Show PIN verification overlay
+  Future<bool> showPinVerify(BuildContext context) async {
+    final result = await Navigator.of(context).push<bool>(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const PinOverlayPage(mode: PinOverlayMode.verify),
+        opaque: false,
+        barrierDismissible: false,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
+    return result ?? false;
   }
 }

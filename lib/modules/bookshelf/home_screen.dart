@@ -10,12 +10,14 @@ import 'package:intl/intl.dart';
 import '../../core/services/feature_manager.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
+import '../../core/services/folder_import_service.dart';
 import '../../core/models/book.dart';
 import '../../core/services/mascot_manager.dart';
 import '../../modules/privacy/privacy_lock_service.dart';
 import '../reader/reader_page.dart';
 import '../settings/settings_page.dart';
 import '../ads/ads_ui.dart';
+import '../import/folder_import_preview_page.dart';
 import 'book_details_page.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -96,6 +98,93 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             content: Text(
                 "Book Imported to ${isPrivate ? 'Private' : 'Public'} Shelf!")));
         _refreshShelf();
+      }
+    }
+  }
+
+  void _showImportMenu(BuildContext context) {
+    // Capture the parent context to ensure provider access
+    final parentContext = context;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.insert_drive_file),
+                title: const Text('Import Single File'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _importBook(parentContext);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.folder_open),
+                title: const Text('Import Folder'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _importFolder(parentContext);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _importFolder(BuildContext context) async {
+    final result = await FilePicker.platform.getDirectoryPath();
+
+    if (result != null) {
+      try {
+        // Scan folder
+        final files = await FolderImportService.instance.scanFolder(
+          result,
+          includeHidden: false,
+        );
+
+        if (files.isEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('No supported books found in folder')),
+            );
+          }
+          return;
+        }
+
+        // Determine privacy based on current tab
+        final featureManager = context.read<FeatureManager>();
+        final isPrivateShelfUnlocked =
+            featureManager.isPro && featureManager.isPrivateShelfUnlocked;
+        final isPrivate = isPrivateShelfUnlocked && _tabController.index == 1;
+
+        // Navigate to preview page
+        if (mounted) {
+          final imported = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => FolderImportPreviewPage(
+                files: files,
+                isPrivate: isPrivate,
+              ),
+            ),
+          );
+
+          if (imported == true) {
+            _refreshShelf();
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error scanning folder: $e')),
+          );
+        }
       }
     }
   }
@@ -320,7 +409,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
-        onPressed: () => _importBook(context),
+        onPressed: () => _showImportMenu(context),
       ),
     );
   }

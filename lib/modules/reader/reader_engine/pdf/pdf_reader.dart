@@ -106,6 +106,22 @@ class PdfReaderEngine implements ReaderEngine {
   }
 
   @override
+  Future<void> nextPage() async {
+    await _pdfController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.ease,
+    );
+  }
+
+  @override
+  Future<void> previousPage() async {
+    await _pdfController.previousPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.ease,
+    );
+  }
+
+  @override
   void dispose() {
     if (_isInit) {
       _pdfController.dispose();

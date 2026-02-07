@@ -200,6 +200,125 @@ class TxtReaderEngine implements ReaderEngine {
     return chapters;
   }
 
+  /// Advance by approximately one screen height (estimated at 20 lines)
+  @override
+  Future<void> nextPage() async {
+    final positions = _itemPositionsListener.itemPositions.value.toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
+
+    if (positions.isEmpty) {
+      _initialIndex = (_initialIndex + 20).clamp(0, _lines.length - 1);
+      return;
+    }
+
+    final first = positions.first;
+    final last = positions.last;
+
+    // Handle huge item case (only one item visible and it's larger than viewport)
+    if (first.index == last.index) {
+      final leading = first.itemLeadingEdge;
+      final trailing = first.itemTrailingEdge;
+      final ratio = trailing - leading;
+
+      // If item is larger than viewport (ratio > 1.0) and we are not at the end of it
+      if (ratio > 1.0 && trailing > 1.0) {
+        // Scroll down within the item
+        // Calculate new alignment
+        // Rel: Leading = A * (1 - R)  => A = Leading / (1 - R)
+        // We want newLeading = leading - 0.9 (scroll down 90% of screen)
+        final targetLeading = leading - 0.9;
+
+        if (targetLeading > (1.0 - ratio)) {
+          final align = targetLeading / (1.0 - ratio);
+          if (_itemScrollController.isAttached) {
+            await _itemScrollController.scrollTo(
+              index: first.index,
+              alignment: align,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          }
+          return;
+        }
+      }
+    }
+
+    // Normal case: Scroll to the last visible item, making it the new top (1 line overlap)
+    // If last item is fully visible or mostly visible, we might want to target index + 1?
+    // But targeting last item with align 0 guarantees it becomes top.
+
+    var targetIndex = last.index;
+    // Edge case: if we are stuck (target == first), force advance
+    if (targetIndex == first.index && positions.length > 1) {
+      targetIndex++;
+    }
+
+    if (_itemScrollController.isAttached) {
+      await _itemScrollController.scrollTo(
+        index: targetIndex.clamp(0, _lines.length - 1),
+        alignment: 0.0, // Align to top
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  /// Go back by approximately one screen height
+  @override
+  Future<void> previousPage() async {
+    final positions = _itemPositionsListener.itemPositions.value.toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
+
+    if (positions.isEmpty) {
+      _initialIndex = (_initialIndex - 20).clamp(0, _lines.length - 1);
+      return;
+    }
+
+    final first = positions.first;
+    final last = positions.last;
+
+    // Handle huge item case
+    if (first.index == last.index) {
+      final leading = first.itemLeadingEdge;
+      final trailing = first.itemTrailingEdge;
+      final ratio = trailing - leading;
+
+      if (ratio > 1.0 && leading < 0.0) {
+        // Scroll up within the item
+        final targetLeading = leading + 0.9;
+
+        if (targetLeading < 0.0) {
+          final align = targetLeading / (1.0 - ratio);
+          if (_itemScrollController.isAttached) {
+            await _itemScrollController.scrollTo(
+              index: first.index,
+              alignment: align,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          }
+          return;
+        }
+      }
+    }
+
+    // Normal case: Scroll to first visible item, making it the new bottom (1 line overlap)
+    var targetIndex = first.index;
+
+    // If we are already at alignment 1.0 (bottom), we shouldn't just stay there?
+    // But usually first item is at top (align 0) or partial.
+    // Making it align 1.0 moves it to bottom. Correct.
+
+    if (_itemScrollController.isAttached) {
+      await _itemScrollController.scrollTo(
+        index: targetIndex.clamp(0, _lines.length - 1),
+        alignment: 1.0, // Align to bottom
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
   @override
   void dispose() {
     _configNotifier.dispose();

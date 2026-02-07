@@ -135,6 +135,18 @@ class EpubReaderEngine implements ReaderEngine {
   }
 
   @override
+  Future<void> nextPage() async {
+    // EpubView handles its own gestures.
+    // TODO: Implement programmatic navigation if supported by controller.
+  }
+
+  @override
+  Future<void> previousPage() async {
+    // EpubView handles its own gestures.
+    // TODO: Implement programmatic navigation if supported by controller.
+  }
+
+  @override
   void dispose() {
     if (_isInit) {
       _epubController.dispose();

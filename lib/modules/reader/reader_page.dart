@@ -4,11 +4,13 @@ import 'package:uuid/uuid.dart';
 import '../../core/models/book.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/reader_preferences_service.dart';
+import '../../core/utils/layout_debouncer.dart';
 import '../bookmark/bookmark_list_page.dart';
 import 'reader_engine/reader_engine.dart';
 import 'reader_engine/reader_factory.dart';
 import 'reader_engine/epub/epub_position.dart';
 import 'reader_engine/txt/txt_position.dart';
+
 import 'reader_engine/pdf/pdf_position.dart';
 import 'reader_error.dart';
 import 'widgets/reader_error_view.dart';
@@ -34,6 +36,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   ReaderErrorState? _errorState;
   List<dynamic> _chapters = [];
   int? _currentChapterIndex;
+  final Debouncer _layoutDebouncer =
+      Debouncer(delay: const Duration(milliseconds: 300));
+  Size? _lastLayoutSize;
 
   ReaderController(this.book) {
     engine = ReaderEngineFactory.create(book);
@@ -256,6 +261,14 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  Future<void> previousPage() async {
+    await engine.previousPage();
+  }
+
+  Future<void> nextPage() async {
+    await engine.nextPage();
+  }
+
   Future<void> addBookmark(BuildContext context) async {
     final position = engine.getCurrentPosition();
     if (position == null) return;
@@ -325,12 +338,43 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  void handleLayoutChange(Size newSize) {
+    // Skip if size hasn't changed significantly
+    if (_lastLayoutSize != null &&
+        (newSize.width - _lastLayoutSize!.width).abs() < 10 &&
+        (newSize.height - _lastLayoutSize!.height).abs() < 10) {
+      return;
+    }
+
+    _lastLayoutSize = newSize;
+
+    // Debounce layout recalculation to avoid excessive updates
+    _layoutDebouncer.run(() {
+      _recalculateLayout(newSize);
+    });
+  }
+
+  void _recalculateLayout(Size size) {
+    // Adjust font size based on screen width
+    // Base width is 800px, scale font size proportionally
+    final baseFontSize = 18.0;
+    final scaleFactor = (size.width / 800).clamp(0.7, 1.5);
+    final adjustedFontSize = (baseFontSize * scaleFactor).clamp(12.0, 32.0);
+
+    if ((adjustedFontSize - _fontSize).abs() > 1.0) {
+      _fontSize = adjustedFontSize;
+      _updateEngineConfig();
+      notifyListeners();
+    }
+  }
+
   @override
   void dispose() {
     _saveCurrentPosition(); // 最后保存一次
     _reminderTimer?.cancel();
     _progressTimer?.cancel();
     _autoSaveTimer?.cancel();
+    _layoutDebouncer.dispose();
     WidgetsBinding.instance.removeObserver(this);
     engine.dispose();
     super.dispose();
@@ -350,10 +394,10 @@ class ReaderPage extends StatelessWidget {
         builder: (context, controller, child) {
           final theme = Theme.of(context);
 
+          // Handle errors
           if (controller.errorState != null) {
             return Scaffold(
-              backgroundColor:
-                  theme.scaffoldBackgroundColor, // Or let the View handle it
+              backgroundColor: theme.scaffoldBackgroundColor,
               body: ReaderErrorView(
                 errorState: controller.errorState!,
                 onBack: () => Navigator.pop(context),
@@ -362,6 +406,7 @@ class ReaderPage extends StatelessWidget {
             );
           }
 
+          // Show reading reminder if needed
           if (controller.shouldShowReminder) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               showDialog(
@@ -384,9 +429,27 @@ class ReaderPage extends StatelessWidget {
             backgroundColor: controller.backgroundColor,
             body: Stack(
               children: [
-                // Content Area
+                // Content Area with Tap Zones
                 GestureDetector(
-                  onTap: controller.toggleControls,
+                  onTapUp: (details) {
+                    final screenHeight = MediaQuery.of(context).size.height;
+                    final tapY = details.globalPosition.dy;
+
+                    // Divide screen into 3 vertical zones:
+                    // Top (0-45%): Previous
+                    // Middle (45-55%): Menu (10% height)
+                    // Bottom (55-100%): Next
+                    if (tapY < screenHeight * 0.45) {
+                      // Top zone - Previous page
+                      controller.previousPage();
+                    } else if (tapY > screenHeight * 0.55) {
+                      // Bottom zone - Next page
+                      controller.nextPage();
+                    } else {
+                      // Center zone - Toggle controls
+                      controller.toggleControls();
+                    }
+                  },
                   child: Container(
                     color: controller.backgroundColor,
                     width: double.infinity,
@@ -399,7 +462,9 @@ class ReaderPage extends StatelessWidget {
                             ),
                         iconTheme: IconThemeData(color: controller.textColor),
                       ),
-                      child: controller.engine.buildReader(context),
+                      child: SafeArea(
+                        child: controller.engine.buildReader(context),
+                      ),
                     ),
                   ),
                 ),
@@ -490,7 +555,8 @@ class ReaderPage extends StatelessWidget {
                             spreadRadius: 2)
                       ],
                     ),
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    padding: EdgeInsets.fromLTRB(
+                        16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
