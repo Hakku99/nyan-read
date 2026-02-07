@@ -15,7 +15,6 @@ enum MascotScene {
 }
 
 class MascotManager {
-  
   MascotType getMascotForScene(MascotScene scene) {
     switch (scene) {
       case MascotScene.splash:
@@ -50,19 +49,19 @@ class _MascotWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Placeholder using Icons and Colors since we don't have assets yet
+    // Use theme colors to match Japanese Cream design
+    final theme = Theme.of(context);
+
     IconData icon;
     Color effectiveColor;
 
     if (color != null) {
       effectiveColor = color!;
       icon = (type == MascotType.typeA) ? Icons.pets : Icons.nightlight_round;
-    } else if (type == MascotType.typeA) {
-      effectiveColor = const Color(0xFFF7B7C8); // Pink
-      icon = Icons.pets; // Cat paw
     } else {
-      effectiveColor = const Color(0xFF7DB7D9); // Blue
-      icon = Icons.nightlight_round; // Moon/Night
+      // Use theme primary color instead of hardcoded colors
+      effectiveColor = theme.colorScheme.primary;
+      icon = (type == MascotType.typeA) ? Icons.pets : Icons.nightlight_round;
     }
 
     // Scene specific tweaks
@@ -78,9 +77,9 @@ class _MascotWidget extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: effectiveColor.withOpacity(0.2),
+        color: effectiveColor.withOpacity(0.15),
         shape: BoxShape.circle,
-        border: Border.all(color: effectiveColor, width: 2),
+        border: Border.all(color: effectiveColor.withOpacity(0.5), width: 2),
       ),
       child: Center(
         child: Icon(

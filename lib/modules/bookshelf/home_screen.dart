@@ -382,7 +382,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           labelColor: Theme.of(context).colorScheme.primary,
           unselectedLabelColor: Theme.of(context).textTheme.bodySmall?.color,
           indicatorColor: Theme.of(context).colorScheme.primary,
-          indicatorWeight: 3,
+          indicatorWeight: 2,
+          indicatorSize: TabBarIndicatorSize.label,
+          indicator: UnderlineTabIndicator(
+            borderRadius: BorderRadius.circular(2),
+            borderSide: BorderSide(
+              width: 2,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
           tabs: [
             const Tab(text: "Public Shelf"),
             if (showPrivacyTab) const Tab(text: "Private Shelf"),
@@ -465,21 +473,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return GestureDetector(
           onTap: () {
             Navigator.push(context,
-                MaterialPageRoute(builder: (_) => ReaderPage(book: book)));
+                    MaterialPageRoute(builder: (_) => ReaderPage(book: book)))
+                .then((_) => _refreshShelf()); // Refresh shelf on return
           },
           onLongPress: () => _showBookMenu(context, book, isPrivate),
           child: Card(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.book, size: 40), // IconTheme controls color
-                const SizedBox(height: 8),
+                // Soft container for book icon
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.menu_book_rounded,
+                    size: 32,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: Text(book.title,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
+                  padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                  child: Text(
+                    book.title,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.2,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -518,18 +548,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           child: InkWell(
             onTap: () {
               Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => ReaderPage(book: book)));
+                      MaterialPageRoute(builder: (_) => ReaderPage(book: book)))
+                  .then((_) => _refreshShelf()); // Refresh shelf on return
             },
             onLongPress: () => _showBookMenu(context, book, isPrivate),
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: Row(
                 children: [
-                  // Book icon
-                  Icon(Icons.book,
-                      size: 40,
-                      color:
-                          Theme.of(context).colorScheme.primary), // Use Primary
+                  // Soft container for book icon
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.menu_book_rounded,
+                      size: 24,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
                   const SizedBox(width: 16),
 
                   // Book info
@@ -539,9 +581,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       children: [
                         Text(
                           book.title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -551,27 +595,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           '${book.author} • ${book.format.toUpperCase()}',
                           style: TextStyle(
                             fontSize: 12,
+                            letterSpacing: 0.3,
                             color: Theme.of(context).textTheme.bodySmall?.color,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        // Progress bar
+                        const SizedBox(height: 10),
+                        // Rounded progress bar
                         Row(
                           children: [
                             Expanded(
-                              child: LinearProgressIndicator(
-                                value: progress,
-                                backgroundColor: Theme.of(context)
-                                    .dividerColor
-                                    .withOpacity(0.3),
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    Theme.of(context).colorScheme.primary),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: progress,
+                                  minHeight: 6,
+                                  backgroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withOpacity(0.15),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withOpacity(0.8)),
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 10),
                             Text(
                               '$progressPercent%',
-                              style: const TextStyle(fontSize: 12),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color,
+                              ),
                             ),
                           ],
                         ),

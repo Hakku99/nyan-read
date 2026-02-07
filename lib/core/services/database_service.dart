@@ -158,15 +158,23 @@ class DatabaseService {
 
   /// 更新书籍的最后阅读位置
   Future<void> updateBookPosition(
-      String bookId, String positionType, String positionPayload) async {
+      String bookId, String positionType, String positionPayload,
+      {double? progress}) async {
     final db = await database;
+    final updateData = <String, dynamic>{
+      'last_position_type': positionType,
+      'last_position_payload': positionPayload,
+      'last_read_at': DateTime.now().millisecondsSinceEpoch,
+    };
+
+    // Also update progress if provided
+    if (progress != null) {
+      updateData['current_progress'] = progress;
+    }
+
     await db.update(
       'books',
-      {
-        'last_position_type': positionType,
-        'last_position_payload': positionPayload,
-        'last_read_at': DateTime.now().millisecondsSinceEpoch,
-      },
+      updateData,
       where: 'id = ?',
       whereArgs: [bookId],
     );
