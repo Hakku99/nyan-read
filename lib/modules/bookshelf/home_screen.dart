@@ -32,10 +32,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _refreshKey = 0;
   late TabController _tabController;
   final _prefs = BookshelfPreferencesService.instance;
+  bool _isSelectionMode = false;
+  final Set<String> _selectedBookIds = {};
+
+  late Future<List<Map<String, dynamic>>> _publicBooksFuture;
+  late Future<List<Map<String, dynamic>>> _privateBooksFuture;
 
   @override
   void initState() {
     super.initState();
+    _refreshFutures();
     // Initially length 1, updated in build if needed?
     // Actually, we need to know if private shelf is unlocked to set length.
     // The previous implementation used DefaultTabController which handles this dynamically.
@@ -47,31 +53,193 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _tabController = TabController(length: 1, vsync: this);
   }
 
+  void _refreshFutures() {
+    _publicBooksFuture = DatabaseService().getBooks(
+      isPrivate: false,
+      orderBy: _prefs.getOrderByClause(),
+    );
+    _privateBooksFuture = DatabaseService().getBooks(
+      isPrivate: true,
+      orderBy: _prefs.getOrderByClause(),
+    );
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
   }
 
+  void _toggleSelectionMode({bool? active, String? initialBookId}) {
+    setState(() {
+      _isSelectionMode = active ?? !_isSelectionMode;
+      _selectedBookIds.clear();
+      if (_isSelectionMode && initialBookId != null) {
+        _selectedBookIds.add(initialBookId);
+      }
+    });
+  }
+
+  Future<void> _selectAllBooks(bool showPrivacyTab) async {
+    // Current tab index: 0 = Public, 1 = Private (if shown)
+    // If showPrivacyTab is false, index 0 is always Public.
+    // If showPrivacyTab is true, index 0 is Public, 1 is Private.
+    // Wait, TabController index might not match if tabs are hidden?
+    // public/private decision relies on `isPrivate` in `_buildShelf`.
+    // Let's assume TabController matches the view.
+
+    final isPrivateTab = showPrivacyTab && _tabController.index == 1;
+    final future = isPrivateTab ? _privateBooksFuture : _publicBooksFuture;
+
+    final books = await future;
+    setState(() {
+      _selectedBookIds
+          .clear(); // Or should we append? Usually "Select All" replaces or adds.
+      // Let's just add all from current view.
+      for (final book in books) {
+        // book is Map<String, dynamic> here? No, fetch returns Map.
+        // Wait, DatabaseService().getBooks returns List<Map<...>>.
+        // We need 'id'.
+        if (book['id'] != null) {
+          _selectedBookIds.add(book['id'] as String);
+        }
+      }
+    });
+  }
+
+  void _deselectAllBooks() {
+    setState(() {
+      _selectedBookIds.clear();
+    });
+  }
+
+  void _toggleBookSelection(String bookId) {
+    setState(() {
+      if (_selectedBookIds.contains(bookId)) {
+        _selectedBookIds.remove(bookId);
+        if (_selectedBookIds.isEmpty) {
+          // Optional: Exit selection mode if last item deselected?
+          // For now, let's keep it active even if empty, like Gallery apps.
+        }
+      } else {
+        _selectedBookIds.add(bookId);
+      }
+    });
+  }
+
+  Future<void> _deleteSelectedBooks() async {
+    final count = _selectedBookIds.length;
+    if (count == 0) return;
+
+    final prefs = BookshelfPreferencesService.instance;
+    bool deleteFile = prefs.deleteFilesOnRemove;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('⚠️ Delete $count Books?'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text("This action cannot be undone."),
+                  const SizedBox(height: 16),
+                  CheckboxListTile(
+                    title: const Text('Also delete local files'),
+                    value: deleteFile,
+                    onChanged: (value) {
+                      setState(() {
+                        deleteFile = value ?? false;
+                      });
+                    },
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.error),
+                  child: const Text('Delete'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      final db = DatabaseService();
+      // Copy list to avoid concurrent modification issues if any
+      final idsToDelete = List<String>.from(_selectedBookIds);
+
+      for (final id in idsToDelete) {
+        // We need to fetch book to get file path if we delete files
+        if (deleteFile) {
+          final bookData = await db.getBookById(id);
+          if (bookData != null) {
+            final book = Book.fromMap(bookData);
+            final file = File(book.filePath);
+            if (await file.exists()) {
+              await file.delete();
+            }
+          }
+        }
+        await db.deleteBook(id);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Deleted $count books')),
+        );
+        _toggleSelectionMode(active: false);
+        _refreshShelf();
+      }
+    }
+  }
+
+  Future<void> _moveSelectedBooks(bool toPrivate) async {
+    final db = DatabaseService();
+    final idsToMove = List<String>.from(_selectedBookIds);
+
+    for (final id in idsToMove) {
+      await db.updateBookPrivacy(id, toPrivate);
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'Moved ${idsToMove.length} books to ${toPrivate ? 'Private' : 'Public'} Shelf')),
+      );
+      _toggleSelectionMode(active: false);
+      _refreshShelf();
+    }
+  }
+
   void _refreshShelf() {
     setState(() {
       _refreshKey++;
+      _refreshFutures();
     });
   }
 
   Future<void> _importBook(BuildContext context) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
+      allowMultiple: true,
       allowedExtensions: ['epub', 'txt', 'pdf'],
     );
 
-    if (result != null && result.files.single.path != null) {
-      final originalFile = File(result.files.single.path!);
-      final appDir = await getApplicationDocumentsDirectory();
-      final fileName = path.basename(originalFile.path);
-      final savedFile =
-          await originalFile.copy(path.join(appDir.path, fileName));
-
+    if (result != null && result.files.isNotEmpty) {
       // Determine privacy based on current tab
       // If we are on the second tab (index 1), it's private.
       // But we need to make sure the second tab IS the private shelf.
@@ -83,20 +251,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       // If it is visible, check tab index.
       final isPrivate = isPrivateShelfUnlocked && _tabController.index == 1;
 
-      final book = Book(
-        id: const Uuid().v4(),
-        title: path.basenameWithoutExtension(fileName),
-        author: "Unknown",
-        filePath: savedFile.path,
-        format: path.extension(fileName).replaceAll('.', ''),
-        isPrivate: isPrivate,
-      );
+      int successCount = 0;
+      final appDir = await getApplicationDocumentsDirectory();
 
-      await DatabaseService().insertBook(book.toMap());
-      if (mounted) {
+      for (final file in result.files) {
+        if (file.path != null) {
+          try {
+            final originalFile = File(file.path!);
+            final fileName = path.basename(originalFile.path);
+            final savedFile =
+                await originalFile.copy(path.join(appDir.path, fileName));
+
+            final book = Book(
+              id: const Uuid().v4(),
+              title: path.basenameWithoutExtension(fileName),
+              author: "Unknown",
+              filePath: savedFile.path,
+              format: path.extension(fileName).replaceAll('.', ''),
+              isPrivate: isPrivate,
+            );
+
+            await DatabaseService().insertBook(book.toMap());
+            successCount++;
+          } catch (e) {
+            debugPrint("Error importing file ${file.name}: $e");
+          }
+        }
+      }
+
+      if (mounted && successCount > 0) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(
-                "Book Imported to ${isPrivate ? 'Private' : 'Public'} Shelf!")));
+                "Imported $successCount books to ${isPrivate ? 'Private' : 'Public'} Shelf!")));
         _refreshShelf();
       }
     }
@@ -115,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             children: [
               ListTile(
                 leading: const Icon(Icons.insert_drive_file),
-                title: const Text('Import Single File'),
+                title: const Text('Import Files'),
                 onTap: () {
                   Navigator.pop(context);
                   _importBook(parentContext);
@@ -314,89 +500,166 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Nyan Read ฅ^•ﻌ•^ฅ'),
-        actions: [
-          // View Mode Toggle
-          IconButton(
-            icon: Icon(_prefs.viewMode == ViewMode.grid
-                ? Icons.view_list
-                : Icons.grid_view),
-            onPressed: () async {
-              await _prefs.setViewMode(_prefs.viewMode == ViewMode.grid
-                  ? ViewMode.list
-                  : ViewMode.grid);
-              setState(() {});
-            },
-            tooltip:
-                _prefs.viewMode == ViewMode.grid ? 'List View' : 'Grid View',
-          ),
+      appBar: _isSelectionMode
+          ? AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => _toggleSelectionMode(active: false),
+              ),
+              title: Text('${_selectedBookIds.length} Selected'),
+              actions: [
+                if (_selectedBookIds.length == 1)
+                  IconButton(
+                    icon: const Icon(Icons.info_outline),
+                    tooltip: 'View Details',
+                    onPressed: () async {
+                      final bookId = _selectedBookIds.first;
+                      final bookData =
+                          await DatabaseService().getBookById(bookId);
+                      if (bookData != null && mounted) {
+                        final book = Book.fromMap(bookData);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BookDetailsPage(
+                              book: book,
+                              bookData: bookData,
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                if (_selectedBookIds.isNotEmpty) ...[
+                  if (featureManager.isPro)
+                    IconButton(
+                      icon: Icon(showPrivacyTab ? Icons.lock_open : Icons.lock),
+                      tooltip:
+                          showPrivacyTab ? 'Move to Public' : 'Move to Private',
+                      onPressed: () => _moveSelectedBooks(!showPrivacyTab),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    tooltip: 'Delete Selected',
+                    onPressed: _deleteSelectedBooks,
+                  ),
+                ],
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'select_all') {
+                      _selectAllBooks(showPrivacyTab);
+                    } else if (value == 'deselect_all') {
+                      _deselectAllBooks();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'select_all',
+                      child: Text('Select All'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'deselect_all',
+                      child: Text('Deselect All'),
+                    ),
+                  ],
+                ),
+              ],
+              backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+            )
+          : AppBar(
+              title: const Text('Nyan Read ฅ^•ﻌ•^ฅ'),
+              actions: [
+                // View Mode Toggle
+                IconButton(
+                  icon: Icon(_prefs.viewMode == ViewMode.grid
+                      ? Icons.view_list
+                      : Icons.grid_view),
+                  onPressed: () async {
+                    await _prefs.setViewMode(_prefs.viewMode == ViewMode.grid
+                        ? ViewMode.list
+                        : ViewMode.grid);
+                    setState(() {});
+                  },
+                  tooltip: _prefs.viewMode == ViewMode.grid
+                      ? 'List View'
+                      : 'Grid View',
+                ),
 
-          // Sort Menu
-          PopupMenuButton<SortBy>(
-            icon: const Icon(Icons.sort),
-            tooltip: 'Sort',
-            onSelected: (SortBy sortBy) async {
-              await _prefs.setSortBy(sortBy);
-              setState(() {});
-            },
-            itemBuilder: (context) => [
-              for (final sortBy in SortBy.values)
-                PopupMenuItem(
-                  value: sortBy,
-                  child: Row(
-                    children: [
-                      if (_prefs.sortBy == sortBy)
-                        const Icon(Icons.check, size: 18)
-                      else
-                        const SizedBox(width: 18),
-                      const SizedBox(width: 8),
-                      Text(_prefs.getSortByLabel(sortBy)),
-                    ],
+                // Sort Menu
+                PopupMenuButton<SortBy>(
+                  icon: const Icon(Icons.sort),
+                  tooltip: 'Sort',
+                  onSelected: (SortBy sortBy) async {
+                    await _prefs.setSortBy(sortBy);
+                    setState(() {});
+                  },
+                  itemBuilder: (context) => [
+                    for (final sortBy in SortBy.values)
+                      PopupMenuItem(
+                        value: sortBy,
+                        child: Row(
+                          children: [
+                            if (_prefs.sortBy == sortBy)
+                              const Icon(Icons.check, size: 18)
+                            else
+                              const SizedBox(width: 18),
+                            const SizedBox(width: 8),
+                            Text(_prefs.getSortByLabel(sortBy)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+
+                // Select Mode Entry
+                IconButton(
+                  icon: const Icon(Icons.checklist),
+                  tooltip: 'Select Books',
+                  onPressed: () => _toggleSelectionMode(active: true),
+                ),
+
+                // Lock/Unlock Button
+                if (featureManager.isPro)
+                  IconButton(
+                    icon: Icon(featureManager.isPrivateShelfUnlocked
+                        ? Icons.lock_open
+                        : Icons.lock),
+                    onPressed: () => _handlePrivacyLock(context),
+                    tooltip: featureManager.isPrivateShelfUnlocked
+                        ? "Lock Privacy Shelf"
+                        : "Unlock Privacy Shelf",
+                  ),
+
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const SettingsPage()))
+                      .then((_) => setState(() {})), // Refresh on return
+                )
+              ],
+              bottom: TabBar(
+                controller: _tabController,
+                labelColor: Theme.of(context).colorScheme.primary,
+                unselectedLabelColor:
+                    Theme.of(context).textTheme.bodySmall?.color,
+                indicatorColor: Theme.of(context).colorScheme.primary,
+                indicatorWeight: 2,
+                indicatorSize: TabBarIndicatorSize.label,
+                indicator: UnderlineTabIndicator(
+                  borderRadius: BorderRadius.circular(2),
+                  borderSide: BorderSide(
+                    width: 2,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
-            ],
-          ),
-
-          // Lock/Unlock Button
-          if (featureManager.isPro)
-            IconButton(
-              icon: Icon(featureManager.isPrivateShelfUnlocked
-                  ? Icons.lock_open
-                  : Icons.lock),
-              onPressed: () => _handlePrivacyLock(context),
-              tooltip: featureManager.isPrivateShelfUnlocked
-                  ? "Lock Privacy Shelf"
-                  : "Unlock Privacy Shelf",
+                tabs: [
+                  const Tab(text: "Public Shelf"),
+                  if (showPrivacyTab) const Tab(text: "Private Shelf"),
+                ],
+              ),
             ),
-
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const SettingsPage()))
-                .then((_) => setState(() {})), // Refresh on return
-          )
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Theme.of(context).colorScheme.primary,
-          unselectedLabelColor: Theme.of(context).textTheme.bodySmall?.color,
-          indicatorColor: Theme.of(context).colorScheme.primary,
-          indicatorWeight: 2,
-          indicatorSize: TabBarIndicatorSize.label,
-          indicator: UnderlineTabIndicator(
-            borderRadius: BorderRadius.circular(2),
-            borderSide: BorderSide(
-              width: 2,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          tabs: [
-            const Tab(text: "Public Shelf"),
-            if (showPrivacyTab) const Tab(text: "Private Shelf"),
-          ],
-        ),
-      ),
       body: Column(
         children: [
           // Ads Stub
@@ -425,10 +688,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildShelf(BuildContext context, {required bool isPrivate}) {
     return FutureBuilder<List<Map<String, dynamic>>>(
       key: ValueKey("shelf_${isPrivate}_$_refreshKey"),
-      future: DatabaseService().getBooks(
-        isPrivate: isPrivate,
-        orderBy: _prefs.getOrderByClause(),
-      ),
+      future: isPrivate ? _privateBooksFuture : _publicBooksFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -470,49 +730,97 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       itemBuilder: (context, index) {
         final bookData = books[index];
         final book = Book.fromMap(bookData);
+        final isSelected = _selectedBookIds.contains(book.id);
+
         return GestureDetector(
           onTap: () {
-            Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => ReaderPage(book: book)))
-                .then((_) => _refreshShelf()); // Refresh shelf on return
+            if (_isSelectionMode) {
+              _toggleBookSelection(book.id);
+            } else {
+              Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => ReaderPage(book: book)))
+                  .then((_) => _refreshShelf()); // Refresh shelf on return
+            }
           },
-          onLongPress: () => _showBookMenu(context, book, isPrivate),
-          child: Card(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Soft container for book icon
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    Icons.menu_book_rounded,
-                    size: 32,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+          onLongPress: () {
+            if (_isSelectionMode) {
+              _toggleBookSelection(book.id);
+            } else {
+              _toggleSelectionMode(active: true, initialBookId: book.id);
+            }
+          },
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Card(
+                shape: isSelected
+                    ? RoundedRectangleBorder(
+                        side: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 3),
+                        borderRadius: BorderRadius.circular(12),
+                      )
+                    : null,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Soft container for book icon
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.menu_book_rounded,
+                        size: 32,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                      child: Text(
+                        book.title,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.2,
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                  child: Text(
-                    book.title,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.2,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+              if (_isSelectionMode)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Colors.grey.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: isSelected
+                          ? const Icon(Icons.check,
+                              size: 16, color: Colors.white)
+                          : const SizedBox(width: 16, height: 16),
                     ),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
         );
       },
@@ -529,6 +837,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       itemBuilder: (context, index) {
         final bookData = books[index];
         final book = Book.fromMap(bookData);
+        final isSelected = _selectedBookIds.contains(book.id);
 
         // Calculate progress percentage
         final progress =
@@ -545,17 +854,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 4),
+          color: isSelected
+              ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
+              : null,
           child: InkWell(
             onTap: () {
-              Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => ReaderPage(book: book)))
-                  .then((_) => _refreshShelf()); // Refresh shelf on return
+              if (_isSelectionMode) {
+                _toggleBookSelection(book.id);
+              } else {
+                Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => ReaderPage(book: book)))
+                    .then((_) => _refreshShelf()); // Refresh shelf on return
+              }
             },
-            onLongPress: () => _showBookMenu(context, book, isPrivate),
+            onLongPress: () {
+              if (_isSelectionMode) {
+                _toggleBookSelection(book.id);
+              } else {
+                _toggleSelectionMode(active: true, initialBookId: book.id);
+              }
+            },
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: Row(
                 children: [
+                  if (_isSelectionMode)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12.0),
+                      child: Checkbox(
+                        value: isSelected,
+                        onChanged: (val) => _toggleBookSelection(book.id),
+                      ),
+                    ),
+
                   // Soft container for book icon
                   Container(
                     padding: const EdgeInsets.all(10),
@@ -642,22 +975,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   const SizedBox(width: 12),
 
                   // Last read time
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        lastReadText,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.color
-                              ?.withOpacity(0.7),
+                  if (!_isSelectionMode) // Hide this in selection mode to save space? Or keep it? keeping it is fine.
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          lastReadText,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.color
+                                ?.withOpacity(0.7),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -665,183 +999,5 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         );
       },
     );
-  }
-
-  void _showBookMenu(BuildContext context, Book book, bool isPrivate) async {
-    // Fetch full book data for details page
-    final bookData = await DatabaseService().getBookById(book.id);
-
-    if (!context.mounted) return;
-
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: const Text('View Details'),
-                onTap: () {
-                  Navigator.pop(context);
-                  if (bookData != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => BookDetailsPage(
-                          book: book,
-                          bookData: bookData,
-                        ),
-                      ),
-                    );
-                  }
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.delete,
-                    color: Theme.of(context).colorScheme.error),
-                title: const Text('Delete Book'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _confirmDelete(context, book);
-                },
-              ),
-              if (context.read<FeatureManager>().isPro)
-                ListTile(
-                  leading: Icon(isPrivate ? Icons.lock_open : Icons.lock),
-                  title: Text(isPrivate
-                      ? 'Move to Public Shelf'
-                      : 'Move to Private Shelf'),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _moveBook(context, book, !isPrivate);
-                  },
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _confirmDelete(BuildContext context, Book book) async {
-    final prefs = BookshelfPreferencesService.instance;
-    bool deleteFile = prefs.deleteFilesOnRemove;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('⚠️ Confirm Delete'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Book: ${book.title}'),
-                  const SizedBox(height: 8),
-                  Text(
-                    'File: ${book.filePath}',
-                    style:
-                        const TextStyle(fontSize: 12, fontFamily: 'monospace'),
-                  ),
-                  const SizedBox(height: 16),
-                  CheckboxListTile(
-                    title: const Text('Also delete local file'),
-                    value: deleteFile,
-                    onChanged: (value) {
-                      setState(() {
-                        deleteFile = value ?? false;
-                      });
-                    },
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error),
-                  child: const Text('Delete'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (confirmed == true && mounted) {
-      await _deleteBook(book, deleteFile);
-    }
-  }
-
-  Future<void> _deleteBook(Book book, bool deleteFile) async {
-    try {
-      // Delete from database
-      await DatabaseService().deleteBook(book.id);
-
-      // Delete file if requested
-      if (deleteFile) {
-        final file = File(book.filePath);
-        if (await file.exists()) {
-          await file.delete();
-        }
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${book.title} deleted')),
-        );
-        _refreshShelf();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting book: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _moveBook(
-      BuildContext context, Book book, bool toPrivate) async {
-    try {
-      // Check if moving to private shelf requires unlock
-      if (toPrivate) {
-        final fm = context.read<FeatureManager>();
-        if (!fm.isPrivateShelfUnlocked) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please unlock Private Shelf first')),
-          );
-          return;
-        }
-      }
-
-      await DatabaseService().updateBookPrivacy(book.id, toPrivate);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                '${book.title} moved to ${toPrivate ? "Private" : "Public"} Shelf'),
-          ),
-        );
-        _refreshShelf();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error moving book: $e')),
-        );
-      }
-    }
   }
 }
