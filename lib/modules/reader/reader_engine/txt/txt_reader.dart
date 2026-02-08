@@ -46,7 +46,25 @@ class TxtReaderEngine implements ReaderEngine {
     lineHeight: 1.5,
   ));
 
-  TxtReaderEngine(this.book);
+  TxtReaderEngine(this.book) {
+    _itemPositionsListener.itemPositions.addListener(_updateCurrentPosition);
+  }
+
+  void _updateCurrentPosition() {
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isNotEmpty) {
+      // Find the top-most visible item
+      int? minIndex;
+      for (var pos in positions) {
+        if (minIndex == null || pos.index < minIndex) {
+          minIndex = pos.index;
+        }
+      }
+      if (minIndex != null) {
+        _initialIndex = minIndex;
+      }
+    }
+  }
 
   @override
   Future<void> initialize() async {
@@ -148,18 +166,9 @@ class TxtReaderEngine implements ReaderEngine {
     debugPrint(
         "DEBUG: Creating ScrollablePositionedList with ${_lines.length} items");
 
-    // Update _initialIndex to current position to prevent jumping on rebuild
-    // This is critical when highlights change, as it triggers a rebuild.
-    if (_itemPositionsListener.itemPositions.value.isNotEmpty) {
-      final positions = _itemPositionsListener.itemPositions.value.toList()
-        ..sort((a, b) => a.index.compareTo(b.index));
-      if (positions.isNotEmpty) {
-        // Use the first visible item as the new initial index
-        _initialIndex = positions.first.index;
-        debugPrint(
-            "DEBUG: Updated _initialIndex to $_initialIndex to preserve scroll position");
-      }
-    }
+    // We do NOT update _initialIndex here because ScrollablePositionedList
+    // should maintain its own state across rebuilds if the widget structure is stable.
+    // Forcing _initialIndex to the current top item causes "snapping" during scrolls.
 
     return ScrollablePositionedList.builder(
       itemCount: _lines.length,
@@ -445,6 +454,7 @@ class TxtReaderEngine implements ReaderEngine {
 
   @override
   void dispose() {
+    _itemPositionsListener.itemPositions.removeListener(_updateCurrentPosition);
     _configNotifier.dispose();
   }
 }

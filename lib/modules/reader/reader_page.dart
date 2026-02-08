@@ -47,6 +47,10 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   List<Highlight> _highlights = [];
   Function(Highlight)? onShowNoteDialog;
   Function(Offset)? onContentTapDelegate;
+  Offset? _tapDownPosition;
+  Offset? _panStartPosition;
+  bool _isPanning = false;
+  static const double _swipeThreshold = 10.0; // Pixels to consider it a swipe
 
   ReaderController(this.book) {
     engine = ReaderEngineFactory.create(book);
@@ -55,6 +59,17 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     _fontSize = prefs.fontSize;
     _lineHeight = prefs.lineHeight;
     _backgroundColor = prefs.backgroundColor;
+
+    // Load or sync brightness
+    _brightness = prefs.brightness ?? 0.5;
+    if (prefs.brightness == null) {
+      // Fetch system brightness if no pref is saved
+      ScreenBrightness().current.then((b) {
+        _brightness = b;
+        notifyListeners();
+      });
+    }
+
     _updateEngineConfig();
     WidgetsBinding.instance.addObserver(this);
   }
@@ -69,7 +84,30 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   ReaderErrorState? get errorState => _errorState;
   List<dynamic> get chapters => _chapters;
   int? get currentChapterIndex => _currentChapterIndex;
+  Offset? get tapDownPosition => _tapDownPosition;
+  bool get isPanning => _isPanning;
 
+  void setTapDownPosition(Offset pos) {
+    _tapDownPosition = pos;
+    _panStartPosition = pos;
+    _isPanning = false;
+  }
+
+  void updatePanPosition(Offset pos) {
+    if (_panStartPosition != null) {
+      final distance = (pos - _panStartPosition!).distance;
+      if (distance > _swipeThreshold) {
+        _isPanning = true;
+      }
+    }
+  }
+
+  void resetPanState() {
+    _isPanning = false;
+    _panStartPosition = null;
+  }
+
+  @override
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
@@ -522,7 +560,15 @@ class ReaderPage extends StatelessWidget {
                       Positioned.fill(
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTapUp: (details) => _handleTap(context, details),
+                          onTapDown: (details) =>
+                              _handleTapDown(context, details),
+                          onTapUp: (details) => _handleTapUp(context, details),
+                          onPanStart: (details) =>
+                              _handlePanStart(context, details),
+                          onPanUpdate: (details) =>
+                              _handlePanUpdate(context, details),
+                          onPanEnd: (details) =>
+                              _handlePanEnd(context, details),
                           child: Consumer<ReaderController>(
                             builder: (context, controller, _) {
                               // Debug the constraints passed to reader
@@ -992,18 +1038,52 @@ class ReaderPage extends StatelessWidget {
     );
   }
 
-  void _handleTap(BuildContext context, TapUpDetails details) {
-    _handleTapLogic(context, details.globalPosition.dy);
+  void _handleTapDown(BuildContext context, TapDownDetails details) {
+    context.read<ReaderController>().setTapDownPosition(details.globalPosition);
+  }
+
+  void _handleTapUp(BuildContext context, TapUpDetails details) {
+    final controller = context.read<ReaderController>();
+    // Only process tap if we weren't panning
+    if (!controller.isPanning) {
+      final pos = controller.tapDownPosition;
+      if (pos != null) {
+        _handleTapLogic(context, pos.dy);
+      }
+    }
+    controller.resetPanState();
+  }
+
+  void _handlePanStart(BuildContext context, DragStartDetails details) {
+    context.read<ReaderController>().setTapDownPosition(details.globalPosition);
+  }
+
+  void _handlePanUpdate(BuildContext context, DragUpdateDetails details) {
+    context.read<ReaderController>().updatePanPosition(details.globalPosition);
+  }
+
+  void _handlePanEnd(BuildContext context, DragEndDetails details) {
+    final controller = context.read<ReaderController>();
+    // Reset pan state - if user was panning, the gestures were handled by the scroll view
+    controller.resetPanState();
   }
 
   void _handleContentTap(
       BuildContext context, Offset position, ReaderController controller) {
-    _handleTapLogic(context, position.dy, controller: controller);
+    // For content taps (like internal links or custom engine gestures),
+    // only process if not panning
+    if (!controller.isPanning) {
+      _handleTapLogic(context, position.dy, controller: controller);
+    }
   }
 
   void _handleTapLogic(BuildContext context, double tapY,
       {ReaderController? controller}) {
     final c = controller ?? context.read<ReaderController>();
+
+    // If user was swiping, don't process as tap
+    if (c.isPanning) return;
+
     if (c.showControls) {
       c.toggleControls();
       return;
@@ -1011,11 +1091,15 @@ class ReaderPage extends StatelessWidget {
 
     final screenHeight = MediaQuery.of(context).size.height;
 
+    // Middle 20% of screen triggers menu (40%-60% range)
+    // Top 40% triggers previous page
+    // Bottom 40% triggers next page
     if (tapY < screenHeight * 0.40) {
       c.previousPage();
     } else if (tapY > screenHeight * 0.60) {
       c.nextPage();
     } else {
+      // Only middle 20% triggers menu
       c.toggleControls();
     }
   }

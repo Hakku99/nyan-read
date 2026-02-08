@@ -44,6 +44,11 @@ class _HighlightableTextState extends State<HighlightableText> {
   final List<TapGestureRecognizer> _recognizers = [];
   Timer? _tapTimer;
 
+  // Swipe detection
+  Offset? _pointerDownPosition;
+  bool _isScrolling = false;
+  static const double _scrollThreshold = 10.0; // Pixels to consider it a scroll
+
   @override
   void dispose() {
     _tapTimer?.cancel();
@@ -59,17 +64,45 @@ class _HighlightableTextState extends State<HighlightableText> {
       color: widget.backgroundColor,
       padding: widget.padding,
       child: Listener(
+        onPointerDown: (event) {
+          _pointerDownPosition = event.position;
+          _isScrolling = false;
+        },
+        onPointerMove: (event) {
+          // Detect if user is scrolling based on movement distance
+          if (_pointerDownPosition != null) {
+            final distance = (event.position - _pointerDownPosition!).distance;
+            if (distance > _scrollThreshold) {
+              _isScrolling = true;
+            }
+          }
+        },
         onPointerUp: (event) {
-          // If text is selected (or being selected), ignore the tap for page turning logic
-          if (_currentSelection != null && !_currentSelection!.isCollapsed) {
+          // Only trigger tap if not scrolling and no text selected
+          if (_isScrolling) {
+            _isScrolling = false;
+            _pointerDownPosition = null;
             return;
           }
+
+          // If text is selected (or being selected), ignore the tap for page turning logic
+          if (_currentSelection != null && !_currentSelection!.isCollapsed) {
+            _pointerDownPosition = null;
+            return;
+          }
+
           // Forward the tap position to parent for page turning
           // Debounce the tap to allow highlight taps to cancel it
           _tapTimer?.cancel();
           _tapTimer = Timer(const Duration(milliseconds: 150), () {
             widget.onTap?.call(event.position);
           });
+
+          _pointerDownPosition = null;
+        },
+        onPointerCancel: (event) {
+          _isScrolling = false;
+          _pointerDownPosition = null;
         },
         child: SelectableText.rich(
           _buildTextSpan(),

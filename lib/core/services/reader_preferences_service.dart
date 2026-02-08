@@ -37,6 +37,7 @@ class ReaderPreferencesService extends ChangeNotifier {
   double _fontSize = 18.0;
   double _lineHeight = 1.5;
   Color _backgroundColor = const Color(0xFFFDFCF8); // Default Cream Paper
+  double? _brightness;
 
   // Getters
   PageTurnMode get pageTurnMode => _pageTurnMode;
@@ -44,6 +45,7 @@ class ReaderPreferencesService extends ChangeNotifier {
   double get fontSize => _fontSize;
   double get lineHeight => _lineHeight;
   Color get backgroundColor => _backgroundColor;
+  double? get brightness => _brightness;
 
   // 初始化服务
   Future<void> initialize() async {
@@ -70,6 +72,7 @@ class ReaderPreferencesService extends ChangeNotifier {
     if (bgColorInt != null) {
       _backgroundColor = Color(bgColorInt);
     }
+    _brightness = _prefs?.getDouble('reader_brightness');
   }
 
   // 设置翻页方式
@@ -111,6 +114,14 @@ class ReaderPreferencesService extends ChangeNotifier {
     if (_backgroundColor.value == color.value) return;
     _backgroundColor = color;
     await _prefs?.setInt('reader_background_color', color.value);
+    notifyListeners();
+  }
+
+  // Set brightness
+  Future<void> setBrightness(double b) async {
+    if (_brightness == b) return;
+    _brightness = b;
+    await _prefs?.setDouble('reader_brightness', b);
     notifyListeners();
   }
 
