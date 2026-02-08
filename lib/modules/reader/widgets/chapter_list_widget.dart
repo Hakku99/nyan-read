@@ -46,76 +46,79 @@ class ChapterListWidget extends StatelessWidget {
         color: theme.cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 标题栏
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Colors.grey.withOpacity(0.2)),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 标题栏
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.list, color: theme.primaryColor),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Table of Contents',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: theme.textTheme.titleLarge?.color,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${chapters.length} chapters',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                Icon(Icons.list, color: theme.primaryColor),
-                const SizedBox(width: 12),
-                Text(
-                  'Table of Contents',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: theme.textTheme.titleLarge?.color,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '${chapters.length} chapters',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
 
-          // 章节列表
-          Flexible(
-            child: Scrollbar(
-              thumbVisibility: true,
-              controller: scrollController,
-              child: ListView.builder(
+            // 章节列表
+            Flexible(
+              child: Scrollbar(
+                thumbVisibility: true,
                 controller: scrollController,
-                shrinkWrap: true,
-                itemCount: chapters.length,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemBuilder: (context, index) {
-                  final chapter = chapters[index];
-                  final chapterIndex = chapter['index'] ?? index;
-                  final title = chapter['title'] ?? 'Chapter ${index + 1}';
+                child: ListView.builder(
+                  controller: scrollController,
+                  shrinkWrap: true,
+                  itemCount: chapters.length,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemBuilder: (context, index) {
+                    final chapter = chapters[index];
+                    final chapterIndex = chapter['index'] ?? index;
+                    final title = chapter['title'] ?? 'Chapter ${index + 1}';
 
-                  // 判断是否为当前章节
-                  final isCurrent = currentChapterIndex == chapterIndex;
+                    // 判断是否为当前章节
+                    final isCurrent = currentChapterIndex == chapterIndex;
 
-                  // 判断是否已读 (简化版: 基于章节索引和总进度)
-                  final isRead =
-                      (chapterIndex / chapters.length) < currentProgress;
+                    // 判断是否已读 (简化版: 基于章节索引和总进度)
+                    final isRead =
+                        (chapterIndex / chapters.length) < currentProgress;
 
-                  return _buildChapterItem(
-                    context,
-                    title: title,
-                    index: index,
-                    isCurrent: isCurrent,
-                    isRead: isRead,
-                    onTap: () => onChapterTap(index, chapter),
-                  );
-                },
+                    return _buildChapterItem(
+                      context,
+                      title: title,
+                      index: index,
+                      isCurrent: isCurrent,
+                      isRead: isRead,
+                      onTap: () => onChapterTap(index, chapter),
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

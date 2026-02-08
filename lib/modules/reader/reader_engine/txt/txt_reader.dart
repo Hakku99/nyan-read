@@ -187,7 +187,9 @@ class TxtReaderEngine implements ReaderEngine {
   Future<void> goToPosition(ReadingPosition position) async {
     if (position is TxtReadingPosition) {
       if (_itemScrollController.isAttached) {
-        _itemScrollController.jumpTo(index: position.paragraphIndex);
+        // Use alignment: 0.0 to ensure the bookmarked line appears at the top of the screen
+        _itemScrollController.jumpTo(
+            index: position.paragraphIndex, alignment: 0.0);
       } else {
         // Queue it for initial build
         _initialIndex = position.paragraphIndex;
@@ -235,13 +237,17 @@ class TxtReaderEngine implements ReaderEngine {
     // 匹配常见的章节标题格式:
     // - "第X章"、"第X回"
     // - "Chapter X"、"CHAPTER X"
-    // - "X. " 开头的标题
+    // - "X. " or "X.Title" 开头的标题
+    // - Standalone numbers "1", "2" (verified by empty line after)
     final chapterPatterns = [
       RegExp(r'^第[零一二三四五六七八九十百千万\d]+[章回节]', multiLine: false),
       RegExp(r'^Chapter\s+\d+', caseSensitive: false),
-      RegExp(r'^\d+\.\s+\S+', multiLine: false),
+      RegExp(r'^\d+\.\s*\S+', multiLine: false), // "1.Title" or "1. Title"
       RegExp(r'^[零一二三四五六七八九十百千万]+、', multiLine: false),
     ];
+
+    // Pattern for standalone numbers (needs empty line verification)
+    final standaloneNumberPattern = RegExp(r'^\d+$', multiLine: false);
 
     int chapterIndex = 0;
     for (int i = 0; i < _lines.length; i++) {
@@ -254,6 +260,14 @@ class TxtReaderEngine implements ReaderEngine {
         if (pattern.hasMatch(line)) {
           isChapter = true;
           break;
+        }
+      }
+
+      // Check for standalone numbers followed by empty line
+      if (!isChapter && standaloneNumberPattern.hasMatch(line)) {
+        // Verify next line is empty or this is the last line
+        if (i + 1 >= _lines.length || _lines[i + 1].trim().isEmpty) {
+          isChapter = true;
         }
       }
 

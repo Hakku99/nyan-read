@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:screen_brightness/screen_brightness.dart';
 import '../../core/models/book.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/reader_preferences_service.dart';
@@ -42,6 +43,11 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
   ReaderController(this.book) {
     engine = ReaderEngineFactory.create(book);
+    // Load saved preferences
+    final prefs = ReaderPreferencesService.instance;
+    _fontSize = prefs.fontSize;
+    _lineHeight = prefs.lineHeight;
+    _backgroundColor = prefs.backgroundColor;
     _updateEngineConfig();
     WidgetsBinding.instance.addObserver(this);
   }
@@ -313,23 +319,31 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   void setFontSize(double size) {
     _fontSize = size;
     _updateEngineConfig();
+    ReaderPreferencesService.instance.setFontSize(size);
     notifyListeners();
   }
 
   void setLineHeight(double height) {
     _lineHeight = height;
     _updateEngineConfig();
+    ReaderPreferencesService.instance.setLineHeight(height);
     notifyListeners();
   }
 
   void setBackground(Color color) {
     _backgroundColor = color;
     _updateEngineConfig();
+    ReaderPreferencesService.instance.setBackgroundColor(color);
     notifyListeners();
   }
 
-  void setBrightness(double b) {
+  Future<void> setBrightness(double b) async {
     _brightness = b;
+    try {
+      await ScreenBrightness().setScreenBrightness(b);
+    } catch (_) {
+      // Brightness control may not be available on all platforms
+    }
     notifyListeners();
   }
 
@@ -869,9 +883,9 @@ class ReaderPage extends StatelessWidget {
     final screenHeight = MediaQuery.of(context).size.height;
     final tapY = details.globalPosition.dy;
 
-    if (tapY < screenHeight * 0.45) {
+    if (tapY < screenHeight * 0.40) {
       controller.previousPage();
-    } else if (tapY > screenHeight * 0.55) {
+    } else if (tapY > screenHeight * 0.60) {
       controller.nextPage();
     } else {
       controller.toggleControls();

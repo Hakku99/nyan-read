@@ -38,6 +38,7 @@ dependencies:
   # File Handling (Stubs for now since we can't fully run)
   file_picker: ^10.3.10
   permission_handler: ^12.0.1
+  screen_brightness: ^1.0.1
 
 dev_dependencies:
   flutter_test:

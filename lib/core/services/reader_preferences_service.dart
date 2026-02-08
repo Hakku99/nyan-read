@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 翻页方式
@@ -32,9 +33,17 @@ class ReaderPreferencesService extends ChangeNotifier {
   PageTurnMode _pageTurnMode = PageTurnMode.swipe;
   PageAnimation _pageAnimation = PageAnimation.fade;
 
+  // Reader display settings
+  double _fontSize = 18.0;
+  double _lineHeight = 1.5;
+  Color _backgroundColor = const Color(0xFFFDFCF8); // Default Cream Paper
+
   // Getters
   PageTurnMode get pageTurnMode => _pageTurnMode;
   PageAnimation get pageAnimation => _pageAnimation;
+  double get fontSize => _fontSize;
+  double get lineHeight => _lineHeight;
+  Color get backgroundColor => _backgroundColor;
 
   // 初始化服务
   Future<void> initialize() async {
@@ -53,6 +62,14 @@ class ReaderPreferencesService extends ChangeNotifier {
         .values[turnModeIndex.clamp(0, PageTurnMode.values.length - 1)];
     _pageAnimation = PageAnimation
         .values[animationIndex.clamp(0, PageAnimation.values.length - 1)];
+
+    // Load reader display settings
+    _fontSize = _prefs?.getDouble('reader_font_size') ?? 18.0;
+    _lineHeight = _prefs?.getDouble('reader_line_height') ?? 1.5;
+    final bgColorInt = _prefs?.getInt('reader_background_color');
+    if (bgColorInt != null) {
+      _backgroundColor = Color(bgColorInt);
+    }
   }
 
   // 设置翻页方式
@@ -73,13 +90,43 @@ class ReaderPreferencesService extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Set font size
+  Future<void> setFontSize(double size) async {
+    if (_fontSize == size) return;
+    _fontSize = size;
+    await _prefs?.setDouble('reader_font_size', size);
+    notifyListeners();
+  }
+
+  // Set line height
+  Future<void> setLineHeight(double height) async {
+    if (_lineHeight == height) return;
+    _lineHeight = height;
+    await _prefs?.setDouble('reader_line_height', height);
+    notifyListeners();
+  }
+
+  // Set background color
+  Future<void> setBackgroundColor(Color color) async {
+    if (_backgroundColor.value == color.value) return;
+    _backgroundColor = color;
+    await _prefs?.setInt('reader_background_color', color.value);
+    notifyListeners();
+  }
+
   // 重置为默认配置
   Future<void> resetToDefaults() async {
     _pageTurnMode = PageTurnMode.swipe;
     _pageAnimation = PageAnimation.fade;
+    _fontSize = 18.0;
+    _lineHeight = 1.5;
+    _backgroundColor = const Color(0xFFFDFCF8);
 
     await _prefs?.setInt('page_turn_mode', PageTurnMode.swipe.index);
     await _prefs?.setInt('page_animation', PageAnimation.fade.index);
+    await _prefs?.setDouble('reader_font_size', 18.0);
+    await _prefs?.setDouble('reader_line_height', 1.5);
+    await _prefs?.setInt('reader_background_color', 0xFFFDFCF8);
 
     notifyListeners();
   }
