@@ -3,19 +3,23 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import '../../core/models/book.dart';
+import '../../core/models/highlight.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/reader_preferences_service.dart';
 import '../../core/utils/layout_debouncer.dart';
 import '../bookmark/bookmark_list_page.dart';
+import '../notes/notes_list_page.dart';
 import 'reader_engine/reader_engine.dart';
 import 'reader_engine/reader_factory.dart';
 import 'reader_engine/epub/epub_position.dart';
 import 'reader_engine/txt/txt_position.dart';
+import 'reader_engine/txt/txt_reader.dart';
 
 import 'reader_engine/pdf/pdf_position.dart';
 import 'reader_error.dart';
 import 'widgets/reader_error_view.dart';
 import 'widgets/chapter_list_widget.dart';
+import 'widgets/highlight_note_dialog.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -40,6 +44,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   final Debouncer _layoutDebouncer =
       Debouncer(delay: const Duration(milliseconds: 300));
   Size? _lastLayoutSize;
+  List<Highlight> _highlights = [];
+  Function(Highlight)? onShowNoteDialog;
+  Function(Offset)? onContentTapDelegate;
 
   ReaderController(this.book) {
     engine = ReaderEngineFactory.create(book);
@@ -97,6 +104,22 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
       // 恢复上次阅读位置
       await _restoreLastPosition();
+
+      // Load highlights and wire up callbacks for TxtReaderEngine
+      await loadHighlights();
+      if (engine is TxtReaderEngine) {
+        final txtEngine = engine as TxtReaderEngine;
+        txtEngine.onTextHighlighted =
+            (paragraphIndex, start, end, text, colorCode) {
+          addHighlight(paragraphIndex, start, end, text, colorCode);
+        };
+        txtEngine.onHighlightTapped = (highlight) {
+          onShowNoteDialog?.call(highlight);
+        };
+        txtEngine.onContentTap = (position) {
+          onContentTapDelegate?.call(position);
+        };
+      }
 
       // 启动自动保存定时器 (每30秒保存一次,防抖)
       _autoSaveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
@@ -347,6 +370,64 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  // --- Highlights ---
+
+  List<Highlight> get highlights => _highlights;
+
+  Future<void> loadHighlights() async {
+    try {
+      final data = await DatabaseService().getHighlights(book.id);
+      _highlights = data.map((m) => Highlight.fromMap(m)).toList();
+
+      // Update engine if it's a TxtReaderEngine
+      if (engine is TxtReaderEngine) {
+        (engine as TxtReaderEngine).setHighlights(_highlights);
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error loading highlights: $e");
+    }
+  }
+
+  Future<void> addHighlight(int paragraphIndex, int start, int end, String text,
+      String colorCode) async {
+    final highlight = Highlight(
+      id: const Uuid().v4(),
+      bookId: book.id,
+      paragraphIndex: paragraphIndex,
+      startOffset: start,
+      endOffset: end,
+      selectedText: text,
+      colorCode: colorCode,
+      createdAt: DateTime.now(),
+    );
+
+    await DatabaseService().insertHighlight(highlight.toMap());
+    await loadHighlights();
+  }
+
+  Future<void> updateHighlight(String highlightId,
+      {String? note, String? colorCode}) async {
+    await DatabaseService()
+        .updateHighlight(highlightId, note: note, colorCode: colorCode);
+    await loadHighlights();
+  }
+
+  Future<void> deleteHighlight(String highlightId) async {
+    await DatabaseService().deleteHighlight(highlightId);
+    await loadHighlights();
+  }
+
+  void showNoteDialog(BuildContext context, Highlight highlight) {
+    showHighlightNoteDialog(
+      context,
+      highlight: highlight,
+      onSave: (note, colorCode) =>
+          updateHighlight(highlight.id, note: note, colorCode: colorCode),
+      onDelete: () => deleteHighlight(highlight.id),
+    );
+  }
+
   void handleLayoutChange(Size newSize) {
     // Skip if size hasn't changed significantly
     if (_lastLayoutSize != null &&
@@ -403,7 +484,17 @@ class ReaderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ReaderController(book)..init(),
+      create: (_) {
+        final controller = ReaderController(book)..init();
+        controller.onShowNoteDialog = ((h) {
+          if (context.mounted) {
+            controller.showNoteDialog(context, h);
+          }
+        });
+        controller.onContentTapDelegate =
+            (pos) => _handleContentTap(context, pos, controller);
+        return controller;
+      },
       child: Builder(
         builder: (context) {
           // Selector for background color prevents rebuilding Scaffold on progress changes
@@ -594,6 +685,34 @@ class ReaderPage extends StatelessWidget {
                                         if (result != null &&
                                             result is Map<String, dynamic>) {
                                           controller.restorePosition(result);
+                                        }
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_note),
+                                      tooltip: 'Highlights & Notes',
+                                      onPressed: () async {
+                                        final result = await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (_) => NotesListPage(
+                                                    bookId: book.id,
+                                                    bookTitle: book.title)));
+                                        if (result != null &&
+                                            result is Highlight) {
+                                          // Jump to highlight position
+                                          if (book.format == 'txt') {
+                                            final pos = TxtReadingPosition(
+                                                paragraphIndex:
+                                                    result.paragraphIndex);
+                                            await controller.engine
+                                                .goToPosition(pos);
+                                          }
+                                          // Show note dialog
+                                          if (context.mounted) {
+                                            controller.showNoteDialog(
+                                                context, result);
+                                          }
                                         }
                                       },
                                     ),
@@ -874,21 +993,30 @@ class ReaderPage extends StatelessWidget {
   }
 
   void _handleTap(BuildContext context, TapUpDetails details) {
-    final controller = context.read<ReaderController>();
-    if (controller.showControls) {
-      controller.toggleControls();
+    _handleTapLogic(context, details.globalPosition.dy);
+  }
+
+  void _handleContentTap(
+      BuildContext context, Offset position, ReaderController controller) {
+    _handleTapLogic(context, position.dy, controller: controller);
+  }
+
+  void _handleTapLogic(BuildContext context, double tapY,
+      {ReaderController? controller}) {
+    final c = controller ?? context.read<ReaderController>();
+    if (c.showControls) {
+      c.toggleControls();
       return;
     }
 
     final screenHeight = MediaQuery.of(context).size.height;
-    final tapY = details.globalPosition.dy;
 
     if (tapY < screenHeight * 0.40) {
-      controller.previousPage();
+      c.previousPage();
     } else if (tapY > screenHeight * 0.60) {
-      controller.nextPage();
+      c.nextPage();
     } else {
-      controller.toggleControls();
+      c.toggleControls();
     }
   }
 

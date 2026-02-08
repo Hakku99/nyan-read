@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="nyan_read"
+        android:label="Nyan Read"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

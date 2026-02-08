@@ -21,7 +21,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -37,6 +37,23 @@ class DatabaseService {
       await db.execute('ALTER TABLE books ADD COLUMN last_position_type TEXT');
       await db
           .execute('ALTER TABLE books ADD COLUMN last_position_payload TEXT');
+    }
+    if (oldVersion < 4) {
+      await db.execute('''
+        CREATE TABLE highlights (
+          id TEXT PRIMARY KEY,
+          book_id TEXT NOT NULL,
+          paragraph_index INTEGER NOT NULL,
+          start_offset INTEGER NOT NULL,
+          end_offset INTEGER NOT NULL,
+          selected_text TEXT NOT NULL,
+          color_code TEXT NOT NULL,
+          note TEXT,
+          created_at INTEGER,
+          updated_at INTEGER,
+          FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE
+        )
+      ''');
     }
   }
 
@@ -84,6 +101,23 @@ class DatabaseService {
         date_str TEXT NOT NULL,
         duration_seconds INTEGER DEFAULT 0,
         books_opened INTEGER DEFAULT 0
+      )
+    ''');
+
+    // 4. Highlights Table
+    await db.execute('''
+      CREATE TABLE highlights (
+        id TEXT PRIMARY KEY,
+        book_id TEXT NOT NULL,
+        paragraph_index INTEGER NOT NULL,
+        start_offset INTEGER NOT NULL,
+        end_offset INTEGER NOT NULL,
+        selected_text TEXT NOT NULL,
+        color_code TEXT NOT NULL,
+        note TEXT,
+        created_at INTEGER,
+        updated_at INTEGER,
+        FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE
       )
     ''');
   }
@@ -202,5 +236,50 @@ class DatabaseService {
       'position_type': row['last_position_type'],
       'position_payload': row['last_position_payload'],
     };
+  }
+
+  // --- Highlights CRUD ---
+
+  Future<void> insertHighlight(Map<String, dynamic> highlightData) async {
+    final db = await database;
+    await db.insert('highlights', highlightData,
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<List<Map<String, dynamic>>> getHighlights(String bookId) async {
+    final db = await database;
+    return await db.query(
+      'highlights',
+      where: 'book_id = ?',
+      whereArgs: [bookId],
+      orderBy: 'paragraph_index ASC, start_offset ASC',
+    );
+  }
+
+  Future<void> updateHighlight(String id,
+      {String? note, String? colorCode}) async {
+    final db = await database;
+    final Map<String, dynamic> values = {
+      'updated_at': DateTime.now().millisecondsSinceEpoch,
+    };
+    if (note != null) values['note'] = note;
+    if (colorCode != null) values['color_code'] = colorCode;
+
+    await db.update(
+      'highlights',
+      values,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> deleteHighlight(String id) async {
+    final db = await database;
+    await db.delete('highlights', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteHighlightsForBook(String bookId) async {
+    final db = await database;
+    await db.delete('highlights', where: 'book_id = ?', whereArgs: [bookId]);
   }
 }

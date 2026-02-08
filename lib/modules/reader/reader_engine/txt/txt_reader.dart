@@ -1,11 +1,12 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../../core/models/book.dart';
+import '../../../../core/models/highlight.dart';
 import '../reader_engine.dart';
 import 'txt_position.dart';
+import '../../widgets/highlightable_text.dart';
 
 class TxtReaderEngine implements ReaderEngine {
   final Book book;
@@ -23,6 +24,15 @@ class TxtReaderEngine implements ReaderEngine {
     fontSize: 18,
     lineHeight: 1.5,
   );
+
+  // Highlights for this book
+  List<Highlight> _highlights = [];
+
+  // Callbacks for text selection
+  Function(int paragraphIndex, int start, int end, String text,
+      String colorCode)? onTextHighlighted;
+  Function(Highlight highlight)? onHighlightTapped;
+  Function(Offset position)? onContentTap;
 
   // We need a way to notify the widget to rebuild when config changes.
   // Since ReaderEngine is not a widget, we can use a ValueNotifier or Stream.
@@ -53,6 +63,16 @@ class TxtReaderEngine implements ReaderEngine {
       throw FormatException("Failed to parse TXT file: $e");
     }
   }
+
+  /// Set the highlights to display
+  void setHighlights(List<Highlight> highlights) {
+    _highlights = highlights;
+    // Trigger rebuild by reassigning config value
+    _configNotifier.value = _config;
+  }
+
+  /// Get current highlights
+  List<Highlight> get highlights => _highlights;
 
   @override
   void setConfig(ReaderConfig config) {
@@ -128,6 +148,19 @@ class TxtReaderEngine implements ReaderEngine {
     debugPrint(
         "DEBUG: Creating ScrollablePositionedList with ${_lines.length} items");
 
+    // Update _initialIndex to current position to prevent jumping on rebuild
+    // This is critical when highlights change, as it triggers a rebuild.
+    if (_itemPositionsListener.itemPositions.value.isNotEmpty) {
+      final positions = _itemPositionsListener.itemPositions.value.toList()
+        ..sort((a, b) => a.index.compareTo(b.index));
+      if (positions.isNotEmpty) {
+        // Use the first visible item as the new initial index
+        _initialIndex = positions.first.index;
+        debugPrint(
+            "DEBUG: Updated _initialIndex to $_initialIndex to preserve scroll position");
+      }
+    }
+
     return ScrollablePositionedList.builder(
       itemCount: _lines.length,
       itemScrollController: _itemScrollController,
@@ -166,18 +199,24 @@ class TxtReaderEngine implements ReaderEngine {
           return SizedBox(height: bottomMargin);
         }
 
-        return Container(
-          color: config.backgroundColor,
-          padding: itemPadding,
-          child: Text(
-            line,
-            style: TextStyle(
-              fontSize: config.fontSize,
-              height: config.lineHeight,
-              color: config.textColor,
-              fontFamily: 'Roboto',
-            ),
+        return HighlightableText(
+          text: line,
+          paragraphIndex: index,
+          highlights: _highlights,
+          style: TextStyle(
+            fontSize: config.fontSize,
+            height: config.lineHeight,
+            color: config.textColor,
+            fontFamily: 'Roboto',
           ),
+          backgroundColor: config.backgroundColor,
+          padding: itemPadding,
+          onTextSelected: (paragraphIdx, start, end, text, colorCode) {
+            // Forward to controller with the selected color
+            onTextHighlighted?.call(paragraphIdx, start, end, text, colorCode);
+          },
+          onHighlightTap: onHighlightTapped,
+          onTap: onContentTap,
         );
       },
     );
