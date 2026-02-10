@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/services/mascot_manager.dart';
 import '../../../../core/theme/theme_presets.dart';
 import '../reader_error.dart';
@@ -22,23 +24,46 @@ class ReaderErrorView extends StatefulWidget {
 class _ReaderErrorViewState extends State<ReaderErrorView> {
   bool _showDetails = false;
 
+  Future<void> _reportError() async {
+    final errorText =
+        widget.errorState.technicalMessage ?? widget.errorState.userMessage;
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: 'ivanlee9906@gmail.com',
+      query: _encodeQueryParameters(<String, String>{
+        'subject': 'Nyan Read Error Report',
+        'body': 'Error Details:\n$errorText',
+      }),
+    );
+
+    try {
+      if (await canLaunchUrl(emailLaunchUri)) {
+        await launchUrl(emailLaunchUri);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Could not launch email client")),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to open email: $e")),
+        );
+      }
+    }
+  }
+
+  String? _encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map((MapEntry<String, String> e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Find the NyanTheme from ThemePresets that matches the current theme if possible,
-    // or we can just access it from the current context if we had a ThemeProvider.
-    // However, ReaderPage sets the theme dynamically in its build.
-    // We should rely on a passed theme or look it up.
-    // The requirement says "Error UI 不使用 Reader 背景色", and "必须使用专用 ErrorTheme".
-    // We can lookup the current ThemePreset based on context or just use hardcoded style from NyanTheme.
-    // Since ReaderPage might be wrapping us in a Theme, but we want a specific Error Theme.
-    // We'll iterate the presets to find the matching one, or just use a default safe one if not found.
-    // Actually, we can get the colors from the Theme extension if we had one, but we added them to NyanTheme.
-
-    // HACK: Since we don't have easy access to the current NyanTheme object (it's not in the context directly, only ThemeData is),
-    // we will try to find the NyanTheme that matches the scaffoldBackgroundColor or primary color.
-    // OR, better, we pass the NyanTheme to this widget.
-    // But for now, let's assume we can find it.
-
     final currentScaffoldColor = Theme.of(context).scaffoldBackgroundColor;
     final nyanTheme = themePresets.values.firstWhere(
       (t) => t.background == currentScaffoldColor,
@@ -64,7 +89,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
             color: errorPrimary,
           ),
           const SizedBox(height: 32),
-          Text(
+          SelectableText(
             widget.errorState.userMessage,
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -100,6 +125,12 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
               ],
             ],
           ),
+          const SizedBox(height: 16),
+          TextButton.icon(
+            onPressed: _reportError,
+            icon: Icon(Icons.bug_report, color: errorSecondary),
+            label: Text("报告给开发者", style: TextStyle(color: errorSecondary)),
+          ),
 
           // Technical Details (Hidden by default)
           if (widget.errorState.technicalMessage != null) ...[
@@ -125,7 +156,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
                   border: Border.all(color: errorSecondary.withOpacity(0.1)),
                 ),
                 width: double.infinity,
-                child: Text(
+                child: SelectableText(
                   widget.errorState.technicalMessage!,
                   style: TextStyle(
                     fontFamily: 'Courier', // Monospace

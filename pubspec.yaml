@@ -34,6 +34,7 @@ dependencies:
   pdfx: ^2.6.0
   internet_file: ^1.2.0
   scrollable_positioned_list: ^0.3.8
+  fast_gbk: ^1.0.0
   
   # File Handling (Stubs for now since we can't fully run)
   file_picker: ^10.3.10

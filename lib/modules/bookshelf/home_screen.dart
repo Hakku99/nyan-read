@@ -660,23 +660,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ],
               ),
             ),
-      body: Column(
-        children: [
-          // Ads Stub
-          if (!featureManager.isPro && featureManager.adsEnabled)
-            AdsUI.showBanner(context),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Ads Stub
+            if (!featureManager.isPro && featureManager.adsEnabled)
+              AdsUI.showBanner(context),
 
-          // Tabs
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildShelf(context, isPrivate: false),
-                if (showPrivacyTab) _buildShelf(context, isPrivate: true),
-              ],
+            // Tabs
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildShelf(context, isPrivate: false),
+                  if (showPrivacyTab) _buildShelf(context, isPrivate: true),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),

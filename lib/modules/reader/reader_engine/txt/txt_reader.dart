@@ -6,6 +6,8 @@ import '../../../../core/models/book.dart';
 import '../../../../core/models/highlight.dart';
 import '../reader_engine.dart';
 import 'txt_position.dart';
+import 'dart:convert';
+import 'package:fast_gbk/fast_gbk.dart';
 import '../../widgets/highlightable_text.dart';
 
 class TxtReaderEngine implements ReaderEngine {
@@ -109,7 +111,21 @@ class TxtReaderEngine implements ReaderEngine {
   }
 
   static Future<String> _readAsString(File file) async {
-    return await file.readAsString();
+    try {
+      // 1. Try UTF-8 (default)
+      return await file.readAsString();
+    } catch (e) {
+      debugPrint("TXT Reader: UTF-8 decoding failed, trying GBK...");
+      try {
+        // 2. Try GBK
+        final bytes = await file.readAsBytes();
+        return gbk.decode(bytes);
+      } catch (e) {
+        debugPrint("TXT Reader: GBK decoding failed, trying Latin1...");
+        // 3. Fallback to Latin1 (never fails to decode, but might show garbage)
+        return await file.readAsString(encoding: latin1);
+      }
+    }
   }
 
   int _initialIndex = 0;
