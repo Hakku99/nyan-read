@@ -144,6 +144,16 @@ class DatabaseService {
     );
   }
 
+  Future<Set<String>> getAllBookFilenames() async {
+    final db = await database;
+    final results = await db.query(
+      'books',
+      columns: ['file_path'],
+    );
+
+    return results.map((row) => basename(row['file_path'] as String)).toSet();
+  }
+
   Future<Map<String, dynamic>?> getBookById(String bookId) async {
     final db = await database;
     final results = await db.query(

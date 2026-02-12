@@ -320,17 +320,49 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     if (result != null) {
       try {
+        final importService = FolderImportService.instance;
+
         // Scan folder
-        final files = await FolderImportService.instance.scanFolder(
+        final scanResult = await importService.scanFolder(
           result,
           includeHidden: false,
         );
 
-        if (files.isEmpty) {
+        if (scanResult.files.isEmpty) {
           if (mounted) {
-            SnackBarUtils.show(context, 'No supported books found in folder');
+            final skippedExts = scanResult.skippedExtensions.entries.toList()
+              ..sort((a, b) => b.value.compareTo(a.value));
+
+            final topSkipped = skippedExts.take(3).map((e) => e.key).join(', ');
+
+            String msg = 'No supported books found.';
+            if (scanResult.totalScanned > 0) {
+              msg += ' Scanned ${scanResult.totalScanned}.';
+              if (topSkipped.isNotEmpty) msg += ' Skipped: $topSkipped';
+            }
+
+            SnackBarUtils.show(context, msg);
           }
           return;
+        }
+
+        // Filter duplicates
+        final db = DatabaseService();
+        final existingFilenames = await db.getAllBookFilenames();
+        final uniqueFiles =
+            importService.filterDuplicates(scanResult.files, existingFilenames);
+        final duplicateCount = scanResult.files.length - uniqueFiles.length;
+
+        if (uniqueFiles.isEmpty) {
+          if (mounted) {
+            SnackBarUtils.show(context,
+                'All books already in library ($duplicateCount duplicates skipped).');
+          }
+          return;
+        }
+
+        if (duplicateCount > 0 && mounted) {
+          SnackBarUtils.show(context, '$duplicateCount duplicates skipped.');
         }
 
         // Determine privacy based on current tab
@@ -345,7 +377,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             context,
             MaterialPageRoute(
               builder: (_) => FolderImportPreviewPage(
-                files: files,
+                files: uniqueFiles,
                 isPrivate: isPrivate,
               ),
             ),

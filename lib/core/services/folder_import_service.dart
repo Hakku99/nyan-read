@@ -1,23 +1,21 @@
 import 'dart:io';
 import 'package:path/path.dart' as path;
 
-/// Result of a folder import operation
-class ImportResult {
-  final int successCount;
-  final int skippedCount;
-  final int failedCount;
+/// Result of a folder scan operation
+class FolderScanResult {
+  final List<File> files;
+  final int totalScanned;
+  final int skippedHidden;
+  final Map<String, int> skippedExtensions;
   final List<String> errors;
-  final List<File> importedFiles;
 
-  ImportResult({
-    required this.successCount,
-    required this.skippedCount,
-    required this.failedCount,
+  FolderScanResult({
+    required this.files,
+    required this.totalScanned,
+    required this.skippedHidden,
+    required this.skippedExtensions,
     required this.errors,
-    required this.importedFiles,
   });
-
-  int get totalProcessed => successCount + skippedCount + failedCount;
 }
 
 /// Service for handling folder import and batch book operations
@@ -35,12 +33,17 @@ class FolderImportService {
   /// [folderPath] - Path to the folder to scan
   /// [includeHidden] - Whether to include hidden files (starting with '.')
   ///
-  /// Returns a list of book files found
-  Future<List<File>> scanFolder(
+  /// Returns a [FolderScanResult] with found files and statistics
+  Future<FolderScanResult> scanFolder(
     String folderPath, {
     bool includeHidden = false,
   }) async {
     final List<File> books = [];
+    final Map<String, int> skippedExtensions = {};
+    final List<String> errors = [];
+    int totalScanned = 0;
+    int skippedHidden = 0;
+
     final dir = Directory(folderPath);
 
     if (!await dir.exists()) {
@@ -51,10 +54,12 @@ class FolderImportService {
       await for (final entity
           in dir.list(recursive: true, followLinks: false)) {
         if (entity is File) {
+          totalScanned++;
           final fileName = path.basename(entity.path);
 
           // Filter hidden files
           if (!includeHidden && fileName.startsWith('.')) {
+            skippedHidden++;
             continue;
           }
 
@@ -62,14 +67,22 @@ class FolderImportService {
           final ext = path.extension(entity.path).toLowerCase();
           if (supportedExtensions.contains(ext)) {
             books.add(entity);
+          } else {
+            skippedExtensions[ext] = (skippedExtensions[ext] ?? 0) + 1;
           }
         }
       }
     } catch (e) {
-      throw Exception('Error scanning folder: $e');
+      errors.add('Error scanning folder: $e');
     }
 
-    return books;
+    return FolderScanResult(
+      files: books,
+      totalScanned: totalScanned,
+      skippedHidden: skippedHidden,
+      skippedExtensions: skippedExtensions,
+      errors: errors,
+    );
   }
 
   /// Check if a file is hidden (starts with '.')
@@ -101,29 +114,20 @@ class FolderImportService {
     return groups;
   }
 
-  /// Filter out files that already exist in the target directory
+  /// Filter out files that already exist in the database (by filename)
   ///
   /// [files] - Files to check
-  /// [targetDirectory] - Directory to check against
+  /// [existingFilenames] - Set of filenames already in the library
   ///
-  /// Returns a list of files that don't exist in the target directory
-  Future<List<File>> filterDuplicates(
+  /// Returns a list of files that are NOT in the existingFilenames set
+  List<File> filterDuplicates(
     List<File> files,
-    Directory targetDirectory,
-  ) async {
-    final List<File> uniqueFiles = [];
-
-    for (final file in files) {
+    Set<String> existingFilenames,
+  ) {
+    return files.where((file) {
       final fileName = path.basename(file.path);
-      final targetPath = path.join(targetDirectory.path, fileName);
-      final targetFile = File(targetPath);
-
-      if (!await targetFile.exists()) {
-        uniqueFiles.add(file);
-      }
-    }
-
-    return uniqueFiles;
+      return !existingFilenames.contains(fileName);
+    }).toList();
   }
 
   /// Get statistics about a list of files

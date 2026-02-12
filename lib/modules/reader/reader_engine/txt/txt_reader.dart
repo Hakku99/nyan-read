@@ -197,70 +197,82 @@ class TxtReaderEngine implements ReaderEngine {
             bottom: 0,
             left: 0,
             right: 0,
-            child: ValueListenableBuilder<int>(
-                valueListenable: _pageInfoNotifier,
-                builder: (context, _, __) {
-                  return ValueListenableBuilder<Iterable<ItemPosition>>(
-                      valueListenable: _itemPositionsListener.itemPositions,
-                      builder: (context, positions, _) {
-                        if (!_isPaginationCalculated) {
-                          return const SizedBox();
-                        }
-                        final progressPercent = (getProgress() ?? 0.0) * 100;
-                        final page = getCurrentPageIndex() + 1;
-                        final total = getPageCount();
-                        final chapterTitle = _getCurrentChapterTitle();
+            child: ValueListenableBuilder<ReaderConfig>(
+              valueListenable: _configNotifier,
+              builder: (context, config, child) {
+                return ValueListenableBuilder<int>(
+                    valueListenable: _pageInfoNotifier,
+                    builder: (context, _, __) {
+                      return ValueListenableBuilder<Iterable<ItemPosition>>(
+                          valueListenable: _itemPositionsListener.itemPositions,
+                          builder: (context, positions, _) {
+                            if (!_isPaginationCalculated) {
+                              return const SizedBox();
+                            }
+                            final progressPercent =
+                                (getProgress() ?? 0.0) * 100;
+                            final page = getCurrentPageIndex() + 1;
+                            final total = getPageCount();
+                            String chapterTitle = _getCurrentChapterTitle();
+                            if (chapterTitle.isEmpty && _chapters.isNotEmpty) {
+                              chapterTitle = _chapters.first['title'] as String;
+                            }
 
-                        return Container(
-                          height: 20, // Height for footer
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          color: _config.backgroundColor
-                              .withOpacity(0.9), // Match bg slightly
-                          child: Row(
-                            children: [
-                              // Left: Progress Percentage
-                              Expanded(
-                                child: Text(
-                                  "${progressPercent.toInt()}%",
-                                  textAlign: TextAlign.left,
-                                  style: TextStyle(
-                                    color: _config.textColor.withOpacity(0.6),
-                                    fontSize: 10,
+                            return Container(
+                              height: 20, // Height for footer
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              color: config.backgroundColor, // Match bg exactly
+                              child: Row(
+                                children: [
+                                  // Left: Progress Percentage
+                                  Expanded(
+                                    child: Text(
+                                      "${progressPercent.toInt()}%",
+                                      textAlign: TextAlign.left,
+                                      style: TextStyle(
+                                        color:
+                                            config.textColor.withOpacity(0.6),
+                                        fontSize: 10,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
 
-                              // Middle: Chapter Title
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  chapterTitle,
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: _config.textColor.withOpacity(0.6),
-                                    fontSize: 10,
+                                  // Middle: Chapter Title
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(
+                                      chapterTitle,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color:
+                                            config.textColor.withOpacity(0.6),
+                                        fontSize: 10,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
 
-                              // Right: Progress
-                              Expanded(
-                                child: Text(
-                                  "$page / $total",
-                                  textAlign: TextAlign.right,
-                                  style: TextStyle(
-                                    color: _config.textColor.withOpacity(0.6),
-                                    fontSize: 10,
+                                  // Right: Progress
+                                  Expanded(
+                                    child: Text(
+                                      "$page / $total",
+                                      textAlign: TextAlign.right,
+                                      style: TextStyle(
+                                        color:
+                                            config.textColor.withOpacity(0.6),
+                                        fontSize: 10,
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
-                            ],
-                          ),
-                        );
-                      });
-                }),
+                            );
+                          });
+                    });
+              },
+            ),
           ),
         ],
       );
@@ -433,15 +445,17 @@ class TxtReaderEngine implements ReaderEngine {
     // - "X. " or "X.Title" 开头的标题
     // - Standalone numbers "1", "2" (verified by empty line after)
     final chapterPatterns = [
-      RegExp(r'^第[零一二三四五六七八九十百千万\d]+[章回节]', multiLine: false),
+      RegExp(r'^第[零一二三四五六七八九十百千万\d]+[章回节话]', multiLine: false),
       RegExp(r'^Chapter\s+\d+', caseSensitive: false),
       RegExp(r'^\d+\.\s*\S+', multiLine: false), // "1.Title" or "1. Title"
       RegExp(r'^[零一二三四五六七八九十百千万]+、', multiLine: false),
       // Improved regex for Volume + Chapter (e.g. 第I卷 第1章, 第3卷：第四章)
       // Supports Chinese numbers, Arabic numbers, and Roman numerals (IVX...) in Volume/Chapter parts
       RegExp(
-          r'^第[零一二三四五六七八九十百千万\dIVXLCDMivxlcdm]+卷[：:\s]*第[零一二三四五六七八九十百千万\d]+[章回节]',
+          r'^第[零一二三四五六七八九十百千万\dIVXLCDMivxlcdm]+卷[：:\s]*第[零一二三四五六七八九十百千万\d]+[章回节话]',
           caseSensitive: false),
+      // Pattern for "Title: 第X话 Title" (e.g. prefix before chapter number)
+      RegExp(r'^.+[：:]\s*第[零一二三四五六七八九十百千万\d]+[章回节话]', multiLine: false),
     ];
 
     // Pattern for standalone numbers (needs empty line verification)
