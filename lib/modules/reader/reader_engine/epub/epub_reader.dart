@@ -147,6 +147,16 @@ class EpubReaderEngine implements ReaderEngine {
   }
 
   @override
+  int getPageCount() {
+    return 0; // Not supported yet
+  }
+
+  @override
+  int getCurrentPageIndex() {
+    return 0; // Not supported yet
+  }
+
+  @override
   void dispose() {
     if (_isInit) {
       _epubController.dispose();

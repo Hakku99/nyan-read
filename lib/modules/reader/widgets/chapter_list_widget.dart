@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 /// 章节列表组件
 /// 显示书籍章节目录,支持当前章节高亮和已读章节弱化
-class ChapterListWidget extends StatelessWidget {
+/// 章节列表组件
+/// 显示书籍章节目录,支持当前章节高亮和已读章节弱化
+class ChapterListWidget extends StatefulWidget {
   final List<dynamic> chapters;
   final int? currentChapterIndex;
   final double currentProgress;
@@ -19,10 +22,37 @@ class ChapterListWidget extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<ChapterListWidget> createState() => _ChapterListWidgetState();
+}
+
+class _ChapterListWidgetState extends State<ChapterListWidget> {
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener =
+      ItemPositionsListener.create();
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Schedule scroll to current chapter
+    if (widget.currentChapterIndex != null && widget.currentChapterIndex! > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_itemScrollController.isAttached) {
+          _itemScrollController.jumpTo(
+            index: widget.currentChapterIndex!,
+            alignment:
+                0.1, // Show a bit of previous context if possible, or just near top
+          );
+        }
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (chapters.isEmpty) {
+    if (widget.chapters.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(32),
         child: Center(
@@ -73,7 +103,7 @@ class ChapterListWidget extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    '${chapters.length} chapters',
+                    '${widget.chapters.length} chapters',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
@@ -85,36 +115,32 @@ class ChapterListWidget extends StatelessWidget {
 
             // 章节列表
             Flexible(
-              child: Scrollbar(
-                thumbVisibility: true,
-                controller: scrollController,
-                child: ListView.builder(
-                  controller: scrollController,
-                  shrinkWrap: true,
-                  itemCount: chapters.length,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemBuilder: (context, index) {
-                    final chapter = chapters[index];
-                    final chapterIndex = chapter['index'] ?? index;
-                    final title = chapter['title'] ?? 'Chapter ${index + 1}';
+              child: ScrollablePositionedList.builder(
+                itemCount: widget.chapters.length,
+                itemScrollController: _itemScrollController,
+                itemPositionsListener: _itemPositionsListener,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemBuilder: (context, index) {
+                  final chapter = widget.chapters[index];
+                  final chapterIndex = chapter['index'] ?? index;
+                  final title = chapter['title'] ?? 'Chapter ${index + 1}';
 
-                    // 判断是否为当前章节
-                    final isCurrent = currentChapterIndex == chapterIndex;
+                  // 判断是否为当前章节
+                  final isCurrent = widget.currentChapterIndex == chapterIndex;
 
-                    // 判断是否已读 (简化版: 基于章节索引和总进度)
-                    final isRead =
-                        (chapterIndex / chapters.length) < currentProgress;
+                  // 判断是否已读 (简化版: 基于章节索引和总进度)
+                  final isRead = (chapterIndex / widget.chapters.length) <
+                      widget.currentProgress;
 
-                    return _buildChapterItem(
-                      context,
-                      title: title,
-                      index: index,
-                      isCurrent: isCurrent,
-                      isRead: isRead,
-                      onTap: () => onChapterTap(index, chapter),
-                    );
-                  },
-                ),
+                  return _buildChapterItem(
+                    context,
+                    title: title,
+                    index: index,
+                    isCurrent: isCurrent,
+                    isRead: isRead,
+                    onTap: () => widget.onChapterTap(index, chapter),
+                  );
+                },
               ),
             ),
           ],
@@ -133,13 +159,16 @@ class ChapterListWidget extends StatelessWidget {
   }) {
     final theme = Theme.of(context);
 
+    // Ensure item height is consistent for scrolling estimation
     return Material(
       color:
           isCurrent ? theme.primaryColor.withOpacity(0.1) : Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          height: 56.0, // Fixed height for consistent scrolling
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          alignment: Alignment.centerLeft,
           child: Row(
             children: [
               // 章节序号
@@ -184,7 +213,7 @@ class ChapterListWidget extends StatelessWidget {
                             ? Colors.grey[600]
                             : theme.textTheme.bodyLarge?.color,
                   ),
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

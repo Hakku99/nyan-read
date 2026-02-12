@@ -122,6 +122,16 @@ class PdfReaderEngine implements ReaderEngine {
   }
 
   @override
+  int getPageCount() {
+    return _isInit ? (_pdfController.pagesCount ?? 0) : 0;
+  }
+
+  @override
+  int getCurrentPageIndex() {
+    return _isInit ? (_pdfController.page - 1) : 0;
+  }
+
+  @override
   void dispose() {
     if (_isInit) {
       _pdfController.dispose();

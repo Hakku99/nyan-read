@@ -72,14 +72,12 @@ class _NotesListPageState extends State<NotesListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Notes & Highlights'),
+            Text('Notes & Highlights (${_highlights.length})'),
             Text(
               widget.bookTitle,
               style:
@@ -87,21 +85,7 @@ class _NotesListPageState extends State<NotesListPage> {
             ),
           ],
         ),
-        actions: [
-          if (_highlights.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Center(
-                child: Text(
-                  '${_highlights.length}',
-                  style: TextStyle(
-                    color: theme.primaryColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-        ],
+        // Removed actions as count is now in title
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -145,12 +129,12 @@ class _NotesListPageState extends State<NotesListPage> {
       itemCount: _highlights.length,
       itemBuilder: (context, index) {
         final highlight = _highlights[index];
-        return _buildHighlightCard(highlight);
+        return _buildHighlightCard(highlight, index);
       },
     );
   }
 
-  Widget _buildHighlightCard(Highlight highlight) {
+  Widget _buildHighlightCard(Highlight highlight, int index) {
     final theme = Theme.of(context);
     final color = _parseColor(highlight.colorCode);
 
@@ -178,9 +162,8 @@ class _NotesListPageState extends State<NotesListPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Color indicator and text
+                // Header with Index and Delete Button
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       width: 4,
@@ -192,14 +175,31 @@ class _NotesListPageState extends State<NotesListPage> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        highlight.selectedText,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          backgroundColor: color.withOpacity(0.2),
-                        ),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Highlight #${index + 1}",
+                            style: theme.textTheme.labelSmall?.copyWith(
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            highlight.selectedText,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              backgroundColor: color.withOpacity(0.2),
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 20),
+                      color: Colors.grey[500],
+                      onPressed: () => _deleteHighlight(highlight),
                     ),
                   ],
                 ),

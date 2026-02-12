@@ -9,6 +9,7 @@ import 'txt_position.dart';
 import 'dart:convert';
 import 'package:fast_gbk/fast_gbk.dart';
 import '../../widgets/highlightable_text.dart';
+import 'pagination_helper.dart';
 
 class TxtReaderEngine implements ReaderEngine {
   final Book book;
@@ -35,6 +36,17 @@ class TxtReaderEngine implements ReaderEngine {
       String colorCode)? onTextHighlighted;
   Function(Highlight highlight)? onHighlightTapped;
   Function(Offset position)? onContentTap;
+
+  // Pagination Support
+  String _fullContent = "";
+  List<int> _paragraphOffsets = [];
+  List<int> _pageOffsets = [];
+  bool _isPaginationCalculated = false;
+  Size? _lastSize;
+  final ValueNotifier<int> _pageInfoNotifier = ValueNotifier(0);
+
+  // Chapter Cache
+  List<Map<String, dynamic>> _chapters = [];
 
   // We need a way to notify the widget to rebuild when config changes.
   // Since ReaderEngine is not a widget, we can use a ValueNotifier or Stream.
@@ -77,7 +89,21 @@ class TxtReaderEngine implements ReaderEngine {
 
     try {
       final content = await compute(_readAsString, file);
+      _fullContent = content;
       _lines = content.split('\n');
+
+      // Build paragraph offsets
+      _paragraphOffsets = List<int>.filled(_lines.length, 0);
+      int currentOffset = 0;
+      for (int i = 0; i < _lines.length; i++) {
+        _paragraphOffsets[i] = currentOffset;
+        currentOffset += _lines[i].length + 1; // +1 for newline
+      }
+
+      // Calculate chapters once
+      final rawChapters = await getChapters();
+      _chapters = rawChapters.cast<Map<String, dynamic>>();
+
       _isLoading = false;
     } catch (e) {
       throw FormatException("Failed to parse TXT file: $e");
@@ -148,16 +174,86 @@ class TxtReaderEngine implements ReaderEngine {
 
     debugPrint(
         "DEBUG: Building ValueListenableBuilder with ${_lines.length} lines");
-    return SizedBox.expand(
-      child: ValueListenableBuilder<ReaderConfig>(
-        valueListenable: _configNotifier,
-        builder: (context, config, child) {
-          debugPrint(
-              "DEBUG: ValueListenableBuilder building with config: fontSize=${config.fontSize}, bg=${config.backgroundColor}");
-          return _buildList(context, config);
-        },
-      ),
-    );
+
+    return LayoutBuilder(builder: (context, constraints) {
+      // Trigger pagination calculation in background
+      _recalculatePagination(constraints.biggest);
+
+      return Stack(
+        children: [
+          SizedBox.expand(
+            child: ValueListenableBuilder<ReaderConfig>(
+              valueListenable: _configNotifier,
+              builder: (context, config, child) {
+                debugPrint(
+                    "DEBUG: ValueListenableBuilder building with config: fontSize=${config.fontSize}, bg=${config.backgroundColor}");
+                return _buildList(context, config);
+              },
+            ),
+          ),
+          // Page Info Overlay
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: ValueListenableBuilder<int>(
+                valueListenable: _pageInfoNotifier,
+                builder: (context, _, __) {
+                  return ValueListenableBuilder<Iterable<ItemPosition>>(
+                      valueListenable: _itemPositionsListener.itemPositions,
+                      builder: (context, positions, _) {
+                        if (!_isPaginationCalculated || _pageOffsets.isEmpty) {
+                          return const SizedBox();
+                        }
+                        final page = getCurrentPageIndex() + 1;
+                        final total = getPageCount();
+                        final chapterTitle = _getCurrentChapterTitle();
+
+                        return Container(
+                          height: 20, // Height for footer
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          color: _config.backgroundColor
+                              .withOpacity(0.9), // Match bg slightly
+                          child: Row(
+                            children: [
+                              // Left: Empty
+                              const Expanded(child: SizedBox()),
+
+                              // Middle: Chapter Title
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  chapterTitle,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: _config.textColor.withOpacity(0.6),
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+
+                              // Right: Progress
+                              Expanded(
+                                child: Text(
+                                  "$page / $total",
+                                  textAlign: TextAlign.right,
+                                  style: TextStyle(
+                                    color: _config.textColor.withOpacity(0.6),
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      });
+                }),
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildList(BuildContext context, ReaderConfig config) {
@@ -288,7 +384,29 @@ class TxtReaderEngine implements ReaderEngine {
       return TxtReadingPosition(paragraphIndex: _initialIndex);
     }
 
-    return TxtReadingPosition(paragraphIndex: positions.first.index);
+    // Find the first item that is "mostly" visible at the top.
+    // itemLeadingEdge is 0.0 when aligned to top.
+    // If itemLeadingEdge is negative, it's partially scrolled off.
+    // We want the first item where itemLeadingEdge > -0.1 (allow slight overlap)
+    // OR if all are negative (shouldn't happen with correct usage), take the last one?
+    // Actually, usually the first item is < 0 and second is > 0.
+    // If the first item is 0.0, we take it.
+    // If first item is -0.5, we consider it "read past" and want the next one?
+    // User wants "first line in reading area". Ideally that's the one starting AT 0.
+    // If line 1 is at -0.5 and line 2 is at 0.5 (big lines?), then line 1 takes up half screen.
+    // But usually lines are small.
+    // Use a threshold: if leading edge is < -0.1, it's "past".
+
+    ItemPosition? candidate = positions.first;
+    for (final pos in positions) {
+      if (pos.itemLeadingEdge >= -0.05) {
+        // Slightly lenient tolerance
+        candidate = pos;
+        break;
+      }
+    }
+
+    return TxtReadingPosition(paragraphIndex: candidate!.index);
   }
 
   @override
@@ -308,6 +426,11 @@ class TxtReaderEngine implements ReaderEngine {
       RegExp(r'^Chapter\s+\d+', caseSensitive: false),
       RegExp(r'^\d+\.\s*\S+', multiLine: false), // "1.Title" or "1. Title"
       RegExp(r'^[零一二三四五六七八九十百千万]+、', multiLine: false),
+      // Improved regex for Volume + Chapter (e.g. 第I卷 第1章, 第3卷：第四章)
+      // Supports Chinese numbers, Arabic numbers, and Roman numerals (IVX...) in Volume/Chapter parts
+      RegExp(
+          r'^第[零一二三四五六七八九十百千万\dIVXLCDMivxlcdm]+卷[：:\s]*第[零一二三四五六七八九十百千万\d]+[章回节]',
+          caseSensitive: false),
     ];
 
     // Pattern for standalone numbers (needs empty line verification)
@@ -347,6 +470,35 @@ class TxtReaderEngine implements ReaderEngine {
 
     // 如果没有检测到章节,返回空列表
     return chapters;
+  }
+
+  String _getCurrentChapterTitle() {
+    if (_chapters.isEmpty) return "";
+
+    // Get current paragraph index
+    int paraIndex = _initialIndex;
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isNotEmpty) {
+      final sorted = positions.toList()
+        ..sort((a, b) => a.index.compareTo(b.index));
+      for (var p in sorted) {
+        if (p.itemLeadingEdge > -0.5) {
+          paraIndex = p.index;
+          break;
+        }
+      }
+    }
+
+    // Find chapter with largest paragraphIndex <= paraIndex
+    // Chapters are sorted by index/paragraphIndex usually.
+    // Binary search or linear back scan.
+    for (int i = _chapters.length - 1; i >= 0; i--) {
+      final chParaIndex = _chapters[i]['paragraphIndex'] as int;
+      if (chParaIndex <= paraIndex) {
+        return _chapters[i]['title'] as String;
+      }
+    }
+    return "";
   }
 
   /// Advance by approximately one screen height (estimated at 20 lines)
@@ -468,9 +620,99 @@ class TxtReaderEngine implements ReaderEngine {
     }
   }
 
+  Future<void> _recalculatePagination(Size size) async {
+    if (_fullContent.isEmpty) return;
+    if (_lastSize == size && _isPaginationCalculated) return;
+
+    _lastSize = size;
+    debugPrint("Recalculating pagination for size: $size"); // Log
+
+    final style = TextStyle(
+      fontSize: _config.fontSize,
+      height: _config.lineHeight,
+      fontFamily: 'Roboto',
+    );
+
+    // Approximate padding used in standard view
+    final padding =
+        const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0);
+
+    // Capture the size we are calculating for
+    final captureSize = size;
+
+    try {
+      final offsets = await PaginationHelper.calculatePageOffsets(
+          text: _fullContent,
+          style: style,
+          maxWidth: size.width,
+          maxHeight: size.height,
+          padding: padding);
+
+      // Check if the size has changed while we were calculating
+      if (_lastSize != captureSize) {
+        debugPrint(
+            "Pagination calculation discarded: size changed from $captureSize to $_lastSize");
+        return;
+      }
+
+      _pageOffsets = offsets;
+      _isPaginationCalculated = true;
+      _pageInfoNotifier.value++; // Notify UI
+      debugPrint("Pagination calculated: ${_pageOffsets.length} pages");
+    } catch (e) {
+      debugPrint("Pagination error: $e");
+    }
+  }
+
+  @override
+  int getPageCount() => _pageOffsets.length;
+
+  @override
+  int getCurrentPageIndex() {
+    if (_paragraphOffsets.isEmpty || _pageOffsets.isEmpty) return 0;
+
+    int paraIndex = _initialIndex;
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isNotEmpty) {
+      // Find the first item that is visible (top >= 0 or close to it)
+      // Or simply the first item in the list reported by listener
+      final sorted = positions.toList()
+        ..sort((a, b) => a.index.compareTo(b.index));
+      for (var p in sorted) {
+        // itemLeadingEdge is 0 at top.
+        if (p.itemLeadingEdge > -0.5) {
+          paraIndex = p.index;
+          break;
+        }
+      }
+    }
+
+    if (paraIndex >= _paragraphOffsets.length) return 0;
+
+    int charIndex = _paragraphOffsets[paraIndex];
+
+    // Binary search
+    int low = 0;
+    int high = _pageOffsets.length - 1;
+    while (low <= high) {
+      int mid = (low + high) ~/ 2;
+      if (_pageOffsets[mid] <= charIndex) {
+        if (mid == _pageOffsets.length - 1 ||
+            _pageOffsets[mid + 1] > charIndex) {
+          return mid;
+        }
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+    return 0;
+  }
+
   @override
   void dispose() {
     _itemPositionsListener.itemPositions.removeListener(_updateCurrentPosition);
     _configNotifier.dispose();
+    _pageInfoNotifier.dispose();
   }
 }

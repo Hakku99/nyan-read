@@ -56,6 +56,12 @@ abstract class ReaderEngine {
   /// Navigates to the previous page/screen.
   Future<void> previousPage();
 
+  /// Returns total calculated pages.
+  int getPageCount();
+
+  /// Returns current page index (0-based).
+  int getCurrentPageIndex();
+
   /// Called when the reader is disposed.
   void dispose();
 }

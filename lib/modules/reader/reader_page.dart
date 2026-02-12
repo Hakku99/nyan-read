@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -143,6 +144,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       // 恢复上次阅读位置
       await _restoreLastPosition();
 
+      // Update chapter index after restoring position
+      await _updateCurrentChapterIndex();
+
       // Load highlights and wire up callbacks for TxtReaderEngine
       await loadHighlights();
       if (engine is TxtReaderEngine) {
@@ -275,12 +279,51 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     _showControls = !_showControls;
     if (_showControls) {
       _syncProgress();
+      _updateCurrentChapterIndex();
       _progressTimer =
           Timer.periodic(const Duration(seconds: 1), (_) => _syncProgress());
     } else {
       _progressTimer?.cancel();
     }
     notifyListeners();
+  }
+
+  Future<void> _updateCurrentChapterIndex() async {
+    if (_chapters.isEmpty) return;
+
+    final position = engine.getCurrentPosition();
+    if (position == null) return;
+
+    int newIndex = 0;
+
+    if (position is TxtReadingPosition && book.format == 'txt') {
+      final currentPara = position.paragraphIndex;
+      // Find the last chapter with paragraphIndex <= current
+      for (int i = 0; i < _chapters.length; i++) {
+        final chapterPara = _chapters[i]['paragraphIndex'] as int? ?? -1;
+        if (chapterPara <= currentPara) {
+          newIndex = i;
+        } else {
+          break;
+        }
+      }
+    } else if (position is PdfReadingPosition && book.format == 'pdf') {
+      final currentPage = position.pageNumber;
+      for (int i = 0; i < _chapters.length; i++) {
+        final chapterPage = _chapters[i]['pageNumber'] as int? ?? -1;
+        if (chapterPage <= currentPage) {
+          newIndex = i;
+        } else {
+          break;
+        }
+      }
+    }
+
+    if (_currentChapterIndex != newIndex) {
+      _currentChapterIndex = newIndex;
+      // No need to notify here if called within toggleControls which notifies at end,
+      // but safe to do so if called independently.
+    }
   }
 
   void _syncProgress() {
@@ -514,6 +557,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   }
 }
 
+const double kSectionSpacing = 16.0;
+const double kRowHeight = 56.0;
+
 class ReaderPage extends StatelessWidget {
   final Book book;
 
@@ -571,22 +617,34 @@ class ReaderPage extends StatelessWidget {
                               _handlePanEnd(context, details),
                           child: Consumer<ReaderController>(
                             builder: (context, controller, _) {
-                              // Debug the constraints passed to reader
-                              return LayoutBuilder(
-                                builder: (context, constraints) {
-                                  debugPrint(
-                                      "DEBUG READER_PAGE: LayoutBuilder constraints: maxWidth=${constraints.maxWidth}, maxHeight=${constraints.maxHeight}");
-                                  final padding =
-                                      MediaQuery.of(context).padding;
-                                  return Padding(
-                                    padding: EdgeInsets.only(
-                                      top: padding.top,
-                                      bottom: padding.bottom,
-                                    ),
-                                    child:
-                                        controller.engine.buildReader(context),
-                                  );
-                                },
+                              // Determine status bar style based on background luminance
+                              // Dark background -> Light icons (light)
+                              // Light background -> Dark icons (dark)
+                              final isDark = controller.backgroundColor
+                                      .computeLuminance() <
+                                  0.5;
+                              final systemOverlayStyle = isDark
+                                  ? SystemUiOverlayStyle.light
+                                  : SystemUiOverlayStyle.dark;
+
+                              return AnnotatedRegion<SystemUiOverlayStyle>(
+                                value: systemOverlayStyle,
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    debugPrint(
+                                        "DEBUG READER_PAGE: LayoutBuilder constraints: maxWidth=${constraints.maxWidth}, maxHeight=${constraints.maxHeight}");
+                                    final padding =
+                                        MediaQuery.of(context).padding;
+                                    return Padding(
+                                      padding: EdgeInsets.only(
+                                        top: padding.top,
+                                        bottom: padding.bottom,
+                                      ),
+                                      child: controller.engine
+                                          .buildReader(context),
+                                    );
+                                  },
+                                ),
                               );
                             },
                           ),
@@ -668,108 +726,14 @@ class ReaderPage extends StatelessWidget {
                                       )),
                                   iconTheme: IconThemeData(
                                       color: theme.colorScheme.onPrimary),
-                                  actions: [
-                                    IconButton(
-                                      icon: const Icon(Icons.list),
-                                      tooltip: 'Table of Contents',
-                                      onPressed: () {
-                                        showModalBottomSheet(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          backgroundColor: Colors.transparent,
-                                          builder: (context) => GestureDetector(
-                                            behavior: HitTestBehavior.opaque,
-                                            onTap: () => Navigator.pop(context),
-                                            child: DraggableScrollableSheet(
-                                              initialChildSize: 0.6,
-                                              minChildSize: 0.3,
-                                              maxChildSize: 0.9,
-                                              builder:
-                                                  (context, scrollController) =>
-                                                      GestureDetector(
-                                                onTap:
-                                                    () {}, // Prevent dismissal when tapping content
-                                                child: ChapterListWidget(
-                                                  chapters: controller.chapters,
-                                                  currentChapterIndex:
-                                                      controller
-                                                          .currentChapterIndex,
-                                                  currentProgress: controller
-                                                      .currentProgress,
-                                                  scrollController:
-                                                      scrollController,
-                                                  onChapterTap:
-                                                      (index, chapterData) {
-                                                    Navigator.pop(context);
-                                                    controller.jumpToChapter(
-                                                        index, chapterData);
-                                                  },
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(
-                                          Icons.bookmark_add_outlined),
-                                      onPressed: () =>
-                                          controller.addBookmark(context),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.bookmarks),
-                                      onPressed: () async {
-                                        final result = await Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (_) =>
-                                                    BookmarkListPage(
-                                                        bookId: book.id,
-                                                        bookTitle:
-                                                            book.title)));
-                                        if (result != null &&
-                                            result is Map<String, dynamic>) {
-                                          controller.restorePosition(result);
-                                        }
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.edit_note),
-                                      tooltip: 'Highlights & Notes',
-                                      onPressed: () async {
-                                        final result = await Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (_) => NotesListPage(
-                                                    bookId: book.id,
-                                                    bookTitle: book.title)));
-                                        if (result != null &&
-                                            result is Highlight) {
-                                          // Jump to highlight position
-                                          if (book.format == 'txt') {
-                                            final pos = TxtReadingPosition(
-                                                paragraphIndex:
-                                                    result.paragraphIndex);
-                                            await controller.engine
-                                                .goToPosition(pos);
-                                          }
-                                          // Show note dialog
-                                          if (context.mounted) {
-                                            controller.showNoteDialog(
-                                                context, result);
-                                          }
-                                        }
-                                      },
-                                    ),
-                                  ],
+                                  actions: const [],
                                 ),
                               ),
 
                               // Bottom Toolbar
                               AnimatedPositioned(
                                 duration: const Duration(milliseconds: 200),
-                                bottom: controller.showControls ? 0 : -400,
+                                bottom: controller.showControls ? 0 : -1000,
                                 left: 0,
                                 right: 0,
                                 child: SafeArea(
@@ -784,240 +748,400 @@ class ReaderPage extends StatelessWidget {
                                               color: theme.dividerColor)),
                                     ),
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 24, vertical: 16),
+                                        horizontal: 24, vertical: 24),
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        // Progress
-                                        Row(
-                                          children: [
-                                            Text(
-                                                "${(controller.currentProgress * 100).toInt()}%",
-                                                style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: theme
-                                                        .colorScheme.onSurface
-                                                        .withOpacity(0.7))),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: SliderTheme(
-                                                data: SliderTheme.of(context)
-                                                    .copyWith(
-                                                  trackHeight: 4,
-                                                  thumbShape:
-                                                      const RoundSliderThumbShape(
-                                                          enabledThumbRadius:
-                                                              8),
-                                                  overlayShape:
-                                                      const RoundSliderOverlayShape(
-                                                          overlayRadius: 16),
-                                                  activeTrackColor:
-                                                      theme.colorScheme.primary,
-                                                  inactiveTrackColor: theme
-                                                      .colorScheme.primary
-                                                      .withOpacity(0.3),
-                                                  thumbColor:
-                                                      theme.colorScheme.primary,
-                                                ),
-                                                child: Slider(
-                                                  value: controller
-                                                      .currentProgress,
-                                                  min: 0.0,
-                                                  max: 1.0,
-                                                  onChanged: (val) =>
-                                                      controller.seekTo(val),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Divider(
-                                            height: 1,
-                                            color: theme.dividerColor
-                                                .withOpacity(0.2)),
-                                        const SizedBox(height: 12),
-
-                                        // Brightness
-                                        Row(
-                                          children: [
-                                            Icon(Icons.brightness_low,
-                                                size: 20,
-                                                color: theme
-                                                    .colorScheme.onSurface
-                                                    .withOpacity(0.6)),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: SliderTheme(
-                                                data: SliderTheme.of(context)
-                                                    .copyWith(
-                                                  trackHeight: 4,
-                                                  thumbShape:
-                                                      const RoundSliderThumbShape(
-                                                          enabledThumbRadius:
-                                                              8),
-                                                  activeTrackColor:
-                                                      theme.colorScheme.primary,
-                                                  inactiveTrackColor: theme
-                                                      .colorScheme.primary
-                                                      .withOpacity(0.3),
-                                                  thumbColor:
-                                                      theme.colorScheme.primary,
-                                                ),
-                                                child: Slider(
-                                                  value: controller.brightness,
-                                                  min: 0.2,
-                                                  max: 1.0,
-                                                  onChanged:
-                                                      controller.setBrightness,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Icon(Icons.brightness_high,
-                                                size: 20,
-                                                color: theme
-                                                    .colorScheme.onSurface
-                                                    .withOpacity(0.6)),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Divider(
-                                            height: 1,
-                                            color: theme.dividerColor
-                                                .withOpacity(0.2)),
-                                        const SizedBox(height: 12),
-
-                                        // Typography
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            // Font Size
-                                            Row(
-                                              children: [
-                                                Icon(Icons.format_size,
-                                                    size: 20,
-                                                    color: theme
-                                                        .colorScheme.onSurface
-                                                        .withOpacity(0.6)),
-                                                const SizedBox(width: 8),
-                                                IconButton(
-                                                  icon: const Icon(Icons
-                                                      .remove_circle_outline),
-                                                  onPressed: () =>
-                                                      controller.setFontSize(
-                                                          controller.fontSize -
-                                                              1),
-                                                  color:
-                                                      theme.colorScheme.primary,
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                ),
-                                                SizedBox(
-                                                    width: 30,
-                                                    child: Text(
-                                                        controller.fontSize
-                                                            .toStringAsFixed(0),
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style: const TextStyle(
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w600))),
-                                                IconButton(
-                                                  icon: const Icon(
-                                                      Icons.add_circle_outline),
-                                                  onPressed: () =>
-                                                      controller.setFontSize(
-                                                          controller.fontSize +
-                                                              1),
-                                                  color:
-                                                      theme.colorScheme.primary,
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                ),
-                                              ],
-                                            ),
-                                            // Line Height
-                                            Row(
-                                              children: [
-                                                Icon(Icons.format_line_spacing,
-                                                    size: 20,
-                                                    color: theme
-                                                        .colorScheme.onSurface
-                                                        .withOpacity(0.6)),
-                                                const SizedBox(width: 8),
-                                                IconButton(
-                                                  icon: const Icon(Icons
-                                                      .remove_circle_outline),
-                                                  onPressed: () => controller
-                                                      .setLineHeight(controller
-                                                              .lineHeight -
-                                                          0.1),
-                                                  color:
-                                                      theme.colorScheme.primary,
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                ),
-                                                SizedBox(
-                                                    width: 30,
-                                                    child: Text(
-                                                        controller.lineHeight
-                                                            .toStringAsFixed(1),
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style: const TextStyle(
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w600))),
-                                                IconButton(
-                                                  icon: const Icon(
-                                                      Icons.add_circle_outline),
-                                                  onPressed: () => controller
-                                                      .setLineHeight(controller
-                                                              .lineHeight +
-                                                          0.1),
-                                                  color:
-                                                      theme.colorScheme.primary,
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Divider(
-                                            height: 1,
-                                            color: theme.dividerColor
-                                                .withOpacity(0.2)),
-                                        const SizedBox(height: 16),
-
-                                        // Themes
-                                        SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
+                                        // 1. Progress
+                                        SizedBox(
+                                          height: kRowHeight,
                                           child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
                                             children: [
-                                              _colorBtn(context, controller,
-                                                  const Color(0xFFFDFCF8)),
-                                              const SizedBox(width: 16),
-                                              _colorBtn(context, controller,
-                                                  const Color(0xFFF5F5DC)),
-                                              const SizedBox(width: 16),
-                                              _colorBtn(context, controller,
-                                                  const Color(0xFF262422),
-                                                  isDark: true),
-                                              const SizedBox(width: 16),
-                                              _colorBtn(context, controller,
-                                                  const Color(0xFF1C1B1A),
-                                                  isDark: true),
+                                              Text(
+                                                  "${(controller.currentProgress * 100).toInt()}%",
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: theme
+                                                          .colorScheme.onSurface
+                                                          .withOpacity(0.7))),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: SliderTheme(
+                                                  data: SliderTheme.of(context)
+                                                      .copyWith(
+                                                    trackHeight: 4,
+                                                    thumbShape:
+                                                        const RoundSliderThumbShape(
+                                                            enabledThumbRadius:
+                                                                8),
+                                                    overlayShape:
+                                                        const RoundSliderOverlayShape(
+                                                            overlayRadius: 16),
+                                                    activeTrackColor: theme
+                                                        .colorScheme.primary,
+                                                    inactiveTrackColor: theme
+                                                        .colorScheme.primary
+                                                        .withOpacity(0.3),
+                                                    thumbColor: theme
+                                                        .colorScheme.primary,
+                                                  ),
+                                                  child: Slider(
+                                                    value: controller
+                                                        .currentProgress,
+                                                    min: 0.0,
+                                                    max: 1.0,
+                                                    onChanged: (val) =>
+                                                        controller.seekTo(val),
+                                                  ),
+                                                ),
+                                              ),
                                             ],
                                           ),
-                                        )
+                                        ),
+                                        Divider(
+                                            height: 12,
+                                            color: theme.dividerColor
+                                                .withOpacity(0.2)),
+
+                                        // 2. Brightness
+                                        SizedBox(
+                                          height: kRowHeight,
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.brightness_low,
+                                                  size: 20,
+                                                  color: theme
+                                                      .colorScheme.onSurface
+                                                      .withOpacity(0.6)),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: SliderTheme(
+                                                  data: SliderTheme.of(context)
+                                                      .copyWith(
+                                                    trackHeight: 4,
+                                                    thumbShape:
+                                                        const RoundSliderThumbShape(
+                                                            enabledThumbRadius:
+                                                                8),
+                                                    activeTrackColor: theme
+                                                        .colorScheme.primary,
+                                                    inactiveTrackColor: theme
+                                                        .colorScheme.primary
+                                                        .withOpacity(0.3),
+                                                    thumbColor: theme
+                                                        .colorScheme.primary,
+                                                  ),
+                                                  child: Slider(
+                                                    value:
+                                                        controller.brightness,
+                                                    min: 0.2,
+                                                    max: 1.0,
+                                                    onChanged: controller
+                                                        .setBrightness,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Icon(Icons.brightness_high,
+                                                  size: 20,
+                                                  color: theme
+                                                      .colorScheme.onSurface
+                                                      .withOpacity(0.6)),
+                                            ],
+                                          ),
+                                        ),
+                                        Divider(
+                                            height: 12,
+                                            color: theme.dividerColor
+                                                .withOpacity(0.2)),
+
+                                        // 3. Typography
+                                        SizedBox(
+                                          height: kRowHeight,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              // Font Size
+                                              Row(
+                                                children: [
+                                                  Icon(Icons.format_size,
+                                                      size: 20,
+                                                      color: theme
+                                                          .colorScheme.onSurface
+                                                          .withOpacity(0.6)),
+                                                  const SizedBox(width: 8),
+                                                  IconButton(
+                                                    icon: const Icon(Icons
+                                                        .remove_circle_outline),
+                                                    onPressed: () => controller
+                                                        .setFontSize(controller
+                                                                .fontSize -
+                                                            1),
+                                                    color: theme
+                                                        .colorScheme.primary,
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                  ),
+                                                  SizedBox(
+                                                      width: 30,
+                                                      child: Text(
+                                                          controller.fontSize
+                                                              .toStringAsFixed(
+                                                                  0),
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style: const TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600))),
+                                                  IconButton(
+                                                    icon: const Icon(Icons
+                                                        .add_circle_outline),
+                                                    onPressed: () => controller
+                                                        .setFontSize(controller
+                                                                .fontSize +
+                                                            1),
+                                                    color: theme
+                                                        .colorScheme.primary,
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                  ),
+                                                ],
+                                              ),
+                                              // Line Height
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                      Icons.format_line_spacing,
+                                                      size: 20,
+                                                      color: theme
+                                                          .colorScheme.onSurface
+                                                          .withOpacity(0.6)),
+                                                  const SizedBox(width: 8),
+                                                  IconButton(
+                                                    icon: const Icon(Icons
+                                                        .remove_circle_outline),
+                                                    onPressed: () => controller
+                                                        .setLineHeight(controller
+                                                                .lineHeight -
+                                                            0.1),
+                                                    color: theme
+                                                        .colorScheme.primary,
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                  ),
+                                                  SizedBox(
+                                                      width: 30,
+                                                      child: Text(
+                                                          controller.lineHeight
+                                                              .toStringAsFixed(
+                                                                  1),
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style: const TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600))),
+                                                  IconButton(
+                                                    icon: const Icon(Icons
+                                                        .add_circle_outline),
+                                                    onPressed: () => controller
+                                                        .setLineHeight(controller
+                                                                .lineHeight +
+                                                            0.1),
+                                                    color: theme
+                                                        .colorScheme.primary,
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Divider(
+                                            height: 12,
+                                            color: theme.dividerColor
+                                                .withOpacity(0.2)),
+
+                                        // 4. Themes
+                                        SizedBox(
+                                          height: kRowHeight,
+                                          child: SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                _colorBtn(context, controller,
+                                                    const Color(0xFFFDFCF8)),
+                                                const SizedBox(width: 16),
+                                                _colorBtn(context, controller,
+                                                    const Color(0xFFF5F5DC)),
+                                                const SizedBox(width: 16),
+                                                _colorBtn(context, controller,
+                                                    const Color(0xFF262422),
+                                                    isDark: true),
+                                                const SizedBox(width: 16),
+                                                _colorBtn(context, controller,
+                                                    const Color(0xFF1C1B1A),
+                                                    isDark: true),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        Divider(
+                                            height: 12,
+                                            color: theme.dividerColor
+                                                .withOpacity(0.2)),
+
+                                        // 5. Navigation Icons
+                                        SizedBox(
+                                          height: kRowHeight,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceAround,
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(Icons.list),
+                                                tooltip: 'Table of Contents',
+                                                color:
+                                                    theme.colorScheme.primary,
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                onPressed: () {
+                                                  showModalBottomSheet(
+                                                    context: context,
+                                                    isScrollControlled: true,
+                                                    backgroundColor:
+                                                        Colors.transparent,
+                                                    builder: (context) =>
+                                                        GestureDetector(
+                                                      behavior: HitTestBehavior
+                                                          .opaque,
+                                                      onTap: () =>
+                                                          Navigator.pop(
+                                                              context),
+                                                      child:
+                                                          DraggableScrollableSheet(
+                                                        initialChildSize: 0.6,
+                                                        minChildSize: 0.3,
+                                                        maxChildSize: 0.9,
+                                                        builder: (context,
+                                                                scrollController) =>
+                                                            GestureDetector(
+                                                          onTap:
+                                                              () {}, // Prevent dismissal when tapping content
+                                                          child:
+                                                              ChapterListWidget(
+                                                            chapters: controller
+                                                                .chapters,
+                                                            currentChapterIndex:
+                                                                controller
+                                                                    .currentChapterIndex,
+                                                            currentProgress:
+                                                                controller
+                                                                    .currentProgress,
+                                                            scrollController:
+                                                                scrollController,
+                                                            onChapterTap: (index,
+                                                                chapterData) {
+                                                              Navigator.pop(
+                                                                  context);
+                                                              controller
+                                                                  .jumpToChapter(
+                                                                      index,
+                                                                      chapterData);
+                                                            },
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons
+                                                    .bookmark_add_outlined),
+                                                color:
+                                                    theme.colorScheme.primary,
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                onPressed: () => controller
+                                                    .addBookmark(context),
+                                              ),
+                                              IconButton(
+                                                icon:
+                                                    const Icon(Icons.bookmarks),
+                                                color:
+                                                    theme.colorScheme.primary,
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                onPressed: () async {
+                                                  final result = await Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                          builder: (_) =>
+                                                              BookmarkListPage(
+                                                                  bookId:
+                                                                      book.id,
+                                                                  bookTitle: book
+                                                                      .title)));
+                                                  if (result != null &&
+                                                      result is Map<String,
+                                                          dynamic>) {
+                                                    controller.restorePosition(
+                                                        result);
+                                                  }
+                                                },
+                                              ),
+                                              IconButton(
+                                                icon:
+                                                    const Icon(Icons.edit_note),
+                                                tooltip: 'Highlights & Notes',
+                                                color:
+                                                    theme.colorScheme.primary,
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                onPressed: () async {
+                                                  final result = await Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                          builder: (_) =>
+                                                              NotesListPage(
+                                                                  bookId:
+                                                                      book.id,
+                                                                  bookTitle: book
+                                                                      .title)));
+
+                                                  // Always reload highlights as they might have been deleted/edited in the list
+                                                  await controller
+                                                      .loadHighlights();
+
+                                                  if (result != null &&
+                                                      result is Highlight) {
+                                                    // Jump to highlight position
+                                                    if (book.format == 'txt') {
+                                                      final pos = TxtReadingPosition(
+                                                          paragraphIndex: result
+                                                              .paragraphIndex);
+                                                      await controller.engine
+                                                          .goToPosition(pos);
+                                                    }
+                                                    // Show note dialog
+                                                    if (context.mounted) {
+                                                      controller.showNoteDialog(
+                                                          context, result);
+                                                    }
+                                                  }
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),

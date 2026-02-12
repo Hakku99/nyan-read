@@ -37,6 +37,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   late Future<List<Map<String, dynamic>>> _publicBooksFuture;
   late Future<List<Map<String, dynamic>>> _privateBooksFuture;
+  int _publicCount = 0;
+  int _privateCount = 0;
 
   @override
   void initState() {
@@ -62,6 +64,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       isPrivate: true,
       orderBy: _prefs.getOrderByClause(),
     );
+
+    // Update counts for UI logic
+    _publicBooksFuture.then((list) {
+      if (mounted) setState(() => _publicCount = list.length);
+    });
+    _privateBooksFuture.then((list) {
+      if (mounted) setState(() => _privateCount = list.length);
+    });
   }
 
   @override
@@ -81,35 +91,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _selectAllBooks(bool showPrivacyTab) async {
-    // Current tab index: 0 = Public, 1 = Private (if shown)
-    // If showPrivacyTab is false, index 0 is always Public.
-    // If showPrivacyTab is true, index 0 is Public, 1 is Private.
-    // Wait, TabController index might not match if tabs are hidden?
-    // public/private decision relies on `isPrivate` in `_buildShelf`.
-    // Let's assume TabController matches the view.
-
     final isPrivateTab = showPrivacyTab && _tabController.index == 1;
     final future = isPrivateTab ? _privateBooksFuture : _publicBooksFuture;
 
     final books = await future;
-    setState(() {
-      _selectedBookIds
-          .clear(); // Or should we append? Usually "Select All" replaces or adds.
-      // Let's just add all from current view.
-      for (final book in books) {
-        // book is Map<String, dynamic> here? No, fetch returns Map.
-        // Wait, DatabaseService().getBooks returns List<Map<...>>.
-        // We need 'id'.
-        if (book['id'] != null) {
-          _selectedBookIds.add(book['id'] as String);
-        }
-      }
-    });
-  }
+    final bookIds = books.map((b) => b['id'] as String).toSet();
 
-  void _deselectAllBooks() {
+    // Check if ALL books in the current view are already selected
+    final allSelected = bookIds.every((id) => _selectedBookIds.contains(id));
+
     setState(() {
-      _selectedBookIds.clear();
+      if (allSelected) {
+        // Deselect all from current view
+        _selectedBookIds.removeAll(bookIds);
+      } else {
+        // Select all from current view
+        _selectedBookIds.addAll(bookIds);
+      }
     });
   }
 
@@ -538,31 +536,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           showPrivacyTab ? 'Move to Public' : 'Move to Private',
                       onPressed: () => _moveSelectedBooks(!showPrivacyTab),
                     ),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    tooltip: 'Delete Selected',
-                    onPressed: _deleteSelectedBooks,
-                  ),
                 ],
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'select_all') {
-                      _selectAllBooks(showPrivacyTab);
-                    } else if (value == 'deselect_all') {
-                      _deselectAllBooks();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'select_all',
-                      child: Text('Select All'),
-                    ),
-                    const PopupMenuItem(
-                      value: 'deselect_all',
-                      child: Text('Deselect All'),
-                    ),
-                  ],
-                ),
+                Builder(builder: (context) {
+                  final isPrivateTab =
+                      showPrivacyTab && _tabController.index == 1;
+                  final currentTotal =
+                      isPrivateTab ? _privateCount : _publicCount;
+                  final allSelected = currentTotal > 0 &&
+                      _selectedBookIds.length >= currentTotal;
+
+                  return IconButton(
+                    icon: Icon(allSelected ? Icons.deselect : Icons.select_all),
+                    tooltip: allSelected ? 'Deselect All' : 'Select All',
+                    onPressed: () => _selectAllBooks(showPrivacyTab),
+                  );
+                }),
               ],
               backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
             )
@@ -609,13 +597,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                   ],
-                ),
-
-                // Select Mode Entry
-                IconButton(
-                  icon: const Icon(Icons.checklist),
-                  tooltip: 'Select Books',
-                  onPressed: () => _toggleSelectionMode(active: true),
                 ),
 
                 // Lock/Unlock Button
@@ -680,9 +661,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () => _showImportMenu(context),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_isSelectionMode) ...[
+            FloatingActionButton(
+              heroTag: 'delete_fab',
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+              child: const Icon(Icons.delete),
+              onPressed: _deleteSelectedBooks,
+            ),
+            const SizedBox(height: 16),
+          ],
+          FloatingActionButton(
+            heroTag: 'add_fab',
+            child: const Icon(Icons.add),
+            onPressed: () => _showImportMenu(context),
+          ),
+        ],
       ),
     );
   }
