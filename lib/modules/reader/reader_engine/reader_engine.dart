@@ -62,6 +62,9 @@ abstract class ReaderEngine {
   /// Returns current page index (0-based).
   int getCurrentPageIndex();
 
+  /// Whether the engine provides its own bottom information bar.
+  bool get hasBottomBar;
+
   /// Called when the reader is disposed.
   void dispose();
 }

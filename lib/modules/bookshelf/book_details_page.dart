@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../../core/models/book.dart';
+import '../../core/utils/snackbar_utils.dart';
 import '../reader/reader_page.dart';
 
 class BookDetailsPage extends StatelessWidget {
@@ -268,12 +269,8 @@ class BookDetailsPage extends StatelessWidget {
                   icon: const Icon(Icons.copy, size: 18),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: book.filePath));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('File path copied to clipboard'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
+                    SnackBarUtils.show(
+                        context, 'File path copied to clipboard');
                   },
                   tooltip: 'Copy path',
                 ),

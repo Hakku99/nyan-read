@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/models/highlight.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:async';
@@ -245,11 +246,7 @@ class _HighlightableTextState extends State<HighlightableText> {
         onPressed: () {
           if (selectedText.isNotEmpty) {
             Clipboard.setData(ClipboardData(text: selectedText));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Copied to clipboard'),
-                  duration: Duration(seconds: 1)),
-            );
+            SnackBarUtils.show(context, 'Copied to clipboard');
           }
           editableTextState.hideToolbar();
         },
@@ -347,10 +344,8 @@ class _HighlightableTextState extends State<HighlightableText> {
       // Fallback: copy to clipboard
       await Clipboard.setData(ClipboardData(text: url.toString()));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Could not open browser. Search link copied.')),
-        );
+        SnackBarUtils.show(
+            context, 'Could not open browser. Search link copied.');
       }
     }
   }

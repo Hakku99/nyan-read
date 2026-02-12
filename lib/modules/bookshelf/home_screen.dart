@@ -18,6 +18,7 @@ import '../reader/reader_page.dart';
 import '../settings/settings_page.dart';
 import '../ads/ads_ui.dart';
 import '../import/folder_import_preview_page.dart';
+import '../../core/utils/snackbar_utils.dart';
 import 'book_details_page.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -195,9 +196,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Deleted $count books')),
-        );
+        SnackBarUtils.show(context, 'Deleted $count books');
         _toggleSelectionMode(active: false);
         _refreshShelf();
       }
@@ -213,11 +212,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Moved ${idsToMove.length} books to ${toPrivate ? 'Private' : 'Public'} Shelf')),
-      );
+      SnackBarUtils.show(context,
+          'Moved ${idsToMove.length} books to ${toPrivate ? 'Private' : 'Public'} Shelf');
       _toggleSelectionMode(active: false);
       _refreshShelf();
     }
@@ -278,9 +274,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
 
       if (mounted && successCount > 0) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(
-                "Imported $successCount books to ${isPrivate ? 'Private' : 'Public'} Shelf!")));
+        SnackBarUtils.show(context,
+            "Imported $successCount books to ${isPrivate ? 'Private' : 'Public'} Shelf!");
         _refreshShelf();
       }
     }
@@ -333,10 +328,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         if (files.isEmpty) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('No supported books found in folder')),
-            );
+            SnackBarUtils.show(context, 'No supported books found in folder');
           }
           return;
         }
@@ -365,9 +357,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error scanning folder: $e')),
-          );
+          SnackBarUtils.show(context, 'Error scanning folder: $e');
         }
       }
     }
@@ -380,8 +370,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (fm.isPrivateShelfUnlocked) {
       // Lock it
       fm.lockPrivateShelf();
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Privacy Shelf Locked")));
+      SnackBarUtils.show(context, "Privacy Shelf Locked");
       // Force switch back to public tab if we were on private
       _tabController.animateTo(0);
     } else {
@@ -433,8 +422,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     _showEnterPasswordDialog(context);
                   }
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Passwords do not match")));
+                  SnackBarUtils.show(context, "Passwords do not match");
                 }
               },
               child: const Text("Save")),
@@ -467,8 +455,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   if (isValid) {
                     context.read<FeatureManager>().unlockPrivateShelf();
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Invalid Password")));
+                    SnackBarUtils.show(context, "Invalid Password");
                   }
                 }
               },

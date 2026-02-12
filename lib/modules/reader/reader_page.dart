@@ -8,6 +8,7 @@ import '../../core/models/highlight.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/reader_preferences_service.dart';
 import '../../core/utils/layout_debouncer.dart';
+import '../../core/utils/snackbar_utils.dart';
 import '../bookmark/bookmark_list_page.dart';
 import '../notes/notes_list_page.dart';
 import 'reader_engine/reader_engine.dart';
@@ -129,6 +130,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       if (_readSeconds > 0 && _readSeconds % 3600 == 0) {
         notifyListeners();
       }
+      // Always sync progress to show in bottom-left corner
+      _syncProgress();
     });
   }
 
@@ -278,12 +281,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   void toggleControls() {
     _showControls = !_showControls;
     if (_showControls) {
-      _syncProgress();
       _updateCurrentChapterIndex();
-      _progressTimer =
-          Timer.periodic(const Duration(seconds: 1), (_) => _syncProgress());
-    } else {
-      _progressTimer?.cancel();
     }
     notifyListeners();
   }
@@ -390,8 +388,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
     await DatabaseService().insertBookmark(bookmark);
     if (context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Bookmark Added!")));
+      SnackBarUtils.show(context, "Bookmark Added!");
     }
   }
 
@@ -631,17 +628,48 @@ class ReaderPage extends StatelessWidget {
                                 value: systemOverlayStyle,
                                 child: LayoutBuilder(
                                   builder: (context, constraints) {
-                                    debugPrint(
-                                        "DEBUG READER_PAGE: LayoutBuilder constraints: maxWidth=${constraints.maxWidth}, maxHeight=${constraints.maxHeight}");
+                                    // debugPrint(
+                                    //     "DEBUG READER_PAGE: LayoutBuilder constraints: maxWidth=${constraints.maxWidth}, maxHeight=${constraints.maxHeight}");
                                     final padding =
                                         MediaQuery.of(context).padding;
-                                    return Padding(
-                                      padding: EdgeInsets.only(
-                                        top: padding.top,
-                                        bottom: padding.bottom,
-                                      ),
-                                      child: controller.engine
-                                          .buildReader(context),
+                                    return Stack(
+                                      children: [
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                            top: padding.top,
+                                            bottom: padding.bottom,
+                                          ),
+                                          child: controller.engine
+                                              .buildReader(context),
+                                        ),
+                                        // Reading Progress Indicator (Bottom Left)
+                                        // Hide if controls are shown OR if engine has its own bottom bar
+                                        Positioned(
+                                          left: 16,
+                                          bottom: padding.bottom > 0
+                                              ? padding.bottom + 4
+                                              : 16,
+                                          child: Opacity(
+                                            opacity: (controller.showControls ||
+                                                    controller
+                                                        .engine.hasBottomBar)
+                                                ? 0
+                                                : 1,
+                                            child: Text(
+                                              "${(controller.currentProgress * 100).toInt()}%",
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: isDark
+                                                    ? Colors.black
+                                                        .withOpacity(0.5)
+                                                    : Colors.white
+                                                        .withOpacity(0.5),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     );
                                   },
                                 ),
@@ -719,7 +747,7 @@ class ReaderPage extends StatelessWidget {
                                   ),
                                   title: Text(book.title,
                                       style: TextStyle(
-                                        fontSize: 20,
+                                        fontSize: 18,
                                         fontWeight: FontWeight.w600,
                                         color: theme.colorScheme.onPrimary
                                             .withOpacity(0.9),

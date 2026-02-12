@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/services/mascot_manager.dart';
 import '../../../../core/theme/theme_presets.dart';
+import '../../../../core/utils/snackbar_utils.dart';
 import '../reader_error.dart';
 
 class ReaderErrorView extends StatefulWidget {
@@ -41,16 +42,12 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
         await launchUrl(emailLaunchUri);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Could not launch email client")),
-          );
+          SnackBarUtils.show(context, "Could not launch email client");
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to open email: $e")),
-        );
+        SnackBarUtils.show(context, "Failed to open email: $e");
       }
     }
   }

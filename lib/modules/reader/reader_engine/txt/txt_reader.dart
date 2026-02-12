@@ -205,6 +205,7 @@ class TxtReaderEngine implements ReaderEngine {
                         if (!_isPaginationCalculated || _pageOffsets.isEmpty) {
                           return const SizedBox();
                         }
+                        final progressPercent = (getProgress() ?? 0.0) * 100;
                         final page = getCurrentPageIndex() + 1;
                         final total = getPageCount();
                         final chapterTitle = _getCurrentChapterTitle();
@@ -216,8 +217,17 @@ class TxtReaderEngine implements ReaderEngine {
                               .withOpacity(0.9), // Match bg slightly
                           child: Row(
                             children: [
-                              // Left: Empty
-                              const Expanded(child: SizedBox()),
+                              // Left: Progress Percentage
+                              Expanded(
+                                child: Text(
+                                  "${progressPercent.toInt()}%",
+                                  textAlign: TextAlign.left,
+                                  style: TextStyle(
+                                    color: _config.textColor.withOpacity(0.6),
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
 
                               // Middle: Chapter Title
                               Expanded(
@@ -708,6 +718,9 @@ class TxtReaderEngine implements ReaderEngine {
     }
     return 0;
   }
+
+  @override
+  bool get hasBottomBar => true;
 
   @override
   void dispose() {

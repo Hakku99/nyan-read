@@ -132,6 +132,9 @@ class PdfReaderEngine implements ReaderEngine {
   }
 
   @override
+  bool get hasBottomBar => false;
+
+  @override
   void dispose() {
     if (_isInit) {
       _pdfController.dispose();

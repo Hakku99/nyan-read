@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/database_service.dart';
+import '../../core/utils/snackbar_utils.dart';
 // I'll use raw maps from DB or construct Bookmark objects.
 
 class BookmarkListPage extends StatefulWidget {
@@ -65,9 +66,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
         setState(() {
           _bookmarks.insert(index, removedItem);
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete bookmark: $e')),
-        );
+        SnackBarUtils.show(context, 'Failed to delete bookmark: $e');
       }
     }
   }

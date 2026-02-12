@@ -157,6 +157,9 @@ class EpubReaderEngine implements ReaderEngine {
   }
 
   @override
+  bool get hasBottomBar => false;
+
+  @override
   void dispose() {
     if (_isInit) {
       _epubController.dispose();
