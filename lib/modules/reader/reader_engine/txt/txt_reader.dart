@@ -40,7 +40,8 @@ class TxtReaderEngine implements ReaderEngine {
   // Pagination Support
   String _fullContent = "";
   List<int> _paragraphOffsets = [];
-  List<int> _pageOffsets = [];
+  int _totalPages = 1;
+  int _charsPerPage = 1;
   bool _isPaginationCalculated = false;
   Size? _lastSize;
   final ValueNotifier<int> _pageInfoNotifier = ValueNotifier(0);
@@ -202,7 +203,7 @@ class TxtReaderEngine implements ReaderEngine {
                   return ValueListenableBuilder<Iterable<ItemPosition>>(
                       valueListenable: _itemPositionsListener.itemPositions,
                       builder: (context, positions, _) {
-                        if (!_isPaginationCalculated || _pageOffsets.isEmpty) {
+                        if (!_isPaginationCalculated) {
                           return const SizedBox();
                         }
                         final progressPercent = (getProgress() ?? 0.0) * 100;
@@ -651,7 +652,7 @@ class TxtReaderEngine implements ReaderEngine {
     final captureSize = size;
 
     try {
-      final offsets = await PaginationHelper.calculatePageOffsets(
+      final result = await PaginationHelper.calculatePageEstimate(
           text: _fullContent,
           style: style,
           maxWidth: size.width,
@@ -665,21 +666,23 @@ class TxtReaderEngine implements ReaderEngine {
         return;
       }
 
-      _pageOffsets = offsets;
+      _totalPages = result[0];
+      _charsPerPage = result[1];
       _isPaginationCalculated = true;
       _pageInfoNotifier.value++; // Notify UI
-      debugPrint("Pagination calculated: ${_pageOffsets.length} pages");
+      debugPrint(
+          "Pagination calculated: $_totalPages pages, $_charsPerPage chars/page");
     } catch (e) {
       debugPrint("Pagination error: $e");
     }
   }
 
   @override
-  int getPageCount() => _pageOffsets.length;
+  int getPageCount() => _totalPages;
 
   @override
   int getCurrentPageIndex() {
-    if (_paragraphOffsets.isEmpty || _pageOffsets.isEmpty) return 0;
+    if (_paragraphOffsets.isEmpty) return 0;
 
     int paraIndex = _initialIndex;
     final positions = _itemPositionsListener.itemPositions.value;
@@ -699,24 +702,17 @@ class TxtReaderEngine implements ReaderEngine {
 
     if (paraIndex >= _paragraphOffsets.length) return 0;
 
+    // Get char offset of start of current paragraph
     int charIndex = _paragraphOffsets[paraIndex];
 
-    // Binary search
-    int low = 0;
-    int high = _pageOffsets.length - 1;
-    while (low <= high) {
-      int mid = (low + high) ~/ 2;
-      if (_pageOffsets[mid] <= charIndex) {
-        if (mid == _pageOffsets.length - 1 ||
-            _pageOffsets[mid + 1] > charIndex) {
-          return mid;
-        }
-        low = mid + 1;
-      } else {
-        high = mid - 1;
-      }
-    }
-    return 0;
+    // Estimate page index
+    int pageIndex = (charIndex / _charsPerPage).floor();
+
+    // Clamp
+    if (pageIndex < 0) pageIndex = 0;
+    if (pageIndex >= _totalPages) pageIndex = _totalPages - 1;
+
+    return pageIndex;
   }
 
   @override

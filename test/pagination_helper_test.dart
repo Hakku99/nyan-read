@@ -5,14 +5,14 @@ import 'package:nyan_read/modules/reader/reader_engine/txt/pagination_helper.dar
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('PaginationHelper calculates offsets', () async {
+  test('PaginationHelper calculates estimated pages', () async {
     final text = 'Hello World ' * 500; // Long text
     final style = const TextStyle(fontSize: 20);
     final maxWidth = 200.0;
     final maxHeight = 200.0; // Small page
     final padding = EdgeInsets.zero;
 
-    final offsets = await PaginationHelper.calculatePageOffsets(
+    final result = await PaginationHelper.calculatePageEstimate(
       text: text,
       style: style,
       maxWidth: maxWidth,
@@ -20,13 +20,16 @@ void main() {
       padding: padding,
     );
 
-    expect(offsets, isNotEmpty);
-    expect(offsets[0], 0);
-    if (offsets.length > 1) {
-      expect(offsets[1], greaterThan(0));
-      expect(offsets[1], lessThan(text.length));
-    }
+    expect(result, hasLength(2));
+    final totalPages = result[0];
+    final charsPerPage = result[1];
 
-    print('Offsets: $offsets');
+    expect(totalPages, greaterThan(0));
+    expect(charsPerPage, greaterThan(0));
+
+    // Roughly check if total pages * chars per page >= text length
+    expect(totalPages * charsPerPage, greaterThanOrEqualTo(text.length));
+
+    print('Estimated Total Pages: $totalPages, Chars Per Page: $charsPerPage');
   });
 }
