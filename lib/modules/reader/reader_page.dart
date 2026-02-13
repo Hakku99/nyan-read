@@ -22,6 +22,7 @@ import 'widgets/highlight_note_dialog.dart';
 import 'widgets/reader_menu.dart';
 import 'dart:async';
 import 'dart:io';
+import 'widgets/brightness_manager.dart';
 
 class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   final Book book;
@@ -438,11 +439,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> setBrightness(double b) async {
     _brightness = b;
-    try {
-      await ScreenBrightness().setScreenBrightness(b);
-    } catch (_) {
-      // Brightness control may not be available on all platforms
-    }
+    // Side effect removed: ScreenBrightness().setScreenBrightness(b);
+    // The BrightnessManager widget now listens to this value and applies it.
     notifyListeners();
   }
 
@@ -555,6 +553,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 const double kSectionSpacing = 16.0;
 const double kRowHeight = 56.0;
 
+// ... (existing imports)
+
 class ReaderPage extends StatelessWidget {
   final Book book;
 
@@ -594,181 +594,205 @@ class ReaderPage extends StatelessWidget {
                 child: Scaffold(
                   backgroundColor: bgColor,
                   resizeToAvoidBottomInset: false,
-                  body: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // 1. Reader Content - Rebuilds when controller notifies
-                      Positioned.fill(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTapDown: (details) =>
-                              _handleTapDown(context, details),
-                          onTapUp: (details) => _handleTapUp(context, details),
-                          onPanStart: (details) =>
-                              _handlePanStart(context, details),
-                          onPanUpdate: (details) =>
-                              _handlePanUpdate(context, details),
-                          onPanEnd: (details) =>
-                              _handlePanEnd(context, details),
-                          child: Consumer<ReaderController>(
-                            builder: (context, controller, _) {
-                              // Determine status bar style based on background luminance
-                              // Dark background -> Light icons (light)
-                              // Light background -> Dark icons (dark)
-                              final isDark = controller.backgroundColor
-                                      .computeLuminance() <
-                                  0.5;
-                              final systemOverlayStyle = isDark
-                                  ? SystemUiOverlayStyle.light
-                                  : SystemUiOverlayStyle.dark;
+                  body: Consumer<ReaderController>(
+                    builder: (context, controller, child) {
+                      return BrightnessManager(
+                        brightness: controller.brightness,
+                        onBrightnessChanged: (val) =>
+                            controller.setBrightness(val),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            // 1. Reader Content - Rebuilds when controller notifies
 
-                              return AnnotatedRegion<SystemUiOverlayStyle>(
-                                value: systemOverlayStyle,
-                                child: LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    // debugPrint(
-                                    //     "DEBUG READER_PAGE: LayoutBuilder constraints: maxWidth=${constraints.maxWidth}, maxHeight=${constraints.maxHeight}");
-                                    final padding =
-                                        MediaQuery.of(context).padding;
-                                    return Stack(
-                                      children: [
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                            top: padding.top,
-                                            bottom: padding.bottom,
-                                          ),
-                                          child: controller.engine
-                                              .buildReader(context),
-                                        ),
-                                        // Reading Progress Indicator (Bottom Left)
-                                        // Hide if controls are shown OR if engine has its own bottom bar
-                                        Positioned(
-                                          left: 16,
-                                          bottom: padding.bottom > 0
-                                              ? padding.bottom + 4
-                                              : 16,
-                                          child: Opacity(
-                                            opacity: (controller.showControls ||
-                                                    controller
-                                                        .engine.hasBottomBar)
-                                                ? 0
-                                                : 1,
-                                            child: Text(
-                                              "${(controller.currentProgress * 100).toInt()}%",
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                color: isDark
-                                                    ? Colors.black
-                                                        .withOpacity(0.5)
-                                                    : Colors.white
-                                                        .withOpacity(0.5),
-                                                fontWeight: FontWeight.bold,
+                            Positioned.fill(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTapDown: (details) =>
+                                    _handleTapDown(context, details),
+                                onTapUp: (details) =>
+                                    _handleTapUp(context, details),
+                                onPanStart: (details) =>
+                                    _handlePanStart(context, details),
+                                onPanUpdate: (details) =>
+                                    _handlePanUpdate(context, details),
+                                onPanEnd: (details) =>
+                                    _handlePanEnd(context, details),
+                                child: Consumer<ReaderController>(
+                                  builder: (context, controller, _) {
+                                    // Determine status bar style based on background luminance
+                                    // Dark background -> Light icons (light)
+                                    // Light background -> Dark icons (dark)
+                                    final isDark = controller.backgroundColor
+                                            .computeLuminance() <
+                                        0.5;
+                                    final systemOverlayStyle = isDark
+                                        ? SystemUiOverlayStyle.light
+                                        : SystemUiOverlayStyle.dark;
+
+                                    return AnnotatedRegion<
+                                        SystemUiOverlayStyle>(
+                                      value: systemOverlayStyle,
+                                      child: LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          // debugPrint(
+                                          //     "DEBUG READER_PAGE: LayoutBuilder constraints: maxWidth=${constraints.maxWidth}, maxHeight=${constraints.maxHeight}");
+                                          final padding =
+                                              MediaQuery.of(context).padding;
+                                          return Stack(
+                                            children: [
+                                              Padding(
+                                                padding: EdgeInsets.only(
+                                                  top: padding.top,
+                                                  bottom: padding.bottom,
+                                                ),
+                                                child: controller.engine
+                                                    .buildReader(context),
                                               ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                              // Reading Progress Indicator (Bottom Left)
+                                              // Hide if controls are shown OR if engine has its own bottom bar
+                                              Positioned(
+                                                left: 16,
+                                                bottom: padding.bottom > 0
+                                                    ? padding.bottom + 4
+                                                    : 16,
+                                                child: Opacity(
+                                                  opacity: (controller
+                                                              .showControls ||
+                                                          controller.engine
+                                                              .hasBottomBar)
+                                                      ? 0
+                                                      : 1,
+                                                  child: Text(
+                                                    "${(controller.currentProgress * 100).toInt()}%",
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      color: isDark
+                                                          ? Colors.black
+                                                              .withOpacity(0.5)
+                                                          : Colors.white
+                                                              .withOpacity(0.5),
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      ),
                                     );
                                   },
                                 ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-
-                      // 2. Error View
-                      Selector<ReaderController, ReaderErrorState?>(
-                        selector: (_, c) => c.errorState,
-                        builder: (context, errorState, _) {
-                          if (errorState == null)
-                            return const SizedBox.shrink();
-                          // Wrap in Positioned.fill to ensure it has size in the Stack
-                          return Positioned.fill(
-                            child: Container(
-                              color: Theme.of(context).scaffoldBackgroundColor,
-                              child: ReaderErrorView(
-                                errorState: errorState,
-                                onBack: () => Navigator.pop(context),
-                                onRetry: () =>
-                                    context.read<ReaderController>().retry(),
                               ),
                             ),
-                          );
-                        },
-                      ),
 
-                      // 3. UI Overlays (AppBar, Status Bar, Bottom Panel) - Rebuilds on showControls notify
-                      Positioned.fill(child: Consumer<ReaderController>(
-                        builder: (context, controller, child) {
-                          // Check if we should show controls (engine is always present)
-                          final theme = Theme.of(context);
-                          final topPadding = MediaQuery.of(context).padding.top;
-
-                          return Stack(
-                            children: [
-                              // Status Bar Helper
-                              Positioned(
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                height: topPadding,
-                                child: AnimatedOpacity(
-                                  duration: const Duration(milliseconds: 200),
-                                  opacity: controller.showControls ? 1.0 : 0.0,
+                            // 2. Error View
+                            Selector<ReaderController, ReaderErrorState?>(
+                              selector: (_, c) => c.errorState,
+                              builder: (context, errorState, _) {
+                                if (errorState == null)
+                                  return const SizedBox.shrink();
+                                // Wrap in Positioned.fill to ensure it has size in the Stack
+                                return Positioned.fill(
                                   child: Container(
-                                      color: theme.colorScheme.primary
-                                          .withOpacity(0.95)),
-                                ),
-                              ),
-
-                              // Top Toolbar
-                              AnimatedPositioned(
-                                duration: const Duration(milliseconds: 200),
-                                top: controller.showControls ? 0 : -100,
-                                left: 0,
-                                right: 0,
-                                height: kToolbarHeight +
-                                    topPadding, // Explicit height to prevent layout errors
-                                child: AppBar(
-                                  backgroundColor: theme.colorScheme.primary
-                                      .withOpacity(0.95),
-                                  elevation: 0,
-                                  primary: true, // Use internal padding
-                                  bottom: PreferredSize(
-                                    preferredSize: const Size.fromHeight(1),
-                                    child: Divider(
-                                        height: 1,
-                                        thickness: 1,
-                                        color: theme.dividerColor
-                                            .withOpacity(0.2)),
+                                    color: Theme.of(context)
+                                        .scaffoldBackgroundColor,
+                                    child: ReaderErrorView(
+                                      errorState: errorState,
+                                      onBack: () => Navigator.pop(context),
+                                      onRetry: () => context
+                                          .read<ReaderController>()
+                                          .retry(),
+                                    ),
                                   ),
-                                  title: Text(book.title,
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                        color: theme.colorScheme.onPrimary
-                                            .withOpacity(0.9),
-                                      )),
-                                  iconTheme: IconThemeData(
-                                      color: theme.colorScheme.onPrimary),
-                                  actions: const [],
-                                ),
-                              ),
+                                );
+                              },
+                            ),
 
-                              // Bottom Toolbar replaced with ReaderMenu
-                              AnimatedPositioned(
-                                duration: const Duration(milliseconds: 200),
-                                bottom: controller.showControls ? 0 : -600,
-                                left: 0,
-                                right: 0,
-                                child: const ReaderMenu(),
-                              ),
-                            ],
-                          );
-                        },
-                      )),
-                    ],
+                            // 3. UI Overlays (AppBar, Status Bar, Bottom Panel) - Rebuilds on showControls notify
+                            Positioned.fill(child: Consumer<ReaderController>(
+                              builder: (context, controller, child) {
+                                // Check if we should show controls (engine is always present)
+                                final theme = Theme.of(context);
+                                final topPadding =
+                                    MediaQuery.of(context).padding.top;
+
+                                return Stack(
+                                  children: [
+                                    // Status Bar Helper
+                                    Positioned(
+                                      top: 0,
+                                      left: 0,
+                                      right: 0,
+                                      height: topPadding,
+                                      child: AnimatedOpacity(
+                                        duration:
+                                            const Duration(milliseconds: 200),
+                                        opacity:
+                                            controller.showControls ? 1.0 : 0.0,
+                                        child: Container(
+                                            color: theme.colorScheme.primary
+                                                .withOpacity(0.95)),
+                                      ),
+                                    ),
+
+                                    // Top Toolbar
+                                    AnimatedPositioned(
+                                      duration:
+                                          const Duration(milliseconds: 200),
+                                      top: controller.showControls ? 0 : -100,
+                                      left: 0,
+                                      right: 0,
+                                      height: kToolbarHeight +
+                                          topPadding, // Explicit height to prevent layout errors
+                                      child: AppBar(
+                                        backgroundColor: theme
+                                            .colorScheme.primary
+                                            .withOpacity(0.95),
+                                        elevation: 0,
+                                        primary: true, // Use internal padding
+                                        bottom: PreferredSize(
+                                          preferredSize:
+                                              const Size.fromHeight(1),
+                                          child: Divider(
+                                              height: 1,
+                                              thickness: 1,
+                                              color: theme.dividerColor
+                                                  .withOpacity(0.2)),
+                                        ),
+                                        title: Text(book.title,
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                              color: theme.colorScheme.onPrimary
+                                                  .withOpacity(0.9),
+                                            )),
+                                        iconTheme: IconThemeData(
+                                            color: theme.colorScheme.onPrimary),
+                                        actions: const [],
+                                      ),
+                                    ),
+
+                                    // Bottom Toolbar replaced with ReaderMenu
+                                    AnimatedPositioned(
+                                      duration:
+                                          const Duration(milliseconds: 200),
+                                      bottom:
+                                          controller.showControls ? 0 : -600,
+                                      left: 0,
+                                      right: 0,
+                                      child: const ReaderMenu(),
+                                    ),
+                                  ],
+                                );
+                              },
+                            )),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ), // end Scaffold
               ); // end PopScope

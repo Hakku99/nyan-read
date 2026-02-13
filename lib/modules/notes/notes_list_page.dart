@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/models/highlight.dart';
 import '../../core/services/database_service.dart';
 import '../reader/widgets/highlight_note_dialog.dart';
+import 'package:nyan_read/l10n/app_localizations.dart';
 
 /// Page to view all highlights and notes for a book
 class NotesListPage extends StatefulWidget {
@@ -72,12 +73,13 @@ class _NotesListPageState extends State<NotesListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Notes & Highlights (${_highlights.length})'),
+            Text(loc.notesAndHighlightsTitle(_highlights.length)),
             Text(
               widget.bookTitle,
               style:
@@ -96,6 +98,7 @@ class _NotesListPageState extends State<NotesListPage> {
   }
 
   Widget _buildEmptyState() {
+    final loc = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -103,12 +106,12 @@ class _NotesListPageState extends State<NotesListPage> {
           Icon(Icons.highlight_off, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'No highlights yet',
+            loc.noHighlightsYet,
             style: TextStyle(fontSize: 18, color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
-            'Long-press on text to create highlights',
+            loc.longPressToCreateHighlight,
             style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
         ],
@@ -136,6 +139,7 @@ class _NotesListPageState extends State<NotesListPage> {
 
   Widget _buildHighlightCard(Highlight highlight, int index) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context)!;
     final color = _parseColor(highlight.colorCode);
 
     return Dismissible(
@@ -179,7 +183,7 @@ class _NotesListPageState extends State<NotesListPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Highlight #${index + 1}",
+                            loc.highlightName(index + 1),
                             style: theme.textTheme.labelSmall?.copyWith(
                                 color: Colors.grey[600],
                                 fontWeight: FontWeight.bold),
@@ -239,7 +243,7 @@ class _NotesListPageState extends State<NotesListPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Paragraph ${highlight.paragraphIndex + 1}',
+                      loc.paragraphIndex(highlight.paragraphIndex + 1),
                       style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                     ),
                     Text(

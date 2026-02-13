@@ -1,0 +1,271 @@
+{
+  "@@locale": "en",
+  "settingsTitle": "Settings",
+  "themePreset": "Theme Preset",
+  "readingSettings": "Reading Settings",
+  "pageTurnMode": "Page Turn Mode",
+  "pageTurnModeTap": "Tap to turn pages",
+  "pageTurnModeSwipe": "Swipe to turn pages",
+  "pageTurnModeDisabled": "Page turning disabled",
+  "pageTurnTap": "Tap",
+  "pageTurnSwipe": "Swipe",
+  "pageTurnDisabled": "Disabled",
+  "pageAnimation": "Page Animation",
+  "pageAnimationFade": "Smooth fade transition",
+  "pageAnimationPaper": "Subtle paper effect",
+  "pageAnimationNone": "No animation",
+  "pageAnimFade": "Fade",
+  "pageAnimPaper": "Paper",
+  "pageAnimNone": "None",
+  "readingReminder": "Reading Reminder",
+  "readingReminderSubtitle": "Remind me to take a break",
+  "reminderInterval": "Reminder Interval",
+  "reminderMinutes": "{minutes} min",
+  "@reminderMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "dataManagement": "Data Management",
+  "deleteFilesOnRemove": "Delete Files on Remove",
+  "deleteFilesOnRemoveSubtitle": "Also delete local files when deleting books",
+  "lockPrivateShelf": "Lock Private Shelf",
+  "tts": "TTS (Text-to-Speech)",
+  "ads": "Ads",
+  "adsSubtitle": "Show Ads (Free Version)",
+  "upgradeToPro": "Upgrade to Pro",
+  "adminPanel": "Admin Panel",
+  "language": "Language",
+  "bookDetails": "Book Details",
+  "title": "Title",
+  "author": "Author",
+  "format": "Format",
+  "privacy": "Privacy",
+  "privateShelf": "Private Shelf",
+  "publicShelf": "Public Shelf",
+  "readingProgress": "Reading Progress",
+  "added": "Added",
+  "lastRead": "Last Read",
+  "fileLocation": "File Location",
+  "startReading": "Start Reading",
+  "copyPath": "Copy path",
+  "filePathCopied": "File path copied to clipboard",
+  "fileExists": "File exists",
+  "fileNotFound": "File not found",
+  "unknown": "Unknown",
+  "never": "Never",
+  "backToBookshelf": "Back to Bookshelf",
+  "retry": "Retry",
+  "reportToDeveloper": "Report to Developer",
+  "showTechnicalDetails": "Show Technical Details",
+  "hideTechnicalDetails": "Hide Technical Details",
+  "couldNotLaunchEmail": "Could not launch email client",
+  "failedToOpenEmail": "Failed to open email: {error}",
+  "@failedToOpenEmail": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "addNote": "Add Note",
+  "editNote": "Edit Note",
+  "addNoteHint": "Add your note here...",
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "save": "Save",
+  "selected": "Selected",
+  "viewDetails": "View Details",
+  "moveToPublic": "Move to Public",
+  "moveToPrivate": "Move to Private",
+  "selectAll": "Select All",
+  "deselectAll": "Deselect All",
+  "appTitle": "Nyan Read ฅ^•ﻌ•^ฅ",
+  "listView": "List View",
+  "gridView": "Grid View",
+  "sort": "Sort",
+  "lockPrivacyShelf": "Lock Privacy Shelf",
+  "unlockPrivacyShelf": "Unlock Privacy Shelf",
+  "publicShelf": "Public Shelf",
+  "privateShelf": "Private Shelf",
+  "deleteBooksTitle": "⚠️ Delete {count} Books?",
+  "@deleteBooksTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actionCannotBeUndone": "This action cannot be undone.",
+  "alsoDeleteLocalFiles": "Also delete local files",
+  "deletedBooks": "Deleted {count} books",
+  "@deletedBooks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "movedBooks": "Moved {count} books to {shelf} Shelf",
+  "@movedBooks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "shelf": {
+        "type": "String"
+      }
+    }
+  },
+  "importFiles": "Import Files",
+  "importFolder": "Import Folder",
+  "importedBooks": "Imported {count} books to {shelf} Shelf!",
+  "@importedBooks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "shelf": {
+        "type": "String"
+      }
+    }
+  },
+  "emptyShelfMessage": "It's empty here. Import a book?",
+  "privacyShelfLocked": "Privacy Shelf Locked",
+  "setPrivacyPassword": "Set Privacy Password",
+  "password": "Password",
+  "confirmPassword": "Confirm Password",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "unlockPrivacyShelfTitle": "Unlock Privacy Shelf",
+  "invalidPassword": "Invalid Password",
+  "unlock": "Unlock",
+  "fontSize": "Font Size",
+  "lineHeight": "Line Height",
+  "themeCream": "Cream",
+  "themeSepia": "Sepia",
+  "themeSumi": "Sumi",
+  "themeCharcoal": "Charcoal",
+  "tableOfContents": "Table of Contents",
+  "addBookmark": "Add Bookmark",
+  "bookmarks": "Bookmarks",
+  "highlightsAndNotes": "Highlights & Notes",
+  "noSupportedBooksFound": "No supported books found.",
+  "scannedFiles": "Scanned {count}.",
+  "@scannedFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "skippedExtensions": "Skipped: {extensions}",
+  "@skippedExtensions": {
+    "placeholders": {
+      "extensions": {
+        "type": "String"
+      }
+    }
+  },
+  "allBooksInLibrary": "All books already in library ({count} duplicates skipped).",
+  "@allBooksInLibrary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "duplicatesSkipped": "{count} duplicates skipped.",
+  "@duplicatesSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorScanningFolder": "Error scanning folder: {error}",
+  "@errorScanningFolder": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "noChaptersDetected": "No chapters detected",
+  "tableOfContents": "Table of Contents",
+  "chapterCount": "{count} chapters",
+  "@chapterCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chapterName": "Chapter {index}",
+  "@chapterName": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+
+  "bookmarksTitle": "Bookmarks ({count})",
+  "@bookmarksTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noBookmarksYet": "No bookmarks yet",
+  "bookmarkName": "Bookmark #{index}",
+  "@bookmarkName": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToDeleteBookmark": "Failed to delete bookmark: {error}",
+  "@failedToDeleteBookmark": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+
+  "notesAndHighlightsTitle": "Notes & Highlights ({count})",
+  "@notesAndHighlightsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noHighlightsYet": "No highlights yet",
+  "longPressToCreateHighlight": "Long-press on text to create highlights",
+  "highlightName": "Highlight #{index}",
+  "@highlightName": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "paragraphIndex": "Paragraph {index}",
+  "@paragraphIndex": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+
+  "themeCreamLight": "Cream Light",
+  "themeSumiDark": "Sumi Dark",
+  "themeSepiaWarm": "Sepia Warm"
+}

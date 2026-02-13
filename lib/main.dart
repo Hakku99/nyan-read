@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:nyan_read/l10n/app_localizations.dart';
+
 import 'package:provider/provider.dart';
 import 'core/services/feature_manager.dart';
 import 'core/services/database_service.dart';
 import 'core/services/reader_preferences_service.dart';
 import 'core/services/bookshelf_preferences_service.dart';
 import 'core/theme/theme_manager.dart';
+import 'core/services/language_manager.dart';
+
 import 'modules/home/splash_page.dart';
 import 'modules/admin/admin_panel.dart';
 
@@ -17,6 +22,8 @@ void main() async {
   await featureManager.init();
   final themeManager = ThemeManager();
   await themeManager.init();
+  final languageManager = LanguageManager();
+  await languageManager.init();
   final readerPrefs = ReaderPreferencesService.instance;
   await readerPrefs.initialize();
   final bookshelfPrefs = BookshelfPreferencesService.instance;
@@ -27,6 +34,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider.value(value: featureManager),
         ChangeNotifierProvider.value(value: themeManager),
+        ChangeNotifierProvider.value(value: languageManager),
       ],
       child: const NyanApp(),
     ),
@@ -76,10 +84,13 @@ class _NyanAppState extends State<NyanApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeManager>(
-      builder: (context, themeManager, child) {
+    return Consumer2<ThemeManager, LanguageManager>(
+      builder: (context, themeManager, languageManager, child) {
         return MaterialApp(
           title: 'Nyan Read',
+          locale: languageManager.locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: themeManager.lightTheme,
           darkTheme: themeManager.darkTheme,
           themeMode: themeManager.themeMode,

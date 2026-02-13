@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:nyan_read/l10n/app_localizations.dart';
 
-/// 章节列表组件
-/// 显示书籍章节目录,支持当前章节高亮和已读章节弱化
 /// 章节列表组件
 /// 显示书籍章节目录,支持当前章节高亮和已读章节弱化
 class ChapterListWidget extends StatefulWidget {
@@ -51,6 +50,7 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context)!;
 
     if (widget.chapters.isEmpty) {
       return Container(
@@ -62,7 +62,7 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
               Icon(Icons.menu_book_outlined, size: 48, color: Colors.grey[400]),
               const SizedBox(height: 16),
               Text(
-                'No chapters detected',
+                loc.noChaptersDetected,
                 style: TextStyle(color: Colors.grey[600], fontSize: 16),
               ),
             ],
@@ -94,7 +94,7 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
                   Icon(Icons.list, color: theme.primaryColor),
                   const SizedBox(width: 12),
                   Text(
-                    'Table of Contents',
+                    loc.tableOfContents,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -103,7 +103,7 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
                   ),
                   const Spacer(),
                   Text(
-                    '${widget.chapters.length} chapters',
+                    loc.chapterCount(widget.chapters.length),
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
@@ -123,7 +123,7 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
                 itemBuilder: (context, index) {
                   final chapter = widget.chapters[index];
                   final chapterIndex = chapter['index'] ?? index;
-                  final title = chapter['title'] ?? 'Chapter ${index + 1}';
+                  final title = chapter['title'] ?? loc.chapterName(index + 1);
 
                   // 判断是否为当前章节
                   final isCurrent = widget.currentChapterIndex == chapterIndex;

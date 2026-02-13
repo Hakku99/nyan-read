@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/snackbar_utils.dart';
 // I'll use raw maps from DB or construct Bookmark objects.
@@ -49,6 +50,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
   }
 
   Future<void> _deleteBookmark(String id) async {
+    final loc = AppLocalizations.of(context)!;
     // Optimistic update
     final index = _bookmarks.indexWhere((b) => b['id'] == id);
     if (index == -1) return;
@@ -66,19 +68,20 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
         setState(() {
           _bookmarks.insert(index, removedItem);
         });
-        SnackBarUtils.show(context, 'Failed to delete bookmark: $e');
+        SnackBarUtils.show(context, loc.failedToDeleteBookmark(e.toString()));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Bookmarks (${_bookmarks.length})'),
+            Text(loc.bookmarksTitle(_bookmarks.length)),
             Text(
               widget.bookTitle,
               style:
@@ -98,7 +101,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
                           size: 64, color: Colors.grey[400]),
                       const SizedBox(height: 16),
                       Text(
-                        'No bookmarks yet',
+                        loc.noBookmarksYet,
                         style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                       ),
                     ],
@@ -117,6 +120,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
 
   Widget _buildBookmarkCard(Map<String, dynamic> bm) {
     final theme = Theme.of(context);
+    final loc = AppLocalizations.of(context)!;
     final note = bm['note'] ?? '';
     final time = DateTime.fromMillisecondsSinceEpoch(bm['created_at'] ?? 0);
     final id = bm['id'];
@@ -150,7 +154,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        "Bookmark #${bm['index']}",
+                        loc.bookmarkName(bm['index']),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),

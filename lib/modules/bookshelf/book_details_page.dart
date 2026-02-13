@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../core/models/book.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../reader/reader_page.dart';
@@ -18,6 +19,7 @@ class BookDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
 
     // Calculate progress
@@ -25,14 +27,14 @@ class BookDetailsPage extends StatelessWidget {
     final progressPercent = (progress * 100).toInt();
 
     // Format dates
-    String addedAt = 'Unknown';
+    String addedAt = loc.unknown;
     if (bookData['added_at'] != null) {
       addedAt = dateFormat.format(
         DateTime.fromMillisecondsSinceEpoch(bookData['added_at'] as int),
       );
     }
 
-    String lastReadAt = 'Never';
+    String lastReadAt = loc.never;
     if (bookData['last_read_at'] != null) {
       lastReadAt = dateFormat.format(
         DateTime.fromMillisecondsSinceEpoch(bookData['last_read_at'] as int),
@@ -41,7 +43,7 @@ class BookDetailsPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Book Details'),
+        title: Text(loc.bookDetails),
         actions: [
           IconButton(
             icon: const Icon(Icons.menu_book),
@@ -51,7 +53,7 @@ class BookDetailsPage extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => ReaderPage(book: book)),
               );
             },
-            tooltip: 'Start Reading',
+            tooltip: loc.startReading,
           ),
         ],
       ),
@@ -82,7 +84,7 @@ class BookDetailsPage extends StatelessWidget {
 
             // Title
             _buildInfoSection(
-              'Title',
+              loc.title,
               book.title,
               icon: Icons.title,
             ),
@@ -91,7 +93,7 @@ class BookDetailsPage extends StatelessWidget {
 
             // Author
             _buildInfoSection(
-              'Author',
+              loc.author,
               book.author,
               icon: Icons.person,
             ),
@@ -100,7 +102,7 @@ class BookDetailsPage extends StatelessWidget {
 
             // Format
             _buildInfoSection(
-              'Format',
+              loc.format,
               book.format.toUpperCase(),
               icon: Icons.description,
             ),
@@ -109,8 +111,8 @@ class BookDetailsPage extends StatelessWidget {
 
             // Privacy Status
             _buildInfoSection(
-              'Privacy',
-              book.isPrivate ? 'Private Shelf' : 'Public Shelf',
+              loc.privacy,
+              book.isPrivate ? loc.privateShelf : loc.publicShelf,
               icon: book.isPrivate ? Icons.lock : Icons.lock_open,
             ),
 
@@ -118,7 +120,7 @@ class BookDetailsPage extends StatelessWidget {
 
             // Reading Progress
             _buildInfoSection(
-              'Reading Progress',
+              loc.readingProgress,
               '$progressPercent%',
               icon: Icons.trending_up,
               trailing: LinearProgressIndicator(
@@ -132,7 +134,7 @@ class BookDetailsPage extends StatelessWidget {
 
             // Added Date
             _buildInfoSection(
-              'Added',
+              loc.added,
               addedAt,
               icon: Icons.add_circle_outline,
             ),
@@ -141,7 +143,7 @@ class BookDetailsPage extends StatelessWidget {
 
             // Last Read
             _buildInfoSection(
-              'Last Read',
+              loc.lastRead,
               lastReadAt,
               icon: Icons.access_time,
             ),
@@ -166,7 +168,7 @@ class BookDetailsPage extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.menu_book),
-                    label: const Text('Start Reading'),
+                    label: Text(loc.startReading),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -227,6 +229,7 @@ class BookDetailsPage extends StatelessWidget {
   }
 
   Widget _buildFilePathSection(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
@@ -237,7 +240,7 @@ class BookDetailsPage extends StatelessWidget {
               Icon(Icons.folder_open, size: 20, color: Colors.grey[600]),
               const SizedBox(width: 12),
               Text(
-                'File Location',
+                loc.fileLocation,
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey[600],
@@ -269,10 +272,9 @@ class BookDetailsPage extends StatelessWidget {
                   icon: const Icon(Icons.copy, size: 18),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: book.filePath));
-                    SnackBarUtils.show(
-                        context, 'File path copied to clipboard');
+                    SnackBarUtils.show(context, loc.filePathCopied);
                   },
-                  tooltip: 'Copy path',
+                  tooltip: loc.copyPath,
                 ),
               ],
             ),
@@ -293,7 +295,7 @@ class BookDetailsPage extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      exists ? 'File exists' : 'File not found',
+                      exists ? loc.fileExists : loc.fileNotFound,
                       style: TextStyle(
                         fontSize: 12,
                         color: exists ? Colors.green : Colors.red,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../../../core/services/mascot_manager.dart';
 import '../../../../core/theme/theme_presets.dart';
 import '../../../../core/utils/snackbar_utils.dart';
@@ -26,6 +27,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
   bool _showDetails = false;
 
   Future<void> _reportError() async {
+    final loc = AppLocalizations.of(context)!;
     final errorText =
         widget.errorState.technicalMessage ?? widget.errorState.userMessage;
     final Uri emailLaunchUri = Uri(
@@ -42,12 +44,12 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
         await launchUrl(emailLaunchUri);
       } else {
         if (mounted) {
-          SnackBarUtils.show(context, "Could not launch email client");
+          SnackBarUtils.show(context, loc.couldNotLaunchEmail);
         }
       }
     } catch (e) {
       if (mounted) {
-        SnackBarUtils.show(context, "Failed to open email: $e");
+        SnackBarUtils.show(context, loc.failedToOpenEmail(e.toString()));
       }
     }
   }
@@ -61,6 +63,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final currentScaffoldColor = Theme.of(context).scaffoldBackgroundColor;
     final nyanTheme = themePresets.values.firstWhere(
       (t) => t.background == currentScaffoldColor,
@@ -105,7 +108,8 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
               TextButton.icon(
                 onPressed: widget.onBack,
                 icon: Icon(Icons.arrow_back, color: errorSecondary),
-                label: Text("返回书架", style: TextStyle(color: errorSecondary)),
+                label: Text(loc.backToBookshelf,
+                    style: TextStyle(color: errorSecondary)),
               ),
               if (widget.onRetry != null) ...[
                 const SizedBox(width: 16),
@@ -117,7 +121,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
                     elevation: 0,
                   ),
                   icon: const Icon(Icons.refresh),
-                  label: const Text("重试"),
+                  label: Text(loc.retry),
                 ),
               ],
             ],
@@ -126,7 +130,8 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
           TextButton.icon(
             onPressed: _reportError,
             icon: Icon(Icons.bug_report, color: errorSecondary),
-            label: Text("报告给开发者", style: TextStyle(color: errorSecondary)),
+            label: Text(loc.reportToDeveloper,
+                style: TextStyle(color: errorSecondary)),
           ),
 
           // Technical Details (Hidden by default)
@@ -135,7 +140,9 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
             GestureDetector(
               onTap: () => setState(() => _showDetails = !_showDetails),
               child: Text(
-                _showDetails ? "隐藏技术细节" : "显示技术细节",
+                _showDetails
+                    ? loc.hideTechnicalDetails
+                    : loc.showTechnicalDetails,
                 style: TextStyle(
                   color: errorSecondary.withOpacity(0.5),
                   fontSize: 12,

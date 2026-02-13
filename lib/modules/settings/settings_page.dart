@@ -4,6 +4,8 @@ import '../../core/theme/theme_manager.dart';
 import '../../core/services/feature_manager.dart';
 import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
+import '../../core/services/language_manager.dart';
+import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../modules/tts/tts_ui.dart';
 // import '../../modules/ads/ads_ui.dart';
 import '../../core/theme/theme_presets.dart';
@@ -15,17 +17,19 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeManager = context.watch<ThemeManager>();
     final featureManager = context.watch<FeatureManager>();
+    final languageManager = context.watch<LanguageManager>();
     final readerPrefs = ReaderPreferencesService.instance;
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Settings"),
+        title: Text(loc.settingsTitle),
       ),
       body: ListView(
         children: [
           // Theme Section
           ListTile(
-            title: const Text("Theme Preset"),
+            title: Text(loc.themePreset),
             trailing: DropdownButton<ThemePreset>(
               value: themeManager.currentPreset,
               onChanged: (ThemePreset? val) {
@@ -34,7 +38,7 @@ class SettingsPage extends StatelessWidget {
               items: themePresets.values.map((theme) {
                 return DropdownMenuItem<ThemePreset>(
                   value: theme.preset,
-                  child: Text(theme.name),
+                  child: Text(_getThemeName(theme.preset, loc)),
                 );
               }).toList(),
             ),
@@ -42,11 +46,34 @@ class SettingsPage extends StatelessWidget {
 
           const Divider(),
 
+          // Language Section
+          ListTile(
+            title: Text(loc.language),
+            trailing: DropdownButton<Locale>(
+              value: languageManager.locale,
+              onChanged: (Locale? val) {
+                if (val != null) languageManager.setLocale(val);
+              },
+              items: const [
+                DropdownMenuItem(
+                  value: Locale('en'),
+                  child: Text('English'),
+                ),
+                DropdownMenuItem(
+                  value: Locale('zh'),
+                  child: Text('中文'),
+                ),
+              ],
+            ),
+          ),
+
+          const Divider(),
+
           // Reading Settings Section
-          const ListTile(
-            leading: Icon(Icons.menu_book),
-            title: Text("Reading Settings",
-                style: TextStyle(fontWeight: FontWeight.w600)),
+          ListTile(
+            leading: const Icon(Icons.menu_book),
+            title: Text(loc.readingSettings,
+                style: const TextStyle(fontWeight: FontWeight.w600)),
           ),
 
           ListenableBuilder(
@@ -55,41 +82,46 @@ class SettingsPage extends StatelessWidget {
               return Column(
                 children: [
                   ListTile(
-                    title: const Text("Page Turn Mode"),
-                    subtitle:
-                        Text(_getPageTurnModeLabel(readerPrefs.pageTurnMode)),
+                    title: Text(loc.pageTurnMode),
+                    subtitle: Text(
+                        _getPageTurnModeLabel(readerPrefs.pageTurnMode, loc)),
                     trailing: DropdownButton<PageTurnMode>(
                       value: readerPrefs.pageTurnMode,
                       onChanged: (PageTurnMode? val) {
                         if (val != null) readerPrefs.setPageTurnMode(val);
                       },
-                      items: const [
+                      items: [
                         DropdownMenuItem(
-                            value: PageTurnMode.tap, child: Text("Tap")),
+                            value: PageTurnMode.tap,
+                            child: Text(loc.pageTurnTap)),
                         DropdownMenuItem(
-                            value: PageTurnMode.swipe, child: Text("Swipe")),
+                            value: PageTurnMode.swipe,
+                            child: Text(loc.pageTurnSwipe)),
                         DropdownMenuItem(
                             value: PageTurnMode.disabled,
-                            child: Text("Disabled")),
+                            child: Text(loc.pageTurnDisabled)),
                       ],
                     ),
                   ),
                   ListTile(
-                    title: const Text("Page Animation"),
-                    subtitle:
-                        Text(_getPageAnimationLabel(readerPrefs.pageAnimation)),
+                    title: Text(loc.pageAnimation),
+                    subtitle: Text(
+                        _getPageAnimationLabel(readerPrefs.pageAnimation, loc)),
                     trailing: DropdownButton<PageAnimation>(
                       value: readerPrefs.pageAnimation,
                       onChanged: (PageAnimation? val) {
                         if (val != null) readerPrefs.setPageAnimation(val);
                       },
-                      items: const [
+                      items: [
                         DropdownMenuItem(
-                            value: PageAnimation.fade, child: Text("Fade")),
+                            value: PageAnimation.fade,
+                            child: Text(loc.pageAnimFade)),
                         DropdownMenuItem(
-                            value: PageAnimation.paper, child: Text("Paper")),
+                            value: PageAnimation.paper,
+                            child: Text(loc.pageAnimPaper)),
                         DropdownMenuItem(
-                            value: PageAnimation.none, child: Text("None")),
+                            value: PageAnimation.none,
+                            child: Text(loc.pageAnimNone)),
                       ],
                     ),
                   ),
@@ -102,21 +134,24 @@ class SettingsPage extends StatelessWidget {
 
           // Reading Reminder
           SwitchListTile(
-            title: const Text("Reading Reminder"),
-            subtitle: const Text("Remind me to take a break"),
+            title: Text(loc.readingReminder),
+            subtitle: Text(loc.readingReminderSubtitle),
             value: true, // Stub state
             onChanged: (val) {
               // TODO: Implement preference persistence
             },
           ),
           ListTile(
-            title: const Text("Reminder Interval"),
+            title: Text(loc.reminderInterval),
             trailing: DropdownButton<int>(
               value: 60,
-              items: const [
-                DropdownMenuItem(value: 30, child: Text("30 min")),
-                DropdownMenuItem(value: 60, child: Text("60 min")),
-                DropdownMenuItem(value: 90, child: Text("90 min")),
+              items: [
+                DropdownMenuItem(
+                    value: 30, child: Text(loc.reminderMinutes(30))),
+                DropdownMenuItem(
+                    value: 60, child: Text(loc.reminderMinutes(60))),
+                DropdownMenuItem(
+                    value: 90, child: Text(loc.reminderMinutes(90))),
               ],
               onChanged: (val) {},
             ),
@@ -125,19 +160,18 @@ class SettingsPage extends StatelessWidget {
           const Divider(),
 
           // Data Management
-          const ListTile(
+          ListTile(
             title: Text(
-              'Data Management',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              loc.dataManagement,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           StatefulBuilder(
             builder: (context, setState) {
               final bookshelfPrefs = BookshelfPreferencesService.instance;
               return SwitchListTile(
-                title: const Text('Delete Files on Remove'),
-                subtitle:
-                    const Text('Also delete local files when deleting books'),
+                title: Text(loc.deleteFilesOnRemove),
+                subtitle: Text(loc.deleteFilesOnRemoveSubtitle),
                 value: bookshelfPrefs.deleteFilesOnRemove,
                 onChanged: (val) async {
                   await bookshelfPrefs.setDeleteFilesOnRemove(val);
@@ -152,12 +186,12 @@ class SettingsPage extends StatelessWidget {
           // Pro / Privacy
           if (featureManager.isPro) ...[
             SwitchListTile(
-              title: const Text("Lock Privacy Shelf"),
+              title: Text(loc.lockPrivateShelf),
               value: true,
               onChanged: (val) {},
             ),
             ListTile(
-              title: const Text("TTS (Text-to-Speech)"),
+              title: Text(loc.tts),
               trailing: Switch(
                 value: featureManager.ttsEnabled,
                 onChanged: (val) {
@@ -169,10 +203,11 @@ class SettingsPage extends StatelessWidget {
                 },
               ),
             ),
-          ] else ...[
+          ],
+          if (!featureManager.isPro) ...[
             ListTile(
-              title: const Text("Ads"),
-              subtitle: const Text("Show Ads (Free Version)"),
+              title: Text(loc.ads),
+              subtitle: Text(loc.adsSubtitle),
               trailing: Switch(
                 value: featureManager.adsEnabled,
                 onChanged: (val) {
@@ -180,9 +215,9 @@ class SettingsPage extends StatelessWidget {
                 },
               ),
             ),
-            const ListTile(
-              title: Text("Upgrade to Pro"),
-              leading: Icon(Icons.star, color: Colors.amber),
+            ListTile(
+              title: Text(loc.upgradeToPro),
+              leading: const Icon(Icons.star, color: Colors.amber),
             ),
           ],
 
@@ -191,7 +226,7 @@ class SettingsPage extends StatelessWidget {
           // Admin
           ListTile(
             leading: const Icon(Icons.admin_panel_settings),
-            title: const Text("Admin Panel"),
+            title: Text(loc.adminPanel),
             onTap: () {
               // We need to navigate to AdminPanel.
               // Since it's in main.dart, we might have issue importing if it's private.
@@ -205,25 +240,36 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  String _getPageTurnModeLabel(PageTurnMode mode) {
+  String _getPageTurnModeLabel(PageTurnMode mode, AppLocalizations loc) {
     switch (mode) {
       case PageTurnMode.tap:
-        return 'Tap to turn pages';
+        return loc.pageTurnModeTap;
       case PageTurnMode.swipe:
-        return 'Swipe to turn pages';
+        return loc.pageTurnModeSwipe;
       case PageTurnMode.disabled:
-        return 'Page turning disabled';
+        return loc.pageTurnModeDisabled;
     }
   }
 
-  String _getPageAnimationLabel(PageAnimation animation) {
+  String _getPageAnimationLabel(PageAnimation animation, AppLocalizations loc) {
     switch (animation) {
       case PageAnimation.fade:
-        return 'Smooth fade transition';
+        return loc.pageAnimationFade;
       case PageAnimation.paper:
-        return 'Subtle paper effect';
+        return loc.pageAnimationPaper;
       case PageAnimation.none:
-        return 'No animation';
+        return loc.pageAnimationNone;
+    }
+  }
+
+  String _getThemeName(ThemePreset preset, AppLocalizations loc) {
+    switch (preset) {
+      case ThemePreset.creamLight:
+        return loc.themeCreamLight;
+      case ThemePreset.sumiDark:
+        return loc.themeSumiDark;
+      case ThemePreset.sepiaWarm:
+        return loc.themeSepiaWarm;
     }
   }
 }

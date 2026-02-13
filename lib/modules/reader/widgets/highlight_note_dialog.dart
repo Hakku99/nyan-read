@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../../core/models/highlight.dart';
 
 /// Dialog for adding or editing a note on a highlight
@@ -51,6 +52,7 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final highlightColor = _parseColor(_selectedColorCode);
 
@@ -75,7 +77,7 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  widget.highlight != null ? 'Edit Note' : 'Add Note',
+                  widget.highlight != null ? loc.editNote : loc.addNote,
                   style: theme.textTheme.titleLarge,
                 ),
               ],
@@ -149,7 +151,7 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
               controller: _controller,
               maxLines: 4,
               decoration: InputDecoration(
-                hintText: 'Add your note here...',
+                hintText: loc.addNoteHint,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -170,8 +172,8 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
                       Navigator.of(context).pop();
                     },
                     icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    label: const Text('Delete',
-                        style: TextStyle(color: Colors.red)),
+                    label: Text(loc.delete,
+                        style: const TextStyle(color: Colors.red)),
                   )
                 else
                   const SizedBox(),
@@ -179,7 +181,7 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
+                      child: Text(loc.cancel),
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
@@ -189,7 +191,7 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
                             note.isEmpty ? null : note, _selectedColorCode);
                         Navigator.of(context).pop();
                       },
-                      child: const Text('Save'),
+                      child: Text(loc.save),
                     ),
                   ],
                 ),

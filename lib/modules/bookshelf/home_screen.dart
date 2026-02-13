@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
+import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../core/services/feature_manager.dart';
 import '../../core/services/database_service.dart';
@@ -127,6 +128,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _deleteSelectedBooks() async {
+    final loc = AppLocalizations.of(context)!;
     final count = _selectedBookIds.length;
     if (count == 0) return;
 
@@ -139,14 +141,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text('⚠️ Delete $count Books?'),
+              title: Text(loc.deleteBooksTitle(count)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text("This action cannot be undone."),
+                  Text(loc.actionCannotBeUndone),
                   const SizedBox(height: 16),
                   CheckboxListTile(
-                    title: const Text('Also delete local files'),
+                    title: Text(loc.alsoDeleteLocalFiles),
                     value: deleteFile,
                     onChanged: (value) {
                       setState(() {
@@ -160,13 +162,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
+                  child: Text(loc.cancel),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
                   style: TextButton.styleFrom(
                       foregroundColor: Theme.of(context).colorScheme.error),
-                  child: const Text('Delete'),
+                  child: Text(loc.delete),
                 ),
               ],
             );
@@ -196,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
 
       if (mounted) {
-        SnackBarUtils.show(context, 'Deleted $count books');
+        SnackBarUtils.show(context, loc.deletedBooks(count));
         _toggleSelectionMode(active: false);
         _refreshShelf();
       }
@@ -204,6 +206,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _moveSelectedBooks(bool toPrivate) async {
+    final loc = AppLocalizations.of(context)!;
     final db = DatabaseService();
     final idsToMove = List<String>.from(_selectedBookIds);
 
@@ -212,8 +215,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
 
     if (mounted) {
-      SnackBarUtils.show(context,
-          'Moved ${idsToMove.length} books to ${toPrivate ? 'Private' : 'Public'} Shelf');
+      final shelf = toPrivate ? loc.privateShelf : loc.publicShelf;
+      SnackBarUtils.show(context, loc.movedBooks(idsToMove.length, shelf));
       _toggleSelectionMode(active: false);
       _refreshShelf();
     }
@@ -274,14 +277,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
 
       if (mounted && successCount > 0) {
-        SnackBarUtils.show(context,
-            "Imported $successCount books to ${isPrivate ? 'Private' : 'Public'} Shelf!");
+        final loc = AppLocalizations.of(context)!;
+        final shelf = isPrivate ? loc.privateShelf : loc.publicShelf;
+        SnackBarUtils.show(context, loc.importedBooks(successCount, shelf));
         _refreshShelf();
       }
     }
   }
 
   void _showImportMenu(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     // Capture the parent context to ensure provider access
     final parentContext = context;
 
@@ -294,7 +299,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             children: [
               ListTile(
                 leading: const Icon(Icons.insert_drive_file),
-                title: const Text('Import Files'),
+                title: Text(loc.importFiles),
                 onTap: () {
                   Navigator.pop(context);
                   _importBook(parentContext);
@@ -302,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               ListTile(
                 leading: const Icon(Icons.folder_open),
-                title: const Text('Import Folder'),
+                title: Text(loc.importFolder),
                 onTap: () {
                   Navigator.pop(context);
                   _importFolder(parentContext);
@@ -316,6 +321,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _importFolder(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
     final result = await FilePicker.platform.getDirectoryPath();
 
     if (result != null) {
@@ -335,10 +341,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
             final topSkipped = skippedExts.take(3).map((e) => e.key).join(', ');
 
-            String msg = 'No supported books found.';
+            String msg = loc.noSupportedBooksFound;
             if (scanResult.totalScanned > 0) {
-              msg += ' Scanned ${scanResult.totalScanned}.';
-              if (topSkipped.isNotEmpty) msg += ' Skipped: $topSkipped';
+              msg += ' ${loc.scannedFiles(scanResult.totalScanned)}';
+              if (topSkipped.isNotEmpty)
+                msg += ' ${loc.skippedExtensions(topSkipped)}';
             }
 
             SnackBarUtils.show(context, msg);
@@ -355,14 +362,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         if (uniqueFiles.isEmpty) {
           if (mounted) {
-            SnackBarUtils.show(context,
-                'All books already in library ($duplicateCount duplicates skipped).');
+            SnackBarUtils.show(context, loc.allBooksInLibrary(duplicateCount));
           }
           return;
         }
 
         if (duplicateCount > 0 && mounted) {
-          SnackBarUtils.show(context, '$duplicateCount duplicates skipped.');
+          SnackBarUtils.show(context, loc.duplicatesSkipped(duplicateCount));
         }
 
         // Determine privacy based on current tab
@@ -389,20 +395,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         }
       } catch (e) {
         if (mounted) {
-          SnackBarUtils.show(context, 'Error scanning folder: $e');
+          final loc = AppLocalizations.of(context)!;
+          SnackBarUtils.show(context, loc.errorScanningFolder(e.toString()));
         }
       }
     }
   }
 
   Future<void> _handlePrivacyLock(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
     final fm = context.read<FeatureManager>();
     final privacyService = PrivacyLockService();
 
     if (fm.isPrivateShelfUnlocked) {
       // Lock it
       fm.lockPrivateShelf();
-      SnackBarUtils.show(context, "Privacy Shelf Locked");
+      SnackBarUtils.show(context, loc.privacyShelfLocked);
       // Force switch back to public tab if we were on private
       _tabController.animateTo(0);
     } else {
@@ -420,30 +428,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   // ... (Dialog methods remain largely the same, skipped for brevity in this tool call, see instruction)
   void _showSetPasswordDialog(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final passController = TextEditingController();
     final confirmController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Set Privacy Password"),
+        title: Text(loc.setPrivacyPassword),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
                 controller: passController,
-                decoration: const InputDecoration(labelText: "Password"),
+                decoration: InputDecoration(labelText: loc.password),
                 obscureText: true),
             TextField(
                 controller: confirmController,
-                decoration:
-                    const InputDecoration(labelText: "Confirm Password"),
+                decoration: InputDecoration(labelText: loc.confirmPassword),
                 obscureText: true),
           ],
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+              onPressed: () => Navigator.pop(ctx), child: Text(loc.cancel)),
           TextButton(
               onPressed: () async {
                 if (passController.text.isNotEmpty &&
@@ -454,30 +462,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     _showEnterPasswordDialog(context);
                   }
                 } else {
-                  SnackBarUtils.show(context, "Passwords do not match");
+                  SnackBarUtils.show(context, loc.passwordsDoNotMatch);
                 }
               },
-              child: const Text("Save")),
+              child: Text(loc.save)),
         ],
       ),
     );
   }
 
   void _showEnterPasswordDialog(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final passController = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Unlock Privacy Shelf"),
+        title: Text(loc.unlockPrivacyShelfTitle),
         content: TextField(
           controller: passController,
-          decoration: const InputDecoration(labelText: "Password"),
+          decoration: InputDecoration(labelText: loc.password),
           obscureText: true,
           autofocus: true,
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+              onPressed: () => Navigator.pop(ctx), child: Text(loc.cancel)),
           TextButton(
               onPressed: () async {
                 final isValid = await PrivacyLockService()
@@ -487,11 +496,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   if (isValid) {
                     context.read<FeatureManager>().unlockPrivateShelf();
                   } else {
-                    SnackBarUtils.show(context, "Invalid Password");
+                    SnackBarUtils.show(context, loc.invalidPassword);
                   }
                 }
               },
-              child: const Text("Unlock")),
+              child: Text(loc.unlock)),
         ],
       ),
     );
@@ -523,12 +532,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 icon: const Icon(Icons.close),
                 onPressed: () => _toggleSelectionMode(active: false),
               ),
-              title: Text('${_selectedBookIds.length} Selected'),
+              title: Text(
+                  '${_selectedBookIds.length} ${AppLocalizations.of(context)!.selected}'),
               actions: [
                 if (_selectedBookIds.length == 1)
                   IconButton(
                     icon: const Icon(Icons.info_outline),
-                    tooltip: 'View Details',
+                    tooltip: AppLocalizations.of(context)!.viewDetails,
                     onPressed: () async {
                       final bookId = _selectedBookIds.first;
                       final bookData =
@@ -551,12 +561,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   if (featureManager.isPro)
                     IconButton(
                       icon: Icon(showPrivacyTab ? Icons.lock_open : Icons.lock),
-                      tooltip:
-                          showPrivacyTab ? 'Move to Public' : 'Move to Private',
+                      tooltip: showPrivacyTab
+                          ? AppLocalizations.of(context)!.moveToPublic
+                          : AppLocalizations.of(context)!.moveToPrivate,
                       onPressed: () => _moveSelectedBooks(!showPrivacyTab),
                     ),
                 ],
                 Builder(builder: (context) {
+                  final loc = AppLocalizations.of(context)!;
                   final isPrivateTab =
                       showPrivacyTab && _tabController.index == 1;
                   final currentTotal =
@@ -566,7 +578,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                   return IconButton(
                     icon: Icon(allSelected ? Icons.deselect : Icons.select_all),
-                    tooltip: allSelected ? 'Deselect All' : 'Select All',
+                    tooltip: allSelected ? loc.deselectAll : loc.selectAll,
                     onPressed: () => _selectAllBooks(showPrivacyTab),
                   );
                 }),
@@ -574,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
             )
           : AppBar(
-              title: const Text('Nyan Read ฅ^•ﻌ•^ฅ'),
+              title: Text(AppLocalizations.of(context)!.appTitle),
               actions: [
                 // View Mode Toggle
                 IconButton(
@@ -588,14 +600,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     setState(() {});
                   },
                   tooltip: _prefs.viewMode == ViewMode.grid
-                      ? 'List View'
-                      : 'Grid View',
+                      ? AppLocalizations.of(context)!.listView
+                      : AppLocalizations.of(context)!.gridView,
                 ),
 
                 // Sort Menu
                 PopupMenuButton<SortBy>(
                   icon: const Icon(Icons.sort),
-                  tooltip: 'Sort',
+                  tooltip: AppLocalizations.of(context)!.sort,
                   onSelected: (SortBy sortBy) async {
                     await _prefs.setSortBy(sortBy);
                     setState(() {});
@@ -626,8 +638,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         : Icons.lock),
                     onPressed: () => _handlePrivacyLock(context),
                     tooltip: featureManager.isPrivateShelfUnlocked
-                        ? "Lock Privacy Shelf"
-                        : "Unlock Privacy Shelf",
+                        ? AppLocalizations.of(context)!.lockPrivacyShelf
+                        : AppLocalizations.of(context)!.unlockPrivacyShelf,
                   ),
 
                 IconButton(
@@ -655,8 +667,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 tabs: [
-                  const Tab(text: "Public Shelf"),
-                  if (showPrivacyTab) const Tab(text: "Private Shelf"),
+                  Tab(text: AppLocalizations.of(context)!.publicShelf),
+                  if (showPrivacyTab)
+                    Tab(text: AppLocalizations.of(context)!.privateShelf),
                 ],
               ),
             ),
@@ -715,13 +728,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         final books = snapshot.data ?? [];
 
         if (books.isEmpty) {
+          final loc = AppLocalizations.of(context)!;
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 MascotManager().render(MascotScene.emptyShelf, size: 120),
                 const SizedBox(height: 16),
-                const Text("It's empty here. Import a book?"),
+                Text(loc.emptyShelfMessage),
               ],
             ),
           );

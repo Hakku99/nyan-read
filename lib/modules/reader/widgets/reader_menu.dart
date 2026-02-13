@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:nyan_read/l10n/app_localizations.dart';
 import '../reader_page.dart';
 import 'chapter_list_widget.dart';
 import '../../bookmark/bookmark_list_page.dart';
@@ -141,6 +142,7 @@ class ReaderMenu extends StatelessWidget {
 
   Widget _buildTypographySection(
       BuildContext context, ReaderController controller, ThemeData theme) {
+    final loc = AppLocalizations.of(context)!;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -148,7 +150,7 @@ class ReaderMenu extends StatelessWidget {
         Expanded(
           child: _buildStepper(
             context,
-            label: "Font Size",
+            label: loc.fontSize,
             value: controller.fontSize.toStringAsFixed(0),
             onRemove: () => controller.setFontSize(controller.fontSize - 1),
             onAdd: () => controller.setFontSize(controller.fontSize + 1),
@@ -162,7 +164,7 @@ class ReaderMenu extends StatelessWidget {
         Expanded(
           child: _buildStepper(
             context,
-            label: "Line Height",
+            label: loc.lineHeight,
             value: controller.lineHeight.toStringAsFixed(1),
             onRemove: () =>
                 controller.setLineHeight(controller.lineHeight - 0.1),
@@ -254,22 +256,23 @@ class ReaderMenu extends StatelessWidget {
 
   Widget _buildThemeSection(
       BuildContext context, ReaderController controller, ThemeData theme) {
+    final loc = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildColorBtn(context, controller, const Color(0xFFFDFCF8),
-              label: "Cream"),
+              label: loc.themeCream),
           const SizedBox(width: 16),
           _buildColorBtn(context, controller, const Color(0xFFF5F5DC),
-              label: "Sepia"),
+              label: loc.themeSepia),
           const SizedBox(width: 16),
           _buildColorBtn(context, controller, const Color(0xFF262422),
-              isDark: true, label: "Sumi"),
+              isDark: true, label: loc.themeSumi),
           const SizedBox(width: 16),
           _buildColorBtn(context, controller, const Color(0xFF1C1B1A),
-              isDark: true, label: "Charcoal"),
+              isDark: true, label: loc.themeCharcoal),
         ],
       ),
     );
@@ -333,6 +336,7 @@ class ReaderMenu extends StatelessWidget {
 
   Widget _buildBottomActions(
       BuildContext context, ReaderController controller, ThemeData theme) {
+    final loc = AppLocalizations.of(context)!;
     Widget buildActionBtn(IconData icon, String tooltip, VoidCallback onTap) {
       return IconButton(
         icon: Icon(icon),
@@ -346,7 +350,7 @@ class ReaderMenu extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        buildActionBtn(Icons.list_alt_rounded, 'Table of Contents', () {
+        buildActionBtn(Icons.list_alt_rounded, loc.tableOfContents, () {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
@@ -375,9 +379,9 @@ class ReaderMenu extends StatelessWidget {
             ),
           );
         }),
-        buildActionBtn(Icons.bookmark_add_outlined, 'Add Bookmark',
+        buildActionBtn(Icons.bookmark_add_outlined, loc.addBookmark,
             () => controller.addBookmark(context)),
-        buildActionBtn(Icons.bookmarks_outlined, 'Bookmarks', () async {
+        buildActionBtn(Icons.bookmarks_outlined, loc.bookmarks, () async {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
@@ -391,7 +395,8 @@ class ReaderMenu extends StatelessWidget {
             controller.restorePosition(result);
           }
         }),
-        buildActionBtn(Icons.edit_note_rounded, 'Highlights & Notes', () async {
+        buildActionBtn(Icons.edit_note_rounded, loc.highlightsAndNotes,
+            () async {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
