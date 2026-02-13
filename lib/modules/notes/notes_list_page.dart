@@ -194,7 +194,7 @@ class _NotesListPageState extends State<NotesListPage> {
                           Text(
                             highlight.selectedText,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              backgroundColor: color.withOpacity(0.2),
+                              backgroundColor: Colors.transparent,
                             ),
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
