@@ -46,6 +46,12 @@ abstract class ReaderEngine {
   /// Seeks to a specific progress (0.0 to 1.0).
   Future<void> seekToProgress(double progress);
 
+  /// Returns a snippet of text from the current position.
+  Future<String?> getSnippet(); // New method
+
+  /// Returns text at a specific position (used for backfilling).
+  Future<String?> getTextAtPosition(ReadingPosition position);
+
   /// Returns list of chapters/table of contents.
   /// Returns empty list if chapters cannot be extracted.
   Future<List<dynamic>> getChapters();

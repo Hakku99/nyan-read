@@ -89,11 +89,13 @@ class _NotesListPageState extends State<NotesListPage> {
         ),
         // Removed actions as count is now in title
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _highlights.isEmpty
-              ? _buildEmptyState()
-              : _buildHighlightsList(),
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _highlights.isEmpty
+                ? _buildEmptyState()
+                : _buildHighlightsList(),
+      ),
     );
   }
 

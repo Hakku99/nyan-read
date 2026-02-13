@@ -170,6 +170,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
         _saveCurrentPosition();
       });
 
+      // Backfill bookmark snippets in background
+      _backfillBookmarkSnippets();
+
       notifyListeners();
     } catch (e, stack) {
       ReaderErrorType type = ReaderErrorType.unknown;
@@ -375,12 +378,15 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     final position = engine.getCurrentPosition();
     if (position == null) return;
 
+    final snippet = await engine.getSnippet();
+
     final bookmark = {
       'id': const Uuid().v4(),
       'book_id': book.id,
       'page_index': 0,
       'position_type': book.format,
       'position_payload': position.toJson(),
+      'content_snippet': snippet, // Save snippet
       'note': '',
       'created_at': DateTime.now().millisecondsSinceEpoch,
     };
@@ -529,6 +535,42 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       _fontSize = adjustedFontSize;
       _updateEngineConfig();
       notifyListeners();
+    }
+  }
+
+  Future<void> _backfillBookmarkSnippets() async {
+    try {
+      final bookmarks = await DatabaseService().getBookmarks(book.id);
+      for (final bm in bookmarks) {
+        if (bm['content_snippet'] == null ||
+            (bm['content_snippet'] as String).isEmpty) {
+          final payload = bm['position_payload'];
+          final type = bm['position_type'] ?? book.format;
+
+          if (payload != null) {
+            ReadingPosition? pos;
+            if (type == 'txt') {
+              pos = TxtReadingPosition.fromJson(payload);
+            } else if (type == 'epub') {
+              pos = EpubReadingPosition.fromJson(payload);
+            } else if (type == 'pdf') {
+              pos = PdfReadingPosition.fromJson(payload);
+            }
+
+            if (pos != null) {
+              final text = await engine.getTextAtPosition(pos);
+              if (text != null && text.isNotEmpty) {
+                await DatabaseService().updateBookmark(bm['id'], {
+                  'content_snippet': text,
+                });
+                debugPrint("Backfilled snippet for bookmark ${bm['id']}");
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Error backfilling snippets: $e");
     }
   }
 

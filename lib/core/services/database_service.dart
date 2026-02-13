@@ -187,6 +187,11 @@ class DatabaseService {
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  Future<void> updateBookmark(String id, Map<String, dynamic> data) async {
+    final db = await database;
+    await db.update('bookmarks', data, where: 'id = ?', whereArgs: [id]);
+  }
+
   Future<List<Map<String, dynamic>>> getBookmarks(String bookId) async {
     final db = await database;
     return await db.query('bookmarks',

@@ -160,6 +160,17 @@ class EpubReaderEngine implements ReaderEngine {
   bool get hasBottomBar => false;
 
   @override
+  Future<String?> getSnippet() async {
+    // TODO: Implement snippet extraction for EPUB
+    return null;
+  }
+
+  @override
+  Future<String?> getTextAtPosition(ReadingPosition position) async {
+    return null;
+  }
+
+  @override
   void dispose() {
     if (_isInit) {
       _epubController.dispose();

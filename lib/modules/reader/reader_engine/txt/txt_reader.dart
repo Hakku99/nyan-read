@@ -433,6 +433,25 @@ class TxtReaderEngine implements ReaderEngine {
   }
 
   @override
+  Future<String?> getSnippet() async {
+    final pos = getCurrentPosition();
+    if (pos is TxtReadingPosition && pos.paragraphIndex < _lines.length) {
+      return _lines[pos.paragraphIndex].trim();
+    }
+    return null;
+  }
+
+  @override
+  Future<String?> getTextAtPosition(ReadingPosition position) async {
+    if (position is TxtReadingPosition) {
+      if (position.paragraphIndex < _lines.length) {
+        return _lines[position.paragraphIndex].trim();
+      }
+    }
+    return null;
+  }
+
+  @override
   Future<List<dynamic>> getChapters() async {
     if (_lines.isEmpty) return [];
 
@@ -447,7 +466,9 @@ class TxtReaderEngine implements ReaderEngine {
     final chapterPatterns = [
       RegExp(r'^第[零一二三四五六七八九十百千万\d]+[章回节话]', multiLine: false),
       RegExp(r'^Chapter\s+\d+', caseSensitive: false),
-      RegExp(r'^\d+\.\s*\S+', multiLine: false), // "1.Title" or "1. Title"
+      RegExp(r'^\d+[\.，,]\s*\S+',
+          multiLine: false), // "1.Title", "1. Title", "1,Title", "1，Title"
+      RegExp(r'^\d+\s+\S+', multiLine: false), // "040 Title", "123 Title"
       RegExp(r'^[零一二三四五六七八九十百千万]+、', multiLine: false),
       // Improved regex for Volume + Chapter (e.g. 第I卷 第1章, 第3卷：第四章)
       // Supports Chinese numbers, Arabic numbers, and Roman numerals (IVX...) in Volume/Chapter parts

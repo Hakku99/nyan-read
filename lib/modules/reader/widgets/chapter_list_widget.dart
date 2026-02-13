@@ -52,25 +52,6 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
     final theme = Theme.of(context);
     final loc = AppLocalizations.of(context)!;
 
-    if (widget.chapters.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(32),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.menu_book_outlined, size: 48, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text(
-                loc.noChaptersDetected,
-                style: TextStyle(color: Colors.grey[600], fontSize: 16),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
@@ -115,33 +96,55 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
 
             // 章节列表
             Flexible(
-              child: ScrollablePositionedList.builder(
-                itemCount: widget.chapters.length,
-                itemScrollController: _itemScrollController,
-                itemPositionsListener: _itemPositionsListener,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemBuilder: (context, index) {
-                  final chapter = widget.chapters[index];
-                  final chapterIndex = chapter['index'] ?? index;
-                  final title = chapter['title'] ?? loc.chapterName(index + 1);
+              child: widget.chapters.isEmpty
+                  ? Container(
+                      padding: const EdgeInsets.all(48),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.menu_book_outlined,
+                                size: 48, color: Colors.grey[300]),
+                            const SizedBox(height: 16),
+                            Text(
+                              loc.noChaptersDetected,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  color: Colors.grey[500], fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ScrollablePositionedList.builder(
+                      itemCount: widget.chapters.length,
+                      itemScrollController: _itemScrollController,
+                      itemPositionsListener: _itemPositionsListener,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemBuilder: (context, index) {
+                        final chapter = widget.chapters[index];
+                        final chapterIndex = chapter['index'] ?? index;
+                        final title =
+                            chapter['title'] ?? loc.chapterName(index + 1);
 
-                  // 判断是否为当前章节
-                  final isCurrent = widget.currentChapterIndex == chapterIndex;
+                        // 判断是否为当前章节
+                        final isCurrent =
+                            widget.currentChapterIndex == chapterIndex;
 
-                  // 判断是否已读 (简化版: 基于章节索引和总进度)
-                  final isRead = (chapterIndex / widget.chapters.length) <
-                      widget.currentProgress;
+                        // 判断是否已读 (简化版: 基于章节索引和总进度)
+                        final isRead = (chapterIndex / widget.chapters.length) <
+                            widget.currentProgress;
 
-                  return _buildChapterItem(
-                    context,
-                    title: title,
-                    index: index,
-                    isCurrent: isCurrent,
-                    isRead: isRead,
-                    onTap: () => widget.onChapterTap(index, chapter),
-                  );
-                },
-              ),
+                        return _buildChapterItem(
+                          context,
+                          title: title,
+                          index: index,
+                          isCurrent: isCurrent,
+                          isRead: isRead,
+                          onTap: () => widget.onChapterTap(index, chapter),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

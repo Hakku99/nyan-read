@@ -168,88 +168,95 @@ class _BrightnessManagerState extends State<BrightnessManager> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // 1. The Child (Reader View)
-        widget.child,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          children: [
+            // 1. The Child (Reader View)
+            widget.child,
 
-        // 2. The Software Mask (Dual-Layer)
-        if (_maskOpacity > 0)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Container(
-                color: Colors.black.withOpacity(_maskOpacity),
-              ),
-            ),
-          ),
-
-        // 3. Gesture Detector (Left Edge)
-        Positioned(
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 60.0, // Large enough to grab comfortably
-          child: GestureDetector(
-            behavior: HitTestBehavior
-                .translucent, // Catch events on transparent region
-            onVerticalDragStart: _onVerticalDragStart,
-            onVerticalDragUpdate: _onVerticalDragUpdate,
-            onVerticalDragEnd: _onVerticalDragEnd,
-            child: Container(
-              color: Colors.transparent, // Debug: Colors.red.withOpacity(0.2)
-            ),
-          ),
-        ),
-
-        // 4. Brightness Indicator (Centered)
-        if (_showIndicator)
-          Center(
-            child: IgnorePointer(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                decoration: BoxDecoration(
-                  color: Colors.black87,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+            // 2. The Software Mask (Dual-Layer)
+            if (_maskOpacity > 0)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Container(
+                    color: Colors.black.withOpacity(_maskOpacity),
+                  ),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      widget.brightness > 0.6
-                          ? Icons.brightness_7
-                          : // Sun
-                          widget.brightness > 0.2
-                              ? Icons.brightness_6
-                              : // Half
-                              Icons.brightness_3, // Moon
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "${(widget.brightness * 100).toInt()}%",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration
-                            .none, // Inherited from Stack if not specified
-                      ),
-                    ),
-                  ],
+              ),
+
+            // 3. Gesture Detector (Left Edge - Refined Area)
+            Positioned(
+              left: 0,
+              bottom: MediaQuery.of(context).padding.bottom,
+              height: (constraints.maxHeight -
+                      MediaQuery.of(context).padding.bottom) *
+                  0.15,
+              width: 30.0, // Reduced from 60.0 to 30.0 for better precision
+              child: GestureDetector(
+                behavior: HitTestBehavior
+                    .translucent, // Catch events on transparent region
+                onVerticalDragStart: _onVerticalDragStart,
+                onVerticalDragUpdate: _onVerticalDragUpdate,
+                onVerticalDragEnd: _onVerticalDragEnd,
+                child: Container(
+                  color:
+                      Colors.transparent, // Debug: Colors.red.withOpacity(0.2)
                 ),
               ),
             ),
-          ),
-      ],
+
+            // 4. Brightness Indicator (Centered)
+            if (_showIndicator)
+              Center(
+                child: IgnorePointer(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          widget.brightness > 0.6
+                              ? Icons.brightness_7
+                              : // Sun
+                              widget.brightness > 0.2
+                                  ? Icons.brightness_6
+                                  : // Half
+                                  Icons.brightness_3, // Moon
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "${(widget.brightness * 100).toInt()}%",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration
+                                .none, // Inherited from Stack if not specified
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
