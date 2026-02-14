@@ -109,7 +109,7 @@
       }
     }
   },
-  "movedBooks": "Moved {count} books to {shelf} Shelf",
+  "movedBooks": "Moved {count} books into {shelf}",
   "@movedBooks": {
     "placeholders": {
       "count": {
@@ -122,7 +122,7 @@
   },
   "importFiles": "Import Files",
   "importFolder": "Import Folder",
-  "importedBooks": "Imported {count} books to {shelf} Shelf!",
+  "importedBooks": "Imported {count} books into {shelf}!",
   "@importedBooks": {
     "placeholders": {
       "count": {

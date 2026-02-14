@@ -256,7 +256,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String movedBooks(int count, String shelf) {
-    return 'Moved $count books to $shelf Shelf';
+    return 'Moved $count books into $shelf';
   }
 
   @override
@@ -267,7 +267,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String importedBooks(int count, String shelf) {
-    return 'Imported $count books to $shelf Shelf!';
+    return 'Imported $count books into $shelf!';
   }
 
   @override

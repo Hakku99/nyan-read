@@ -109,7 +109,7 @@
       }
     }
   },
-  "movedBooks": "已将 {count} 本书移至{shelf}书架",
+  "movedBooks": "已将 {count} 本书移至{shelf}",
   "@movedBooks": {
     "placeholders": {
       "count": {
@@ -122,7 +122,7 @@
   },
   "importFiles": "导入文件",
   "importFolder": "导入文件夹",
-  "importedBooks": "已将 {count} 本书导入{shelf}书架！",
+  "importedBooks": "已将 {count} 本书导入{shelf}！",
   "@importedBooks": {
     "placeholders": {
       "count": {

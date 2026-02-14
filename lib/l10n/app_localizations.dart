@@ -575,7 +575,7 @@ abstract class AppLocalizations {
   /// No description provided for @movedBooks.
   ///
   /// In en, this message translates to:
-  /// **'Moved {count} books to {shelf} Shelf'**
+  /// **'Moved {count} books into {shelf}'**
   String movedBooks(int count, String shelf);
 
   /// No description provided for @importFiles.
@@ -593,7 +593,7 @@ abstract class AppLocalizations {
   /// No description provided for @importedBooks.
   ///
   /// In en, this message translates to:
-  /// **'Imported {count} books to {shelf} Shelf!'**
+  /// **'Imported {count} books into {shelf}!'**
   String importedBooks(int count, String shelf);
 
   /// No description provided for @emptyShelfMessage.
