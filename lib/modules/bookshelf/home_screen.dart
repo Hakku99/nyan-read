@@ -5,7 +5,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
-import 'package:intl/intl.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -22,6 +21,8 @@ import '../ads/ads_ui.dart';
 import '../import/folder_import_preview_page.dart';
 import '../../core/utils/snackbar_utils.dart';
 import 'book_details_page.dart';
+import 'widgets/segmented_tab_control.dart';
+import 'widgets/animated_book_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -31,6 +32,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+  // Design system constants
+  static const double _radius16 = 16.0;
+  static const double _spacing8 = 8.0;
+  static const double _spacing12 = 12.0;
+  static const double _spacing16 = 16.0;
+  static const double _spacing24 = 24.0;
+  static const double _minTouchTarget = 40.0;
+
   // To trigger rebuilds of the Futures
   int _refreshKey = 0;
   late TabController _tabController;
@@ -627,96 +636,147 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     onPressed: () => _selectAllBooks(showPrivacyTab),
                   );
                 }),
+                const SizedBox(width: _spacing8),
               ],
               backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
             )
           : AppBar(
-              title: Text(AppLocalizations.of(context)!.appTitle),
-              actions: [
-                // View Mode Toggle
-                IconButton(
-                  icon: Icon(_prefs.viewMode == ViewMode.grid
-                      ? Icons.view_list
-                      : Icons.grid_view),
-                  onPressed: () async {
-                    await _prefs.setViewMode(_prefs.viewMode == ViewMode.grid
-                        ? ViewMode.list
-                        : ViewMode.grid);
-                    setState(() {});
-                  },
-                  tooltip: _prefs.viewMode == ViewMode.grid
-                      ? AppLocalizations.of(context)!.listView
-                      : AppLocalizations.of(context)!.gridView,
-                ),
-
-                // Sort Menu
-                PopupMenuButton<SortBy>(
-                  icon: const Icon(Icons.sort),
-                  tooltip: AppLocalizations.of(context)!.sort,
-                  onSelected: (SortBy sortBy) async {
-                    await _prefs.setSortBy(sortBy);
-                    setState(() {});
-                  },
-                  itemBuilder: (context) => [
-                    for (final sortBy in SortBy.values)
-                      PopupMenuItem(
-                        value: sortBy,
-                        child: Row(
-                          children: [
-                            if (_prefs.sortBy == sortBy)
-                              const Icon(Icons.check, size: 18)
-                            else
-                              const SizedBox(width: 18),
-                            const SizedBox(width: 8),
-                            Text(_prefs.getSortByLabel(sortBy)),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-
-                // Lock/Unlock Button
-                if (featureManager.isPro)
-                  IconButton(
-                    icon: Icon(featureManager.isPrivateShelfUnlocked
-                        ? Icons.lock_open
-                        : Icons.lock),
-                    onPressed: () => _handlePrivacyLock(context),
-                    tooltip: featureManager.isPrivateShelfUnlocked
-                        ? AppLocalizations.of(context)!.lockPrivacyShelf
-                        : AppLocalizations.of(context)!.unlockPrivacyShelf,
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    AppLocalizations.of(context)!.appTitle,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.3,
+                    ),
                   ),
-
-                IconButton(
-                  icon: const Icon(Icons.settings),
-                  onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const SettingsPage()))
-                      .then((_) => setState(() {})), // Refresh on return
-                )
-              ],
-              bottom: TabBar(
-                controller: _tabController,
-                labelColor: Theme.of(context).colorScheme.primary,
-                unselectedLabelColor:
-                    Theme.of(context).textTheme.bodySmall?.color,
-                indicatorColor: Theme.of(context).colorScheme.primary,
-                indicatorWeight: 2,
-                indicatorSize: TabBarIndicatorSize.label,
-                indicator: UnderlineTabIndicator(
-                  borderRadius: BorderRadius.circular(2),
-                  borderSide: BorderSide(
-                    width: 2,
-                    color: Theme.of(context).colorScheme.primary,
+                  const SizedBox(height: 2),
+                  Text(
+                    AppLocalizations.of(context)!.enjoyReading,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                      letterSpacing: 0.2,
+                    ),
                   ),
-                ),
-                tabs: [
-                  Tab(text: AppLocalizations.of(context)!.publicShelf),
-                  if (showPrivacyTab)
-                    Tab(text: AppLocalizations.of(context)!.privateShelf),
                 ],
               ),
+              centerTitle: false,
+              actions: [
+                // Grouped action container
+                Container(
+                  margin:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: _spacing8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(_radius16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // View Mode Toggle
+                      IconButton(
+                        icon: Icon(_prefs.viewMode == ViewMode.grid
+                            ? Icons.view_list
+                            : Icons.grid_view),
+                        iconSize: 20,
+                        constraints: const BoxConstraints(
+                          minWidth: _minTouchTarget,
+                          minHeight: _minTouchTarget,
+                        ),
+                        padding: EdgeInsets.zero,
+                        onPressed: () async {
+                          await _prefs.setViewMode(
+                              _prefs.viewMode == ViewMode.grid
+                                  ? ViewMode.list
+                                  : ViewMode.grid);
+                          setState(() {});
+                        },
+                        tooltip: _prefs.viewMode == ViewMode.grid
+                            ? AppLocalizations.of(context)!.listView
+                            : AppLocalizations.of(context)!.gridView,
+                      ),
+
+                      // Sort Menu
+                      PopupMenuButton<SortBy>(
+                        icon: const Icon(Icons.sort, size: 20),
+                        iconSize: 20,
+                        tooltip: AppLocalizations.of(context)!.sort,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: _minTouchTarget,
+                          minHeight: _minTouchTarget,
+                        ),
+                        onSelected: (SortBy sortBy) async {
+                          await _prefs.setSortBy(sortBy);
+                          setState(() {});
+                        },
+                        itemBuilder: (context) => [
+                          for (final sortBy in SortBy.values)
+                            PopupMenuItem(
+                              value: sortBy,
+                              child: Row(
+                                children: [
+                                  if (_prefs.sortBy == sortBy)
+                                    const Icon(Icons.check, size: 18)
+                                  else
+                                    const SizedBox(width: 18),
+                                  const SizedBox(width: 8),
+                                  Text(_prefs.getSortByLabel(sortBy)),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      // Lock/Unlock Button
+                      if (featureManager.isPro)
+                        IconButton(
+                          icon: Icon(
+                            featureManager.isPrivateShelfUnlocked
+                                ? Icons.lock_open
+                                : Icons.lock,
+                            size: 20,
+                          ),
+                          iconSize: 20,
+                          constraints: const BoxConstraints(
+                            minWidth: _minTouchTarget,
+                            minHeight: _minTouchTarget,
+                          ),
+                          padding: EdgeInsets.zero,
+                          onPressed: () => _handlePrivacyLock(context),
+                          tooltip: featureManager.isPrivateShelfUnlocked
+                              ? AppLocalizations.of(context)!.lockPrivacyShelf
+                              : AppLocalizations.of(context)!
+                                  .unlockPrivacyShelf,
+                        ),
+
+                      // Settings
+                      IconButton(
+                        icon: const Icon(Icons.settings, size: 20),
+                        iconSize: 20,
+                        constraints: const BoxConstraints(
+                          minWidth: _minTouchTarget,
+                          minHeight: _minTouchTarget,
+                        ),
+                        padding: EdgeInsets.zero,
+                        onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const SettingsPage()))
+                            .then((_) => setState(() {})), // Refresh on return
+                        tooltip: 'Settings',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
       body: SafeArea(
         child: Column(
@@ -725,14 +785,44 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             if (!featureManager.isPro && featureManager.adsEnabled)
               AdsUI.showBanner(context),
 
-            // Tabs
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildShelf(context, isPrivate: false),
-                  if (showPrivacyTab) _buildShelf(context, isPrivate: true),
+            // Segmented Tab Control
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: _spacing16,
+                vertical: _spacing12,
+              ),
+              child: SegmentedTabControl(
+                tabs: [
+                  SegmentedTab(
+                    label: AppLocalizations.of(context)!.publicShelf,
+                  ),
+                  if (showPrivacyTab)
+                    SegmentedTab(
+                      label: AppLocalizations.of(context)!.privateShelf,
+                      icon: Icons.lock,
+                    ),
                 ],
+                selectedIndex: _tabController.index,
+                onTabChanged: (index) {
+                  _tabController.animateTo(index);
+                  setState(() {}); // Rebuild to update subtitle
+                },
+              ),
+            ),
+
+            // Content with animated transition
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeOutCubic,
+                child: KeyedSubtree(
+                  key: ValueKey(_tabController.index),
+                  child: _buildShelf(
+                    context,
+                    isPrivate: showPrivacyTab && _tabController.index == 1,
+                  ),
+                ),
               ),
             ),
           ],
@@ -749,7 +839,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: const Icon(Icons.delete),
               onPressed: _deleteSelectedBooks,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: _spacing16),
           ],
           FloatingActionButton(
             heroTag: 'add_fab',
@@ -780,15 +870,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         final books = snapshot.data ?? [];
 
         if (books.isEmpty) {
-          final loc = AppLocalizations.of(context)!;
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                MascotManager().render(MascotScene.emptyShelf, size: 120),
-                const SizedBox(height: 16),
-                Text(loc.emptyShelfMessage),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.all(_spacing24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  MascotManager().render(MascotScene.emptyShelf, size: 120),
+                  const SizedBox(height: _spacing24),
+                  Text(
+                    '书架还在等待故事',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  const SizedBox(height: _spacing8),
+                  Text(
+                    '导入一本书，开始今天的阅读吧',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -803,12 +912,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildGridView(
       BuildContext context, List<Map<String, dynamic>> books, bool isPrivate) {
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(_spacing16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        childAspectRatio: 0.7,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        childAspectRatio: 0.75, // 3:4 ratio
+        crossAxisSpacing: _spacing16,
+        mainAxisSpacing: _spacing16,
       ),
       itemCount: books.length,
       itemBuilder: (context, index) {
@@ -816,14 +925,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         final book = Book.fromMap(bookData);
         final isSelected = _selectedBookIds.contains(book.id);
 
-        return GestureDetector(
+        return AnimatedBookCardGrid(
+          book: book,
+          isSelected: isSelected,
+          isSelectionMode: _isSelectionMode,
           onTap: () {
             if (_isSelectionMode) {
               _toggleBookSelection(book.id);
             } else {
               Navigator.push(context,
                       MaterialPageRoute(builder: (_) => ReaderPage(book: book)))
-                  .then((_) => _refreshShelf()); // Refresh shelf on return
+                  .then((_) => _refreshShelf());
             }
           },
           onLongPress: () {
@@ -833,79 +945,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               _toggleSelectionMode(active: true, initialBookId: book.id);
             }
           },
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Card(
-                shape: isSelected
-                    ? RoundedRectangleBorder(
-                        side: BorderSide(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: 3),
-                        borderRadius: BorderRadius.circular(12),
-                      )
-                    : null,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Soft container for book icon
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.menu_book_rounded,
-                        size: 32,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                      child: Text(
-                        book.title,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.2,
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (_isSelectionMode)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Colors.grey.withOpacity(0.5),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: isSelected
-                          ? const Icon(Icons.check,
-                              size: 16, color: Colors.white)
-                          : const SizedBox(width: 16, height: 16),
-                    ),
-                  ),
-                ),
-            ],
-          ),
         );
       },
     );
@@ -913,173 +952,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildListView(
       BuildContext context, List<Map<String, dynamic>> books, bool isPrivate) {
-    final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
-
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+          horizontal: _spacing16, vertical: _spacing8),
       itemCount: books.length,
       itemBuilder: (context, index) {
         final bookData = books[index];
         final book = Book.fromMap(bookData);
         final isSelected = _selectedBookIds.contains(book.id);
 
-        // Calculate progress percentage
-        final progress =
-            (bookData['current_progress'] as num?)?.toDouble() ?? 0.0;
-        final progressPercent = (progress * 100).toInt();
-
-        // Format last read time
-        String lastReadText = 'Never read';
-        if (bookData['last_read_at'] != null) {
-          final lastRead = DateTime.fromMillisecondsSinceEpoch(
-              bookData['last_read_at'] as int);
-          lastReadText = dateFormat.format(lastRead);
-        }
-
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          color: isSelected
-              ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
-              : null,
-          child: InkWell(
-            onTap: () {
-              if (_isSelectionMode) {
-                _toggleBookSelection(book.id);
-              } else {
-                Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => ReaderPage(book: book)))
-                    .then((_) => _refreshShelf()); // Refresh shelf on return
-              }
-            },
-            onLongPress: () {
-              if (_isSelectionMode) {
-                _toggleBookSelection(book.id);
-              } else {
-                _toggleSelectionMode(active: true, initialBookId: book.id);
-              }
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Row(
-                children: [
-                  if (_isSelectionMode)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 12.0),
-                      child: Checkbox(
-                        value: isSelected,
-                        onChanged: (val) => _toggleBookSelection(book.id),
-                      ),
-                    ),
-
-                  // Soft container for book icon
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      Icons.menu_book_rounded,
-                      size: 24,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-
-                  // Book info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          book.title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${book.author} • ${book.format.toUpperCase()}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            letterSpacing: 0.3,
-                            color: Theme.of(context).textTheme.bodySmall?.color,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        // Rounded progress bar
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value: progress,
-                                  minHeight: 6,
-                                  backgroundColor: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withOpacity(0.15),
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Theme.of(context)
-                                          .colorScheme
-                                          .primary
-                                          .withOpacity(0.8)),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              '$progressPercent%',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.color,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  // Last read time
-                  if (!_isSelectionMode) // Hide this in selection mode to save space? Or keep it? keeping it is fine.
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          lastReadText,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.color
-                                ?.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
-          ),
+        return AnimatedBookCardList(
+          book: book,
+          bookData: bookData,
+          isSelected: isSelected,
+          isSelectionMode: _isSelectionMode,
+          onTap: () {
+            if (_isSelectionMode) {
+              _toggleBookSelection(book.id);
+            } else {
+              Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => ReaderPage(book: book)))
+                  .then((_) => _refreshShelf());
+            }
+          },
+          onLongPress: () {
+            if (_isSelectionMode) {
+              _toggleBookSelection(book.id);
+            } else {
+              _toggleSelectionMode(active: true, initialBookId: book.id);
+            }
+          },
+          onSelectionToggle: () => _toggleBookSelection(book.id),
         );
       },
     );

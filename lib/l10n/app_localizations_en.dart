@@ -221,6 +221,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Nyan Read ฅ^•ﻌ•^ฅ';
 
   @override
+  String get enjoyReading => 'Enjoy reading time';
+
+  @override
   String get listView => 'List View';
 
   @override

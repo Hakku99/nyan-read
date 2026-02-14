@@ -217,7 +217,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deselectAll => '取消全选';
 
   @override
-  String get appTitle => 'Nyan Read ฅ^•ﻌ•^ฅ';
+  String get appTitle => '喵阅 ฅ^•ﻌ•^ฅ';
+
+  @override
+  String get enjoyReading => '享受阅读时光';
 
   @override
   String get listView => '列表视图';

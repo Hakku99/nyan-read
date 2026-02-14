@@ -512,6 +512,12 @@ abstract class AppLocalizations {
   /// **'Nyan Read ฅ^•ﻌ•^ฅ'**
   String get appTitle;
 
+  /// No description provided for @enjoyReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Enjoy reading time'**
+  String get enjoyReading;
+
   /// No description provided for @listView.
   ///
   /// In en, this message translates to:
