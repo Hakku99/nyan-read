@@ -7,6 +7,7 @@ import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/services/feature_manager.dart';
 import '../../core/services/database_service.dart';
@@ -305,14 +306,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   _importBook(parentContext);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.folder_open),
-                title: Text(loc.importFolder),
-                onTap: () {
-                  Navigator.pop(context);
-                  _importFolder(parentContext);
-                },
-              ),
+              if (!Platform.isAndroid)
+                ListTile(
+                  leading: const Icon(Icons.folder_open),
+                  title: Text(loc.importFolder),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _importFolder(parentContext);
+                  },
+                ),
             ],
           ),
         );
@@ -326,6 +328,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     if (result != null) {
       try {
+        // Request storage permission on Android
+        if (Platform.isAndroid) {
+          PermissionStatus status;
+
+          // Android 13+ (API 33+) uses granular media permissions
+          // For reading books, we need all media permissions
+          if (await Permission.photos.request().isGranted ||
+              await Permission.videos.request().isGranted ||
+              await Permission.audio.request().isGranted) {
+            status = PermissionStatus.granted;
+          } else {
+            // Android 12 and below uses READ_EXTERNAL_STORAGE
+            status = await Permission.storage.request();
+          }
+
+          if (!status.isGranted) {
+            if (mounted) {
+              SnackBarUtils.show(
+                context,
+                'Storage permission is required to import folders',
+              );
+            }
+            return;
+          }
+        }
+
         final importService = FolderImportService.instance;
 
         // Scan folder
@@ -336,6 +364,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         if (scanResult.files.isEmpty) {
           if (mounted) {
+            // Check for errors first
+            if (scanResult.errors.isNotEmpty) {
+              final errorMsg = scanResult.errors.first;
+              SnackBarUtils.show(context, errorMsg);
+              return;
+            }
+
+            // On Android, if we successfully got permission but still found 0 files,
+            // it's likely due to Scoped Storage limitations
+            if (Platform.isAndroid && scanResult.totalScanned == 0) {
+              SnackBarUtils.show(
+                context,
+                'Folder import is limited on Android 10+. Please use "Import Files" to select multiple books at once.',
+              );
+              return;
+            }
+
             final skippedExts = scanResult.skippedExtensions.entries.toList()
               ..sort((a, b) => b.value.compareTo(a.value));
 
@@ -709,7 +754,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           FloatingActionButton(
             heroTag: 'add_fab',
             child: const Icon(Icons.add),
-            onPressed: () => _showImportMenu(context),
+            onPressed: () {
+              if (Platform.isAndroid) {
+                // On Android, folder import is not supported, so just import files directly
+                _importBook(context);
+              } else {
+                _showImportMenu(context);
+              }
+            },
           ),
         ],
       ),
