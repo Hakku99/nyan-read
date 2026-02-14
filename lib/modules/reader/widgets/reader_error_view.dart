@@ -26,10 +26,23 @@ class ReaderErrorView extends StatefulWidget {
 class _ReaderErrorViewState extends State<ReaderErrorView> {
   bool _showDetails = false;
 
+  String _getErrorMessage(AppLocalizations loc) {
+    switch (widget.errorState.type) {
+      case ReaderErrorType.fileNotFound:
+        return loc.errorFileNotFound;
+      case ReaderErrorType.unsupportedFormat:
+        return loc.errorUnsupportedFormat;
+      case ReaderErrorType.parseFailed:
+        return loc.errorParseFailed;
+      case ReaderErrorType.unknown:
+        return loc.errorUnknown;
+    }
+  }
+
   Future<void> _reportError() async {
     final loc = AppLocalizations.of(context)!;
-    final errorText =
-        widget.errorState.technicalMessage ?? widget.errorState.userMessage;
+    final errorText = widget.errorState.technicalMessage ??
+        _getErrorMessage(loc); // Use localized message if no technical details
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
       path: 'ivanlee9906@gmail.com',
@@ -41,7 +54,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
 
     try {
       if (await canLaunchUrl(emailLaunchUri)) {
-        await launchUrl(emailLaunchUri);
+        await launchUrl(emailLaunchUri, mode: LaunchMode.externalApplication);
       } else {
         if (mounted) {
           SnackBarUtils.show(context, loc.couldNotLaunchEmail);
@@ -75,6 +88,8 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
     final errorSecondary = nyanTheme.errorSecondaryTextColor;
     final errorAccent = nyanTheme.errorAccentColor;
 
+    final userMessage = _getErrorMessage(loc);
+
     return Container(
       color: errorBg,
       width: double.infinity,
@@ -90,7 +105,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
           ),
           const SizedBox(height: 32),
           SelectableText(
-            widget.errorState.userMessage,
+            userMessage,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 18,

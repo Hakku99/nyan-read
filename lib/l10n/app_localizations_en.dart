@@ -434,4 +434,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get neverRead => 'Never read';
+
+  @override
+  String get errorFileNotFound =>
+      'This book seems to have lost its way.\nThe file cannot be found, it may have been moved or deleted.';
+
+  @override
+  String get errorUnsupportedFormat =>
+      'Nyan cannot read this format.\nThis file type is not supported yet.';
+
+  @override
+  String get errorParseFailed =>
+      'The pages are stuck together.\nFailed to parse file, it might be corrupted.';
+
+  @override
+  String get errorUnknown =>
+      'Something unexpected happened.\nPlease try again later.';
 }

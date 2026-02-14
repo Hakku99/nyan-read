@@ -871,6 +871,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Never read'**
   String get neverRead;
+
+  /// No description provided for @errorFileNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'This book seems to have lost its way.\nThe file cannot be found, it may have been moved or deleted.'**
+  String get errorFileNotFound;
+
+  /// No description provided for @errorUnsupportedFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Nyan cannot read this format.\nThis file type is not supported yet.'**
+  String get errorUnsupportedFormat;
+
+  /// No description provided for @errorParseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The pages are stuck together.\nFailed to parse file, it might be corrupted.'**
+  String get errorParseFailed;
+
+  /// No description provided for @errorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Something unexpected happened.\nPlease try again later.'**
+  String get errorUnknown;
 }
 
 class _AppLocalizationsDelegate

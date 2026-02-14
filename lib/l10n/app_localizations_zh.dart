@@ -432,4 +432,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get neverRead => '未读';
+
+  @override
+  String get errorFileNotFound => '这本书好像迷路了。\n文件找不到了，可能被移动或删除。';
+
+  @override
+  String get errorUnsupportedFormat => '猫娘看不懂这种格式。\n暂时不支持打开此类型的文件。';
+
+  @override
+  String get errorParseFailed => '书页粘在一起了。\n文件解析失败，可能是文件已损坏。';
+
+  @override
+  String get errorUnknown => '发生了意想不到的事情。\n请稍后再试。';
 }
