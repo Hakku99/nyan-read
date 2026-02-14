@@ -1,6 +1,7 @@
 {
   "@@locale": "en",
   "settingsTitle": "Settings",
+  "appearance": "Appearance",
   "themePreset": "Theme Preset",
   "readingSettings": "Reading Settings",
   "pageTurnMode": "Page Turn Mode",

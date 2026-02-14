@@ -1,6 +1,7 @@
 {
   "@@locale": "zh",
   "settingsTitle": "设置",
+  "appearance": "外观",
   "themePreset": "预设主题",
   "readingSettings": "阅读设置",
   "pageTurnMode": "翻页模式",

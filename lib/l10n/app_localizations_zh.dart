@@ -12,6 +12,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsTitle => '设置';
 
   @override
+  String get appearance => '外观';
+
+  @override
   String get themePreset => '预设主题';
 
   @override
