@@ -28,6 +28,8 @@ class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
   final _importService = FolderImportService.instance;
   late List<File> _displayedFiles;
   late Set<String> _selectedFiles;
+  Set<String> _existingFilenames = {};
+  bool _isLoadingExisting = true;
   bool _showHidden = false;
   bool _isImporting = false;
   int _importProgress = 0;
@@ -37,7 +39,28 @@ class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
     super.initState();
     _displayedFiles =
         widget.files.where((f) => !_importService.isHiddenFile(f)).toList();
-    _selectedFiles = Set.from(_displayedFiles.map((f) => f.path));
+    _loadExistingBooks();
+  }
+
+  Future<void> _loadExistingBooks() async {
+    final existing = await DatabaseService().getAllBookFilenames();
+    if (mounted) {
+      setState(() {
+        // Store lowercase filenames for case-insensitive comparison
+        _existingFilenames = existing.map((e) => e.toLowerCase()).toSet();
+        _isLoadingExisting = false;
+
+        // Initialize selected files, excluding existing ones
+        _selectedFiles = {};
+        for (final file in _displayedFiles) {
+          final fileName = path.basename(file.path);
+          // Only select if NOT already in library (case-insensitive)
+          if (!_existingFilenames.contains(fileName.toLowerCase())) {
+            _selectedFiles.add(file.path);
+          }
+        }
+      });
+    }
   }
 
   void _toggleShowHidden() {
@@ -68,14 +91,25 @@ class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
 
     int successCount = 0;
     int failedCount = 0;
+    int skippedCount = 0;
     final errors = <String>[];
 
     final appDir = await getApplicationDocumentsDirectory();
 
     for (int i = 0; i < selectedFileObjects.length; i++) {
       final file = selectedFileObjects[i];
+      final fileName = path.basename(file.path);
+
+      // Skip if already exists (case-insensitive check)
+      if (_existingFilenames.contains(fileName.toLowerCase())) {
+        skippedCount++;
+        setState(() {
+          _importProgress = i + 1;
+        });
+        continue;
+      }
+
       try {
-        final fileName = path.basename(file.path);
         final savedFile = await file.copy(path.join(appDir.path, fileName));
 
         final book = Book(
@@ -100,11 +134,12 @@ class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
     }
 
     if (mounted) {
-      _showImportResult(successCount, failedCount, errors);
+      _showImportResult(successCount, failedCount, skippedCount, errors);
     }
   }
 
-  void _showImportResult(int success, int failed, List<String> errors) {
+  void _showImportResult(
+      int success, int failed, int skipped, List<String> errors) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -114,6 +149,9 @@ class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('✓ Imported: $success'),
+            if (skipped > 0)
+              Text('• Skipped (Already exists): $skipped',
+                  style: const TextStyle(color: Colors.orange)),
             if (failed > 0) Text('✗ Failed: $failed'),
             if (errors.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -165,6 +203,7 @@ class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
                 if (selectedCount == _displayedFiles.length) {
                   _selectedFiles.clear();
                 } else {
+                  // Select all, even existing ones if user explicitly clicks select all
                   _selectedFiles = Set.from(_displayedFiles.map((f) => f.path));
                 }
               });
@@ -243,6 +282,9 @@ class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
   }
 
   Widget _buildFileList() {
+    if (_isLoadingExisting) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return ListView.builder(
       itemCount: _displayedFiles.length,
       itemBuilder: (context, index) {
@@ -259,11 +301,25 @@ class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
               fontStyle: isHidden ? FontStyle.italic : null,
             ),
           ),
-          subtitle: Text(
-            file.path,
-            style: const TextStyle(fontSize: 11),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                file.path,
+                style: const TextStyle(fontSize: 11),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (_existingFilenames.contains(fileName.toLowerCase()))
+                const Text(
+                  'Already in library',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.orange,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+            ],
           ),
           secondary: Icon(
             Icons.book,

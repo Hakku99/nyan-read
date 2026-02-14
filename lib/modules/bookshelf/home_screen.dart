@@ -247,6 +247,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
 
     if (result != null && result.files.isNotEmpty) {
+      // Get existing filenames from database to check for duplicates
+      final db = DatabaseService();
+      final existingFilenames = await db.getAllBookFilenames();
+
       // Determine privacy based on current tab
       // If we are on the second tab (index 1), it's private.
       // But we need to make sure the second tab IS the private shelf.
@@ -259,6 +263,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final isPrivate = isPrivateShelfUnlocked && _tabController.index == 1;
 
       int successCount = 0;
+      int skippedCount = 0;
       final appDir = await getApplicationDocumentsDirectory();
 
       for (final file in result.files) {
@@ -266,6 +271,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           try {
             final originalFile = File(file.path!);
             final fileName = path.basename(originalFile.path);
+
+            // Check if file with this name already exists in the database
+            if (existingFilenames.contains(fileName)) {
+              skippedCount++;
+              debugPrint("Skipping duplicate file: $fileName");
+              continue;
+            }
+
             final savedFile =
                 await originalFile.copy(path.join(appDir.path, fileName));
 
@@ -286,11 +299,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         }
       }
 
-      if (mounted && successCount > 0) {
+      if (mounted) {
         final loc = AppLocalizations.of(context)!;
         final shelf = isPrivate ? loc.privateShelf : loc.publicShelf;
-        SnackBarUtils.show(context, loc.importedBooks(successCount, shelf));
-        _refreshShelf();
+
+        // Show appropriate feedback based on results
+        if (successCount > 0 && skippedCount > 0) {
+          SnackBarUtils.show(
+            context,
+            '${loc.importedBooks(successCount, shelf)}. ${loc.duplicatesSkipped(skippedCount)}',
+          );
+        } else if (successCount > 0) {
+          SnackBarUtils.show(context, loc.importedBooks(successCount, shelf));
+        } else if (skippedCount > 0) {
+          SnackBarUtils.show(context, loc.allBooksInLibrary(skippedCount));
+        }
+
+        if (successCount > 0) {
+          _refreshShelf();
+        }
       }
     }
   }
@@ -788,8 +815,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             // Main Content Card
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.only(
-                    left: _spacing16, right: _spacing16, bottom: _spacing16),
+                padding:
+                    const EdgeInsets.only(left: _spacing16, right: _spacing16),
                 child: Card(
                   elevation: 0,
                   color: Theme.of(context)
