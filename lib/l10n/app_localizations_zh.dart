@@ -414,4 +414,22 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get themeSepiaWarm => '复古褐';
+
+  @override
+  String get timeToday => '今天';
+
+  @override
+  String get timeYesterday => '昨天';
+
+  @override
+  String get timeThreeDaysAgo => '三天前';
+
+  @override
+  String get timeSevenDaysAgo => '七天前';
+
+  @override
+  String get timeLongAgo => '许久以前';
+
+  @override
+  String get neverRead => '未读';
 }

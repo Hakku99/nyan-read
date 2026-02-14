@@ -835,6 +835,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sepia Warm'**
   String get themeSepiaWarm;
+
+  /// No description provided for @timeToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get timeToday;
+
+  /// No description provided for @timeYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get timeYesterday;
+
+  /// No description provided for @timeThreeDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'3 days ago'**
+  String get timeThreeDaysAgo;
+
+  /// No description provided for @timeSevenDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'7 days ago'**
+  String get timeSevenDaysAgo;
+
+  /// No description provided for @timeLongAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Long ago'**
+  String get timeLongAgo;
+
+  /// No description provided for @neverRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Never read'**
+  String get neverRead;
 }
 
 class _AppLocalizationsDelegate

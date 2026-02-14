@@ -268,5 +268,12 @@
 
   "themeCreamLight": "Cream Light",
   "themeSumiDark": "Sumi Dark",
-  "themeSepiaWarm": "Sepia Warm"
+  "themeSepiaWarm": "Sepia Warm",
+  "timeToday": "Today",
+  "timeYesterday": "Yesterday",
+  "timeThreeDaysAgo": "3 days ago",
+  "timeSevenDaysAgo": "7 days ago",
+  "timeLongAgo": "Long ago",
+  "neverRead": "Never read"
 }
+

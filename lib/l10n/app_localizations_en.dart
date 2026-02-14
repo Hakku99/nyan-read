@@ -416,4 +416,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themeSepiaWarm => 'Sepia Warm';
+
+  @override
+  String get timeToday => 'Today';
+
+  @override
+  String get timeYesterday => 'Yesterday';
+
+  @override
+  String get timeThreeDaysAgo => '3 days ago';
+
+  @override
+  String get timeSevenDaysAgo => '7 days ago';
+
+  @override
+  String get timeLongAgo => 'Long ago';
+
+  @override
+  String get neverRead => 'Never read';
 }

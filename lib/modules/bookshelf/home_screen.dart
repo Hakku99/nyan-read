@@ -785,42 +785,62 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             if (!featureManager.isPro && featureManager.adsEnabled)
               AdsUI.showBanner(context),
 
-            // Segmented Tab Control
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: _spacing16,
-                vertical: _spacing12,
-              ),
-              child: SegmentedTabControl(
-                tabs: [
-                  SegmentedTab(
-                    label: AppLocalizations.of(context)!.publicShelf,
-                  ),
-                  if (showPrivacyTab)
-                    SegmentedTab(
-                      label: AppLocalizations.of(context)!.privateShelf,
-                      icon: Icons.lock,
-                    ),
-                ],
-                selectedIndex: _tabController.index,
-                onTabChanged: (index) {
-                  _tabController.animateTo(index);
-                  setState(() {}); // Rebuild to update subtitle
-                },
-              ),
-            ),
-
-            // Content with animated transition
+            // Main Content Card
             Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeOutCubic,
-                child: KeyedSubtree(
-                  key: ValueKey(_tabController.index),
-                  child: _buildShelf(
-                    context,
-                    isPrivate: showPrivacyTab && _tabController.index == 1,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                    left: _spacing16, right: _spacing16, bottom: _spacing16),
+                child: Card(
+                  elevation: 0,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .surfaceVariant
+                      .withOpacity(0.3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    children: [
+                      // Segmented Tab Control
+                      Padding(
+                        padding: const EdgeInsets.all(_spacing12),
+                        child: SegmentedTabControl(
+                          tabs: [
+                            SegmentedTab(
+                              label: AppLocalizations.of(context)!.publicShelf,
+                            ),
+                            if (showPrivacyTab)
+                              SegmentedTab(
+                                label:
+                                    AppLocalizations.of(context)!.privateShelf,
+                                icon: Icons.lock,
+                              ),
+                          ],
+                          selectedIndex: _tabController.index,
+                          onTabChanged: (index) {
+                            _tabController.animateTo(index);
+                            setState(() {}); // Rebuild to update subtitle
+                          },
+                        ),
+                      ),
+
+                      // Content with animated transition
+                      Expanded(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeOutCubic,
+                          child: KeyedSubtree(
+                            key: ValueKey(_tabController.index),
+                            child: _buildShelf(
+                              context,
+                              isPrivate:
+                                  showPrivacyTab && _tabController.index == 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

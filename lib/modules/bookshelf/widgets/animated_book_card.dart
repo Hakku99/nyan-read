@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../../core/models/book.dart';
+import '../../../core/utils/datetime_utils.dart';
 
 /// Animated book card for list view mode
 class AnimatedBookCardList extends StatefulWidget {
@@ -65,38 +66,47 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
 
     // Calculate progress percentage
     final progress =
         (widget.bookData['current_progress'] as num?)?.toDouble() ?? 0.0;
     final progressPercent = (progress * 100).toInt();
 
-    // Format last read time
-    String lastReadText = 'Never read';
+    // Format last read time with relative labels
+    String lastReadText = AppLocalizations.of(context)!.neverRead;
     if (widget.bookData['last_read_at'] != null) {
-      final lastRead = DateTime.fromMillisecondsSinceEpoch(
-          widget.bookData['last_read_at'] as int);
-      lastReadText = dateFormat.format(lastRead);
+      final now = DateTime.now();
+      lastReadText = DateTimeUtils.formatRelativeTimeFromMillis(
+        widget.bookData['last_read_at'] as int,
+        now,
+        AppLocalizations.of(context)!,
+      );
     }
 
     return ScaleTransition(
       scale: _scaleAnimation,
-      child: Card(
+      child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
-        shape: RoundedRectangleBorder(
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
+          border: Border.all(
             color: widget.isSelected
                 ? theme.colorScheme.primary
-                : theme.dividerColor,
+                : theme.colorScheme.outline.withOpacity(0.1),
             width: widget.isSelected ? 2 : 1,
           ),
+          color: widget.isSelected
+              ? theme.colorScheme.primaryContainer.withOpacity(0.2)
+              : theme.colorScheme.surfaceVariant.withOpacity(0.3),
+          boxShadow: [
+            BoxShadow(
+              color: theme.shadowColor.withOpacity(0.05),
+              offset: const Offset(0, 2),
+              blurRadius: 8,
+              spreadRadius: 0,
+            ),
+          ],
         ),
-        color: widget.isSelected
-            ? theme.colorScheme.primaryContainer.withOpacity(0.2)
-            : theme.cardColor,
-        elevation: 0,
         child: GestureDetector(
           onTap: widget.onTap,
           onLongPress: widget.onLongPress,
@@ -139,7 +149,7 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                       Text(
                         widget.book.title,
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.2,
                           color: theme.textTheme.bodyLarge?.color,
@@ -147,16 +157,7 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${widget.book.author} · ${widget.book.format.toUpperCase()}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          letterSpacing: 0.3,
-                          color: theme.textTheme.bodySmall?.color,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       // Rounded progress bar
                       Row(
                         children: [
@@ -294,81 +295,98 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Card(
-              shape: RoundedRectangleBorder(
-                side: BorderSide(
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
                   color: widget.isSelected
                       ? theme.colorScheme.primary
-                      : theme.dividerColor,
+                      : theme.colorScheme.outline.withOpacity(0.1),
                   width: widget.isSelected ? 3 : 1,
                 ),
-                borderRadius: BorderRadius.circular(16),
+                color: widget.isSelected
+                    ? theme.colorScheme.primaryContainer.withOpacity(0.2)
+                    : theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.shadowColor.withOpacity(0.05),
+                    offset: const Offset(0, 2),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                  ),
+                ],
               ),
-              elevation: 0,
-              child: Stack(
-                children: [
-                  // Main content
-                  Positioned.fill(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Book icon container
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            Icons.menu_book_rounded,
-                            size: 32,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        // Title with gradient
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                          child: Text(
-                            widget.book.title,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 0.2,
-                              color: theme.textTheme.bodyLarge?.color,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(
+                    15), // Slightly less to account for border? Or just 16.
+                // Using 16 matches container.
+                child: Stack(
+                  children: [
+                    // Main content
+                    Positioned.fill(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 16),
+                          // Book icon container
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.menu_book_rounded,
+                              size: 32,
+                              color: theme.colorScheme.primary,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 10),
+                          // Title with gradient
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 6.0),
+                            child: Text(
+                              widget.book.title,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.2,
+                                color: theme.textTheme.bodyLarge?.color,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  // Bottom gradient for title readability
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: 60,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            theme.cardColor.withOpacity(0.9),
-                            theme.cardColor.withOpacity(0.0),
-                          ],
-                        ),
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(16),
-                          bottomRight: Radius.circular(16),
+                    // Bottom gradient for title readability
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: 60,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [
+                              theme.cardColor.withOpacity(0.9),
+                              theme.cardColor.withOpacity(0.0),
+                            ],
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(16),
+                            bottomRight: Radius.circular(16),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             // Selection indicator
