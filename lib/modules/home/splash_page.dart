@@ -26,29 +26,13 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: Colors.white,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            MascotManager().render(MascotScene.splash, size: 150, color: Colors.white)
-                .animate()
-                .fade(duration: 800.ms)
-                .scale(duration: 800.ms),
-            const SizedBox(height: 20),
-            const Text(
-              "Nyan Read",
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ).animate().fadeIn(delay: 500.ms),
-            const Text(
-              "v1.0.0",
-              style: TextStyle(color: Colors.white70),
-            ).animate().fadeIn(delay: 700.ms),
-          ],
+        child: Image.asset(
+          'assets/images/splash_screen.png',
+          width: double.infinity,
+          height: double.infinity,
+          fit: BoxFit.cover,
         ),
       ),
     );

@@ -45,14 +45,24 @@ dependencies:
   screen_brightness: ^1.0.1
   url_launcher: ^6.2.6
 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: 0.11.0
 
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/images/splash_screen.png
+  android_12:
+    image: assets/images/splash_screen.png
+
 flutter:
   generate: true
   uses-material-design: true
+  assets:
+    - assets/images/
+
 
 # Flutter launcher icons configuration is now in flutter_launcher_icons.yaml
