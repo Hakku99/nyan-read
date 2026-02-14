@@ -64,7 +64,9 @@ class NyanTheme {
       colorScheme: ColorScheme(
         brightness: brightness,
         primary: primary,
-        onPrimary: brightness == Brightness.dark ? textPrimary : Colors.white,
+        onPrimary: brightness == Brightness.dark
+            ? const Color(0xFF1C1B1A)
+            : Colors.white,
         secondary: accent,
         onSecondary: Colors.white,
         error: brightness == Brightness.dark
@@ -163,18 +165,19 @@ final Map<ThemePreset, NyanTheme> themePresets = {
   ThemePreset.sumiDark: const NyanTheme(
     preset: ThemePreset.sumiDark,
     name: "Sumi Dark",
-    primary: Color(0xFFB5BEA0), // Light Matcha
-    surface: Color(0xFF262422), // Dark Wood/Charcoal
+    primary: Color(0xFFC5D0A8), // Brighter Matcha (was 0xFFB5BEA0)
+    surface: Color(
+        0xFF2D2A28), // Slightly lighter Dark Wood/Charcoal (was 0xFF262422)
     background: Color(0xFF1C1B1A), // Warm Charcoal
-    textPrimary: Color(0xFFE6E2D8), // Cream White
-    textSecondary: Color(0xFFA8A29A), // Warm Grey
-    textMuted: Color(0xFF706B65),
+    textPrimary: Color(0xFFF5F3ED), // Brighter Cream White (was 0xFFE6E2D8)
+    textSecondary: Color(0xFFC5BFB5), // Lighter Warm Grey (was 0xFFA8A29A)
+    textMuted: Color(0xFF8F8A84), // Medium Grey (was 0xFF706B65)
     accent: Color(0xFFD4A373), // Soft Wood
-    divider: Color(0xFF3E3B38),
-    borderColor: Color(0xFF3E3B38),
+    divider: Color(0xFF4A4642), // More visible divider (was 0xFF3E3B38)
+    borderColor: Color(0xFF4A4642), // More visible border (was 0xFF3E3B38)
     brightness: Brightness.dark,
 
-    primaryButtonColor: Color(0xFFB5BEA0),
+    primaryButtonColor: Color(0xFFC5D0A8),
     successColor: Color(0xFF8FBC8F),
     warningColor: Color(0xFFD4A373),
     infoColor: Color(0xFF7FABAC),
