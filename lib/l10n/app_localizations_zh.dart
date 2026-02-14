@@ -232,6 +232,33 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sort => '排序';
 
   @override
+  String get sortBy => '排序方式';
+
+  @override
+  String get sortOrderAsc => '升序';
+
+  @override
+  String get sortOrderDesc => '降序';
+
+  @override
+  String get lastReadAsc => '最后阅读升序';
+
+  @override
+  String get lastReadDesc => '最后阅读降序';
+
+  @override
+  String get addedAsc => '添加时间升序';
+
+  @override
+  String get addedDesc => '添加时间降序';
+
+  @override
+  String get titleAsc => '标题升序';
+
+  @override
+  String get titleDesc => '标题降序';
+
+  @override
   String get lockPrivacyShelf => '锁定隐私书架';
 
   @override

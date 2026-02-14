@@ -536,6 +536,60 @@ abstract class AppLocalizations {
   /// **'Sort'**
   String get sort;
 
+  /// No description provided for @sortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get sortBy;
+
+  /// No description provided for @sortOrderAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Ascending'**
+  String get sortOrderAsc;
+
+  /// No description provided for @sortOrderDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Descending'**
+  String get sortOrderDesc;
+
+  /// No description provided for @lastReadAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Read Ascending'**
+  String get lastReadAsc;
+
+  /// No description provided for @lastReadDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Read Descending'**
+  String get lastReadDesc;
+
+  /// No description provided for @addedAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Added Ascending'**
+  String get addedAsc;
+
+  /// No description provided for @addedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Added Descending'**
+  String get addedDesc;
+
+  /// No description provided for @titleAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Title Ascending'**
+  String get titleAsc;
+
+  /// No description provided for @titleDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Title Descending'**
+  String get titleDesc;
+
   /// No description provided for @lockPrivacyShelf.
   ///
   /// In en, this message translates to:
