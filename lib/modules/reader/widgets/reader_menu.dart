@@ -91,22 +91,11 @@ class ReaderMenu extends StatelessWidget {
         ),
         const SizedBox(width: 16),
         Expanded(
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 6,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-              activeTrackColor: theme.primary,
-              inactiveTrackColor: theme.primary.withOpacity(0.2),
-              thumbColor: theme.primary,
-              overlayColor: theme.primary.withOpacity(0.1),
-            ),
-            child: Slider(
-              value: controller.currentProgress,
-              min: 0.0,
-              max: 1.0,
-              onChanged: (val) => controller.seekTo(val),
-            ),
+          child: Slider(
+            value: controller.currentProgress,
+            min: 0.0,
+            max: 1.0,
+            onChanged: (val) => controller.seekTo(val),
           ),
         ),
       ],
@@ -120,21 +109,11 @@ class ReaderMenu extends StatelessWidget {
         Icon(Icons.wb_sunny_outlined, size: 20, color: theme.primary),
         const SizedBox(width: 16),
         Expanded(
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 6,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-              activeTrackColor: theme
-                  .primary, // Changed from accent to primary for consistency
-              inactiveTrackColor: theme.primary.withOpacity(0.2),
-              thumbColor: theme.primary, // Changed from accent to primary
-            ),
-            child: Slider(
-              value: controller.brightness,
-              min: 0.0,
-              max: 1.0,
-              onChanged: (val) => controller.setBrightness(val),
-            ),
+          child: Slider(
+            value: controller.brightness,
+            min: 0.0,
+            max: 1.0,
+            onChanged: (val) => controller.setBrightness(val),
           ),
         ),
         const SizedBox(width: 16),
@@ -301,8 +280,8 @@ class ReaderMenu extends StatelessWidget {
               border: Border.all(
                 color: isSelected
                     ? currentTheme.primary
-                    : currentTheme.divider.withOpacity(0.5),
-                width: isSelected ? 2 : 1,
+                    : currentTheme.primary.withOpacity(0.3),
+                width: isSelected ? 2 : 1.5,
               ),
               boxShadow: isSelected
                   ? [

@@ -90,14 +90,28 @@ class NyanTheme {
         margin: const EdgeInsets.symmetric(vertical: 4),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: brightness == Brightness.dark
-                ? Colors.white.withOpacity(0.08)
-                : divider,
-            width: brightness == Brightness.dark ? 0.5 : 1,
-          ),
+          side: preset == ThemePreset.sepiaWarm
+              ? BorderSide(
+                  color: const Color(0xFF795548).withOpacity(0.15), width: 1)
+              : BorderSide(
+                  color: brightness == Brightness.dark
+                      ? Colors.white.withOpacity(0.08)
+                      : divider,
+                  width: brightness == Brightness.dark ? 0.5 : 1,
+                ),
         ),
       ),
+      floatingActionButtonTheme: preset == ThemePreset.sepiaWarm
+          ? FloatingActionButtonThemeData(
+              backgroundColor: primary.withOpacity(0.15),
+              foregroundColor: primary,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: primary, width: 1),
+              ),
+            )
+          : null,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: brightness == Brightness.dark
@@ -148,6 +162,38 @@ class NyanTheme {
         labelStyle: TextStyle(color: textSecondary),
         hintStyle: TextStyle(color: textSecondary.withOpacity(0.7)),
       ),
+      switchTheme: preset == ThemePreset.sepiaWarm
+          ? SwitchThemeData(
+              thumbColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return const Color(0xFFEDE3C7); // Light thumb on ON
+                }
+                return const Color(0xFFD7CCC8); // Pale Brown thumb on OFF
+              }),
+              trackColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return primary; // Solid Brown track on ON
+                }
+                return const Color(0xFFA1887F); // Latte track on OFF
+              }),
+              trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return Colors.transparent;
+                }
+                return const Color(0xFFA1887F); // Latte outline
+              }),
+            )
+          : null,
+      sliderTheme: preset == ThemePreset.sepiaWarm
+          ? SliderThemeData(
+              activeTrackColor: primary,
+              inactiveTrackColor:
+                  const Color(0xFFA1887F).withOpacity(0.5), // Latte @ 50%
+              thumbColor: primary,
+              overlayColor: primary.withOpacity(0.1),
+              trackHeight: 4,
+            )
+          : null,
       textTheme: TextTheme(
         bodyLarge: TextStyle(color: textPrimary, fontSize: 16),
         bodyMedium: TextStyle(color: textPrimary, fontSize: 14),
@@ -216,18 +262,18 @@ final Map<ThemePreset, NyanTheme> themePresets = {
   ThemePreset.sepiaWarm: const NyanTheme(
     preset: ThemePreset.sepiaWarm,
     name: "Sepia Warm",
-    primary: Color(0xFF8D6E63),
-    surface: Color(0xFFEFEBE9),
-    background: Color(0xFFEDE3C7), // New Warm Sepia
+    primary: Color(0xFF795548), // Leather Brown
+    surface: Color(0xFFFDFBF7), // Warm Paper White
+    background: Color(0xFFEDE3C7), // Warm Sepia
     textPrimary: Color(0xFF3E2723), // Dark Brown
     textSecondary: Color(0xFF5D4037),
     textMuted: Color(0xFFA1887F),
-    accent: Color(0xFF8D6E63),
+    accent: Color(0xFF795548),
     divider: Color(0xFFD7CCC8),
     borderColor: Color(0xFFD7CCC8),
     brightness: Brightness.light,
 
-    primaryButtonColor: Color(0xFF8D6E63),
+    primaryButtonColor: Color(0xFF795548),
     successColor: Color(0xFF558B2F),
     warningColor: Color(0xFFEF6C00),
     infoColor: Color(0xFF0277BD),
