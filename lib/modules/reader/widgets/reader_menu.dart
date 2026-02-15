@@ -26,16 +26,27 @@ class ReaderMenu extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         decoration: BoxDecoration(
-          color: activeTheme.surface, // Use theme surface color
+          color: themeManager.currentPreset == ThemePreset.creamLight
+              ? const Color(0xFFFAF9F6)
+              : activeTheme.surface,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
+            if (themeManager.currentPreset == ThemePreset.creamLight)
+              BoxShadow(
+                color: const Color(0xFF4A453E).withOpacity(0.15),
+                blurRadius: 15,
+                offset: const Offset(0, -4),
+              )
+            else
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              ),
           ],
-          border: Border.all(color: activeTheme.divider.withOpacity(0.5)),
+          border: themeManager.currentPreset == ThemePreset.creamLight
+              ? Border.all(color: const Color(0xFFD8D4C8), width: 1.0)
+              : Border.all(color: activeTheme.divider.withOpacity(0.5)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
@@ -51,21 +62,33 @@ class ReaderMenu extends StatelessWidget {
             _buildBrightnessSection(context, controller, activeTheme),
 
             const SizedBox(height: 24),
-            Divider(height: 1, color: activeTheme.divider.withOpacity(0.5)),
+            Divider(
+                height: 1,
+                color: themeManager.currentPreset == ThemePreset.creamLight
+                    ? const Color(0xFFD8D4C8)
+                    : activeTheme.divider.withOpacity(0.5)),
             const SizedBox(height: 24),
 
             // 3. Settings Row (Font, Line Height)
             _buildTypographySection(context, controller, activeTheme),
 
             const SizedBox(height: 24),
-            Divider(height: 1, color: activeTheme.divider.withOpacity(0.5)),
+            Divider(
+                height: 1,
+                color: themeManager.currentPreset == ThemePreset.creamLight
+                    ? const Color(0xFFD8D4C8)
+                    : activeTheme.divider.withOpacity(0.5)),
             const SizedBox(height: 24),
 
             // 4. Themes (Background Colors)
             _buildThemeSection(context, controller, activeTheme),
 
             const SizedBox(height: 24),
-            Divider(height: 1, color: activeTheme.divider.withOpacity(0.5)),
+            Divider(
+                height: 1,
+                color: themeManager.currentPreset == ThemePreset.creamLight
+                    ? const Color(0xFFD8D4C8)
+                    : activeTheme.divider.withOpacity(0.5)),
             const SizedBox(height: 16),
 
             // 5. Bottom Navigation Actions
@@ -125,36 +148,46 @@ class ReaderMenu extends StatelessWidget {
   Widget _buildTypographySection(
       BuildContext context, ReaderController controller, NyanTheme theme) {
     final loc = AppLocalizations.of(context)!;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Font Size Control
-        Expanded(
-          child: _buildStepper(
-            context,
-            label: loc.fontSize,
-            value: controller.fontSize.toStringAsFixed(0),
-            onRemove: () => controller.setFontSize(controller.fontSize - 1),
-            onAdd: () => controller.setFontSize(controller.fontSize + 1),
-            theme: theme,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.preset == ThemePreset.creamLight
+            ? const Color(0xFFF2F0EB)
+            : theme.surface.withOpacity(0.5), // Subtle grouping for others
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Font Size Control
+          Expanded(
+            child: _buildStepper(
+              context,
+              label: loc.fontSize,
+              value: controller.fontSize.toStringAsFixed(0),
+              onRemove: () => controller.setFontSize(controller.fontSize - 1),
+              onAdd: () => controller.setFontSize(controller.fontSize + 1),
+              theme: theme,
+            ),
           ),
-        ),
 
-        const SizedBox(width: 16),
+          const SizedBox(width: 16),
 
-        // Line Height Control
-        Expanded(
-          child: _buildStepper(
-            context,
-            label: loc.lineHeight,
-            value: controller.lineHeight.toStringAsFixed(1),
-            onRemove: () =>
-                controller.setLineHeight(controller.lineHeight - 0.1),
-            onAdd: () => controller.setLineHeight(controller.lineHeight + 0.1),
-            theme: theme,
+          // Line Height Control
+          Expanded(
+            child: _buildStepper(
+              context,
+              label: loc.lineHeight,
+              value: controller.lineHeight.toStringAsFixed(1),
+              onRemove: () =>
+                  controller.setLineHeight(controller.lineHeight - 0.1),
+              onAdd: () =>
+                  controller.setLineHeight(controller.lineHeight + 0.1),
+              theme: theme,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -183,9 +216,13 @@ class ReaderMenu extends StatelessWidget {
         Container(
           height: 44,
           decoration: BoxDecoration(
-            // Removed border
             borderRadius: BorderRadius.circular(12),
-            color: theme.textPrimary.withOpacity(0.08), // Soft fill
+            color: theme.preset == ThemePreset.creamLight
+                ? Colors.white
+                : theme.textPrimary.withOpacity(0.08),
+            border: theme.preset == ThemePreset.creamLight
+                ? Border.all(color: const Color(0xFFD8D4C8))
+                : null,
           ),
           child: Row(
             children: [
