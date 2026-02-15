@@ -474,4 +474,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get errorUnknown => '发生了意想不到的事情。\n请稍后再试。';
+
+  @override
+  String get emptyShelfTitle => '书架还在等待故事';
+
+  @override
+  String get emptyShelfSubtitle => '导入一本书，开始今天的阅读吧';
 }

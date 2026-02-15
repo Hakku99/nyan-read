@@ -480,4 +480,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorUnknown =>
       'Something unexpected happened.\nPlease try again later.';
+
+  @override
+  String get emptyShelfTitle => 'Bookshelf is waiting for stories';
+
+  @override
+  String get emptyShelfSubtitle => 'Import a book to start reading';
 }

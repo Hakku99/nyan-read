@@ -669,8 +669,16 @@ class ReaderPage extends StatelessWidget {
                                             .computeLuminance() <
                                         0.5;
                                     final systemOverlayStyle = isDark
-                                        ? SystemUiOverlayStyle.light
-                                        : SystemUiOverlayStyle.dark;
+                                        ? SystemUiOverlayStyle.light.copyWith(
+                                            statusBarColor: Colors.transparent,
+                                            systemNavigationBarColor:
+                                                Colors.transparent,
+                                          )
+                                        : SystemUiOverlayStyle.dark.copyWith(
+                                            statusBarColor: Colors.transparent,
+                                            systemNavigationBarColor:
+                                                Colors.transparent,
+                                          );
 
                                     return AnnotatedRegion<
                                         SystemUiOverlayStyle>(
@@ -790,9 +798,8 @@ class ReaderPage extends StatelessWidget {
                                       height: kToolbarHeight +
                                           topPadding, // Explicit height to prevent layout errors
                                       child: AppBar(
-                                        backgroundColor: theme
-                                            .colorScheme.primary
-                                            .withOpacity(0.95),
+                                        backgroundColor:
+                                            theme.colorScheme.surface,
                                         elevation: 0,
                                         primary: true, // Use internal padding
                                         bottom: PreferredSize(
@@ -802,17 +809,17 @@ class ReaderPage extends StatelessWidget {
                                               height: 1,
                                               thickness: 1,
                                               color: theme.dividerColor
-                                                  .withOpacity(0.2)),
+                                                  .withOpacity(0.08)),
                                         ),
                                         title: Text(book.title,
                                             style: TextStyle(
                                               fontSize: 18,
                                               fontWeight: FontWeight.w600,
-                                              color: theme.colorScheme.onPrimary
-                                                  .withOpacity(0.9),
+                                              color: theme
+                                                  .textTheme.titleLarge?.color,
                                             )),
                                         iconTheme: IconThemeData(
-                                            color: theme.colorScheme.onPrimary),
+                                            color: theme.colorScheme.primary),
                                         actions: const [],
                                       ),
                                     ),

@@ -90,7 +90,32 @@ class NyanTheme {
         margin: const EdgeInsets.symmetric(vertical: 4),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: divider, width: 1), // Subtle border
+          side: BorderSide(
+            color: brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.08)
+                : divider,
+            width: brightness == Brightness.dark ? 0.5 : 1,
+          ),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: brightness == Brightness.dark
+              ? primary.withOpacity(0.15)
+              : primary,
+          foregroundColor: brightness == Brightness.dark
+              ? primary
+              : (brightness == Brightness.dark
+                  ? const Color(0xFF1C1B1A)
+                  : Colors.white),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: brightness == Brightness.dark
+                ? BorderSide(color: primary.withOpacity(0.5), width: 1)
+                : BorderSide.none,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -144,7 +169,7 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     name: "Cream Light",
     primary: Color(0xFF8E9775),
     surface: Color(0xFFF2F0EB),
-    background: Color(0xFFFDFCF8),
+    background: Color(0xFFF7F5EF), // New Cream+
     textPrimary: Color(0xFF4A453E),
     textSecondary: Color(0xFF8C867B),
     textMuted: Color(0xFFB0ACA5),
@@ -165,16 +190,15 @@ final Map<ThemePreset, NyanTheme> themePresets = {
   ThemePreset.sumiDark: const NyanTheme(
     preset: ThemePreset.sumiDark,
     name: "Sumi Dark",
-    primary: Color(0xFFC5D0A8), // Brighter Matcha (was 0xFFB5BEA0)
-    surface: Color(
-        0xFF2D2A28), // Slightly lighter Dark Wood/Charcoal (was 0xFF262422)
-    background: Color(0xFF1C1B1A), // Warm Charcoal
-    textPrimary: Color(0xFFF5F3ED), // Brighter Cream White (was 0xFFE6E2D8)
-    textSecondary: Color(0xFFC5BFB5), // Lighter Warm Grey (was 0xFFA8A29A)
-    textMuted: Color(0xFF8F8A84), // Medium Grey (was 0xFF706B65)
-    accent: Color(0xFFD4A373), // Soft Wood
-    divider: Color(0xFF4A4642), // More visible divider (was 0xFF3E3B38)
-    borderColor: Color(0xFF4A4642), // More visible border (was 0xFF3E3B38)
+    primary: Color(0xFFC5D0A8),
+    surface: Color(0xFF262422), // Sumi Ink (for surface/menu)
+    background: Color(0xFF141312), // Deep Charcoal (for main background)
+    textPrimary: Color(0xFFF5F3ED),
+    textSecondary: Color(0xFFC5BFB5),
+    textMuted: Color(0xFF8F8A84),
+    accent: Color(0xFFD4A373),
+    divider: Color(0xFF4A4642),
+    borderColor: Color(0xFF4A4642),
     brightness: Brightness.dark,
 
     primaryButtonColor: Color(0xFFC5D0A8),
@@ -194,7 +218,7 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     name: "Sepia Warm",
     primary: Color(0xFF8D6E63),
     surface: Color(0xFFEFEBE9),
-    background: Color(0xFFF5F5DC),
+    background: Color(0xFFEDE3C7), // New Warm Sepia
     textPrimary: Color(0xFF3E2723), // Dark Brown
     textSecondary: Color(0xFF5D4037),
     textMuted: Color(0xFFA1887F),

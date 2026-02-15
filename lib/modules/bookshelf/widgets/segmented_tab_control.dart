@@ -28,11 +28,23 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final backgroundColor = widget.backgroundColor ?? theme.colorScheme.surface;
-    final selectedColor = widget.selectedColor ?? theme.colorScheme.primary;
+
+    // Ghost style for dark mode, solid for light mode
+    final selectedColor = widget.selectedColor ??
+        (isDark
+            ? theme.colorScheme.primary.withOpacity(0.15)
+            : theme.colorScheme.primary);
+
     final unselectedColor = widget.unselectedColor ??
         theme.textTheme.bodySmall?.color ??
         Colors.grey;
+
+    // Text color for selected tab
+    final selectedTextColor =
+        isDark ? theme.colorScheme.primary : theme.colorScheme.onPrimary;
 
     return Container(
       height: 40,
@@ -65,6 +77,11 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                   decoration: BoxDecoration(
                     color: selectedColor,
                     borderRadius: BorderRadius.circular(16),
+                    border: isDark
+                        ? Border.all(
+                            color: theme.colorScheme.primary.withOpacity(0.5),
+                            width: 1)
+                        : null,
                   ),
                 ),
               ),
@@ -91,7 +108,7 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                                 tab.icon,
                                 size: 16,
                                 color: isSelected
-                                    ? theme.colorScheme.onPrimary
+                                    ? selectedTextColor
                                     : unselectedColor,
                               ),
                               const SizedBox(width: 6),
@@ -103,7 +120,7 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                   color: isSelected
-                                      ? theme.colorScheme.onPrimary
+                                      ? selectedTextColor
                                       : unselectedColor,
                                 ),
                                 overflow: TextOverflow.ellipsis,

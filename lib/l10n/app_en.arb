@@ -289,6 +289,8 @@
   "errorFileNotFound": "This book seems to have lost its way.\nThe file cannot be found, it may have been moved or deleted.",
   "errorUnsupportedFormat": "Nyan cannot read this format.\nThis file type is not supported yet.",
   "errorParseFailed": "The pages are stuck together.\nFailed to parse file, it might be corrupted.",
-  "errorUnknown": "Something unexpected happened.\nPlease try again later."
+  "errorUnknown": "Something unexpected happened.\nPlease try again later.",
+  "emptyShelfTitle": "Bookshelf is waiting for stories",
+  "emptyShelfSubtitle": "Import a book to start reading"
 }
 

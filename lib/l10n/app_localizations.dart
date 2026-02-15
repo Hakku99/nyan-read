@@ -955,6 +955,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something unexpected happened.\nPlease try again later.'**
   String get errorUnknown;
+
+  /// No description provided for @emptyShelfTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookshelf is waiting for stories'**
+  String get emptyShelfTitle;
+
+  /// No description provided for @emptyShelfSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import a book to start reading'**
+  String get emptyShelfSubtitle;
 }
 
 class _AppLocalizationsDelegate

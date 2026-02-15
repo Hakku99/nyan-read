@@ -291,7 +291,7 @@ class _SectionHeader extends StatelessWidget {
           fontSize: 12,
           fontWeight: FontWeight.w600,
           letterSpacing: 1.2,
-          color: Theme.of(context).textTheme.bodySmall?.color,
+          color: Theme.of(context).colorScheme.secondary,
         ),
       ),
     );
@@ -314,27 +314,27 @@ class _SettingsCard extends StatelessWidget {
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: theme.dividerColor.withOpacity(0.3),
+          color: isDark
+              ? Colors.white.withOpacity(0.08)
+              : theme.dividerColor.withOpacity(0.3),
           width: 0.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.2)
-                : Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.1)
-                : Colors.black.withOpacity(0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-            spreadRadius: 0,
-          ),
-        ],
+        boxShadow: isDark
+            ? [] // Remove shadow in dark mode for flat "ink on paper" look
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                  spreadRadius: 0,
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                  spreadRadius: 0,
+                ),
+              ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),

@@ -5,8 +5,11 @@ import '../reader_page.dart';
 import 'chapter_list_widget.dart';
 import '../../bookmark/bookmark_list_page.dart';
 import '../../notes/notes_list_page.dart';
+import '../../settings/settings_page.dart';
 import '../reader_engine/txt/txt_position.dart';
 import '../../../../core/models/highlight.dart';
+import '../../../../core/theme/theme_presets.dart';
+import '../../../../core/theme/theme_manager.dart';
 
 class ReaderMenu extends StatelessWidget {
   const ReaderMenu({Key? key}) : super(key: key);
@@ -14,14 +17,16 @@ class ReaderMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ReaderController>();
-    final theme = Theme.of(context);
+    final themeManager = context.watch<ThemeManager>();
+    // Use the global app theme for the menu, decoupled from the reader's background color
+    final activeTheme = themePresets[themeManager.currentPreset]!;
 
     return SafeArea(
       bottom: true,
       child: Container(
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         decoration: BoxDecoration(
-          color: theme.cardColor,
+          color: activeTheme.surface, // Use theme surface color
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -30,7 +35,7 @@ class ReaderMenu extends StatelessWidget {
               offset: const Offset(0, 4),
             ),
           ],
-          border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+          border: Border.all(color: activeTheme.divider.withOpacity(0.5)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
@@ -38,33 +43,33 @@ class ReaderMenu extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 1. Progress Slider
-            _buildProgressSection(context, controller, theme),
+            _buildProgressSection(context, controller, activeTheme),
 
             const SizedBox(height: 24),
 
             // 2. Brightness Slider
-            _buildBrightnessSection(context, controller, theme),
+            _buildBrightnessSection(context, controller, activeTheme),
 
             const SizedBox(height: 24),
-            Divider(height: 1, color: theme.dividerColor.withOpacity(0.5)),
+            Divider(height: 1, color: activeTheme.divider.withOpacity(0.5)),
             const SizedBox(height: 24),
 
             // 3. Settings Row (Font, Line Height)
-            _buildTypographySection(context, controller, theme),
+            _buildTypographySection(context, controller, activeTheme),
 
             const SizedBox(height: 24),
-            Divider(height: 1, color: theme.dividerColor.withOpacity(0.5)),
+            Divider(height: 1, color: activeTheme.divider.withOpacity(0.5)),
             const SizedBox(height: 24),
 
             // 4. Themes (Background Colors)
-            _buildThemeSection(context, controller, theme),
+            _buildThemeSection(context, controller, activeTheme),
 
             const SizedBox(height: 24),
-            Divider(height: 1, color: theme.dividerColor.withOpacity(0.5)),
+            Divider(height: 1, color: activeTheme.divider.withOpacity(0.5)),
             const SizedBox(height: 16),
 
             // 5. Bottom Navigation Actions
-            _buildBottomActions(context, controller, theme),
+            _buildBottomActions(context, controller, activeTheme),
           ],
         ),
       ),
@@ -72,7 +77,7 @@ class ReaderMenu extends StatelessWidget {
   }
 
   Widget _buildProgressSection(
-      BuildContext context, ReaderController controller, ThemeData theme) {
+      BuildContext context, ReaderController controller, NyanTheme theme) {
     return Row(
       children: [
         Text(
@@ -80,7 +85,7 @@ class ReaderMenu extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.textPrimary.withOpacity(0.7),
             fontFamily: 'monospace',
           ),
         ),
@@ -91,10 +96,10 @@ class ReaderMenu extends StatelessWidget {
               trackHeight: 6,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-              activeTrackColor: theme.colorScheme.primary,
-              inactiveTrackColor: theme.colorScheme.primary.withOpacity(0.2),
-              thumbColor: theme.colorScheme.primary,
-              overlayColor: theme.colorScheme.primary.withOpacity(0.1),
+              activeTrackColor: theme.primary,
+              inactiveTrackColor: theme.primary.withOpacity(0.2),
+              thumbColor: theme.primary,
+              overlayColor: theme.primary.withOpacity(0.1),
             ),
             child: Slider(
               value: controller.currentProgress,
@@ -109,39 +114,37 @@ class ReaderMenu extends StatelessWidget {
   }
 
   Widget _buildBrightnessSection(
-      BuildContext context, ReaderController controller, ThemeData theme) {
+      BuildContext context, ReaderController controller, NyanTheme theme) {
     return Row(
       children: [
-        Icon(Icons.wb_sunny_outlined,
-            size: 20, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+        Icon(Icons.wb_sunny_outlined, size: 20, color: theme.primary),
         const SizedBox(width: 16),
         Expanded(
           child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 6,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-              activeTrackColor: theme.colorScheme.secondary,
-              inactiveTrackColor: theme.colorScheme.secondary.withOpacity(0.2),
-              thumbColor: theme.colorScheme.secondary,
+              activeTrackColor: theme
+                  .primary, // Changed from accent to primary for consistency
+              inactiveTrackColor: theme.primary.withOpacity(0.2),
+              thumbColor: theme.primary, // Changed from accent to primary
             ),
             child: Slider(
               value: controller.brightness,
-              min:
-                  0.0, // Allow fuller range if supported, though system might clamp
+              min: 0.0,
               max: 1.0,
               onChanged: (val) => controller.setBrightness(val),
             ),
           ),
         ),
         const SizedBox(width: 16),
-        Icon(Icons.wb_sunny,
-            size: 20, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+        Icon(Icons.wb_sunny, size: 20, color: theme.primary),
       ],
     );
   }
 
   Widget _buildTypographySection(
-      BuildContext context, ReaderController controller, ThemeData theme) {
+      BuildContext context, ReaderController controller, NyanTheme theme) {
     final loc = AppLocalizations.of(context)!;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -182,7 +185,7 @@ class ReaderMenu extends StatelessWidget {
     required String value,
     required VoidCallback onRemove,
     required VoidCallback onAdd,
-    required ThemeData theme,
+    required NyanTheme theme,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,16 +197,16 @@ class ReaderMenu extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.textSecondary.withOpacity(0.8),
             ),
           ),
         ),
         Container(
           height: 44,
           decoration: BoxDecoration(
-            border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+            // Removed border
             borderRadius: BorderRadius.circular(12),
-            color: theme.colorScheme.surface,
+            color: theme.textPrimary.withOpacity(0.08), // Soft fill
           ),
           child: Row(
             children: [
@@ -212,14 +215,15 @@ class ReaderMenu extends StatelessWidget {
                   onTap: onRemove,
                   borderRadius:
                       const BorderRadius.horizontal(left: Radius.circular(11)),
-                  child: Icon(Icons.remove,
-                      size: 18, color: theme.colorScheme.onSurface),
+                  child: Icon(Icons.remove, size: 18, color: theme.textPrimary),
                 ),
               ),
+              // Removed or made dividers very subtle if needed.
+              // Here we can remove them for a cleaner look or use a very faint color.
               Container(
                 width: 1,
                 height: 20,
-                color: theme.dividerColor.withOpacity(0.5),
+                color: theme.divider.withOpacity(0.2), // Much more subtle
               ),
               Container(
                 constraints: const BoxConstraints(minWidth: 40),
@@ -228,7 +232,7 @@ class ReaderMenu extends StatelessWidget {
                   value,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
+                    color: theme.textPrimary,
                     fontSize: 15,
                   ),
                 ),
@@ -236,15 +240,14 @@ class ReaderMenu extends StatelessWidget {
               Container(
                 width: 1,
                 height: 20,
-                color: theme.dividerColor.withOpacity(0.5),
+                color: theme.divider.withOpacity(0.2),
               ),
               Expanded(
                 child: InkWell(
                   onTap: onAdd,
                   borderRadius:
                       const BorderRadius.horizontal(right: Radius.circular(11)),
-                  child: Icon(Icons.add,
-                      size: 18, color: theme.colorScheme.onSurface),
+                  child: Icon(Icons.add, size: 18, color: theme.textPrimary),
                 ),
               ),
             ],
@@ -255,23 +258,23 @@ class ReaderMenu extends StatelessWidget {
   }
 
   Widget _buildThemeSection(
-      BuildContext context, ReaderController controller, ThemeData theme) {
+      BuildContext context, ReaderController controller, NyanTheme theme) {
     final loc = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildColorBtn(context, controller, const Color(0xFFFDFCF8),
+          _buildColorBtn(context, controller, const Color(0xFFF7F5EF), theme,
               label: loc.themeCream),
           const SizedBox(width: 16),
-          _buildColorBtn(context, controller, const Color(0xFFF5F5DC),
+          _buildColorBtn(context, controller, const Color(0xFFEDE3C7), theme,
               label: loc.themeSepia),
           const SizedBox(width: 16),
-          _buildColorBtn(context, controller, const Color(0xFF262422),
+          _buildColorBtn(context, controller, const Color(0xFF262422), theme,
               isDark: true, label: loc.themeSumi),
           const SizedBox(width: 16),
-          _buildColorBtn(context, controller, const Color(0xFF1C1B1A),
+          _buildColorBtn(context, controller, const Color(0xFF141312), theme,
               isDark: true, label: loc.themeCharcoal),
         ],
       ),
@@ -279,9 +282,9 @@ class ReaderMenu extends StatelessWidget {
   }
 
   Widget _buildColorBtn(BuildContext context, ReaderController c, Color color,
+      NyanTheme currentTheme,
       {bool isDark = false, String? label}) {
     final isSelected = c.backgroundColor.value == color.value;
-    final theme = Theme.of(context);
 
     return GestureDetector(
       onTap: () => c.setBackground(color),
@@ -297,14 +300,14 @@ class ReaderMenu extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(
                 color: isSelected
-                    ? theme.colorScheme.primary
-                    : theme.dividerColor.withOpacity(0.3),
+                    ? currentTheme.primary
+                    : currentTheme.divider.withOpacity(0.5),
                 width: isSelected ? 2 : 1,
               ),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.2),
+                        color: currentTheme.primary.withOpacity(0.2),
                         blurRadius: 8,
                         spreadRadius: 1,
                       )
@@ -324,8 +327,8 @@ class ReaderMenu extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 color: isSelected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface.withOpacity(0.6),
+                    ? currentTheme.primary
+                    : currentTheme.textSecondary.withOpacity(0.8),
               ),
             ),
           ],
@@ -335,14 +338,14 @@ class ReaderMenu extends StatelessWidget {
   }
 
   Widget _buildBottomActions(
-      BuildContext context, ReaderController controller, ThemeData theme) {
+      BuildContext context, ReaderController controller, NyanTheme theme) {
     final loc = AppLocalizations.of(context)!;
     Widget buildActionBtn(IconData icon, String tooltip, VoidCallback onTap) {
       return IconButton(
         icon: Icon(icon),
         tooltip: tooltip,
         onPressed: onTap,
-        color: theme.colorScheme.onSurface.withOpacity(0.8),
+        color: theme.textPrimary.withOpacity(0.8),
         iconSize: 26,
       );
     }
@@ -419,6 +422,14 @@ class ReaderMenu extends StatelessWidget {
               controller.showNoteDialog(context, result);
             }
           }
+        }),
+        buildActionBtn(Icons.settings_outlined, loc.settingsTitle, () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const SettingsPage(),
+            ),
+          );
         }),
       ],
     );

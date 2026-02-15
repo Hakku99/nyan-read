@@ -952,6 +952,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
           FloatingActionButton(
             heroTag: 'add_fab',
+            elevation: 0,
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                : Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).brightness == Brightness.dark
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onPrimary,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: const Icon(Icons.add),
             onPressed: () {
               if (Platform.isAndroid) {
@@ -988,7 +997,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   MascotManager().render(MascotScene.emptyShelf, size: 120),
                   const SizedBox(height: _spacing24),
                   Text(
-                    '书架还在等待故事',
+                    AppLocalizations.of(context)!.emptyShelfTitle,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -998,7 +1007,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: _spacing8),
                   Text(
-                    '导入一本书，开始今天的阅读吧',
+                    AppLocalizations.of(context)!.emptyShelfSubtitle,
                     style: TextStyle(
                       fontSize: 14,
                       color: Theme.of(context).textTheme.bodySmall?.color,
