@@ -108,6 +108,7 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
           ],
         ),
         child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: widget.onTap,
           onLongPress: widget.onLongPress,
           onTapDown: _handleTapDown,
@@ -287,6 +288,7 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
     return ScaleTransition(
       scale: _scaleAnimation,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
         onLongPress: widget.onLongPress,
         onTapDown: _handleTapDown,

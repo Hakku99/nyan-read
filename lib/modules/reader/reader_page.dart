@@ -40,6 +40,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   bool _showControls = false;
   double _currentProgress = 0.0;
   ReaderErrorState? _errorState;
+  bool _followSystem = false;
+  StreamSubscription<double>? _brightnessSubscription;
   List<dynamic> _chapters = [];
   int? _currentChapterIndex;
   final Debouncer _layoutDebouncer =
@@ -81,6 +83,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   Color get backgroundColor => _backgroundColor;
   Color get textColor => _textColor;
   bool get showControls => _showControls;
+  bool get followSystem => _followSystem;
   double get currentProgress => _currentProgress;
   ReaderErrorState? get errorState => _errorState;
   List<dynamic> get chapters => _chapters;
@@ -296,26 +299,52 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
     int newIndex = 0;
 
-    if (position is TxtReadingPosition && book.format == 'txt') {
-      final currentPara = position.paragraphIndex;
-      // Find the last chapter with paragraphIndex <= current
+    // Robust search for current chapter
+    // We want the chapter with the largest start-point that is still <= current-point.
+
+    if ((position is TxtReadingPosition && book.format == 'txt') ||
+        (book.format == 'txt')) {
+      // Fallback for format check
+      final currentPara =
+          (position is TxtReadingPosition) ? position.paragraphIndex : -1;
+
+      int maxStartPara = -1;
+
       for (int i = 0; i < _chapters.length; i++) {
         final chapterPara = _chapters[i]['paragraphIndex'] as int? ?? -1;
-        if (chapterPara <= currentPara) {
-          newIndex = i;
-        } else {
-          break;
+        // Check if this chapter starts before or at current position
+        if (chapterPara != -1 && chapterPara <= currentPara) {
+          // If this chapter starts LATER than the previous candidate, it's a better candidate
+          // (i.e. we want the Closest chapter that is <= current)
+          if (chapterPara > maxStartPara) {
+            maxStartPara = chapterPara;
+            newIndex = i;
+          } else if (chapterPara == maxStartPara) {
+            // Tie-breaker: prefer higher index if starts are same (rare)
+            newIndex = i;
+          }
         }
       }
     } else if (position is PdfReadingPosition && book.format == 'pdf') {
       final currentPage = position.pageNumber;
+      int maxStartPage = -1;
+
       for (int i = 0; i < _chapters.length; i++) {
         final chapterPage = _chapters[i]['pageNumber'] as int? ?? -1;
-        if (chapterPage <= currentPage) {
-          newIndex = i;
-        } else {
-          break;
+        if (chapterPage != -1 && chapterPage <= currentPage) {
+          if (chapterPage > maxStartPage) {
+            maxStartPage = chapterPage;
+            newIndex = i;
+          }
         }
+      }
+    } else {
+      // Fallback for other formats (e.g. EPUB) if possible
+      // If we can't determine, keep current or default to 0.
+      // For EPUB, we might need Cfi comparison which is complex.
+      // Leaving as 0 if unknown prevents crashing, but navigation won't sync.
+      if (_currentChapterIndex != null) {
+        newIndex = _currentChapterIndex!;
       }
     }
 
@@ -448,6 +477,48 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     // Side effect removed: ScreenBrightness().setScreenBrightness(b);
     // The BrightnessManager widget now listens to this value and applies it.
     notifyListeners();
+  }
+
+  Future<void> toggleFollowSystem() async {
+    _followSystem = !_followSystem;
+    if (_followSystem) {
+      // Switch to system brightness
+      try {
+        double systemBrightness = await ScreenBrightness().current;
+        _brightness = systemBrightness;
+
+        // Listen for changes
+        _brightnessSubscription?.cancel();
+        _brightnessSubscription =
+            ScreenBrightness().onCurrentBrightnessChanged.listen((double b) {
+          if (_followSystem) {
+            _brightness = b;
+            notifyListeners();
+          }
+        });
+      } catch (e) {
+        debugPrint("Failed to get system brightness: $e");
+        _followSystem = false; // Revert if failed
+      }
+    } else {
+      // Stop listening
+      _brightnessSubscription?.cancel();
+      _brightnessSubscription = null;
+    }
+    notifyListeners();
+  }
+
+  Future<void> jumpToPreviousChapter() async {
+    if (_currentChapterIndex == null || _currentChapterIndex! <= 0) return;
+    await jumpToChapter(
+        _currentChapterIndex! - 1, _chapters[_currentChapterIndex! - 1]);
+  }
+
+  Future<void> jumpToNextChapter() async {
+    if (_currentChapterIndex == null ||
+        _currentChapterIndex! >= _chapters.length - 1) return;
+    await jumpToChapter(
+        _currentChapterIndex! + 1, _chapters[_currentChapterIndex! + 1]);
   }
 
   // --- Highlights ---
@@ -585,6 +656,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     _reminderTimer?.cancel();
     _progressTimer?.cancel();
     _autoSaveTimer?.cancel();
+    _brightnessSubscription?.cancel();
     _layoutDebouncer.dispose();
     WidgetsBinding.instance.removeObserver(this);
     engine.dispose();

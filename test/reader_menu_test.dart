@@ -19,7 +19,9 @@ class MockReaderController extends Mock implements ReaderController {
   @override
   double get lineHeight => 1.5;
   @override
-  ValueNotifier<Color> get backgroundColor => ValueNotifier(Colors.white);
+  Color get backgroundColor => Colors.white;
+  @override
+  bool get followSystem => false;
 
   @override
   Book get book => const Book(
@@ -40,7 +42,7 @@ class MockReaderController extends Mock implements ReaderController {
   @override
   void seekTo(double value) {}
   @override
-  void setBrightness(double value) {}
+  Future<void> setBrightness(double value) async {}
   @override
   void setFontSize(double value) {}
   @override
@@ -49,6 +51,12 @@ class MockReaderController extends Mock implements ReaderController {
   Future<void> addBookmark(BuildContext context) async {}
   @override
   Future<void> loadHighlights() async {}
+  @override
+  Future<void> toggleFollowSystem() async {}
+  @override
+  Future<void> jumpToPreviousChapter() async {}
+  @override
+  Future<void> jumpToNextChapter() async {}
 }
 
 class MockThemeManager extends Mock implements ThemeManager {

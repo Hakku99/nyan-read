@@ -102,24 +102,34 @@ class ReaderMenu extends StatelessWidget {
   Widget _buildProgressSection(
       BuildContext context, ReaderController controller, NyanTheme theme) {
     return Row(
+      crossAxisAlignment:
+          CrossAxisAlignment.center, // Ensure vertical alignment
       children: [
-        Text(
-          "${(controller.currentProgress * 100).toInt()}%",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: theme.textPrimary.withOpacity(0.7),
-            fontFamily: 'monospace',
-          ),
+        IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded), // Softer chevron
+          iconSize: 24, // Adjusted size for chevron
+          visualDensity: VisualDensity.standard,
+          onPressed: () => controller.jumpToPreviousChapter(),
+          color: theme.primary,
+          tooltip: "Previous Chapter",
         ),
-        const SizedBox(width: 16),
         Expanded(
           child: Slider(
             value: controller.currentProgress,
             min: 0.0,
             max: 1.0,
+            label: "${(controller.currentProgress * 100).toInt()}%",
+            divisions: 1000,
             onChanged: (val) => controller.seekTo(val),
           ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.arrow_forward_ios_rounded), // Softer chevron
+          iconSize: 24, // Adjusted size for chevron
+          visualDensity: VisualDensity.standard,
+          onPressed: () => controller.jumpToNextChapter(),
+          color: theme.primary,
+          tooltip: "Next Chapter",
         ),
       ],
     );
@@ -128,19 +138,52 @@ class ReaderMenu extends StatelessWidget {
   Widget _buildBrightnessSection(
       BuildContext context, ReaderController controller, NyanTheme theme) {
     return Row(
+      crossAxisAlignment:
+          CrossAxisAlignment.center, // Ensure vertical alignment
       children: [
-        Icon(Icons.wb_sunny_outlined, size: 20, color: theme.primary),
+        // Balanced visual weight: Filled rounded icon
+        Icon(Icons.wb_sunny_rounded,
+            size: 22, color: theme.textSecondary.withOpacity(0.6)),
         const SizedBox(width: 16),
         Expanded(
-          child: Slider(
-            value: controller.brightness,
-            min: 0.0,
-            max: 1.0,
-            onChanged: (val) => controller.setBrightness(val),
+          child: AbsorbPointer(
+            absorbing: controller.followSystem,
+            child: Opacity(
+              opacity: controller.followSystem ? 0.4 : 1.0,
+              child: Slider(
+                value: controller.brightness,
+                min: 0.0,
+                max: 1.0,
+                onChanged: (val) => controller.setBrightness(val),
+              ),
+            ),
           ),
         ),
         const SizedBox(width: 16),
-        Icon(Icons.wb_sunny, size: 20, color: theme.primary),
+        InkWell(
+          onTap: () => controller.toggleFollowSystem(),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              // Active: Subtle colored background. Inactive: Transparent
+              color: controller.followSystem
+                  ? theme.primary.withOpacity(0.15)
+                  : Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.brightness_auto_rounded,
+              size: 22,
+              // Active: Primary Color. Inactive: Grey/Hint color
+              color: controller.followSystem
+                  ? theme.primary
+                  : theme.textSecondary.withOpacity(0.6),
+            ),
+          ),
+        ),
       ],
     );
   }
