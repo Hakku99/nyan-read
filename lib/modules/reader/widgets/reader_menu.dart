@@ -146,41 +146,43 @@ class ReaderMenu extends StatelessWidget {
             size: 22, color: theme.textSecondary.withOpacity(0.6)),
         const SizedBox(width: 16),
         Expanded(
-          child: AbsorbPointer(
-            absorbing: controller.followSystem,
-            child: Opacity(
-              opacity: controller.followSystem ? 0.4 : 1.0,
-              child: Slider(
-                value: controller.brightness,
-                min: 0.0,
-                max: 1.0,
-                onChanged: (val) => controller.setBrightness(val),
-              ),
-            ),
+          // Slider is always interactive now
+          child: Slider(
+            value: controller.brightness,
+            min: 0.0,
+            max: 1.0,
+            onChanged: (val) => controller.setBrightness(val),
+            // Ensure proper visual feedback when "following system" - maybe indicate somehow?
+            // Actually, requirements say "Slider looks active (Matcha Green)" which is default active color.
           ),
         ),
         const SizedBox(width: 16),
-        InkWell(
-          onTap: () => controller.toggleFollowSystem(),
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              // Active: Subtle colored background. Inactive: Transparent
-              color: controller.followSystem
-                  ? theme.primary.withOpacity(0.15)
-                  : Colors.transparent,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              Icons.brightness_auto_rounded,
-              size: 22,
-              // Active: Primary Color. Inactive: Grey/Hint color
-              color: controller.followSystem
-                  ? theme.primary
-                  : theme.textSecondary.withOpacity(0.6),
+        Tooltip(
+          message: controller.followSystem
+              ? "Stop Following System"
+              : "Follow System Brightness",
+          child: InkWell(
+            onTap: () => controller.toggleFollowSystem(),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                // Active: Subtle colored background. Inactive: Transparent
+                color: controller.followSystem
+                    ? theme.primary.withOpacity(0.15)
+                    : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.brightness_auto_rounded,
+                size: 22,
+                // Active: Primary Color. Inactive: Grey/Hint color
+                color: controller.followSystem
+                    ? theme.primary
+                    : theme.textSecondary.withOpacity(0.6),
+              ),
             ),
           ),
         ),

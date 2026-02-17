@@ -473,6 +473,15 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> setBrightness(double b) async {
+    if (_followSystem) {
+      // Break "Follow System" link
+      _followSystem = false;
+      _brightnessSubscription?.cancel();
+      _brightnessSubscription = null;
+      // Note: We don't notifyListeners() here immediately because the
+      // subsequent _brightness update will trigger it, or we do it once at the end.
+    }
+
     _brightness = b;
     // Side effect removed: ScreenBrightness().setScreenBrightness(b);
     // The BrightnessManager widget now listens to this value and applies it.
