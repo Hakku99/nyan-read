@@ -35,6 +35,7 @@ void main() async {
         ChangeNotifierProvider.value(value: featureManager),
         ChangeNotifierProvider.value(value: themeManager),
         ChangeNotifierProvider.value(value: languageManager),
+        ChangeNotifierProvider.value(value: readerPrefs),
       ],
       child: const NyanApp(),
     ),

@@ -483,8 +483,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     _brightness = b;
-    // Side effect removed: ScreenBrightness().setScreenBrightness(b);
-    // The BrightnessManager widget now listens to this value and applies it.
+    await ReaderPreferencesService.instance
+        .setBrightness(b); // Sync to prefs which triggers BrightnessManager
     notifyListeners();
   }
 
@@ -720,7 +720,6 @@ class ReaderPage extends StatelessWidget {
                   body: Consumer<ReaderController>(
                     builder: (context, controller, child) {
                       return BrightnessManager(
-                        brightness: controller.brightness,
                         onBrightnessChanged: (val) =>
                             controller.setBrightness(val),
                         child: Stack(
@@ -864,56 +863,64 @@ class ReaderPage extends StatelessWidget {
                                         opacity:
                                             controller.showControls ? 1.0 : 0.0,
                                         child: Container(
-                                            color: theme.colorScheme.primary
+                                            color: theme.colorScheme.surface
                                                 .withOpacity(0.95)),
                                       ),
                                     ),
 
                                     // Top Toolbar
-                                    AnimatedPositioned(
-                                      duration:
-                                          const Duration(milliseconds: 200),
-                                      top: controller.showControls ? 0 : -100,
+                                    Positioned(
+                                      top: 0,
                                       left: 0,
                                       right: 0,
-                                      height: kToolbarHeight +
-                                          topPadding, // Explicit height to prevent layout errors
-                                      child: AppBar(
-                                        backgroundColor:
-                                            theme.colorScheme.surface,
-                                        elevation: 0,
-                                        primary: true, // Use internal padding
-                                        bottom: PreferredSize(
-                                          preferredSize:
-                                              const Size.fromHeight(1),
-                                          child: Divider(
-                                              height: 1,
-                                              thickness: 1,
-                                              color: theme.dividerColor
-                                                  .withOpacity(0.08)),
+                                      height: kToolbarHeight + topPadding,
+                                      child: AnimatedSlide(
+                                        offset: controller.showControls
+                                            ? Offset.zero
+                                            : const Offset(0, -1),
+                                        duration:
+                                            const Duration(milliseconds: 200),
+                                        child: AppBar(
+                                          backgroundColor:
+                                              theme.colorScheme.surface,
+                                          elevation: 0,
+                                          primary: true,
+                                          bottom: PreferredSize(
+                                            preferredSize:
+                                                const Size.fromHeight(1),
+                                            child: Divider(
+                                                height: 1,
+                                                thickness: 1,
+                                                color: theme.dividerColor
+                                                    .withOpacity(0.08)),
+                                          ),
+                                          title: Text(book.title,
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w600,
+                                                color: theme.textTheme
+                                                    .titleLarge?.color,
+                                              )),
+                                          iconTheme: IconThemeData(
+                                              color: theme.colorScheme.primary),
+                                          actions: const [],
                                         ),
-                                        title: Text(book.title,
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w600,
-                                              color: theme
-                                                  .textTheme.titleLarge?.color,
-                                            )),
-                                        iconTheme: IconThemeData(
-                                            color: theme.colorScheme.primary),
-                                        actions: const [],
                                       ),
                                     ),
 
-                                    // Bottom Toolbar replaced with ReaderMenu
-                                    AnimatedPositioned(
-                                      duration:
-                                          const Duration(milliseconds: 200),
-                                      bottom:
-                                          controller.showControls ? 0 : -600,
+                                    // Bottom Toolbar (ReaderMenu)
+                                    Positioned(
+                                      bottom: 0,
                                       left: 0,
                                       right: 0,
-                                      child: const ReaderMenu(),
+                                      child: AnimatedSlide(
+                                        offset: controller.showControls
+                                            ? Offset.zero
+                                            : const Offset(0, 1),
+                                        duration:
+                                            const Duration(milliseconds: 200),
+                                        child: const ReaderMenu(),
+                                      ),
                                     ),
                                   ],
                                 );

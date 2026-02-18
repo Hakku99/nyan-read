@@ -21,13 +21,57 @@ class MockReaderPreferencesService extends Mock
   @override
   Color get backgroundColor => const Color(0xFFFDFCF8);
 
-  // Stubs for setters if needed
+  @override
+  double get minPhysicalBrightness => 0.1;
+
+  @override
+  double get followSystemOffset => 0.0;
+
+  @override
+  double get warmth => 0.0;
+
+  @override
+  PageTurnMode get pageTurnMode => PageTurnMode.swipe;
+
+  @override
+  PageAnimation get pageAnimation => PageAnimation.fade;
+
+  @override
+  bool get hasListeners => false;
+
+  @override
+  double getPerceptualBrightness(double val) => val * val;
+
   @override
   Future<void> setFontSize(double size) async {}
   @override
   Future<void> setLineHeight(double height) async {}
   @override
   Future<void> setBackgroundColor(Color color) async {}
+  @override
+  Future<void> setPageTurnMode(PageTurnMode mode) async {}
+  @override
+  Future<void> setPageAnimation(PageAnimation animation) async {}
+  @override
+  Future<void> initialize() async {}
+  @override
+  Future<void> resetToDefaults() async {}
+  @override
+  Future<void> setBrightness(double b) async {}
+  @override
+  Future<void> setWarmth(double w) async {}
+  @override
+  Future<void> setMinPhysicalBrightness(double m) async {}
+  @override
+  Future<void> setFollowSystemOffset(double o) async {}
+  @override
+  void addListener(VoidCallback listener) {}
+  @override
+  void removeListener(VoidCallback listener) {}
+  @override
+  void notifyListeners() {}
+  @override
+  void dispose() {}
 }
 
 void main() {
@@ -46,22 +90,9 @@ void main() {
       addedAt: 0,
     );
 
-    // Mock singleton before controller init
-    // Note: ReaderController implementation accesses ReaderPreferencesService.instance directly.
-    // Since we can't easily mock the static instance without refactoring (or using a service locator fully),
-    // we rely on SharedPreferences.setMockInitialValues which the real service uses.
-    // However, ReaderPreferencesService is a singleton.
-    // For this unit test context, we can just rely on the controller's internal state logic
-    // since we are testing logic: setBrightness -> updates _followSystem.
-
-    // We need to initialize the controller.
-    // It does some async work in constructor/init, but for this specific test
-    // we just want to test setBrightness and toggleFollowSystem behavior.
-
     final controller = ReaderController(book);
 
     // 2. Enable Follow System
-    // Toggle ON
     await controller.toggleFollowSystem();
     expect(controller.followSystem, true, reason: "Follow System should be ON");
 
