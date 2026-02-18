@@ -26,6 +26,9 @@ class NyanTheme {
   final Color warningColor;
   final Color infoColor;
 
+  // Static constants for specific UI elements
+  static const Color creamRecess = Color(0xFFF0EAD6);
+
   // Error Theme Colors
   final Color errorBackgroundColor;
   final Color errorPrimaryTextColor;
@@ -214,8 +217,8 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     preset: ThemePreset.creamLight,
     name: "Cream Light",
     primary: Color(0xFF8E9775),
-    surface: Color(0xFFF2F0EB),
-    background: Color(0xFFF7F5EF), // New Cream+
+    surface: Color(0xFFFFFCF5), // Level 2: Near-white cream
+    background: Color(0xFFF7F3E8), // Level 1: Warm/Darker Cream
     textPrimary: Color(0xFF4A453E),
     textSecondary: Color(0xFF8C867B),
     textMuted: Color(0xFFB0ACA5),

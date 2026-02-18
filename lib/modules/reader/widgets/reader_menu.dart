@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import '../reader_page.dart';
@@ -31,21 +32,28 @@ class ReaderMenu extends StatelessWidget {
               ? const Color(0xFFFAF9F6)
               : activeTheme.surface,
           borderRadius: BorderRadius.circular(24), // Soft corners
-          boxShadow: [
-            if (themeManager.currentPreset == ThemePreset.creamLight)
-              BoxShadow(
-                color: const Color(0x1A5D4037), // Diffused warm shadow
-                blurRadius: 24,
-                spreadRadius: -4,
-                offset: const Offset(0, 8),
-              )
-            else
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-          ],
+          boxShadow: themeManager.currentPreset == ThemePreset.creamLight
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF5D4037).withOpacity(0.08),
+                    offset: const Offset(0, 8),
+                    blurRadius: 24,
+                    spreadRadius: -2,
+                  ),
+                  BoxShadow(
+                    color: const Color(0xFFFFE0B2).withOpacity(0.15),
+                    offset: const Offset(0, 0),
+                    blurRadius: 12,
+                    spreadRadius: 0,
+                  )
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
           border: themeManager.currentPreset == ThemePreset.creamLight
               ? Border.all(color: const Color(0xFFF0EFE9), width: 1.5)
               : Border.all(color: activeTheme.divider.withOpacity(0.5)),
@@ -113,25 +121,16 @@ class ReaderMenu extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 6.0,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-              trackShape: const RoundedRectSliderTrackShape(),
-            ),
-            child: Slider(
-              value: controller.currentProgress,
-              min: 0.0,
-              max: 1.0,
-              label: "${(controller.currentProgress * 100).toInt()}%",
-              divisions: 1000,
-              onChanged: (val) => controller.seekTo(val),
-              activeColor: theme.primary,
-              inactiveColor: theme.preset == ThemePreset.creamLight
-                  ? const Color(0xFFE6E2D8)
-                  : theme.divider.withOpacity(0.3),
-            ),
+          child: SliderWithFloatingLabel(
+            value: controller.currentProgress,
+            min: 0.0,
+            max: 1.0,
+            divisions: 1000,
+            onChanged: (val) => controller.seekTo(val),
+            activeColor: theme.primary,
+            inactiveColor: theme.preset == ThemePreset.creamLight
+                ? const Color(0xFFE6E2D8)
+                : theme.divider.withOpacity(0.3),
           ),
         ),
         const SizedBox(width: 12),
@@ -157,7 +156,7 @@ class ReaderMenu extends StatelessWidget {
         height: 40,
         decoration: BoxDecoration(
           color: theme.preset == ThemePreset.creamLight
-              ? const Color(0xFFF0EFE9)
+              ? NyanTheme.creamRecess
               : theme.surface.withOpacity(0.5),
           shape: BoxShape.circle,
         ),
@@ -181,27 +180,29 @@ class ReaderMenu extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(Icons.wb_sunny_outlined, // Outlined sun
-                size: 22,
-                color: theme.textSecondary.withOpacity(0.6)),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: theme.preset == ThemePreset.creamLight
+                    ? NyanTheme.creamRecess
+                    : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(Icons.wb_sunny_rounded,
+                  size: 22, color: theme.textSecondary.withOpacity(0.6)),
+            ),
             const SizedBox(width: 16),
             Expanded(
-              child: SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 6.0,
-                  trackShape: const RoundedRectSliderTrackShape(),
-                  thumbShape:
-                      const RoundSliderThumbShape(enabledThumbRadius: 8),
-                ),
-                child: Slider(
-                  value: controller.brightness,
-                  min: 0.0,
-                  max: 1.0,
-                  onChanged: (val) => controller.setBrightness(val),
-                  activeColor: theme.textSecondary
-                      .withOpacity(0.8), // Darker grey for brightness
-                  inactiveColor: theme.divider.withOpacity(0.5),
-                ),
+              child: SliderWithFloatingLabel(
+                value: controller.brightness,
+                min: 0.0,
+                max: 1.0,
+                onChanged: (val) => controller.setBrightness(val),
+                activeColor: theme.textSecondary
+                    .withOpacity(0.8), // Darker grey for brightness
+                inactiveColor: theme.divider.withOpacity(0.5),
               ),
             ),
             const SizedBox(width: 16),
@@ -217,25 +218,18 @@ class ReaderMenu extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: controller.followSystem
-                        ? theme.primary // Sage Green when active
-                        : Colors.transparent,
+                    color: Colors.transparent, // Removed background
                     shape: BoxShape.circle,
-                    border: controller.followSystem
-                        ? null
-                        : Border.all(
-                            color: theme.textSecondary.withOpacity(0.4),
-                            width: 1.5),
                   ),
                   alignment: Alignment.center,
                   child: Icon(
                     controller.followSystem
-                        ? Icons.brightness_auto // Filled when active
+                        ? Icons.brightness_auto
                         : Icons.brightness_auto_outlined,
-                    size: 20,
+                    size: 24,
                     color: controller.followSystem
-                        ? Colors.white
-                        : theme.textSecondary.withOpacity(0.8),
+                        ? theme.primary
+                        : Colors.grey.withOpacity(0.5),
                   ),
                 ),
               ),
@@ -243,79 +237,40 @@ class ReaderMenu extends StatelessWidget {
           ],
         ),
 
-        const SizedBox(
-            height:
-                24), // Extra spacing for the floating label above? No, below.
+        const SizedBox(height: 24),
 
         // 2. Warmth Slider (New Design)
-        Stack(
-          alignment: Alignment.center,
-          clipBehavior: Clip.none, // Allow drawing outside for floating label
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Icon(Icons.thermostat_rounded,
-                    size: 22, color: const Color(0xFFFFCCBC)), // Apricot icon
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Container(
-                    height: 6,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(3),
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0x222196F3), // Cool Blue (Transparent-ish)
-                          Color(0xFFFFCCBC), // Soft Apricot
-                        ],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                    ),
-                    child: SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        trackHeight: 6.0,
-                        trackShape: const RoundedRectSliderTrackShape(),
-                        thumbShape:
-                            const RoundSliderThumbShape(enabledThumbRadius: 8),
-                        thumbColor: const Color(0xFFFFAB91), // Peach Thumb
-                        activeTrackColor: Colors.transparent, // Uses Gradient
-                        inactiveTrackColor: Colors.transparent, // Uses Gradient
-                        overlayColor: const Color(0xFFFFAB91).withOpacity(0.12),
-                      ),
-                      child: Slider(
-                        value: prefs.warmth,
-                        min: 0.0,
-                        max: 1.0,
-                        onChanged: (val) => prefs.setWarmth(val),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // Placeholder to balance layout if needed, or keeping empty for now
-                // The floating label takes the place of the side text.
-                const SizedBox(width: 36),
-              ],
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: theme.preset == ThemePreset.creamLight
+                    ? NyanTheme.creamRecess
+                    : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(Icons.thermostat_rounded,
+                  size: 22, color: const Color(0xFFFFCCBC)), // Apricot icon
             ),
-
-            // Floating Label
-            Positioned(
-              bottom: -20.0, // Push into negative space
-              left: 40 + 16, // Align with track start (Icon=24 + Gap=16) approx
-              right: 16 + 36, // Align with track end (Gap=16 + Spacer=36)
-              child: Center(
-                child: Text(
-                  "${(prefs.warmth * 100).toInt()}%",
-                  style: TextStyle(
-                    fontSize: 10.0,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.0,
-                    color: const Color(0xFFFFAB91), // Peach Text
-                  ),
-                ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: SliderWithFloatingLabel(
+                value: prefs.warmth,
+                min: 0.0,
+                max: 1.0,
+                onChanged: (val) => prefs.setWarmth(val),
+                activeColor: const Color(0xFFFFCCBC), // Apricot
+                thumbColor: const Color(0xFFFFAB91), // Peach
+                inactiveColor: const Color(0xFFFFE0B2).withOpacity(0.3),
               ),
             ),
+            const SizedBox(width: 16),
+            // Placeholder to balance layout
+            const SizedBox(width: 36),
           ],
         ),
       ],
@@ -328,7 +283,7 @@ class ReaderMenu extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: theme.preset == ThemePreset.creamLight
-            ? const Color(0xFFF5F5F0) // Slightly darker cream for grouping
+            ? NyanTheme.creamRecess
             : theme.surface.withOpacity(0.5),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -397,8 +352,8 @@ class ReaderMenu extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Icon(Icons.remove_rounded,
-                    size: 20, color: theme.textPrimary),
+                child:
+                    Icon(Icons.remove_rounded, size: 20, color: theme.primary),
               ),
             ),
             Container(
@@ -418,8 +373,7 @@ class ReaderMenu extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child:
-                    Icon(Icons.add_rounded, size: 20, color: theme.textPrimary),
+                child: Icon(Icons.add_rounded, size: 20, color: theme.primary),
               ),
             ),
           ],
@@ -478,8 +432,9 @@ class ReaderMenu extends StatelessWidget {
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: currentTheme.primary.withOpacity(0.25),
-                        blurRadius: 10,
+                        color: const Color(0xFF8DA399).withOpacity(0.3),
+                        blurRadius: 8,
+                        spreadRadius: 1,
                         offset: const Offset(0, 2),
                       )
                     ]
@@ -614,6 +569,91 @@ class ReaderMenu extends StatelessWidget {
           }),
         ],
       ),
+    );
+  }
+}
+
+class SliderWithFloatingLabel extends StatefulWidget {
+  final double value;
+  final ValueChanged<double> onChanged;
+  final ValueChanged<double>? onChangeEnd;
+  final double min;
+  final double max;
+  final int? divisions;
+  final Color? activeColor;
+  final Color? inactiveColor;
+  final Color? thumbColor;
+
+  const SliderWithFloatingLabel({
+    Key? key,
+    required this.value,
+    required this.onChanged,
+    this.onChangeEnd,
+    this.min = 0.0,
+    this.max = 1.0,
+    this.divisions,
+    this.activeColor,
+    this.inactiveColor,
+    this.thumbColor,
+  }) : super(key: key);
+
+  @override
+  State<SliderWithFloatingLabel> createState() =>
+      _SliderWithFloatingLabelState();
+}
+
+class _SliderWithFloatingLabelState extends State<SliderWithFloatingLabel> {
+  bool _isDragging = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            trackHeight: 6.0,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10.0),
+            trackShape: const RoundedRectSliderTrackShape(),
+            thumbColor: widget.thumbColor,
+            overlayColor: widget.thumbColor?.withOpacity(0.12),
+            activeTrackColor: widget.activeColor,
+            inactiveTrackColor: widget.inactiveColor,
+          ),
+          child: Slider(
+            value: widget.value,
+            min: widget.min,
+            max: widget.max,
+            divisions: widget.divisions,
+            onChanged: widget.onChanged,
+            onChangeStart: (_) => setState(() => _isDragging = true),
+            onChangeEnd: (val) {
+              setState(() => _isDragging = false);
+              HapticFeedback.selectionClick(); // ADDED HAPTIC FEEDBACK
+              if (widget.onChangeEnd != null) widget.onChangeEnd!(val);
+            },
+            activeColor: widget.activeColor,
+            inactiveColor: widget.inactiveColor,
+          ),
+        ),
+        Positioned(
+          bottom: -20,
+          child: AnimatedOpacity(
+            opacity: _isDragging ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 200),
+            child: Text(
+              "${(widget.value * 100).toInt()}%",
+              style: TextStyle(
+                fontSize: 10,
+                color: (widget.activeColor ?? Theme.of(context).primaryColor)
+                    .withOpacity(0.8),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
