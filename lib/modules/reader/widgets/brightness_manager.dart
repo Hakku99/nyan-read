@@ -73,6 +73,8 @@ class _BrightnessManagerState extends State<BrightnessManager>
   void _applyBrightnessState() {
     if (_prefs.brightness != null) {
       _applyBrightness(_prefs.brightness!);
+    } else {
+      _restoreOriginalBrightness();
     }
   }
 

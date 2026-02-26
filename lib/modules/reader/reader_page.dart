@@ -22,7 +22,8 @@ import 'widgets/highlight_note_dialog.dart';
 import 'widgets/reader_menu.dart';
 import 'dart:async';
 import 'dart:io';
-import 'widgets/brightness_manager.dart';
+import 'controllers/brightness_controller.dart';
+import 'widgets/sub_zero_brightness_wrapper.dart';
 
 class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   final Book book;
@@ -496,6 +497,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
         double systemBrightness = await ScreenBrightness().current;
         _brightness = systemBrightness;
 
+        // Reset prefs to follow system (null)
+        await ReaderPreferencesService.instance.setBrightness(null);
+
         // Listen for changes
         _brightnessSubscription?.cancel();
         _brightnessSubscription =
@@ -513,6 +517,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       // Stop listening
       _brightnessSubscription?.cancel();
       _brightnessSubscription = null;
+
+      // Save current brightness as manual override
+      await setBrightness(_brightness);
     }
     notifyListeners();
   }
@@ -678,16 +685,35 @@ const double kRowHeight = 56.0;
 
 // ... (existing imports)
 
-class ReaderPage extends StatelessWidget {
+class ReaderPage extends StatefulWidget {
   final Book book;
 
   const ReaderPage({Key? key, required this.book}) : super(key: key);
 
   @override
+  State<ReaderPage> createState() => _ReaderPageState();
+}
+
+class _ReaderPageState extends State<ReaderPage> {
+  final BrightnessController _brightnessController = BrightnessController();
+
+  @override
+  void initState() {
+    super.initState();
+    _brightnessController.initBrightness();
+  }
+
+  @override
+  void dispose() {
+    _brightnessController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) {
-        final controller = ReaderController(book)..init();
+        final controller = ReaderController(widget.book)..init();
         controller.onShowNoteDialog = ((h) {
           if (context.mounted) {
             controller.showNoteDialog(context, h);
@@ -719,9 +745,9 @@ class ReaderPage extends StatelessWidget {
                   resizeToAvoidBottomInset: false,
                   body: Consumer<ReaderController>(
                     builder: (context, controller, child) {
-                      return BrightnessManager(
-                        onBrightnessChanged: (val) =>
-                            controller.setBrightness(val),
+                      return SubZeroBrightnessWrapper(
+                        brightnessNotifier:
+                            _brightnessController.uiBrightnessValue,
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
@@ -894,7 +920,7 @@ class ReaderPage extends StatelessWidget {
                                                 color: theme.dividerColor
                                                     .withOpacity(0.08)),
                                           ),
-                                          title: Text(book.title,
+                                          title: Text(widget.book.title,
                                               style: TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.w600,
@@ -926,6 +952,34 @@ class ReaderPage extends StatelessWidget {
                                 );
                               },
                             )),
+
+                            // 4. Edge Gesture Binding for Brightness
+                            Positioned(
+                              left: 0,
+                              top: 0,
+                              bottom: 0,
+                              width: 50.0,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.translucent,
+                                onVerticalDragUpdate: (details) {
+                                  _brightnessController.handleDragUpdate(
+                                    details.primaryDelta ?? 0.0,
+                                    MediaQuery.of(context).size.height,
+                                  );
+
+                                  // Optionally sync slider in reader menu
+                                  // This drives the slider to follow the finger synchronously
+                                  context
+                                      .read<ReaderController>()
+                                      .setBrightness(_brightnessController
+                                          .uiBrightnessValue.value);
+                                },
+                                onVerticalDragEnd: (details) {
+                                  _brightnessController.handleDragEnd();
+                                },
+                                child: const SizedBox.expand(),
+                              ),
+                            ),
                           ],
                         ),
                       );

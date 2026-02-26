@@ -35,25 +35,19 @@ class ReaderMenu extends StatelessWidget {
           boxShadow: themeManager.currentPreset == ThemePreset.creamLight
               ? [
                   BoxShadow(
-                    color: const Color(0xFF5D4037).withOpacity(0.08),
-                    offset: const Offset(0, 8),
-                    blurRadius: 24,
-                    spreadRadius: -2,
-                  ),
-                  BoxShadow(
-                    color: const Color(0xFFFFE0B2).withOpacity(0.15),
-                    offset: const Offset(0, 0),
+                    color: Colors.black.withOpacity(0.04),
                     blurRadius: 12,
-                    spreadRadius: 0,
-                  )
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 10,
                     offset: const Offset(0, 4),
+                    spreadRadius: 0,
                   ),
-                ],
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                    spreadRadius: 0,
+                  ),
+                ]
+              : [], // Remove shadow in dark mode for flat "ink on paper" look
           border: themeManager.currentPreset == ThemePreset.creamLight
               ? Border.all(color: const Color(0xFFF0EFE9), width: 1.5)
               : Border.all(color: activeTheme.divider.withOpacity(0.5)),

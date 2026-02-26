@@ -57,7 +57,7 @@ class MockReaderPreferencesService extends Mock
   @override
   Future<void> resetToDefaults() async {}
   @override
-  Future<void> setBrightness(double b) async {}
+  Future<void> setBrightness(double? b) async {}
   @override
   Future<void> setWarmth(double w) async {}
   @override

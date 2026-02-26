@@ -140,12 +140,15 @@ class ReaderPreferencesService extends ChangeNotifier {
   }
 
   // Set brightness
-  Future<void> setBrightness(double b) async {
+  Future<void> setBrightness(double? b) async {
     if (_brightness == b) return;
     _brightness = b;
-    // Debounce is handled in UI, but we can double check here?
-    // For now, direct write is okay if UI debounces.
-    await _prefs?.setDouble('reader_brightness', b);
+
+    if (b == null) {
+      await _prefs?.remove('reader_brightness');
+    } else {
+      await _prefs?.setDouble('reader_brightness', b);
+    }
     notifyListeners();
   }
 
