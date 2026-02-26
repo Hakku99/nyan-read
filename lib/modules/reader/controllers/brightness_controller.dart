@@ -7,7 +7,11 @@ class BrightnessController {
   // 初始值给 0.5 仅为防空指针，真理必须在 initBrightness 中从物理世界拉取
   final ValueNotifier<double> uiBrightnessValue = ValueNotifier(0.5);
 
+  // HUD 悬浮窗显示状态
+  final ValueNotifier<bool> isAdjusting = ValueNotifier(false);
+
   Timer? _throttleTimer;
+  Timer? _hudHideTimer;
   double _lastCommittedValue = -1.0;
 
   // ===== 硬件防砖底线防御参数 =====
@@ -43,6 +47,10 @@ class BrightnessController {
     // 1. 无阻塞：直接驱动 120Hz 局部重绘
     uiBrightnessValue.value = newBrightness;
 
+    // 唤起 HUD 悬浮窗，并取消隐藏定时器
+    isAdjusting.value = true;
+    _hudHideTimer?.cancel();
+
     // 2. 丢弃高频垃圾请求，启动 50ms 节流窗口
     if (_throttleTimer?.isActive ?? false) return;
 
@@ -55,6 +63,11 @@ class BrightnessController {
   void handleDragEnd() {
     _throttleTimer?.cancel();
     _commitToNative(uiBrightnessValue.value);
+
+    // 启动 HUD 隐藏延迟
+    _hudHideTimer = Timer(const Duration(milliseconds: 500), () {
+      isAdjusting.value = false;
+    });
   }
 
   /// 核心原生拦截层：向下通信的唯一咽喉
@@ -77,6 +90,8 @@ class BrightnessController {
   /// 控制器销毁，释放定时器与 Notifier
   void dispose() {
     _throttleTimer?.cancel();
+    _hudHideTimer?.cancel();
     uiBrightnessValue.dispose();
+    isAdjusting.dispose();
   }
 }

@@ -24,6 +24,7 @@ import 'dart:async';
 import 'dart:io';
 import 'controllers/brightness_controller.dart';
 import 'widgets/sub_zero_brightness_wrapper.dart';
+import 'widgets/brightness_hud_widget.dart';
 
 class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   final Book book;
@@ -980,6 +981,11 @@ class _ReaderPageState extends State<ReaderPage> {
                                 child: const SizedBox.expand(),
                               ),
                             ),
+
+                            // 5. Brightness HUD Overlay
+                            // Injected just below overlays and gesture catchers
+                            BrightnessHudWidget(
+                                controller: _brightnessController),
                           ],
                         ),
                       );
