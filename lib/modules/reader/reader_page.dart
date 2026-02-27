@@ -1047,7 +1047,7 @@ class _ReaderPageState extends State<ReaderPage> {
       backgroundColor: Colors.transparent,
       builder: (BuildContext sheetContext) {
         // Retrieve current controller without listening to changes for background
-        final surfaceColor = controller.backgroundColor;
+        final surfaceColor = Theme.of(context).colorScheme.surface;
 
         return Container(
           decoration: BoxDecoration(

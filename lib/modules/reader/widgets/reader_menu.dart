@@ -22,7 +22,8 @@ class ReaderMenu extends StatelessWidget {
     final controller = context.watch<ReaderController>();
     final themeManager = context.watch<ThemeManager>();
     // Use the global app theme for the menu, decoupled from the reader's background color
-    final activeTheme = themePresets[themeManager.currentPreset]!;
+    final activeTheme = Theme.of(context);
+    final nyanTheme = themePresets[themeManager.currentPreset]!;
 
     return SafeArea(
       bottom: false,
@@ -31,32 +32,6 @@ class ReaderMenu extends StatelessWidget {
           maxHeight: MediaQuery.of(context).size.height * 0.7,
         ),
         child: Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          decoration: BoxDecoration(
-            color: themeManager.currentPreset == ThemePreset.creamLight
-                ? const Color(0xFFFAF9F6)
-                : activeTheme.surface,
-            borderRadius: BorderRadius.circular(24), // Soft corners
-            boxShadow: themeManager.currentPreset == ThemePreset.creamLight
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                      spreadRadius: 0,
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                      spreadRadius: 0,
-                    ),
-                  ]
-                : [], // Remove shadow in dark mode for flat "ink on paper" look
-            border: themeManager.currentPreset == ThemePreset.creamLight
-                ? Border.all(color: const Color(0xFFF0EFE9), width: 1.5)
-                : Border.all(color: activeTheme.divider.withOpacity(0.5)),
-          ),
           padding: EdgeInsets.only(
             left: 24.0,
             right: 24.0,
@@ -74,40 +49,34 @@ class ReaderMenu extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // 2. Brightness Slider
-                _buildBrightnessSection(context, controller, activeTheme),
+                _buildBrightnessSection(context, controller, nyanTheme),
 
                 const SizedBox(height: 24),
                 Divider(
                     height: 1,
-                    color: themeManager.currentPreset == ThemePreset.creamLight
-                        ? const Color(0xFFE6E2D8)
-                        : activeTheme.divider.withOpacity(0.5)),
+                    color: activeTheme.dividerColor.withOpacity(0.5)),
                 const SizedBox(height: 24),
 
                 // 3. Settings Row (Font, Line Height)
-                _buildTypographySection(context, controller, activeTheme),
+                _buildTypographySection(context, controller, nyanTheme),
 
                 const SizedBox(height: 24),
                 Divider(
                     height: 1,
-                    color: themeManager.currentPreset == ThemePreset.creamLight
-                        ? const Color(0xFFE6E2D8)
-                        : activeTheme.divider.withOpacity(0.5)),
+                    color: activeTheme.dividerColor.withOpacity(0.5)),
                 const SizedBox(height: 24),
 
                 // 4. Themes (Background Colors)
-                _buildThemeSection(context, controller, activeTheme),
+                _buildThemeSection(context, controller, nyanTheme),
 
                 const SizedBox(height: 24),
                 Divider(
                     height: 1,
-                    color: themeManager.currentPreset == ThemePreset.creamLight
-                        ? const Color(0xFFE6E2D8)
-                        : activeTheme.divider.withOpacity(0.5)),
+                    color: activeTheme.dividerColor.withOpacity(0.5)),
                 const SizedBox(height: 20),
 
                 // 5. Bottom Navigation Actions
-                _buildBottomActions(context, controller, activeTheme),
+                _buildBottomActions(context, controller, nyanTheme),
               ],
             ),
           ),
@@ -117,7 +86,7 @@ class ReaderMenu extends StatelessWidget {
   }
 
   Widget _buildProgressSection(
-      BuildContext context, ReaderController controller, NyanTheme theme) {
+      BuildContext context, ReaderController controller, ThemeData theme) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -134,10 +103,8 @@ class ReaderMenu extends StatelessWidget {
             max: 1.0,
             divisions: 1000,
             onChanged: (val) => controller.seekTo(val),
-            activeColor: theme.primary,
-            inactiveColor: theme.preset == ThemePreset.creamLight
-                ? const Color(0xFFE6E2D8)
-                : theme.divider.withOpacity(0.3),
+            activeColor: theme.colorScheme.primary,
+            inactiveColor: theme.dividerColor.withOpacity(0.3),
           ),
         ),
         const SizedBox(width: 12),
@@ -153,7 +120,7 @@ class ReaderMenu extends StatelessWidget {
   Widget _buildNavButton({
     required IconData icon,
     required VoidCallback onTap,
-    required NyanTheme theme,
+    required ThemeData theme,
   }) {
     return InkWell(
       onTap: onTap,
@@ -162,16 +129,14 @@ class ReaderMenu extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: theme.preset == ThemePreset.creamLight
-              ? NyanTheme.creamRecess
-              : theme.surface.withOpacity(0.5),
+          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
           shape: BoxShape.circle,
         ),
         alignment: Alignment.center,
         child: Icon(
           icon,
           size: 24,
-          color: theme.textSecondary,
+          color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
     );
@@ -287,41 +252,39 @@ class ReaderMenu extends StatelessWidget {
   Widget _buildTypographySection(
       BuildContext context, ReaderController controller, NyanTheme theme) {
     final loc = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: _buildStepper(
-              context,
-              label: loc.fontSize,
-              value: controller.fontSize.toStringAsFixed(0),
-              onRemove: () => controller.setFontSize(controller.fontSize - 1),
-              onAdd: () => controller.setFontSize(controller.fontSize + 1),
-              theme: theme,
-            ),
+    // Flat layout — no wrapping Container, same visual layer as sliders above.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: _buildStepper(
+            context,
+            label: loc.fontSize,
+            value: controller.fontSize.toStringAsFixed(0),
+            onRemove: () => controller.setFontSize(controller.fontSize - 1),
+            onAdd: () => controller.setFontSize(controller.fontSize + 1),
+            theme: theme,
           ),
-          Container(
-            width: 1,
-            height: 32,
-            color: theme.divider.withOpacity(0.1),
-            margin: const EdgeInsets.symmetric(horizontal: 16),
+        ),
+        // Subtle vertical separator
+        Container(
+          width: 1,
+          height: 40,
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          color: theme.divider.withOpacity(0.1),
+        ),
+        Expanded(
+          child: _buildStepper(
+            context,
+            label: loc.lineHeight,
+            value: controller.lineHeight.toStringAsFixed(1),
+            onRemove: () =>
+                controller.setLineHeight(controller.lineHeight - 0.1),
+            onAdd: () => controller.setLineHeight(controller.lineHeight + 0.1),
+            theme: theme,
           ),
-          Expanded(
-            child: _buildStepper(
-              context,
-              label: loc.lineHeight,
-              value: controller.lineHeight.toStringAsFixed(1),
-              onRemove: () =>
-                  controller.setLineHeight(controller.lineHeight - 0.1),
-              onAdd: () =>
-                  controller.setLineHeight(controller.lineHeight + 0.1),
-              theme: theme,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -339,9 +302,10 @@ class ReaderMenu extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: theme.textSecondary.withOpacity(0.7),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: theme.textSecondary.withOpacity(0.5),
+            letterSpacing: 0.2,
           ),
         ),
         const SizedBox(height: 8),
@@ -350,33 +314,36 @@ class ReaderMenu extends StatelessWidget {
           children: [
             InkWell(
               onTap: onRemove,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0, vertical: 12.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
                 child:
-                    Icon(Icons.remove_rounded, size: 24, color: theme.primary),
+                    Icon(Icons.remove_rounded, size: 22, color: theme.primary),
               ),
             ),
             Container(
-              constraints: const BoxConstraints(minWidth: 48),
+              constraints: const BoxConstraints(minWidth: 36),
               alignment: Alignment.center,
-              child: Text(
-                value,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: theme.textPrimary,
-                  fontSize: 18,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: theme.textPrimary,
+                    fontSize: 20,
+                  ),
                 ),
               ),
             ),
             InkWell(
               onTap: onAdd,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0, vertical: 12.0),
-                child: Icon(Icons.add_rounded, size: 24, color: theme.primary),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+                child: Icon(Icons.add_rounded, size: 22, color: theme.primary),
               ),
             ),
           ],

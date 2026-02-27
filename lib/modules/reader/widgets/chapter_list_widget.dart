@@ -55,7 +55,6 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         top: true,
