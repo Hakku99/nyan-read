@@ -25,6 +25,7 @@ import 'dart:io';
 import 'controllers/brightness_controller.dart';
 import 'widgets/sub_zero_brightness_wrapper.dart';
 import 'widgets/brightness_hud_widget.dart';
+import 'widgets/chapter_list_widget.dart';
 
 class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   final Book book;
@@ -697,6 +698,8 @@ class ReaderPage extends StatefulWidget {
 
 class _ReaderPageState extends State<ReaderPage> {
   final BrightnessController _brightnessController = BrightnessController();
+  final GlobalKey<ScaffoldState> readerPageScaffoldKey =
+      GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -742,8 +745,29 @@ class _ReaderPageState extends State<ReaderPage> {
                   }
                 },
                 child: Scaffold(
+                  key: readerPageScaffoldKey,
                   backgroundColor: bgColor,
                   resizeToAvoidBottomInset: false,
+                  drawer: Drawer(
+                    backgroundColor: bgColor,
+                    width: MediaQuery.of(context).size.width * 0.9,
+                    shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.zero),
+                    child: SafeArea(
+                      child: Consumer<ReaderController>(
+                          builder: (context, controller, child) {
+                        return ChapterListWidget(
+                          chapters: controller.chapters,
+                          currentChapterIndex: controller.currentChapterIndex,
+                          currentProgress: controller.currentProgress,
+                          onChapterTap: (index, chapterData) {
+                            Navigator.pop(context);
+                            controller.jumpToChapter(index, chapterData);
+                          },
+                        );
+                      }),
+                    ),
+                  ),
                   body: Consumer<ReaderController>(
                     builder: (context, controller, child) {
                       return SubZeroBrightnessWrapper(
@@ -868,10 +892,10 @@ class _ReaderPageState extends State<ReaderPage> {
                               },
                             ),
 
-                            // 3. UI Overlays (AppBar, Status Bar, Bottom Panel) - Rebuilds on showControls notify
+                            // 3. UI Overlays (Status Bar Helper)
+                            // Rebuilds on showControls notify, keeping status bar logic
                             Positioned.fill(child: Consumer<ReaderController>(
                               builder: (context, controller, child) {
-                                // Check if we should show controls (engine is always present)
                                 final theme = Theme.of(context);
                                 final topPadding =
                                     MediaQuery.of(context).padding.top;
@@ -892,61 +916,6 @@ class _ReaderPageState extends State<ReaderPage> {
                                         child: Container(
                                             color: theme.colorScheme.surface
                                                 .withOpacity(0.95)),
-                                      ),
-                                    ),
-
-                                    // Top Toolbar
-                                    Positioned(
-                                      top: 0,
-                                      left: 0,
-                                      right: 0,
-                                      height: kToolbarHeight + topPadding,
-                                      child: AnimatedSlide(
-                                        offset: controller.showControls
-                                            ? Offset.zero
-                                            : const Offset(0, -1),
-                                        duration:
-                                            const Duration(milliseconds: 200),
-                                        child: AppBar(
-                                          backgroundColor:
-                                              theme.colorScheme.surface,
-                                          elevation: 0,
-                                          primary: true,
-                                          bottom: PreferredSize(
-                                            preferredSize:
-                                                const Size.fromHeight(1),
-                                            child: Divider(
-                                                height: 1,
-                                                thickness: 1,
-                                                color: theme.dividerColor
-                                                    .withOpacity(0.08)),
-                                          ),
-                                          title: Text(widget.book.title,
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.w600,
-                                                color: theme.textTheme
-                                                    .titleLarge?.color,
-                                              )),
-                                          iconTheme: IconThemeData(
-                                              color: theme.colorScheme.primary),
-                                          actions: const [],
-                                        ),
-                                      ),
-                                    ),
-
-                                    // Bottom Toolbar (ReaderMenu)
-                                    Positioned(
-                                      bottom: 0,
-                                      left: 0,
-                                      right: 0,
-                                      child: AnimatedSlide(
-                                        offset: controller.showControls
-                                            ? Offset.zero
-                                            : const Offset(0, 1),
-                                        duration:
-                                            const Duration(milliseconds: 200),
-                                        child: const ReaderMenu(),
                                       ),
                                     ),
                                   ],
@@ -1062,7 +1031,42 @@ class _ReaderPageState extends State<ReaderPage> {
       c.nextPage();
     } else {
       // Only middle 20% triggers menu
-      c.toggleControls();
+      _showSettingsBottomSheet(context, c);
     }
+  }
+
+  void _showSettingsBottomSheet(
+      BuildContext context, ReaderController controller) {
+    // Notify controller to toggle the status bar controls helper if needed.
+    // In many reader apps tapping center shows status bar too.
+    controller.toggleControls();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext sheetContext) {
+        // Retrieve current controller without listening to changes for background
+        final surfaceColor = controller.backgroundColor;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: surfaceColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          // ReaderMenu will inject its own UI into this container as the settings.
+          // Padding removed here to allow ReaderMenu to manage its own padding.
+          child: ChangeNotifierProvider<ReaderController>.value(
+            value: controller,
+            child: ReaderMenu(scaffoldKey: readerPageScaffoldKey),
+          ),
+        );
+      },
+    ).whenComplete(() {
+      // Hide the status bar controls helper when the bottom sheet closes
+      if (controller.showControls) {
+        controller.toggleControls();
+      }
+    });
   }
 }

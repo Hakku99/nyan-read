@@ -58,7 +58,8 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
-        top: false,
+        top: true,
+        bottom: true,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -74,15 +75,19 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
                 children: [
                   Icon(Icons.list, color: theme.primaryColor),
                   const SizedBox(width: 12),
-                  Text(
-                    loc.tableOfContents,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: theme.textTheme.titleLarge?.color,
+                  Expanded(
+                    child: Text(
+                      loc.tableOfContents,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: theme.textTheme.titleLarge?.color,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 12),
                   Text(
                     loc.chapterCount(widget.chapters.length),
                     style: TextStyle(
@@ -120,7 +125,7 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
                       itemCount: widget.chapters.length,
                       itemScrollController: _itemScrollController,
                       itemPositionsListener: _itemPositionsListener,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: EdgeInsets.zero,
                       itemBuilder: (context, index) {
                         final chapter = widget.chapters[index];
                         final chapterIndex = chapter['index'] ?? index;
