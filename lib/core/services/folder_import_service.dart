@@ -1,16 +1,40 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'package:path/path.dart' as path;
+import 'package:uuid/uuid.dart';
 
-/// Result of a folder scan operation
+// --- Background Isolate Payloads & Results ---
+
+/// 扫描进度载体 (用于回调给 UI)
+class ScanProgress {
+  final int totalScanned;
+  final int validFound;
+  ScanProgress(this.totalScanned, this.validFound);
+}
+
+/// 发给 Isolate 的参数载体
+class _ScanPayload {
+  final String folderPath;
+  final bool includeHidden;
+  final Set<String> existingFilenames;
+  final SendPort? progressPort;
+
+  _ScanPayload(this.folderPath, this.includeHidden, this.existingFilenames,
+      this.progressPort);
+}
+
+/// 最终扫描结果 (所有文件以绝对路径 String 和解析好的 Map 返回)
 class FolderScanResult {
-  final List<File> files;
+  final List<String> filePaths;
+  final List<Map<String, dynamic>> parsedBooks; // 直接可以直接入库的 Book Map
   final int totalScanned;
   final int skippedHidden;
   final Map<String, int> skippedExtensions;
   final List<String> errors;
 
   FolderScanResult({
-    required this.files,
+    required this.filePaths,
+    required this.parsedBooks,
     required this.totalScanned,
     required this.skippedHidden,
     required this.skippedExtensions,
@@ -28,47 +52,101 @@ class FolderImportService {
   /// Supported book file extensions
   static const List<String> supportedExtensions = ['.epub', '.txt', '.pdf'];
 
-  /// Scan a folder recursively for supported book files
-  ///
-  /// [folderPath] - Path to the folder to scan
-  /// [includeHidden] - Whether to include hidden files (starting with '.')
-  ///
-  /// Returns a [FolderScanResult] with found files and statistics
-  Future<FolderScanResult> scanFolder(
-    String folderPath, {
+  /// Background Folder Scan via Isolate
+  /// 完全解决主线程 I/O 阻塞
+  Future<FolderScanResult> scanFolderBackground(
+    String folderPath,
+    Set<String> existingFilenames, {
     bool includeHidden = false,
+    Function(ScanProgress)? onProgress,
   }) async {
-    final List<File> books = [];
+    final receivePort = ReceivePort();
+
+    if (onProgress != null) {
+      receivePort.listen((message) {
+        if (message is ScanProgress) {
+          onProgress(message);
+        }
+      });
+    }
+
+    final payload = _ScanPayload(
+        folderPath, includeHidden, existingFilenames, receivePort.sendPort);
+
+    // 发射到后台 Isolate 运算
+    final result = await Isolate.run(() async {
+      return await _heavyScanTask(payload);
+    });
+
+    receivePort.close();
+    return result;
+  }
+
+  /// 顶层 (脱离原本单例) 的后台重计算任务
+  static Future<FolderScanResult> _heavyScanTask(_ScanPayload payload) async {
+    final List<String> validFilePaths = [];
+    final List<Map<String, dynamic>> parsedBooks = [];
     final Map<String, int> skippedExtensions = {};
     final List<String> errors = [];
     int totalScanned = 0;
     int skippedHidden = 0;
 
-    final dir = Directory(folderPath);
+    final dir = Directory(payload.folderPath);
 
-    if (!await dir.exists()) {
-      throw Exception('Folder does not exist: $folderPath');
+    if (!dir.existsSync()) {
+      errors.add("Folder does not exist: ${payload.folderPath}");
+      return FolderScanResult(
+          filePaths: validFilePaths,
+          parsedBooks: parsedBooks,
+          totalScanned: 0,
+          skippedHidden: 0,
+          skippedExtensions: skippedExtensions,
+          errors: errors);
     }
 
     try {
+      // 这里的阻塞将严格拘谨在 Isolate 里
       await for (final entity
           in dir.list(recursive: true, followLinks: false)) {
         if (entity is File) {
           totalScanned++;
           final fileName = path.basename(entity.path);
 
-          // Filter hidden files
-          if (!includeHidden && fileName.startsWith('.')) {
+          // Filter hidden
+          if (!payload.includeHidden && fileName.startsWith('.')) {
             skippedHidden++;
             continue;
           }
 
-          // Filter by supported extensions
+          // Filter by ext
           final ext = path.extension(entity.path).toLowerCase();
           if (supportedExtensions.contains(ext)) {
-            books.add(entity);
+            // Deduplication
+            if (!payload.existingFilenames.contains(fileName)) {
+              validFilePaths.add(entity.path);
+
+              // ============================================
+              // 在这里直接完成耗时的元数据组装/头文件基础解析
+              // ============================================
+              parsedBooks.add({
+                'id': const Uuid().v4(), // 需要引入 uuid 兜底
+                'title': path.basenameWithoutExtension(entity.path),
+                'author': 'Unknown',
+                'file_path': entity.path,
+                'format': ext.replaceAll('.', ''),
+                'is_private': 0,
+                'added_at': DateTime.now().millisecondsSinceEpoch,
+                'current_progress': 0.0,
+              });
+            }
           } else {
             skippedExtensions[ext] = (skippedExtensions[ext] ?? 0) + 1;
+          }
+
+          // 限流汇报进度: 每 100 个文件，或者有新书时，发送一次进度
+          if (totalScanned % 100 == 0) {
+            payload.progressPort
+                ?.send(ScanProgress(totalScanned, validFilePaths.length));
           }
         }
       }
@@ -77,67 +155,12 @@ class FolderImportService {
     }
 
     return FolderScanResult(
-      files: books,
+      filePaths: validFilePaths,
+      parsedBooks: parsedBooks,
       totalScanned: totalScanned,
       skippedHidden: skippedHidden,
       skippedExtensions: skippedExtensions,
       errors: errors,
     );
-  }
-
-  /// Check if a file is hidden (starts with '.')
-  bool isHiddenFile(File file) {
-    final fileName = path.basename(file.path);
-    return fileName.startsWith('.');
-  }
-
-  /// Get file extension without the dot
-  String getFileExtension(File file) {
-    return path.extension(file.path).replaceAll('.', '').toLowerCase();
-  }
-
-  /// Check if a file is a supported book format
-  bool isSupportedFile(File file) {
-    final ext = path.extension(file.path).toLowerCase();
-    return supportedExtensions.contains(ext);
-  }
-
-  /// Group files by extension for statistics
-  Map<String, int> groupByExtension(List<File> files) {
-    final Map<String, int> groups = {};
-
-    for (final file in files) {
-      final ext = getFileExtension(file);
-      groups[ext] = (groups[ext] ?? 0) + 1;
-    }
-
-    return groups;
-  }
-
-  /// Filter out files that already exist in the database (by filename)
-  ///
-  /// [files] - Files to check
-  /// [existingFilenames] - Set of filenames already in the library
-  ///
-  /// Returns a list of files that are NOT in the existingFilenames set
-  List<File> filterDuplicates(
-    List<File> files,
-    Set<String> existingFilenames,
-  ) {
-    return files.where((file) {
-      final fileName = path.basename(file.path);
-      return !existingFilenames.contains(fileName);
-    }).toList();
-  }
-
-  /// Get statistics about a list of files
-  Map<String, dynamic> getFileStatistics(List<File> files) {
-    final stats = <String, dynamic>{
-      'total': files.length,
-      'byExtension': groupByExtension(files),
-      'hidden': files.where((f) => isHiddenFile(f)).length,
-    };
-
-    return stats;
   }
 }

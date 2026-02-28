@@ -19,7 +19,6 @@ import '../../modules/privacy/privacy_lock_service.dart';
 import 'package:go_router/go_router.dart';
 import '../settings/settings_page.dart';
 import '../ads/ads_ui.dart';
-import '../import/folder_import_preview_page.dart';
 import '../../core/utils/snackbar_utils.dart';
 import 'book_details_page.dart';
 import 'widgets/segmented_tab_control.dart';
@@ -474,13 +473,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
         final importService = FolderImportService.instance;
 
-        // Scan folder
-        final scanResult = await importService.scanFolder(
+        // Show initial loading snackbar
+        if (mounted) {
+          SnackBarUtils.show(context, 'Starting background scan...');
+        }
+
+        // Get existing filenames first to pass to the Isolate
+        final db = getIt<DatabaseService>();
+        final existingFilenames = await db.getAllBookFilenames();
+
+        // Scan folder using Isolate
+        final scanResult = await importService.scanFolderBackground(
           result,
+          existingFilenames,
           includeHidden: false,
+          onProgress: (progress) {
+            // Optional: You can update a ValueNotifier here to show live progress
+            debugPrint(
+                'Background Scan Progress: Scanned: ${progress.totalScanned}, Found New: ${progress.validFound}');
+          },
         );
 
-        if (scanResult.files.isEmpty) {
+        if (scanResult.filePaths.isEmpty) {
           if (mounted) {
             // Check for errors first
             if (scanResult.errors.isNotEmpty) {
@@ -516,45 +530,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           return;
         }
 
-        // Filter duplicates
-        final db = getIt<DatabaseService>();
-        final existingFilenames = await db.getAllBookFilenames();
-        final uniqueFiles =
-            importService.filterDuplicates(scanResult.files, existingFilenames);
-        final duplicateCount = scanResult.files.length - uniqueFiles.length;
+        // Duplicates were already filtered out inside the Isolate!
+        final uniqueBooksMap = scanResult.parsedBooks;
 
-        if (uniqueFiles.isEmpty) {
-          if (mounted) {
-            SnackBarUtils.show(context, loc.allBooksInLibrary(duplicateCount));
-          }
-          return;
-        }
+        // Execute batch insert into database
+        await db.batchInsertBooks(uniqueBooksMap);
 
-        if (duplicateCount > 0 && mounted) {
-          SnackBarUtils.show(context, loc.duplicatesSkipped(duplicateCount));
-        }
-
-        // Determine privacy based on current tab
-        final featureManager = context.read<FeatureManager>();
-        final isPrivateShelfUnlocked =
-            featureManager.isPro && featureManager.isPrivateShelfUnlocked;
-        final isPrivate = isPrivateShelfUnlocked && _tabController.index == 1;
-
-        // Navigate to preview page
         if (mounted) {
-          final imported = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => FolderImportPreviewPage(
-                files: uniqueFiles,
-                isPrivate: isPrivate,
-              ),
-            ),
-          );
-
-          if (imported == true) {
-            _refreshShelf();
-          }
+          SnackBarUtils.show(
+              context, 'Successfully imported ${uniqueBooksMap.length} books!');
+          _refreshShelf();
         }
       } catch (e) {
         if (mounted) {

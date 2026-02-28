@@ -26,7 +26,6 @@ class FolderImportPreviewPage extends StatefulWidget {
 }
 
 class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
-  final _importService = FolderImportService.instance;
   late List<File> _displayedFiles;
   late Set<String> _selectedFiles;
   Set<String> _existingFilenames = {};
@@ -38,8 +37,9 @@ class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
   @override
   void initState() {
     super.initState();
-    _displayedFiles =
-        widget.files.where((f) => !_importService.isHiddenFile(f)).toList();
+    _displayedFiles = widget.files
+        .where((f) => !path.basename(f.path).startsWith('.'))
+        .toList();
     _loadExistingBooks();
   }
 
@@ -70,12 +70,12 @@ class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
       if (_showHidden) {
         _displayedFiles = widget.files;
       } else {
-        _displayedFiles =
-            widget.files.where((f) => !_importService.isHiddenFile(f)).toList();
+        _displayedFiles = widget.files
+            .where((f) => !path.basename(f.path).startsWith('.'))
+            .toList();
         // Remove hidden files from selection
-        _selectedFiles.removeWhere((path) {
-          final file = File(path);
-          return _importService.isHiddenFile(file);
+        _selectedFiles.removeWhere((p) {
+          return path.basename(p).startsWith('.');
         });
       }
     });
@@ -179,7 +179,17 @@ class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final stats = _importService.getFileStatistics(_displayedFiles);
+    final int total = _displayedFiles.length;
+    final Map<String, int> byExtension = {};
+    for (var f in _displayedFiles) {
+      final ext = path.extension(f.path).toLowerCase().replaceAll('.', '');
+      byExtension[ext] = (byExtension[ext] ?? 0) + 1;
+    }
+
+    final stats = <String, dynamic>{
+      'total': total,
+      'byExtension': byExtension,
+    };
     final selectedCount = _selectedFiles.length;
 
     return Scaffold(
@@ -291,7 +301,7 @@ class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
       itemBuilder: (context, index) {
         final file = _displayedFiles[index];
         final fileName = path.basename(file.path);
-        final isHidden = _importService.isHiddenFile(file);
+        final isHidden = fileName.startsWith('.');
         final isSelected = _selectedFiles.contains(file.path);
 
         return CheckboxListTile(

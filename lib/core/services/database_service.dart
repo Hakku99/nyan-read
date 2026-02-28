@@ -141,6 +141,21 @@ class DatabaseService {
     );
   }
 
+  /// 批量插入书籍 (Batch Insert)
+  /// 使用独立事务，极大提升性能并防止主线程因反复 DB Lock 而阻塞
+  Future<void> batchInsertBooks(List<Map<String, dynamic>> books) async {
+    if (books.isEmpty) return;
+    final db = await database;
+    final batch = db.batch();
+
+    for (final book in books) {
+      batch.insert('books', book, conflictAlgorithm: ConflictAlgorithm.ignore);
+    }
+
+    // 执行批处理且无需返回每一行的结果
+    await batch.commit(noResult: true);
+  }
+
   Future<Set<String>> getAllBookFilenames() async {
     final db = await database;
     final results = await db.query(
