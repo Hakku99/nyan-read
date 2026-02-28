@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/models/highlight.dart';
 import '../../core/services/database_service.dart';
+import '../../core/services/service_locator.dart';
 import '../reader/widgets/highlight_note_dialog.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
@@ -34,7 +35,7 @@ class _NotesListPageState extends State<NotesListPage> {
   Future<void> _loadHighlights() async {
     setState(() => _isLoading = true);
     try {
-      final data = await DatabaseService().getHighlights(widget.bookId);
+      final data = await getIt<DatabaseService>().getHighlights(widget.bookId);
       setState(() {
         _highlights = data.map((m) => Highlight.fromMap(m)).toList();
         _isLoading = false;
@@ -54,7 +55,7 @@ class _NotesListPageState extends State<NotesListPage> {
   }
 
   Future<void> _deleteHighlight(Highlight highlight) async {
-    await DatabaseService().deleteHighlight(highlight.id);
+    await getIt<DatabaseService>().deleteHighlight(highlight.id);
     _loadHighlights();
   }
 
@@ -63,7 +64,7 @@ class _NotesListPageState extends State<NotesListPage> {
       context,
       highlight: highlight,
       onSave: (note, colorCode) async {
-        await DatabaseService()
+        await getIt<DatabaseService>()
             .updateHighlight(highlight.id, note: note, colorCode: colorCode);
         _loadHighlights();
       },

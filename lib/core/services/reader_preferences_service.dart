@@ -19,13 +19,7 @@ enum PageAnimation {
 /// 阅读偏好设置服务
 /// 管理翻页方式、翻页动画等阅读相关配置
 class ReaderPreferencesService extends ChangeNotifier {
-  static final ReaderPreferencesService _instance =
-      ReaderPreferencesService._internal();
-  static ReaderPreferencesService get instance => _instance;
-
-  factory ReaderPreferencesService() => _instance;
-
-  ReaderPreferencesService._internal();
+  ReaderPreferencesService();
 
   SharedPreferences? _prefs;
 

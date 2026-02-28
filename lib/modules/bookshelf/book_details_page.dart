@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/models/book.dart';
 import '../../core/utils/snackbar_utils.dart';
-import '../reader/reader_page.dart';
 
 class BookDetailsPage extends StatelessWidget {
   final Book book;
@@ -48,10 +48,7 @@ class BookDetailsPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.menu_book),
             onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => ReaderPage(book: book)),
-              );
+              context.pushReplacement('/reader/${book.id}');
             },
             tooltip: loc.startReading,
           ),
@@ -161,11 +158,7 @@ class BookDetailsPage extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => ReaderPage(book: book)),
-                      );
+                      context.pushReplacement('/reader/${book.id}');
                     },
                     icon: const Icon(Icons.menu_book),
                     label: Text(loc.startReading),

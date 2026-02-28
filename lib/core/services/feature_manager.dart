@@ -7,9 +7,7 @@ enum AppMode {
 }
 
 class FeatureManager extends ChangeNotifier {
-  static final FeatureManager _instance = FeatureManager._internal();
-  factory FeatureManager() => _instance;
-  FeatureManager._internal();
+  FeatureManager();
 
   AppMode _currentMode = AppMode.free;
   bool _adsEnabled = true;

@@ -1,41 +1,44 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import 'package:provider/provider.dart';
 import 'core/services/feature_manager.dart';
-import 'core/services/database_service.dart';
 import 'core/services/reader_preferences_service.dart';
-import 'core/services/bookshelf_preferences_service.dart';
 import 'core/theme/theme_manager.dart';
 import 'core/services/language_manager.dart';
 
-import 'modules/home/splash_page.dart';
-import 'modules/admin/admin_panel.dart';
+import 'core/services/service_locator.dart';
+import 'core/router/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Init Services
-  await DatabaseService().database; // warm up db
-  final featureManager = FeatureManager();
-  await featureManager.init();
-  final themeManager = ThemeManager();
-  await themeManager.init();
-  final languageManager = LanguageManager();
-  await languageManager.init();
-  final readerPrefs = ReaderPreferencesService.instance;
-  await readerPrefs.initialize();
-  final bookshelfPrefs = BookshelfPreferencesService.instance;
-  await bookshelfPrefs.initialize();
+  // 0. Global Error Monitoring
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('💥 [FlutterError] ${details.exception}\n${details.stack}');
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('💥 [PlatformError] $error\n$stack');
+    return true;
+  };
+
+  // 1. Initialize dependency injection with fail-fast timeout
+  try {
+    await setupServiceLocator().timeout(const Duration(seconds: 5));
+  } catch (e, stack) {
+    debugPrint('DI Initialization Failed: $e\n$stack');
+  }
 
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: featureManager),
-        ChangeNotifierProvider.value(value: themeManager),
-        ChangeNotifierProvider.value(value: languageManager),
-        ChangeNotifierProvider.value(value: readerPrefs),
+        ChangeNotifierProvider.value(value: getIt<FeatureManager>()),
+        ChangeNotifierProvider.value(value: getIt<ThemeManager>()),
+        ChangeNotifierProvider.value(value: getIt<LanguageManager>()),
+        ChangeNotifierProvider.value(value: getIt<ReaderPreferencesService>()),
       ],
       child: const NyanApp(),
     ),
@@ -87,7 +90,7 @@ class _NyanAppState extends State<NyanApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Consumer2<ThemeManager, LanguageManager>(
       builder: (context, themeManager, languageManager, child) {
-        return MaterialApp(
+        return MaterialApp.router(
           title: 'Nyan Read',
           locale: languageManager.locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -95,10 +98,8 @@ class _NyanAppState extends State<NyanApp> with WidgetsBindingObserver {
           theme: themeManager.lightTheme,
           darkTheme: themeManager.darkTheme,
           themeMode: themeManager.themeMode,
-          home: const SplashPage(),
-          routes: {
-            '/admin': (context) => const AdminPanel(),
-          },
+          routerConfig: appRouter,
+          debugShowCheckedModeBanner: false,
         );
       },
     );

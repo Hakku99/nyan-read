@@ -8,6 +8,7 @@ import '../../core/services/reading_reminder_service.dart';
 import '../../core/services/language_manager.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../core/theme/theme_presets.dart';
+import '../../core/services/service_locator.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -28,7 +29,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final themeManager = context.watch<ThemeManager>();
     final featureManager = context.watch<FeatureManager>();
     final languageManager = context.watch<LanguageManager>();
-    final readerPrefs = ReaderPreferencesService.instance;
+    final readerPrefs = getIt<ReaderPreferencesService>();
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
@@ -184,7 +185,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _SectionHeader(title: loc.dataManagement.toUpperCase()),
           StatefulBuilder(
             builder: (context, setState) {
-              final bookshelfPrefs = BookshelfPreferencesService.instance;
+              final bookshelfPrefs = getIt<BookshelfPreferencesService>();
               return _SettingsCard(
                 children: [
                   _SwitchRow(

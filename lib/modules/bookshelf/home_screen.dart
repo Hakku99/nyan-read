@@ -11,11 +11,12 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../core/services/feature_manager.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
+import '../../core/services/service_locator.dart';
 import '../../core/services/folder_import_service.dart';
 import '../../core/models/book.dart';
 import '../../core/services/mascot_manager.dart';
 import '../../modules/privacy/privacy_lock_service.dart';
-import '../reader/reader_page.dart';
+import 'package:go_router/go_router.dart';
 import '../settings/settings_page.dart';
 import '../ads/ads_ui.dart';
 import '../import/folder_import_preview_page.dart';
@@ -43,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   // To trigger rebuilds of the Futures
   int _refreshKey = 0;
   late TabController _tabController;
-  final _prefs = BookshelfPreferencesService.instance;
+  final _prefs = getIt<BookshelfPreferencesService>();
   bool _isSelectionMode = false;
   final Set<String> _selectedBookIds = {};
 
@@ -68,11 +69,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _refreshFutures() {
-    _publicBooksFuture = DatabaseService().getBooks(
+    _publicBooksFuture = getIt<DatabaseService>().getBooks(
       isPrivate: false,
       orderBy: _prefs.getOrderByClause(),
     );
-    _privateBooksFuture = DatabaseService().getBooks(
+    _privateBooksFuture = getIt<DatabaseService>().getBooks(
       isPrivate: true,
       orderBy: _prefs.getOrderByClause(),
     );
@@ -142,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final count = _selectedBookIds.length;
     if (count == 0) return;
 
-    final prefs = BookshelfPreferencesService.instance;
+    final prefs = getIt<BookshelfPreferencesService>();
     bool deleteFile = prefs.deleteFilesOnRemove;
 
     final confirmed = await showDialog<bool>(
@@ -188,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
 
     if (confirmed == true) {
-      final db = DatabaseService();
+      final db = getIt<DatabaseService>();
       // Copy list to avoid concurrent modification issues if any
       final idsToDelete = List<String>.from(_selectedBookIds);
 
@@ -217,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _moveSelectedBooks(bool toPrivate) async {
     final loc = AppLocalizations.of(context)!;
-    final db = DatabaseService();
+    final db = getIt<DatabaseService>();
     final idsToMove = List<String>.from(_selectedBookIds);
 
     for (final id in idsToMove) {
@@ -248,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     if (result != null && result.files.isNotEmpty) {
       // Get existing filenames from database to check for duplicates
-      final db = DatabaseService();
+      final db = getIt<DatabaseService>();
       final existingFilenames = await db.getAllBookFilenames();
 
       // Determine privacy based on current tab
@@ -291,7 +292,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               isPrivate: isPrivate,
             );
 
-            await DatabaseService().insertBook(book.toMap());
+            await db.insertBook(book.toMap());
             successCount++;
           } catch (e) {
             debugPrint("Error importing file ${file.name}: $e");
@@ -516,7 +517,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         }
 
         // Filter duplicates
-        final db = DatabaseService();
+        final db = getIt<DatabaseService>();
         final existingFilenames = await db.getAllBookFilenames();
         final uniqueFiles =
             importService.filterDuplicates(scanResult.files, existingFilenames);
@@ -704,7 +705,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     onPressed: () async {
                       final bookId = _selectedBookIds.first;
                       final bookData =
-                          await DatabaseService().getBookById(bookId);
+                          await getIt<DatabaseService>().getBookById(bookId);
                       if (bookData != null && mounted) {
                         final book = Book.fromMap(bookData);
                         Navigator.push(
@@ -1051,9 +1052,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             if (_isSelectionMode) {
               _toggleBookSelection(book.id);
             } else {
-              Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => ReaderPage(book: book)))
-                  .then((_) => _refreshShelf());
+              context.push('/reader/${book.id}').then((_) => _refreshShelf());
             }
           },
           onLongPress: () {
@@ -1088,9 +1087,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             if (_isSelectionMode) {
               _toggleBookSelection(book.id);
             } else {
-              Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => ReaderPage(book: book)))
-                  .then((_) => _refreshShelf());
+              context.push('/reader/${book.id}').then((_) => _refreshShelf());
             }
           },
           onLongPress: () {

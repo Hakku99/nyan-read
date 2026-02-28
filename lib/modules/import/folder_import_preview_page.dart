@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/services/folder_import_service.dart';
 import '../../core/services/database_service.dart';
 import '../../core/models/book.dart';
+import '../../core/services/service_locator.dart';
 
 /// Preview page for folder import
 /// Shows list of files to import with statistics
@@ -121,7 +122,7 @@ class _FolderImportPreviewPageState extends State<FolderImportPreviewPage> {
           isPrivate: widget.isPrivate,
         );
 
-        await DatabaseService().insertBook(book.toMap());
+        await getIt<DatabaseService>().insertBook(book.toMap());
         successCount++;
       } catch (e) {
         failedCount++;

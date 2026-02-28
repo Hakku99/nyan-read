@@ -5,11 +5,7 @@ enum ViewMode { grid, list }
 enum SortBy { recency, importDate, title }
 
 class BookshelfPreferencesService {
-  static final BookshelfPreferencesService _instance =
-      BookshelfPreferencesService._internal();
-  static BookshelfPreferencesService get instance => _instance;
-
-  BookshelfPreferencesService._internal();
+  BookshelfPreferencesService();
 
   SharedPreferences? _prefs;
 

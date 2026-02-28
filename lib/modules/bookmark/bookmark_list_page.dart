@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../core/services/database_service.dart';
+import '../../core/services/service_locator.dart';
 import '../../core/utils/snackbar_utils.dart';
-// I'll use raw maps from DB or construct Bookmark objects.
 
 class BookmarkListPage extends StatefulWidget {
   final String bookId;
@@ -28,7 +28,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
   Future<void> _loadBookmarks() async {
     setState(() => _isLoading = true);
     try {
-      final data = await DatabaseService().getBookmarks(widget.bookId);
+      final data = await getIt<DatabaseService>().getBookmarks(widget.bookId);
       if (mounted) {
         // Convert to modifiable list
         final List<Map<String, dynamic>> bookmarks = List.from(data);
@@ -61,7 +61,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
     });
 
     try {
-      await DatabaseService().deleteBookmark(id);
+      await getIt<DatabaseService>().deleteBookmark(id);
     } catch (e) {
       // Revert if failed
       if (mounted) {
