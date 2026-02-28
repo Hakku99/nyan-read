@@ -93,8 +93,10 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   /// Call once from _ReaderPageState.initState() to bridge the two brightness systems.
   void attachBrightnessController(BrightnessController bc) {
     _brightnessControllerRef = bc;
-    // Sync initial brightness into BrightnessController so the overlay is correct.
-    bc.setFromSlider(_brightness);
+    // Sync initial brightness silently into BrightnessController so the overlay is correct.
+    // DANGER: Do not call `bc.setFromSlider(_brightness)` here, as it calls `_showHud()`
+    // and causes the HUD to permanently stick on screen on initial load.
+    bc.uiBrightnessValue.value = _brightness;
   }
 
   ReaderErrorState? get errorState => _errorState;
