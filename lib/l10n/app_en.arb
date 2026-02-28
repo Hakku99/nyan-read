@@ -130,6 +130,8 @@
       }
     }
   },
+  "emptyPrivateShelf": "This private space is empty.\nSelect books from the public shelf and tap the Lock icon to move them here.",
+  "emptyShelfInstructions": "Your shelf is empty!\nTap the + button below to import some books.\nYou can import individual files or an entire folder.",
   "importFiles": "Import Files",
   "importFolder": "Import Folder",
   "importedBooks": "Imported {count} books into {shelf}!",

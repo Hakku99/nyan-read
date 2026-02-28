@@ -289,6 +289,14 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get emptyPrivateShelf =>
+      '这里空空如也喵~\n在公开书架中长按书籍进入多选，\n然后点击锁定按钮将它们移入私密书架。';
+
+  @override
+  String get emptyShelfInstructions =>
+      '你的书架还是空的！\n点击下方的 + 按钮导入书籍。\n你可以导入单个文件或整个文件夹。';
+
+  @override
   String get importFiles => '导入文件';
 
   @override

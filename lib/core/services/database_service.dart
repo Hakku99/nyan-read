@@ -181,6 +181,26 @@ class DatabaseService {
     await db.delete('books', where: 'id = ?', whereArgs: [bookId]);
   }
 
+  Future<void> deleteBooks(List<String> bookIds) async {
+    if (bookIds.isEmpty) return;
+    final db = await database;
+    final batch = db.batch();
+    for (final id in bookIds) {
+      batch.delete('books', where: 'id = ?', whereArgs: [id]);
+    }
+    await batch.commit(noResult: true);
+  }
+
+  Future<void> updateBook(String bookId, Map<String, dynamic> data) async {
+    final db = await database;
+    await db.update(
+      'books',
+      data,
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
+  }
+
   Future<void> updateBookPrivacy(String bookId, bool isPrivate) async {
     final db = await database;
     await db.update(

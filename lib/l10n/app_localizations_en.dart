@@ -290,6 +290,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get emptyPrivateShelf =>
+      'This private space is empty.\nSelect books from the public shelf and tap the Lock icon to move them here.';
+
+  @override
+  String get emptyShelfInstructions =>
+      'Your shelf is empty!\nTap the + button below to import some books.\nYou can import individual files or an entire folder.';
+
+  @override
   String get importFiles => 'Import Files';
 
   @override

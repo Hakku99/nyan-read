@@ -23,67 +23,44 @@ import '../../core/utils/snackbar_utils.dart';
 import 'book_details_page.dart';
 import 'widgets/segmented_tab_control.dart';
 import 'widgets/animated_book_card.dart';
+import 'bookshelf_view_model.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  Widget build(BuildContext context) {
+    // Provide the ViewModel at the highest level of this route
+    return ChangeNotifierProvider(
+      create: (_) => BookshelfViewModel(getIt(), getIt()),
+      child: const _HomeScreenContent(),
+    );
+  }
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenContent extends StatefulWidget {
+  const _HomeScreenContent();
+
+  @override
+  State<_HomeScreenContent> createState() => _HomeScreenContentState();
+}
+
+class _HomeScreenContentState extends State<_HomeScreenContent>
+    with TickerProviderStateMixin {
   // Design system constants
   static const double _radius16 = 16.0;
   static const double _spacing8 = 8.0;
   static const double _spacing12 = 12.0;
   static const double _spacing16 = 16.0;
-  static const double _spacing24 = 24.0;
   static const double _minTouchTarget = 40.0;
 
-  // To trigger rebuilds of the Futures
-  int _refreshKey = 0;
   late TabController _tabController;
   final _prefs = getIt<BookshelfPreferencesService>();
-  bool _isSelectionMode = false;
-  final Set<String> _selectedBookIds = {};
-
-  late Future<List<Map<String, dynamic>>> _publicBooksFuture;
-  late Future<List<Map<String, dynamic>>> _privateBooksFuture;
-  int _publicCount = 0;
-  int _privateCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _refreshFutures();
-    // Initially length 1, updated in build if needed?
-    // Actually, we need to know if private shelf is unlocked to set length.
-    // The previous implementation used DefaultTabController which handles this dynamically.
-    // To keep it simple and robust, we will check FeatureManager in build to init/update controller.
-    // However, TabController length cannot change. Safe bet: always 2, but only show 1 if locked?
-    // Or just use a simple variable to track "current tab index" and sync with DefaultTabController?
-    // Syncing with DefaultTabController is hard.
-    // Let's use a valid approach: Re-create TabController when tabs change.
     _tabController = TabController(length: 1, vsync: this);
-  }
-
-  void _refreshFutures() {
-    _publicBooksFuture = getIt<DatabaseService>().getBooks(
-      isPrivate: false,
-      orderBy: _prefs.getOrderByClause(),
-    );
-    _privateBooksFuture = getIt<DatabaseService>().getBooks(
-      isPrivate: true,
-      orderBy: _prefs.getOrderByClause(),
-    );
-
-    // Update counts for UI logic
-    _publicBooksFuture.then((list) {
-      if (mounted) setState(() => _publicCount = list.length);
-    });
-    _privateBooksFuture.then((list) {
-      if (mounted) setState(() => _privateCount = list.length);
-    });
   }
 
   @override
@@ -92,55 +69,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  void _toggleSelectionMode({bool? active, String? initialBookId}) {
-    setState(() {
-      _isSelectionMode = active ?? !_isSelectionMode;
-      _selectedBookIds.clear();
-      if (_isSelectionMode && initialBookId != null) {
-        _selectedBookIds.add(initialBookId);
-      }
-    });
-  }
-
-  Future<void> _selectAllBooks(bool showPrivacyTab) async {
-    final isPrivateTab = showPrivacyTab && _tabController.index == 1;
-    final future = isPrivateTab ? _privateBooksFuture : _publicBooksFuture;
-
-    final books = await future;
-    final bookIds = books.map((b) => b['id'] as String).toSet();
-
-    // Check if ALL books in the current view are already selected
-    final allSelected = bookIds.every((id) => _selectedBookIds.contains(id));
-
-    setState(() {
-      if (allSelected) {
-        // Deselect all from current view
-        _selectedBookIds.removeAll(bookIds);
-      } else {
-        // Select all from current view
-        _selectedBookIds.addAll(bookIds);
-      }
-    });
-  }
-
-  void _toggleBookSelection(String bookId) {
-    setState(() {
-      if (_selectedBookIds.contains(bookId)) {
-        _selectedBookIds.remove(bookId);
-        if (_selectedBookIds.isEmpty) {
-          // Optional: Exit selection mode if last item deselected?
-          // For now, let's keep it active even if empty, like Gallery apps.
-        }
-      } else {
-        _selectedBookIds.add(bookId);
-      }
-    });
-  }
-
-  Future<void> _deleteSelectedBooks() async {
+  Future<void> _deleteSelectedBooks(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
-    final count = _selectedBookIds.length;
-    if (count == 0) return;
+    final vm = context.read<BookshelfViewModel>();
+
+    if (vm.selectedCount == 0) return;
 
     final prefs = getIt<BookshelfPreferencesService>();
     bool deleteFile = prefs.deleteFilesOnRemove;
@@ -151,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text(loc.deleteBooksTitle(count)),
+              title: Text(loc.deleteBooksTitle(vm.selectedCount)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -187,56 +120,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       },
     );
 
-    if (confirmed == true) {
-      final db = getIt<DatabaseService>();
-      // Copy list to avoid concurrent modification issues if any
-      final idsToDelete = List<String>.from(_selectedBookIds);
-
-      for (final id in idsToDelete) {
-        // We need to fetch book to get file path if we delete files
-        if (deleteFile) {
-          final bookData = await db.getBookById(id);
-          if (bookData != null) {
-            final book = Book.fromMap(bookData);
-            final file = File(book.filePath);
-            if (await file.exists()) {
-              await file.delete();
-            }
-          }
+    if (confirmed == true && mounted) {
+      try {
+        await vm.deleteSelectedBooks(deleteFile);
+        if (mounted) {
+          SnackBarUtils.show(context, loc.deletedBooks(vm.selectedCount));
         }
-        await db.deleteBook(id);
+      } catch (e) {
+        if (mounted) {
+          SnackBarUtils.show(context, 'Error deleting books: $e');
+        }
       }
+    }
+  }
 
+  Future<void> _moveSelectedBooks(BuildContext context, bool toPrivate) async {
+    final vm = context.read<BookshelfViewModel>();
+    if (vm.selectedCount == 0) return;
+
+    try {
+      await vm.moveSelectedBooks(toPrivate);
+    } catch (e) {
       if (mounted) {
-        SnackBarUtils.show(context, loc.deletedBooks(count));
-        _toggleSelectionMode(active: false);
-        _refreshShelf();
+        SnackBarUtils.show(context, 'Error moving books: $e');
       }
     }
-  }
-
-  Future<void> _moveSelectedBooks(bool toPrivate) async {
-    final loc = AppLocalizations.of(context)!;
-    final db = getIt<DatabaseService>();
-    final idsToMove = List<String>.from(_selectedBookIds);
-
-    for (final id in idsToMove) {
-      await db.updateBookPrivacy(id, toPrivate);
-    }
-
-    if (mounted) {
-      final shelf = toPrivate ? loc.privateShelf : loc.publicShelf;
-      SnackBarUtils.show(context, loc.movedBooks(idsToMove.length, shelf));
-      _toggleSelectionMode(active: false);
-      _refreshShelf();
-    }
-  }
-
-  void _refreshShelf() {
-    setState(() {
-      _refreshKey++;
-      _refreshFutures();
-    });
   }
 
   Future<void> _importBook(BuildContext context) async {
@@ -316,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         }
 
         if (successCount > 0) {
-          _refreshShelf();
+          context.read<BookshelfViewModel>().loadBooks();
         }
       }
     }
@@ -422,7 +330,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             : null,
                         onTap: () async {
                           await _prefs.setSort(sortBy, isAscending);
-                          _refreshShelf();
+                          if (context.mounted) {
+                            context.read<BookshelfViewModel>().loadBooks();
+                          }
                           setModalState(() {});
                           Navigator.pop(context);
                         },
@@ -539,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         if (mounted) {
           SnackBarUtils.show(
               context, 'Successfully imported ${uniqueBooksMap.length} books!');
-          _refreshShelf();
+          context.read<BookshelfViewModel>().loadBooks();
         }
       } catch (e) {
         if (mounted) {
@@ -674,67 +584,87 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
 
     return Scaffold(
-      appBar: _isSelectionMode
-          ? AppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => _toggleSelectionMode(active: false),
-              ),
-              title: Text(
-                  '${_selectedBookIds.length} ${AppLocalizations.of(context)!.selected}'),
-              actions: [
-                if (_selectedBookIds.length == 1)
-                  IconButton(
-                    icon: const Icon(Icons.info_outline),
-                    tooltip: AppLocalizations.of(context)!.viewDetails,
-                    onPressed: () async {
-                      final bookId = _selectedBookIds.first;
-                      final bookData =
-                          await getIt<DatabaseService>().getBookById(bookId);
-                      if (bookData != null && mounted) {
-                        final book = Book.fromMap(bookData);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BookDetailsPage(
-                              book: book,
-                              bookData: bookData,
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                if (_selectedBookIds.isNotEmpty) ...[
-                  if (featureManager.isPro)
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: Selector<BookshelfViewModel,
+            ({bool isSelectionMode, int selectedCount})>(
+          selector: (_, vm) => (
+            isSelectionMode: vm.isSelectionMode,
+            selectedCount: vm.selectedCount,
+          ),
+          builder: (context, state, _) {
+            final vm = context.read<BookshelfViewModel>();
+            if (state.isSelectionMode) {
+              return AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => vm.toggleSelectionMode(active: false),
+                ),
+                title: Text(
+                    '${state.selectedCount} ${AppLocalizations.of(context)!.selected}'),
+                actions: [
+                  if (state.selectedCount == 1)
                     IconButton(
-                      icon: Icon(showPrivacyTab ? Icons.lock_open : Icons.lock),
-                      tooltip: showPrivacyTab
-                          ? AppLocalizations.of(context)!.moveToPublic
-                          : AppLocalizations.of(context)!.moveToPrivate,
-                      onPressed: () => _moveSelectedBooks(!showPrivacyTab),
+                      icon: const Icon(Icons.info_outline),
+                      tooltip: AppLocalizations.of(context)!.viewDetails,
+                      onPressed: () async {
+                        final bookId = vm.selectedBookIds.first;
+                        final bookData =
+                            await getIt<DatabaseService>().getBookById(bookId);
+                        if (bookData != null && mounted) {
+                          final book = Book.fromMap(bookData);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BookDetailsPage(
+                                book: book,
+                                bookData: bookData,
+                              ),
+                            ),
+                          );
+                        }
+                      },
                     ),
-                ],
-                Builder(builder: (context) {
-                  final loc = AppLocalizations.of(context)!;
-                  final isPrivateTab =
-                      showPrivacyTab && _tabController.index == 1;
-                  final currentTotal =
-                      isPrivateTab ? _privateCount : _publicCount;
-                  final allSelected = currentTotal > 0 &&
-                      _selectedBookIds.length >= currentTotal;
+                  if (state.selectedCount > 0) ...[
+                    if (featureManager.isPro)
+                      IconButton(
+                        icon:
+                            Icon(showPrivacyTab ? Icons.lock_open : Icons.lock),
+                        tooltip: showPrivacyTab
+                            ? AppLocalizations.of(context)!.moveToPublic
+                            : AppLocalizations.of(context)!.moveToPrivate,
+                        onPressed: () =>
+                            _moveSelectedBooks(context, !showPrivacyTab),
+                      ),
+                  ],
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: AppLocalizations.of(context)!.delete,
+                    onPressed: () => _deleteSelectedBooks(context),
+                  ),
+                  Builder(builder: (context) {
+                    final loc = AppLocalizations.of(context)!;
+                    final isPrivateTab =
+                        showPrivacyTab && _tabController.index == 1;
+                    final currentTotal =
+                        isPrivateTab ? vm.privateCount : vm.publicCount;
+                    final allSelected =
+                        currentTotal > 0 && state.selectedCount >= currentTotal;
 
-                  return IconButton(
-                    icon: Icon(allSelected ? Icons.deselect : Icons.select_all),
-                    tooltip: allSelected ? loc.deselectAll : loc.selectAll,
-                    onPressed: () => _selectAllBooks(showPrivacyTab),
-                  );
-                }),
-                const SizedBox(width: _spacing8),
-              ],
-              backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-            )
-          : AppBar(
+                    return IconButton(
+                      icon:
+                          Icon(allSelected ? Icons.deselect : Icons.select_all),
+                      tooltip: allSelected ? loc.deselectAll : loc.selectAll,
+                      onPressed: () => vm.selectAll(isPrivateTab),
+                    );
+                  }),
+                  const SizedBox(width: _spacing8),
+                ],
+                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+              );
+            }
+
+            return AppBar(
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -852,7 +782,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
               ],
-            ),
+            );
+          },
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -898,21 +831,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           },
                         ),
                       ),
-
-                      // Content with animated transition
                       Expanded(
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          switchInCurve: Curves.easeOutCubic,
-                          switchOutCurve: Curves.easeOutCubic,
-                          child: KeyedSubtree(
-                            key: ValueKey(_tabController.index),
-                            child: _buildShelf(
-                              context,
-                              isPrivate:
-                                  showPrivacyTab && _tabController.index == 1,
-                            ),
+                        child: Selector<
+                            BookshelfViewModel,
+                            ({
+                              bool isLoading,
+                              List<Book> pub,
+                              List<Book> priv
+                            })>(
+                          selector: (_, vm) => (
+                            isLoading: vm.isLoading,
+                            pub: vm.publicBooks,
+                            priv: vm.privateBooks,
                           ),
+                          builder: (context, state, child) {
+                            if (state.isLoading) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
+
+                            return TabBarView(
+                              controller: _tabController,
+                              physics:
+                                  const NeverScrollableScrollPhysics(), // Use tab bar to switch
+                              children: [
+                                _buildShelfContent(context, state.pub, false),
+                                if (showPrivacyTab)
+                                  _buildShelfContent(context, state.priv, true),
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -923,98 +871,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
         ),
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_isSelectionMode) ...[
-            FloatingActionButton(
-              heroTag: 'delete_fab',
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-              child: const Icon(Icons.delete),
-              onPressed: _deleteSelectedBooks,
-            ),
-            const SizedBox(height: _spacing16),
-          ],
-          FloatingActionButton(
-            heroTag: 'add_fab',
-            elevation: 0,
-            backgroundColor: Theme.of(context).brightness == Brightness.dark
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
-                : Theme.of(context).colorScheme.primary,
-            foregroundColor: Theme.of(context).brightness == Brightness.dark
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onPrimary,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: const Icon(Icons.add),
-            onPressed: () {
-              if (Platform.isAndroid) {
-                // On Android, folder import is not supported, so just import files directly
-                _importBook(context);
-              } else {
-                _showImportMenu(context);
-              }
-            },
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showImportMenu(context),
+        child: const Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildShelf(BuildContext context, {required bool isPrivate}) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      key: ValueKey("shelf_${isPrivate}_$_refreshKey"),
-      future: isPrivate ? _privateBooksFuture : _publicBooksFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final books = snapshot.data ?? [];
-
-        if (books.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(_spacing24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  MascotManager().render(MascotScene.emptyShelf, size: 120),
-                  const SizedBox(height: _spacing24),
-                  Text(
-                    AppLocalizations.of(context)!.emptyShelfTitle,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                  const SizedBox(height: _spacing8),
-                  Text(
-                    AppLocalizations.of(context)!.emptyShelfSubtitle,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).textTheme.bodySmall?.color,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ],
+  Widget _buildShelfContent(
+      BuildContext context, List<Book> books, bool isPrivate) {
+    if (books.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: MascotManager().render(MascotScene.emptyShelf, size: 120),
+            ),
+            Text(
+              isPrivate
+                  ? AppLocalizations.of(context)!.emptyPrivateShelf
+                  : AppLocalizations.of(context)!.emptyShelfInstructions,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodySmall?.color,
+                letterSpacing: 0.2,
               ),
             ),
-          );
-        }
+          ],
+        ),
+      );
+    }
 
-        return _prefs.viewMode == ViewMode.grid
-            ? _buildGridView(context, books, isPrivate)
-            : _buildListView(context, books, isPrivate);
-      },
-    );
+    return _prefs.viewMode == ViewMode.grid
+        ? _buildGridView(context, books, isPrivate)
+        : _buildListView(context, books, isPrivate);
   }
 
   Widget _buildGridView(
-      BuildContext context, List<Map<String, dynamic>> books, bool isPrivate) {
+      BuildContext context, List<Book> books, bool isPrivate) {
     return GridView.builder(
       padding: const EdgeInsets.all(_spacing16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -1025,27 +921,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       itemCount: books.length,
       itemBuilder: (context, index) {
-        final bookData = books[index];
-        final book = Book.fromMap(bookData);
-        final isSelected = _selectedBookIds.contains(book.id);
+        final book = books[index];
 
-        return AnimatedBookCardGrid(
-          book: book,
-          isSelected: isSelected,
-          isSelectionMode: _isSelectionMode,
-          onTap: () {
-            if (_isSelectionMode) {
-              _toggleBookSelection(book.id);
-            } else {
-              context.push('/reader/${book.id}').then((_) => _refreshShelf());
-            }
-          },
-          onLongPress: () {
-            if (_isSelectionMode) {
-              _toggleBookSelection(book.id);
-            } else {
-              _toggleSelectionMode(active: true, initialBookId: book.id);
-            }
+        return Selector<BookshelfViewModel,
+            ({bool isSelectionMode, bool isSelected})>(
+          selector: (_, vm) => (
+            isSelectionMode: vm.isSelectionMode,
+            isSelected: vm.isBookSelected(book.id),
+          ),
+          builder: (context, state, child) {
+            final vm = context.read<BookshelfViewModel>();
+            return AnimatedBookCardGrid(
+              book: book,
+              isSelected: state.isSelected,
+              isSelectionMode: state.isSelectionMode,
+              onTap: () {
+                if (state.isSelectionMode) {
+                  vm.toggleBookSelection(book.id);
+                } else {
+                  context
+                      .push('/reader/${book.id}')
+                      .then((_) => vm.loadBooks());
+                }
+              },
+              onLongPress: () {
+                if (state.isSelectionMode) {
+                  vm.toggleBookSelection(book.id);
+                } else {
+                  vm.toggleSelectionMode(active: true, initialBookId: book.id);
+                }
+              },
+            );
           },
         );
       },
@@ -1053,36 +959,47 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildListView(
-      BuildContext context, List<Map<String, dynamic>> books, bool isPrivate) {
+      BuildContext context, List<Book> books, bool isPrivate) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(
           horizontal: _spacing16, vertical: _spacing8),
       itemCount: books.length,
       itemBuilder: (context, index) {
-        final bookData = books[index];
-        final book = Book.fromMap(bookData);
-        final isSelected = _selectedBookIds.contains(book.id);
+        final book = books[index];
 
-        return AnimatedBookCardList(
-          book: book,
-          bookData: bookData,
-          isSelected: isSelected,
-          isSelectionMode: _isSelectionMode,
-          onTap: () {
-            if (_isSelectionMode) {
-              _toggleBookSelection(book.id);
-            } else {
-              context.push('/reader/${book.id}').then((_) => _refreshShelf());
-            }
+        return Selector<BookshelfViewModel,
+            ({bool isSelectionMode, bool isSelected})>(
+          selector: (_, vm) => (
+            isSelectionMode: vm.isSelectionMode,
+            isSelected: vm.isBookSelected(book.id),
+          ),
+          builder: (context, state, child) {
+            final vm = context.read<BookshelfViewModel>();
+            return AnimatedBookCardList(
+              book: book,
+              bookData: book
+                  .toMap(), // For compatibility with older list view API if needed
+              isSelected: state.isSelected,
+              isSelectionMode: state.isSelectionMode,
+              onTap: () {
+                if (state.isSelectionMode) {
+                  vm.toggleBookSelection(book.id);
+                } else {
+                  context
+                      .push('/reader/${book.id}')
+                      .then((_) => vm.loadBooks());
+                }
+              },
+              onLongPress: () {
+                if (state.isSelectionMode) {
+                  vm.toggleBookSelection(book.id);
+                } else {
+                  vm.toggleSelectionMode(active: true, initialBookId: book.id);
+                }
+              },
+              onSelectionToggle: () => vm.toggleBookSelection(book.id),
+            );
           },
-          onLongPress: () {
-            if (_isSelectionMode) {
-              _toggleBookSelection(book.id);
-            } else {
-              _toggleSelectionMode(active: true, initialBookId: book.id);
-            }
-          },
-          onSelectionToggle: () => _toggleBookSelection(book.id),
         );
       },
     );

@@ -638,6 +638,18 @@ abstract class AppLocalizations {
   /// **'Moved {count} books into {shelf}'**
   String movedBooks(int count, String shelf);
 
+  /// No description provided for @emptyPrivateShelf.
+  ///
+  /// In en, this message translates to:
+  /// **'This private space is empty.\nSelect books from the public shelf and tap the Lock icon to move them here.'**
+  String get emptyPrivateShelf;
+
+  /// No description provided for @emptyShelfInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Your shelf is empty!\nTap the + button below to import some books.\nYou can import individual files or an entire folder.'**
+  String get emptyShelfInstructions;
+
   /// No description provided for @importFiles.
   ///
   /// In en, this message translates to:
