@@ -12,10 +12,44 @@ import 'package:nyan_read/modules/reader/reader_engine/reader_engine.dart';
 import 'package:nyan_read/modules/reader/reader_error.dart';
 import 'package:nyan_read/core/models/highlight.dart';
 import 'dart:ui';
+import 'package:nyan_read/modules/reader/controllers/content_meta_manager.dart';
+import 'package:nyan_read/modules/reader/controllers/reader_settings_manager.dart';
+import 'package:nyan_read/modules/reader/controllers/reading_progress_manager.dart';
+import 'package:nyan_read/core/utils/lifecycle_registry.dart';
+import 'mocks/mock_reader_settings_manager.dart';
+import 'mocks/mock_content_meta_manager.dart';
+import 'mocks/mock_reading_progress_manager.dart';
 
 class MockReaderController extends ChangeNotifier
     with WidgetsBindingObserver
     implements ReaderController {
+  @override
+  late final ReadingProgressManager progressManager;
+  @override
+  late final ReaderSettingsManager settingsManager;
+  @override
+  late final ContentMetaManager metaManager;
+
+  MockReaderController() {
+    final lifecycle = LifecycleRegistry();
+    progressManager = MockReadingProgressManager(
+      engine: engine,
+      book: book,
+      lifecycle: lifecycle,
+      onProgressUpdated: () {},
+    );
+    settingsManager = MockReaderSettingsManager(
+      engine: engine,
+      lifecycle: lifecycle,
+      onSettingsChanged: () {},
+    );
+    metaManager = MockContentMetaManager(
+      engine: engine,
+      book: book,
+      onMetaChanged: () {},
+    );
+  }
+
   @override
   double get currentProgress => 0.5;
   @override
@@ -37,9 +71,8 @@ class MockReaderController extends ChangeNotifier
   @override
   Offset? get tapDownPosition => null;
   @override
-  bool get isAdjustingBrightness => false;
   @override
-  bool get shouldShowReminder => false;
+  bool get isAdjustingBrightness => false;
 
   @override
   Book get book => Book(

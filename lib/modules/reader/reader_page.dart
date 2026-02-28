@@ -2,7 +2,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import 'package:screen_brightness/screen_brightness.dart';
 import '../../core/models/book.dart';
 import '../../core/models/highlight.dart';
 import '../../core/services/database_service.dart';
@@ -23,36 +22,32 @@ import 'widgets/highlight_note_dialog.dart';
 import 'widgets/reader_menu.dart';
 import 'dart:async';
 import 'dart:io';
+import '../../core/utils/lifecycle_registry.dart';
+import 'controllers/reading_progress_manager.dart';
 import 'controllers/brightness_controller.dart';
 import 'widgets/sub_zero_brightness_wrapper.dart';
 import 'widgets/brightness_hud_widget.dart';
 import 'widgets/chapter_list_widget.dart';
+import 'controllers/reader_settings_manager.dart';
+import 'controllers/content_meta_manager.dart';
 
 class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   final Book book;
   late ReaderEngine engine;
 
-  double _fontSize = 18.0;
-  double _lineHeight = 1.5;
-  double _brightness = 1.0;
-  Color _backgroundColor = const Color(0xFFFDFCF8); // Default Cream Paper
-  Color _textColor = const Color(0xFF4A453E); // Default Sumi Ink
-  Timer? _reminderTimer;
-  Timer? _progressTimer;
-  Timer? _autoSaveTimer;
-  int _readSeconds = 0;
   bool _showControls = false;
-  double _currentProgress = 0.0;
   ReaderErrorState? _errorState;
-  bool _followSystem = false;
-  StreamSubscription<double>? _brightnessSubscription;
-  BrightnessController? _brightnessControllerRef;
-  List<dynamic> _chapters = [];
-  int? _currentChapterIndex;
+
+  // Managers & Lifecycle
+  final LifecycleRegistry _lifecycle = LifecycleRegistry();
+  late final ReadingProgressManager progressManager;
+  late final ReaderSettingsManager settingsManager;
+  late final ContentMetaManager metaManager;
+
   final Debouncer _layoutDebouncer =
       Debouncer(delay: const Duration(milliseconds: 300));
   Size? _lastLayoutSize;
-  List<Highlight> _highlights = [];
+
   Function(Highlight)? onShowNoteDialog;
   Function(Offset)? onContentTapDelegate;
   Offset? _tapDownPosition;
@@ -62,47 +57,47 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
   ReaderController(this.book) {
     engine = ReaderEngineFactory.create(book);
-    // Load saved preferences
-    final prefs = getIt<ReaderPreferencesService>();
-    _fontSize = prefs.fontSize;
-    _lineHeight = prefs.lineHeight;
-    _backgroundColor = prefs.backgroundColor;
 
-    // Load or sync brightness
-    _brightness = prefs.brightness ?? 0.5;
-    if (prefs.brightness == null) {
-      // Fetch system brightness if no pref is saved
-      ScreenBrightness().current.then((b) {
-        _brightness = b;
-        notifyListeners();
-      });
-    }
-
-    _updateEngineConfig();
     WidgetsBinding.instance.addObserver(this);
+
+    // Initialize Managers
+    settingsManager = ReaderSettingsManager(
+      engine: engine,
+      lifecycle: _lifecycle,
+      onSettingsChanged: notifyListeners,
+    );
+
+    metaManager = ContentMetaManager(
+      engine: engine,
+      book: book,
+      onMetaChanged: notifyListeners,
+    );
+
+    progressManager = ReadingProgressManager(
+      engine: engine,
+      book: book,
+      lifecycle: _lifecycle,
+      onProgressUpdated: notifyListeners,
+    );
   }
 
-  double get fontSize => _fontSize;
-  double get lineHeight => _lineHeight;
-  double get brightness => _brightness;
-  Color get backgroundColor => _backgroundColor;
-  Color get textColor => _textColor;
+  double get fontSize => settingsManager.fontSize;
+  double get lineHeight => settingsManager.lineHeight;
+  double get brightness => settingsManager.brightness;
+  Color get backgroundColor => settingsManager.backgroundColor;
+  Color get textColor => settingsManager.textColor;
   bool get showControls => _showControls;
-  bool get followSystem => _followSystem;
-  double get currentProgress => _currentProgress;
+  bool get followSystem => settingsManager.followSystem;
+  double get currentProgress => progressManager.currentProgress;
 
-  /// Call once from _ReaderPageState.initState() to bridge the two brightness systems.
   void attachBrightnessController(BrightnessController bc) {
-    _brightnessControllerRef = bc;
-    // Sync initial brightness silently into BrightnessController so the overlay is correct.
-    // DANGER: Do not call `bc.setFromSlider(_brightness)` here, as it calls `_showHud()`
-    // and causes the HUD to permanently stick on screen on initial load.
-    bc.uiBrightnessValue.value = _brightness;
+    settingsManager.attachBrightnessController(bc);
   }
 
   ReaderErrorState? get errorState => _errorState;
-  List<dynamic> get chapters => _chapters;
-  int? get currentChapterIndex => _currentChapterIndex;
+  List<dynamic> get chapters => metaManager.chapters;
+  int? get currentChapterIndex => metaManager.currentChapterIndex;
+  List<Highlight> get highlights => metaManager.highlights;
   Offset? get tapDownPosition => _tapDownPosition;
   bool get isPanning => _isPanning;
 
@@ -127,29 +122,16 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   @override
-  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
-      _saveCurrentPosition();
+      progressManager.saveCurrentPosition();
     }
   }
 
   void init() {
-    _startTimer();
+    progressManager.startTracking();
     _loadBook();
-  }
-
-  void _startTimer() {
-    _reminderTimer?.cancel();
-    _reminderTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _readSeconds++;
-      if (_readSeconds > 0 && _readSeconds % 3600 == 0) {
-        notifyListeners();
-      }
-      // Always sync progress to show in bottom-left corner
-      _syncProgress();
-    });
   }
 
   Future<void> _loadBook() async {
@@ -159,21 +141,21 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       await engine.initialize();
 
       // 加载章节信息
-      _chapters = await engine.getChapters();
+      await metaManager.loadChapters();
 
       // 恢复上次阅读位置
       await _restoreLastPosition();
 
       // Update chapter index after restoring position
-      await _updateCurrentChapterIndex();
+      await metaManager.updateCurrentChapterIndex();
 
       // Load highlights and wire up callbacks for TxtReaderEngine
-      await loadHighlights();
+      await metaManager.loadHighlights();
       if (engine is TxtReaderEngine) {
         final txtEngine = engine as TxtReaderEngine;
         txtEngine.onTextHighlighted =
             (paragraphIndex, start, end, text, colorCode) {
-          addHighlight(paragraphIndex, start, end, text, colorCode);
+          metaManager.addHighlight(paragraphIndex, start, end, text, colorCode);
         };
         txtEngine.onHighlightTapped = (highlight) {
           onShowNoteDialog?.call(highlight);
@@ -182,11 +164,6 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
           onContentTapDelegate?.call(position);
         };
       }
-
-      // 启动自动保存定时器 (每30秒保存一次,防抖)
-      _autoSaveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-        _saveCurrentPosition();
-      });
 
       // Backfill bookmark snippets in background
       _backfillBookmarkSnippets();
@@ -243,171 +220,25 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _saveCurrentPosition() async {
-    try {
-      final position = engine.getCurrentPosition();
-      final progress = engine.getProgress() ?? _currentProgress;
-      debugPrint(
-          "DEBUG: _saveCurrentPosition called. Engine returned: ${position?.toJson()}, progress: $progress");
-
-      if (position != null) {
-        await DatabaseService().updateBookPosition(
-          book.id,
-          book.format,
-          position.toJson(),
-          progress: progress,
-        );
-        debugPrint("DEBUG: Position and progress saved to DB");
-      } else {
-        debugPrint("DEBUG: Engine returned null position, NOT saving.");
-      }
-    } catch (e) {
-      debugPrint('Error saving position: $e');
-    }
-  }
-
   void retry() {
     _loadBook();
   }
 
-  void _updateEngineConfig() {
-    // Determine text color based on background luminance
-    // Japanese Cream constraints: No pure black on large surfaces if possible, but for text strict contrast is needed.
-    // However, we can use the sumi ink color for light backgrounds.
-
-    final bg = _backgroundColor;
-    // Check for Dark Mode backgrounds
-    bool isDark = bg.computeLuminance() < 0.5;
-
-    if (isDark) {
-      _textColor = const Color(0xFFE6E2D8); // Cream White
-    } else {
-      _textColor = const Color(0xFF4A453E); // Sumi Ink
-    }
-
-    final prefs = getIt<ReaderPreferencesService>();
-    engine.setConfig(ReaderConfig(
-      backgroundColor: _backgroundColor,
-      textColor: _textColor,
-      fontSize: _fontSize,
-      lineHeight: _lineHeight,
-      pageTurnMode: prefs.pageTurnMode,
-      pageAnimation: prefs.pageAnimation,
-    ));
-  }
-
-  bool get shouldShowReminder => _readSeconds > 0 && _readSeconds % 3600 == 0;
-
   void toggleControls() {
     _showControls = !_showControls;
     if (_showControls) {
-      _updateCurrentChapterIndex();
+      metaManager.updateCurrentChapterIndex();
     }
     notifyListeners();
   }
 
-  Future<void> _updateCurrentChapterIndex() async {
-    if (_chapters.isEmpty) return;
-
-    final position = engine.getCurrentPosition();
-    if (position == null) return;
-
-    int newIndex = 0;
-
-    // Robust search for current chapter
-    // We want the chapter with the largest start-point that is still <= current-point.
-
-    if ((position is TxtReadingPosition && book.format == 'txt') ||
-        (book.format == 'txt')) {
-      // Fallback for format check
-      final currentPara =
-          (position is TxtReadingPosition) ? position.paragraphIndex : -1;
-
-      int maxStartPara = -1;
-
-      for (int i = 0; i < _chapters.length; i++) {
-        final chapterPara = _chapters[i]['paragraphIndex'] as int? ?? -1;
-        // Check if this chapter starts before or at current position
-        if (chapterPara != -1 && chapterPara <= currentPara) {
-          // If this chapter starts LATER than the previous candidate, it's a better candidate
-          // (i.e. we want the Closest chapter that is <= current)
-          if (chapterPara > maxStartPara) {
-            maxStartPara = chapterPara;
-            newIndex = i;
-          } else if (chapterPara == maxStartPara) {
-            // Tie-breaker: prefer higher index if starts are same (rare)
-            newIndex = i;
-          }
-        }
-      }
-    } else if (position is PdfReadingPosition && book.format == 'pdf') {
-      final currentPage = position.pageNumber;
-      int maxStartPage = -1;
-
-      for (int i = 0; i < _chapters.length; i++) {
-        final chapterPage = _chapters[i]['pageNumber'] as int? ?? -1;
-        if (chapterPage != -1 && chapterPage <= currentPage) {
-          if (chapterPage > maxStartPage) {
-            maxStartPage = chapterPage;
-            newIndex = i;
-          }
-        }
-      }
-    } else {
-      // Fallback for other formats (e.g. EPUB) if possible
-      // If we can't determine, keep current or default to 0.
-      // For EPUB, we might need Cfi comparison which is complex.
-      // Leaving as 0 if unknown prevents crashing, but navigation won't sync.
-      if (_currentChapterIndex != null) {
-        newIndex = _currentChapterIndex!;
-      }
-    }
-
-    if (_currentChapterIndex != newIndex) {
-      _currentChapterIndex = newIndex;
-      // No need to notify here if called within toggleControls which notifies at end,
-      // but safe to do so if called independently.
-    }
-  }
-
-  void _syncProgress() {
-    final p = engine.getProgress() ?? 0.0;
-    if (p != _currentProgress) {
-      _currentProgress = p;
-      notifyListeners();
-    }
-  }
-
   Future<void> seekTo(double val) async {
-    _currentProgress = val;
-    notifyListeners(); // Optimistic update
-    await engine.seekToProgress(val);
-    await _saveCurrentPosition(); // 保存进度
+    await progressManager.seekTo(val);
   }
 
   Future<void> jumpToChapter(int index, dynamic chapterData) async {
-    try {
-      _currentChapterIndex = index;
-
-      // 根据不同格式跳转
-      if (book.format == 'epub' && chapterData['anchor'] != null) {
-        final cfi = chapterData['anchor'] as String;
-        await engine.goToPosition(EpubReadingPosition(cfi: cfi));
-      } else if (book.format == 'txt' &&
-          chapterData['paragraphIndex'] != null) {
-        final paragraphIndex = chapterData['paragraphIndex'] as int;
-        await engine
-            .goToPosition(TxtReadingPosition(paragraphIndex: paragraphIndex));
-      } else if (book.format == 'pdf' && chapterData['pageNumber'] != null) {
-        final pageNumber = chapterData['pageNumber'] as int;
-        await engine.goToPosition(PdfReadingPosition(pageNumber: pageNumber));
-      }
-
-      await _saveCurrentPosition(); // 保存进度
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error jumping to chapter: $e');
-    }
+    await metaManager.jumpToChapter(index, chapterData,
+        () async => await progressManager.saveCurrentPosition());
   }
 
   Future<void> previousPage() async {
@@ -466,187 +297,43 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  void setFontSize(double size) {
-    _fontSize = size;
-    _updateEngineConfig();
-    getIt<ReaderPreferencesService>().setFontSize(size);
-    notifyListeners();
-  }
+  void setFontSize(double size) => settingsManager.setFontSize(size);
+  void setLineHeight(double height) => settingsManager.setLineHeight(height);
+  void setBackground(Color color) => settingsManager.setBackground(color);
+  Future<void> setBrightness(double b) => settingsManager.setBrightness(b);
+  Future<void> toggleFollowSystem() => settingsManager.toggleFollowSystem();
 
-  void setLineHeight(double height) {
-    _lineHeight = height;
-    _updateEngineConfig();
-    getIt<ReaderPreferencesService>().setLineHeight(height);
-    notifyListeners();
-  }
+  Future<void> jumpToPreviousChapter() async =>
+      await metaManager.jumpToPreviousChapter(
+          () async => await progressManager.saveCurrentPosition());
+  Future<void> jumpToNextChapter() async => await metaManager.jumpToNextChapter(
+      () async => await progressManager.saveCurrentPosition());
 
-  void setBackground(Color color) {
-    _backgroundColor = color;
-    _updateEngineConfig();
-    getIt<ReaderPreferencesService>().setBackgroundColor(color);
-    notifyListeners();
-  }
-
-  Future<void> setBrightness(double b) async {
-    if (_followSystem) {
-      // Break "Follow System" link
-      _followSystem = false;
-      _brightnessSubscription?.cancel();
-      _brightnessSubscription = null;
-    }
-
-    _brightness = b;
-    // Drive native screen brightness + sub-zero overlay via BrightnessController
-    _brightnessControllerRef?.setFromSlider(b);
-    // Persist to prefs
-    await getIt<ReaderPreferencesService>().setBrightness(b);
-    notifyListeners();
-  }
-
-  Future<void> toggleFollowSystem() async {
-    _followSystem = !_followSystem;
-    if (_followSystem) {
-      // Switch to system brightness: hand control back to the OS
-      try {
-        // 1. Release native brightness control (OS takes over)
-        await _brightnessControllerRef?.resetToSystem();
-        if (_brightnessControllerRef == null) {
-          await ScreenBrightness().resetScreenBrightness();
-        }
-
-        // 2. Read what the system brightness currently is
-        double systemBrightness = await ScreenBrightness().current;
-        _brightness = systemBrightness;
-        // Sync overlay but keep it in step with system
-        _brightnessControllerRef?.uiBrightnessValue.value = systemBrightness;
-
-        // 3. Clear saved pref so BrightnessManager (if present) also follows system
-        await getIt<ReaderPreferencesService>().setBrightness(null);
-
-        // 4. Stream: keep slider synced when user adjusts system brightness
-        _brightnessSubscription?.cancel();
-        _brightnessSubscription =
-            ScreenBrightness().onCurrentBrightnessChanged.listen((double b) {
-          if (_followSystem) {
-            _brightness = b;
-            _brightnessControllerRef?.uiBrightnessValue.value = b;
-            notifyListeners();
-          }
-        });
-      } catch (e) {
-        debugPrint("Failed to get system brightness: $e");
-        _followSystem = false; // Revert if failed
-      }
-    } else {
-      // Stop listening
-      _brightnessSubscription?.cancel();
-      _brightnessSubscription = null;
-
-      // Re-apply the current brightness value as a manual override
-      await setBrightness(_brightness);
-    }
-    notifyListeners();
-  }
-
-  Future<void> jumpToPreviousChapter() async {
-    if (_currentChapterIndex == null || _currentChapterIndex! <= 0) return;
-    await jumpToChapter(
-        _currentChapterIndex! - 1, _chapters[_currentChapterIndex! - 1]);
-  }
-
-  Future<void> jumpToNextChapter() async {
-    if (_currentChapterIndex == null ||
-        _currentChapterIndex! >= _chapters.length - 1) return;
-    await jumpToChapter(
-        _currentChapterIndex! + 1, _chapters[_currentChapterIndex! + 1]);
-  }
-
-  // --- Highlights ---
-
-  List<Highlight> get highlights => _highlights;
-
-  Future<void> loadHighlights() async {
-    try {
-      final data = await DatabaseService().getHighlights(book.id);
-      _highlights = data.map((m) => Highlight.fromMap(m)).toList();
-
-      // Update engine if it's a TxtReaderEngine
-      if (engine is TxtReaderEngine) {
-        (engine as TxtReaderEngine).setHighlights(_highlights);
-      }
-      notifyListeners();
-    } catch (e) {
-      debugPrint("Error loading highlights: $e");
-    }
-  }
-
+  Future<void> loadHighlights() => metaManager.loadHighlights();
   Future<void> addHighlight(int paragraphIndex, int start, int end, String text,
-      String colorCode) async {
-    final highlight = Highlight(
-      id: const Uuid().v4(),
-      bookId: book.id,
-      paragraphIndex: paragraphIndex,
-      startOffset: start,
-      endOffset: end,
-      selectedText: text,
-      colorCode: colorCode,
-      createdAt: DateTime.now(),
-    );
-
-    await DatabaseService().insertHighlight(highlight.toMap());
-    await loadHighlights();
-  }
-
+          String colorCode) =>
+      metaManager.addHighlight(paragraphIndex, start, end, text, colorCode);
   Future<void> updateHighlight(String highlightId,
-      {String? note, String? colorCode}) async {
-    await DatabaseService()
-        .updateHighlight(highlightId, note: note, colorCode: colorCode);
-    await loadHighlights();
-  }
-
-  Future<void> deleteHighlight(String highlightId) async {
-    await DatabaseService().deleteHighlight(highlightId);
-    await loadHighlights();
-  }
+          {String? note, String? colorCode}) =>
+      metaManager.updateHighlight(highlightId,
+          note: note, colorCode: colorCode);
+  Future<void> deleteHighlight(String highlightId) =>
+      metaManager.deleteHighlight(highlightId);
 
   void showNoteDialog(BuildContext context, Highlight highlight) {
     showHighlightNoteDialog(
       context,
       highlight: highlight,
-      onSave: (note, colorCode) =>
-          updateHighlight(highlight.id, note: note, colorCode: colorCode),
-      onDelete: () => deleteHighlight(highlight.id),
+      onSave: (note, colorCode) => metaManager.updateHighlight(highlight.id,
+          note: note, colorCode: colorCode),
+      onDelete: () => metaManager.deleteHighlight(highlight.id),
     );
   }
 
   void handleLayoutChange(Size newSize) {
-    // Skip if size hasn't changed significantly
-    if (_lastLayoutSize != null &&
-        (newSize.width - _lastLayoutSize!.width).abs() < 10 &&
-        (newSize.height - _lastLayoutSize!.height).abs() < 10) {
-      return;
-    }
-
+    settingsManager.handleLayoutChange(
+        newSize, _lastLayoutSize, notifyListeners);
     _lastLayoutSize = newSize;
-
-    // Debounce layout recalculation to avoid excessive updates
-    _layoutDebouncer.run(() {
-      _recalculateLayout(newSize);
-    });
-  }
-
-  void _recalculateLayout(Size size) {
-    // Adjust font size based on screen width
-    // Base width is 800px, scale font size proportionally
-    final baseFontSize = 18.0;
-    final scaleFactor = (size.width / 800).clamp(0.7, 1.5);
-    final adjustedFontSize = (baseFontSize * scaleFactor).clamp(12.0, 32.0);
-
-    if ((adjustedFontSize - _fontSize).abs() > 1.0) {
-      _fontSize = adjustedFontSize;
-      _updateEngineConfig();
-      notifyListeners();
-    }
   }
 
   Future<void> _backfillBookmarkSnippets() async {
@@ -687,16 +374,14 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Public method to save progress before exiting - can be awaited
   Future<void> saveBeforeExit() async {
-    await _saveCurrentPosition();
+    await progressManager.saveCurrentPosition();
   }
 
   @override
   void dispose() {
-    _saveCurrentPosition(); // 最后保存一次 (backup save, may not complete)
-    _reminderTimer?.cancel();
-    _progressTimer?.cancel();
-    _autoSaveTimer?.cancel();
-    _brightnessSubscription?.cancel();
+    progressManager
+        .saveCurrentPosition(); // 最后保存一次 (backup save, may not complete)
+    _lifecycle.disposeAll();
     _layoutDebouncer.dispose();
     WidgetsBinding.instance.removeObserver(this);
     engine.dispose();
