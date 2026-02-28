@@ -1,96 +1,179 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:screen_brightness/screen_brightness.dart';
+import '../../../../core/services/reader_preferences_service.dart';
 
 class BrightnessController {
   // 核心 UI 驱动状态：绝对全量程 (0.00 到 1.00)
-  // 初始值给 0.5 仅为防空指针，真理必须在 initBrightness 中从物理世界拉取
   final ValueNotifier<double> uiBrightnessValue = ValueNotifier(0.5);
 
-  // HUD 悬浮窗显示状态
+  // 统一 HUD 悬浮窗显示状态
   final ValueNotifier<bool> isAdjusting = ValueNotifier(false);
 
-  Timer? _throttleTimer;
+  final ReaderPreferencesService _prefs;
+
   Timer? _hudHideTimer;
-  double _lastCommittedValue = -1.0;
+  Timer? _debounceTimer;
+  StreamSubscription<double>? _systemBrightnessSubscription;
+  double _lastCommittedLevel = -1.0;
+  double? _originalSystemBrightness;
 
   // ===== 硬件防砖底线防御参数 =====
   static const double hardwareSafeClamp = 0.10;
 
-  /// 异步初始化：连接物理世界与软件感知的桥梁
-  /// 必须在 Widget 的 initState 中被调用，拒绝“闪瞎眼”
-  Future<void> initBrightness() async {
+  BrightnessController(this._prefs) {
+    _initBrightnessTracking();
+  }
+
+  /// 异步初始化：连接物理世界与软件感知的单向数据流桥梁
+  Future<void> _initBrightnessTracking() async {
+    // 监听全局设定变更
+    _prefs.addListener(_handlePrefsChange);
+
+    // 监听外部系统强制干扰
+    _systemBrightnessSubscription = ScreenBrightness()
+        .onCurrentBrightnessChanged
+        .listen(_onSystemBrightnessInterfered);
+
+    await _saveOriginalBrightness();
+
+    // 首屏拉取
     try {
       final currentPhysical = await ScreenBrightness().current;
-      // 同步真实世界状态到 UI 内存
       uiBrightnessValue.value = currentPhysical;
-      _lastCommittedValue = currentPhysical;
-    } catch (_) {
-      // 降级保护：如果获取失败（无权限/模拟器），回退安全中庸值
-      uiBrightnessValue.value = 0.5;
+    } catch (_) {}
+
+    _applyBrightnessState();
+  }
+
+  Future<void> _saveOriginalBrightness() async {
+    try {
+      _originalSystemBrightness = await ScreenBrightness().current;
+    } catch (_) {}
+  }
+
+  Future<void> _restoreOriginalBrightness() async {
+    if (_originalSystemBrightness != null) {
+      try {
+        _lastCommittedLevel = _originalSystemBrightness!;
+        await ScreenBrightness()
+            .setScreenBrightness(_originalSystemBrightness!);
+      } catch (_) {}
+    } else {
+      try {
+        _lastCommittedLevel = -1.0;
+        await ScreenBrightness().resetScreenBrightness();
+      } catch (_) {}
     }
   }
 
-  /// 接收 UI 层的相对滑动像素，转换为亮度值
-  void handleDragUpdate(double dragDeltaY, double screenHeight) {
-    // 灵敏度映射：手指划过半个屏幕，亮度变化 100%
-    final sensitivity = 2.0 / screenHeight;
+  /// 来自操作系统的抢占干涉
+  void _onSystemBrightnessInterfered(double systemLevel) {
+    if (_lastCommittedLevel < 0) return;
 
-    // 🚨 物理坐标系修正 🚨
-    // Flutter 坐标原点在左上角。向下滑动 dragDeltaY 为正数。
-    // 逻辑修正：向下滑动 (为正) = 变暗 (做减法)。
-    final change = -(dragDeltaY * sensitivity);
+    // 如果偏差大于 5%，认为是用户在控制中心动手了
+    if ((systemLevel - _lastCommittedLevel).abs() > 0.05) {
+      if (_prefs.brightness != null) {
+        _lastCommittedLevel = -1.0;
+        // 退回跟随系统
+        _prefs.setBrightness(null);
+        uiBrightnessValue.value = systemLevel;
+      }
+    }
+  }
 
-    // 获取当前基准值，叠加增量，并严格限制在 0.0 - 1.0 数学区间内
-    final newBrightness = (uiBrightnessValue.value + change).clamp(0.0, 1.0);
-
-    // 1. 无阻塞：直接驱动 120Hz 局部重绘
-    uiBrightnessValue.value = newBrightness;
-
-    // 唤起 HUD 悬浮窗，并取消隐藏定时器
-    isAdjusting.value = true;
-    _hudHideTimer?.cancel();
-
-    // 2. 丢弃高频垃圾请求，启动 50ms 节流窗口
-    if (_throttleTimer?.isActive ?? false) return;
-
-    _throttleTimer = Timer(const Duration(milliseconds: 50), () {
-      _commitToNative(uiBrightnessValue.value);
+  /// Preferences 变化事件 (滑动 slider 或手势导致的设定变化都会走到这里)
+  void _handlePrefsChange() {
+    // 100ms Debounce 防抖，组装一波 IO
+    if (_debounceTimer?.isActive ?? false) {
+      _debounceTimer!.cancel();
+    }
+    _debounceTimer = Timer(const Duration(milliseconds: 100), () {
+      _applyBrightnessState();
     });
   }
 
-  /// 滑动结束（手势抬起），强制核对最后状态，拒绝脏数据残留
-  void handleDragEnd() {
-    _throttleTimer?.cancel();
-    _commitToNative(uiBrightnessValue.value);
+  /// 执行最后的单向流同步：计算 -> Native
+  Future<void> _applyBrightnessState() async {
+    if (_prefs.brightness == null) {
+      await _restoreOriginalBrightness();
+      return;
+    }
 
-    // 启动 HUD 隐藏延迟
-    _hudHideTimer = Timer(const Duration(milliseconds: 500), () {
+    try {
+      final b = _prefs.brightness!;
+      final perceptual = _prefs.getPerceptualBrightness(b);
+      final minPhys = _prefs.minPhysicalBrightness;
+
+      double systemLevel = perceptual > minPhys ? perceptual : minPhys;
+
+      // 双层 API 防抖：拦截相同的亮度值
+      if ((_lastCommittedLevel - systemLevel).abs() < 0.01) return;
+
+      _lastCommittedLevel = systemLevel;
+      await ScreenBrightness().setScreenBrightness(systemLevel);
+    } catch (_) {}
+  }
+
+  void _showHud() {
+    isAdjusting.value = true;
+    _hudHideTimer?.cancel();
+  }
+
+  // 统一的手势/滑动结束 (隐藏 HUD)
+  void handleInteractionEnd() {
+    _hudHideTimer?.cancel();
+    _hudHideTimer = Timer(const Duration(milliseconds: 800), () {
       isAdjusting.value = false;
     });
   }
 
-  /// 核心原生拦截层：向下通信的唯一咽喉
-  Future<void> _commitToNative(double value) async {
-    // 🚨 硬件底线拦截 (Safe-clamp) 🚨
-    final safePhysicalLevel =
-        value > hardwareSafeClamp ? value : hardwareSafeClamp;
+  /// ========== 对外交互暴露 (手势 & 菜单滑块) ==========
 
-    // 如果物理亮度与上次一致，拦截 IPC 通信，避免无意义损耗。
-    if ((_lastCommittedValue - safePhysicalLevel).abs() < 0.01) return;
-
-    _lastCommittedValue = safePhysicalLevel;
-
-    try {
-      // 真正接触系统 API 的一发决胜点
-      await ScreenBrightness().setScreenBrightness(safePhysicalLevel);
-    } catch (_) {}
+  /// 接受 BrightnessManager 彻底掏空后的手势回调
+  void handleDragStart() {
+    _showHud();
   }
 
-  /// 控制器销毁，释放定时器与 Notifier
+  void handleDragUpdate(double dragDeltaY, double screenHeight) {
+    _showHud();
+
+    final sensitivity = 2.0 / screenHeight;
+    final change = -(dragDeltaY * sensitivity);
+
+    final currentBase = _prefs.brightness ?? 0.5;
+    final newBrightness = (currentBase + change).clamp(0.0, 1.0);
+
+    // 1. 无阻塞：直接驱动 120Hz HUD
+    uiBrightnessValue.value = newBrightness;
+
+    // 2. 将计算结果丢进数据源管线。
+    // 这不会立刻触发 IO，会被内部的 100ms _applyBrightnessState 拦截并组装
+    _prefs.setBrightness(newBrightness);
+  }
+
+  /// Called from the slider in ReaderMenu.
+  void setFromSlider(double value) {
+    _showHud();
+    final clamped = value.clamp(0.0, 1.0);
+    uiBrightnessValue.value = clamped;
+    _prefs.setBrightness(clamped);
+  }
+
+  /// Resets screen brightness to OS control
+  Future<void> resetToSystem() async {
+    await _prefs.setBrightness(null);
+  }
+
+  /// 控制器销毁
   void dispose() {
-    _throttleTimer?.cancel();
+    _prefs.removeListener(_handlePrefsChange);
+    _systemBrightnessSubscription?.cancel();
+    _restoreOriginalBrightness();
+
+    _debounceTimer?.cancel();
     _hudHideTimer?.cancel();
+
     uiBrightnessValue.dispose();
     isAdjusting.dispose();
   }

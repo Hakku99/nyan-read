@@ -134,6 +134,9 @@ class MockReaderController extends ChangeNotifier
   ReaderErrorState? get errorState => null;
 
   @override
+  void attachBrightnessController(dynamic bc) {}
+
+  @override
   Future<void> saveBeforeExit() async {}
 
   @override

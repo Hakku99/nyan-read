@@ -45,6 +45,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   ReaderErrorState? _errorState;
   bool _followSystem = false;
   StreamSubscription<double>? _brightnessSubscription;
+  BrightnessController? _brightnessControllerRef;
   List<dynamic> _chapters = [];
   int? _currentChapterIndex;
   final Debouncer _layoutDebouncer =
@@ -88,6 +89,14 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   bool get showControls => _showControls;
   bool get followSystem => _followSystem;
   double get currentProgress => _currentProgress;
+
+  /// Call once from _ReaderPageState.initState() to bridge the two brightness systems.
+  void attachBrightnessController(BrightnessController bc) {
+    _brightnessControllerRef = bc;
+    // Sync initial brightness into BrightnessController so the overlay is correct.
+    bc.setFromSlider(_brightness);
+  }
+
   ReaderErrorState? get errorState => _errorState;
   List<dynamic> get chapters => _chapters;
   int? get currentChapterIndex => _currentChapterIndex;
@@ -481,33 +490,43 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       _followSystem = false;
       _brightnessSubscription?.cancel();
       _brightnessSubscription = null;
-      // Note: We don't notifyListeners() here immediately because the
-      // subsequent _brightness update will trigger it, or we do it once at the end.
     }
 
     _brightness = b;
-    await ReaderPreferencesService.instance
-        .setBrightness(b); // Sync to prefs which triggers BrightnessManager
+    // Drive native screen brightness + sub-zero overlay via BrightnessController
+    _brightnessControllerRef?.setFromSlider(b);
+    // Persist to prefs
+    await ReaderPreferencesService.instance.setBrightness(b);
     notifyListeners();
   }
 
   Future<void> toggleFollowSystem() async {
     _followSystem = !_followSystem;
     if (_followSystem) {
-      // Switch to system brightness
+      // Switch to system brightness: hand control back to the OS
       try {
+        // 1. Release native brightness control (OS takes over)
+        await _brightnessControllerRef?.resetToSystem();
+        if (_brightnessControllerRef == null) {
+          await ScreenBrightness().resetScreenBrightness();
+        }
+
+        // 2. Read what the system brightness currently is
         double systemBrightness = await ScreenBrightness().current;
         _brightness = systemBrightness;
+        // Sync overlay but keep it in step with system
+        _brightnessControllerRef?.uiBrightnessValue.value = systemBrightness;
 
-        // Reset prefs to follow system (null)
+        // 3. Clear saved pref so BrightnessManager (if present) also follows system
         await ReaderPreferencesService.instance.setBrightness(null);
 
-        // Listen for changes
+        // 4. Stream: keep slider synced when user adjusts system brightness
         _brightnessSubscription?.cancel();
         _brightnessSubscription =
             ScreenBrightness().onCurrentBrightnessChanged.listen((double b) {
           if (_followSystem) {
             _brightness = b;
+            _brightnessControllerRef?.uiBrightnessValue.value = b;
             notifyListeners();
           }
         });
@@ -520,7 +539,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       _brightnessSubscription?.cancel();
       _brightnessSubscription = null;
 
-      // Save current brightness as manual override
+      // Re-apply the current brightness value as a manual override
       await setBrightness(_brightness);
     }
     notifyListeners();
@@ -697,14 +716,16 @@ class ReaderPage extends StatefulWidget {
 }
 
 class _ReaderPageState extends State<ReaderPage> {
-  final BrightnessController _brightnessController = BrightnessController();
+  late final BrightnessController _brightnessController;
   final GlobalKey<ScaffoldState> readerPageScaffoldKey =
       GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
-    _brightnessController.initBrightness();
+    // DI: Inject the global preferences singleton into the controller
+    _brightnessController =
+        BrightnessController(ReaderPreferencesService.instance);
   }
 
   @override
@@ -718,6 +739,9 @@ class _ReaderPageState extends State<ReaderPage> {
     return ChangeNotifierProvider(
       create: (_) {
         final controller = ReaderController(widget.book)..init();
+        // Bridge the two brightness systems so the slider and gesture-drag
+        // both drive the same BrightnessController (native API + overlay).
+        controller.attachBrightnessController(_brightnessController);
         controller.onShowNoteDialog = ((h) {
           if (context.mounted) {
             controller.showNoteDialog(context, h);
@@ -945,7 +969,7 @@ class _ReaderPageState extends State<ReaderPage> {
                                           .uiBrightnessValue.value);
                                 },
                                 onVerticalDragEnd: (details) {
-                                  _brightnessController.handleDragEnd();
+                                  _brightnessController.handleInteractionEnd();
                                 },
                                 child: const SizedBox.expand(),
                               ),
