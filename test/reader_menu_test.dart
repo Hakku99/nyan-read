@@ -145,8 +145,8 @@ class MockReaderController extends ChangeNotifier
   void didChangeTextScaleFactor() {}
 
   @override
-  Future<void> addHighlight(int start, int end, int colorValue,
-      String chapterId, String note) async {}
+  Future<void> addHighlight(int paragraphIndex, int start, int end, String text,
+      String colorCode, String paragraphText) async {}
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {}

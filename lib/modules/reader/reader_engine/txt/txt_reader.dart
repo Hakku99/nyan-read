@@ -118,6 +118,13 @@ class TxtReaderEngine implements ReaderEngine {
     _configNotifier.value = _config;
   }
 
+  /// 返回指定段落的原始文字（同步，供 AnchorHealer 自愈管线使用）
+  /// 注意：必须与 _buildList 中传入 HighlightableText 的文本保持完全一致（均 .trim()）
+  String? getParagraphText(int paragraphIndex) {
+    if (paragraphIndex < 0 || paragraphIndex >= _lines.length) return null;
+    return _lines[paragraphIndex].trim();
+  }
+
   /// Get current highlights
   List<Highlight> get highlights => _highlights;
 

@@ -10,6 +10,10 @@ class Highlight {
   final String? note;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  // --- Phase 2: Hybrid Signature Anchoring fields ---
+  final String preContext; // up to 15 chars before selection
+  final String postContext; // up to 15 chars after selection
+  final int isHealed; // 0 = original, 1 = offset was healed
 
   Highlight({
     required this.id,
@@ -22,9 +26,12 @@ class Highlight {
     this.note,
     required this.createdAt,
     this.updatedAt,
+    this.preContext = '',
+    this.postContext = '',
+    this.isHealed = 0,
   });
 
-  /// Create from database map
+  /// Create from database map (backwards-compatible with v4 rows missing anchor fields)
   factory Highlight.fromMap(Map<String, dynamic> map) {
     return Highlight(
       id: map['id'] as String,
@@ -39,6 +46,9 @@ class Highlight {
       updatedAt: map['updated_at'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['updated_at'] as int)
           : null,
+      preContext: (map['pre_context'] as String?) ?? '',
+      postContext: (map['post_context'] as String?) ?? '',
+      isHealed: (map['is_healed'] as int?) ?? 0,
     );
   }
 
@@ -55,6 +65,9 @@ class Highlight {
       'note': note,
       'created_at': createdAt.millisecondsSinceEpoch,
       'updated_at': updatedAt?.millisecondsSinceEpoch,
+      'pre_context': preContext,
+      'post_context': postContext,
+      'is_healed': isHealed,
     };
   }
 
@@ -70,6 +83,9 @@ class Highlight {
     String? note,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? preContext,
+    String? postContext,
+    int? isHealed,
   }) {
     return Highlight(
       id: id ?? this.id,
@@ -82,12 +98,15 @@ class Highlight {
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      preContext: preContext ?? this.preContext,
+      postContext: postContext ?? this.postContext,
+      isHealed: isHealed ?? this.isHealed,
     );
   }
 
   @override
   String toString() {
-    return 'Highlight(id: $id, paragraphIndex: $paragraphIndex, text: "${selectedText.length > 20 ? selectedText.substring(0, 20) : selectedText}...", color: $colorCode)';
+    return 'Highlight(id: $id, paragraphIndex: $paragraphIndex, text: "${selectedText.length > 20 ? selectedText.substring(0, 20) : selectedText}...", color: $colorCode, healed: $isHealed)';
   }
 }
 

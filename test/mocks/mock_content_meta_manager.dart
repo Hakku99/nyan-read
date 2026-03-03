@@ -29,7 +29,7 @@ class MockContentMetaManager implements ContentMetaManager {
 
   @override
   Future<void> addHighlight(int paragraphIndex, int start, int end, String text,
-      String colorCode) async {}
+      String colorCode, String paragraphText) async {}
 
   @override
   Future<void> deleteHighlight(String highlightId) async {}

@@ -155,7 +155,10 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
         final txtEngine = engine as TxtReaderEngine;
         txtEngine.onTextHighlighted =
             (paragraphIndex, start, end, text, colorCode) {
-          metaManager.addHighlight(paragraphIndex, start, end, text, colorCode);
+          final paragraphText =
+              txtEngine.getParagraphText(paragraphIndex) ?? '';
+          metaManager.addHighlight(
+              paragraphIndex, start, end, text, colorCode, paragraphText);
         };
         txtEngine.onHighlightTapped = (highlight) {
           onShowNoteDialog?.call(highlight);
@@ -311,8 +314,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> loadHighlights() => metaManager.loadHighlights();
   Future<void> addHighlight(int paragraphIndex, int start, int end, String text,
-          String colorCode) =>
-      metaManager.addHighlight(paragraphIndex, start, end, text, colorCode);
+          String colorCode, String paragraphText) =>
+      metaManager.addHighlight(
+          paragraphIndex, start, end, text, colorCode, paragraphText);
   Future<void> updateHighlight(String highlightId,
           {String? note, String? colorCode}) =>
       metaManager.updateHighlight(highlightId,

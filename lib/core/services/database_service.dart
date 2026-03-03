@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -22,7 +23,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -41,17 +42,14 @@ class DatabaseService {
 
       final status = result.first.values.first as String;
       if (status.toLowerCase() != 'ok') {
-        // ignore: avoid_print
-        print(
+        debugPrint(
             '--- [DatabaseService] 致命破损: 主库 PRAGMA integrity_check = $status ---');
         throw Exception('Database corrupted');
       } else {
-        // ignore: avoid_print
-        print('--- [DatabaseService] 主库完整性校验通过 (ok) ---');
+        debugPrint('--- [DatabaseService] 主库完整性校验通过 (ok) ---');
       }
     } catch (e) {
-      // ignore: avoid_print
-      print('--- [DatabaseService] 熔断机制激活！准备加载沙盒冷备... 异常原因: $e ---');
+      debugPrint('--- [DatabaseService] 熔断机制激活！准备加载沙盒冷备... 异常原因: $e ---');
       await _restoreFromLatestBackup(mainDbPath);
     }
   }
@@ -62,8 +60,7 @@ class DatabaseService {
       final backupDir = Directory(join(dbPath, 'backups'));
 
       if (!backupDir.existsSync()) {
-        // ignore: avoid_print
-        print('--- [DatabaseService] 破防：无可用冷备目录，放弃疗愈！ ---');
+        debugPrint('--- [DatabaseService] 破防：无可用冷备目录，放弃疗愈！ ---');
         return;
       }
 
@@ -72,14 +69,12 @@ class DatabaseService {
           b.statSync().modified.compareTo(a.statSync().modified)); // 从新到旧
 
       if (snapshotDirs.isEmpty) {
-        // ignore: avoid_print
-        print('--- [DatabaseService] 破防：无可用冷备快照，放弃疗愈！ ---');
+        debugPrint('--- [DatabaseService] 破防：无可用冷备快照，放弃疗愈！ ---');
         return;
       }
 
       final latestBackupDir = snapshotDirs.first;
-      // ignore: avoid_print
-      print(
+      debugPrint(
           '--- [DatabaseService] 捕获最新冷备: ${latestBackupDir.path}，正在覆盖主库序列 ---');
 
       // 两步走：先将受损源文件归档剥离，彻底焚毁旧魂 (WAL/SHM)，再切入热备
@@ -103,11 +98,9 @@ class DatabaseService {
       if (backupWal.existsSync()) backupWal.copySync('$mainDbPath-wal');
       if (backupShm.existsSync()) backupShm.copySync('$mainDbPath-shm');
 
-      // ignore: avoid_print
-      print('--- [DatabaseService] 冷备降落覆盖完成，即刻重新点火！ ---');
+      debugPrint('--- [DatabaseService] 冷备降落覆盖完成，即刻重新点火！ ---');
     } catch (e, stack) {
-      // ignore: avoid_print
-      print('--- [DatabaseService] 灾难性异常: 自愈机制执行失败 - $e\n$stack ---');
+      debugPrint('--- [DatabaseService] 灾难性异常: 自愈机制执行失败 - $e\n$stack ---');
     }
   }
 
@@ -137,7 +130,15 @@ class DatabaseService {
           updated_at INTEGER,
           FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE
         )
-      ''');
+      '''); // Closing the CREATE TABLE statement
+    }
+    if (oldVersion < 5) {
+      await db.execute(
+          'ALTER TABLE highlights ADD COLUMN pre_context TEXT DEFAULT ""');
+      await db.execute(
+          'ALTER TABLE highlights ADD COLUMN post_context TEXT DEFAULT ""');
+      await db.execute(
+          'ALTER TABLE highlights ADD COLUMN is_healed INTEGER DEFAULT 0');
     }
   }
 
@@ -415,5 +416,24 @@ class DatabaseService {
   Future<void> deleteHighlightsForBook(String bookId) async {
     final db = await database;
     await db.delete('highlights', where: 'book_id = ?', whereArgs: [bookId]);
+  }
+
+  /// 自愈偏移回写接口：即发即弃，不阻塞 UI (Fire-and-forget)
+  Future<void> updateHighlightHealedOffset(
+      String id, int newStart, int newEnd) async {
+    final db = await database;
+    await db.update(
+      'highlights',
+      {
+        'start_offset': newStart,
+        'end_offset': newEnd,
+        'is_healed': 1,
+        'updated_at': DateTime.now().millisecondsSinceEpoch
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    debugPrint(
+        '--- [DatabaseService] 高亮坐标自愈回写完成: id=\$id, newStart=\$newStart ---');
   }
 }

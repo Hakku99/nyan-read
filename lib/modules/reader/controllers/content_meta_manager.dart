@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/models/book.dart';
 import '../../../core/models/highlight.dart';
 import '../../../core/services/database_service.dart';
+import '../../../core/utils/anchor_healer.dart';
 import '../reader_engine/reader_engine.dart';
 import '../reader_engine/txt/txt_reader.dart';
 import '../reader_engine/epub/epub_position.dart';
@@ -17,6 +19,9 @@ class ContentMetaManager {
   List<dynamic> _chapters = [];
   int? _currentChapterIndex;
   List<Highlight> _highlights = [];
+
+  // DI: 通过 get_it 获取 DatabaseService，禁止直接 new DatabaseService()
+  DatabaseService get _db => GetIt.instance<DatabaseService>();
 
   ContentMetaManager({
     required this.engine,
@@ -33,17 +38,107 @@ class ContentMetaManager {
     onMetaChanged();
   }
 
+  /// 加载高亮 + 前置状态自愈 (State Pre-processing)
+  ///
+  /// 遵循单向数据流原则：此方法是唯一的"自愈流水线"。
+  /// UI 层 (TxtReaderEngine) 只会收到坐标绝对健康的 List<Highlight>。
   Future<void> loadHighlights() async {
     try {
-      final data = await DatabaseService().getHighlights(book.id);
-      _highlights = data.map((m) => Highlight.fromMap(m)).toList();
+      final rawData = await _db.getHighlights(book.id);
+      final rawHighlights = rawData.map((m) => Highlight.fromMap(m)).toList();
+
+      // 如果当前是 TXT 格式，可以获取段落文本进行坐标校验。
+      // 其他格式（EPUB/PDF）暂时透传原始坐标。
+      List<Highlight> healthyHighlights;
+      if (engine is TxtReaderEngine) {
+        healthyHighlights = await _healHighlights(
+          rawHighlights,
+          engine as TxtReaderEngine,
+        );
+      } else {
+        healthyHighlights = rawHighlights;
+      }
+
+      _highlights = healthyHighlights;
       if (engine is TxtReaderEngine) {
         (engine as TxtReaderEngine).setHighlights(_highlights);
       }
       onMetaChanged();
     } catch (e) {
-      debugPrint("Error loading highlights: $e");
+      debugPrint('[ContentMetaManager] Error loading highlights: $e');
     }
+  }
+
+  /// 单次章节高亮自愈管线 (内部)
+  ///
+  /// Fast-Path: offset 比对即可，0 I/O。
+  /// Slow-Path: AnchorHealer 双向权重仲裁 + 即发即弃(fire-and-forget)回写 DB。
+  Future<List<Highlight>> _healHighlights(
+    List<Highlight> raw,
+    TxtReaderEngine txtEngine,
+  ) async {
+    final healedList = <Highlight>[];
+
+    for (final h in raw) {
+      // 1. 取出段落原文
+      final paragraphText = txtEngine.getParagraphText(h.paragraphIndex);
+      if (paragraphText == null) {
+        // 段落不存在，保留原样（防止崩溃）
+        healedList.add(h);
+        continue;
+      }
+
+      // 2. Fast-Path：用原始 offset 截取并与 selectedText 比对
+      final start = h.startOffset;
+      final end = h.endOffset;
+      final isOffsetValid = start >= 0 &&
+          end <= paragraphText.length &&
+          start < end &&
+          paragraphText.substring(start, end) == h.selectedText;
+
+      if (isOffsetValid) {
+        // 坐标健康，直接入队
+        healedList.add(h);
+        continue;
+      }
+
+      // 如果 preContext 为空（v4 旧数据），跳过自愈，透传原始值
+      if (h.preContext.isEmpty && h.postContext.isEmpty) {
+        debugPrint('[ContentMetaManager] 旧数据无锚点信息，跳过自愈: ${h.selectedText}');
+        healedList.add(h);
+        continue;
+      }
+
+      // 3. Slow-Path：AnchorHealer 搜救
+      final newStart = AnchorHealer.findHealedOffset(
+        paragraphText,
+        h.preContext,
+        h.selectedText,
+        h.postContext,
+      );
+
+      if (newStart != null) {
+        final newEnd = newStart + h.selectedText.length;
+        debugPrint(
+            '[ContentMetaManager] 高亮坐标自愈成功: "${h.selectedText}" $start→$newStart');
+
+        final healed = h.copyWith(
+          startOffset: newStart,
+          endOffset: newEnd,
+          isHealed: 1,
+        );
+        healedList.add(healed);
+
+        // 即发即弃：异步回写 DB，绝对不阻塞 UI 渲染帧
+        _db.updateHighlightHealedOffset(h.id, newStart, newEnd);
+      } else {
+        debugPrint(
+            '[ContentMetaManager] 高亮坐标搜救失败，丢弃渲染（不崩溃）: ${h.selectedText}');
+        // 搜救失败：丢弃，不加入健康列表，防止错误渲染
+      }
+    }
+
+    return healedList;
   }
 
   Future<void> updateCurrentChapterIndex() async {
@@ -116,7 +211,7 @@ class ContentMetaManager {
       await saveProgressFn();
       onMetaChanged();
     } catch (e) {
-      debugPrint('Error jumping to chapter: $e');
+      debugPrint('[ContentMetaManager] Error jumping to chapter: $e');
     }
   }
 
@@ -134,8 +229,18 @@ class ContentMetaManager {
         _chapters[_currentChapterIndex! + 1], saveProgressFn);
   }
 
+  /// 新增高亮时，同步采样 pre/post context 锚点，存入 DB
   Future<void> addHighlight(int paragraphIndex, int start, int end, String text,
-      String colorCode) async {
+      String colorCode, String paragraphText) async {
+    // 采样阶段：提取前后15字符特征
+    final preContext = start > 0
+        ? paragraphText.substring((start - 15).clamp(0, start), start)
+        : '';
+    final postContext = end < paragraphText.length
+        ? paragraphText.substring(
+            end, (end + 15).clamp(end, paragraphText.length))
+        : '';
+
     final highlight = Highlight(
       id: const Uuid().v4(),
       bookId: book.id,
@@ -145,20 +250,21 @@ class ContentMetaManager {
       selectedText: text,
       colorCode: colorCode,
       createdAt: DateTime.now(),
+      preContext: preContext,
+      postContext: postContext,
     );
-    await DatabaseService().insertHighlight(highlight.toMap());
+    await _db.insertHighlight(highlight.toMap());
     await loadHighlights();
   }
 
   Future<void> updateHighlight(String highlightId,
       {String? note, String? colorCode}) async {
-    await DatabaseService()
-        .updateHighlight(highlightId, note: note, colorCode: colorCode);
+    await _db.updateHighlight(highlightId, note: note, colorCode: colorCode);
     await loadHighlights();
   }
 
   Future<void> deleteHighlight(String highlightId) async {
-    await DatabaseService().deleteHighlight(highlightId);
+    await _db.deleteHighlight(highlightId);
     await loadHighlights();
   }
 }
