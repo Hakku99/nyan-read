@@ -7,6 +7,7 @@ import 'reader_preferences_service.dart';
 import 'bookshelf_preferences_service.dart';
 import '../theme/theme_manager.dart';
 import 'language_manager.dart';
+import 'backup_recovery_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -56,5 +57,9 @@ Future<void> setupServiceLocator() async {
   debugPrint('--- [DI] 103. 正在装载 LanguageManager ---');
   getIt.registerSingleton<LanguageManager>(LanguageManager()..init());
 
-  debugPrint('--- [DI] 104. 同步服务装载完毕！ ---');
+  debugPrint('--- [DI] 104. 正在装载 BackupRecoveryService (末日地堡系统) ---');
+  getIt.registerSingleton<BackupRecoveryService>(
+      BackupRecoveryService()..init());
+
+  debugPrint('--- [DI] 105. 同步服务装载完毕！ ---');
 }

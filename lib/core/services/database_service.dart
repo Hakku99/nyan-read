@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -16,12 +17,98 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'nyan_read.db');
 
+    // 机制 B：启动期自我疗愈 (Self-Healing)
+    await _checkAndHealDatabase(path);
+
     return await openDatabase(
       path,
       version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _checkAndHealDatabase(String mainDbPath) async {
+    final file = File(mainDbPath);
+    if (!file.existsSync()) return;
+
+    try {
+      // 避免使用 openReadOnlyDatabase 触发 WAL 丢失。
+      // 使用单离单开读写模式强制执行 SQLite WAL Checkpoint 合并日志，再查验。
+      final db = await openDatabase(mainDbPath, singleInstance: false);
+      final result = await db.rawQuery('PRAGMA integrity_check;');
+      await db.close();
+
+      final status = result.first.values.first as String;
+      if (status.toLowerCase() != 'ok') {
+        // ignore: avoid_print
+        print(
+            '--- [DatabaseService] 致命破损: 主库 PRAGMA integrity_check = $status ---');
+        throw Exception('Database corrupted');
+      } else {
+        // ignore: avoid_print
+        print('--- [DatabaseService] 主库完整性校验通过 (ok) ---');
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print('--- [DatabaseService] 熔断机制激活！准备加载沙盒冷备... 异常原因: $e ---');
+      await _restoreFromLatestBackup(mainDbPath);
+    }
+  }
+
+  Future<void> _restoreFromLatestBackup(String mainDbPath) async {
+    try {
+      final dbPath = await getDatabasesPath();
+      final backupDir = Directory(join(dbPath, 'backups'));
+
+      if (!backupDir.existsSync()) {
+        // ignore: avoid_print
+        print('--- [DatabaseService] 破防：无可用冷备目录，放弃疗愈！ ---');
+        return;
+      }
+
+      final snapshotDirs = backupDir.listSync().whereType<Directory>().toList();
+      snapshotDirs.sort((a, b) =>
+          b.statSync().modified.compareTo(a.statSync().modified)); // 从新到旧
+
+      if (snapshotDirs.isEmpty) {
+        // ignore: avoid_print
+        print('--- [DatabaseService] 破防：无可用冷备快照，放弃疗愈！ ---');
+        return;
+      }
+
+      final latestBackupDir = snapshotDirs.first;
+      // ignore: avoid_print
+      print(
+          '--- [DatabaseService] 捕获最新冷备: ${latestBackupDir.path}，正在覆盖主库序列 ---');
+
+      // 两步走：先将受损源文件归档剥离，彻底焚毁旧魂 (WAL/SHM)，再切入热备
+      final corruptFile = File(mainDbPath);
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      if (corruptFile.existsSync()) {
+        corruptFile.renameSync('${mainDbPath}_corrupted_$ts.bak');
+      }
+
+      final oldWal = File('$mainDbPath-wal');
+      final oldShm = File('$mainDbPath-shm');
+      if (oldWal.existsSync()) oldWal.deleteSync();
+      if (oldShm.existsSync()) oldShm.deleteSync();
+
+      // 恢复快照目录中的所有文件
+      final backupDb = File(join(latestBackupDir.path, 'nyan_read.db'));
+      final backupWal = File(join(latestBackupDir.path, 'nyan_read.db-wal'));
+      final backupShm = File(join(latestBackupDir.path, 'nyan_read.db-shm'));
+
+      if (backupDb.existsSync()) backupDb.copySync(mainDbPath);
+      if (backupWal.existsSync()) backupWal.copySync('$mainDbPath-wal');
+      if (backupShm.existsSync()) backupShm.copySync('$mainDbPath-shm');
+
+      // ignore: avoid_print
+      print('--- [DatabaseService] 冷备降落覆盖完成，即刻重新点火！ ---');
+    } catch (e, stack) {
+      // ignore: avoid_print
+      print('--- [DatabaseService] 灾难性异常: 自愈机制执行失败 - $e\n$stack ---');
+    }
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
