@@ -293,6 +293,30 @@
   "errorParseFailed": "书页粘在一起了。\n文件解析失败，可能是文件已损坏。",
   "errorUnknown": "发生了意想不到的事情。\n请稍后再试。",
   "emptyShelfTitle": "书架还在等待故事",
-  "emptyShelfSubtitle": "导入一本书，开始今天的阅读吧"
+  "emptyShelfSubtitle": "导入一本书，开始今天的阅读吧",
+  "exportData": "导出阅读资产",
+  "exportDataSubtitle": "将书籍、高亮与书签备份为 JSON 文件",
+  "saveToDevice": "保存到设备",
+  "saveToDeviceSubtitle": "在你的设备上选择一个文件夹",
+  "shareVia": "分享到…",
+  "shareViaSubtitle": "微信、邮件、网盘等",
+  "importData": "导入阅读资产",
+  "importDataSubtitle": "从之前导出的 JSON 文件恢复数据",
+  "importSuccess": "成功恢复 {count} 本书！",
+  "@importSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importFailed": "导入失败：{error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }
 

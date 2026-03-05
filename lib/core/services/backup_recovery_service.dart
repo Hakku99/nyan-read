@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+
 import 'package:intl/intl.dart';
 import 'database_service.dart';
 import 'service_locator.dart';
@@ -217,4 +220,125 @@ class BackupRecoveryService extends WidgetsBindingObserver {
       debugPrint('--- [Isolate Scavenger] 清理任务异常: $e ---');
     }
   }
+
+  /// 机制 D: 全局资产结构化导出 (Data Portability)
+  /// 正确架构：sqflite Platform Channel 只能在主线程调用。
+  /// 主线程负责全量数据抓取，纯 Dart 的 jsonEncode + 文件写入才放入 Isolate。
+  Future<String> exportGlobalUserData() async {
+    final dbService = getIt<DatabaseService>();
+    final tempDir = await getTemporaryDirectory();
+
+    // [主线程] 执行 3 次全量查询，消灭 N+1 风暴
+    // Platform Channel (sqflite) 只能在主线程被安全调用
+    final allBooksList = await dbService.getAllBooks();
+    final allHighlightsList = await dbService.getAllHighlights();
+    final allBookmarksList = await dbService.getAllBookmarks();
+
+    debugPrint('--- [Export] 主线程数据抓取完成: ${allBooksList.length} 本书 ---');
+
+    // 将纯 Dart 数据传入 Isolate，由其完成 CPU 密集型的序列化与 I/O
+    final payload = _ExportPayload(
+      tempDirPath: tempDir.path,
+      books: allBooksList,
+      highlights: allHighlightsList,
+      bookmarks: allBookmarksList,
+    );
+    return await Isolate.run(() => _heavyJsonSerializeTask(payload));
+  }
+
+  /// [Isolate 内部] 接收主线程传来的纯数据，完成序列化与文件写入
+  /// 注意：这里没有任何 Platform Channel 调用，完全是纯 Dart 计算
+  static Future<String> _heavyJsonSerializeTask(_ExportPayload payload) async {
+    try {
+      // 1. 内存 Map 提速组装 (O(1) 查询聚合)
+      final highlightsMap = <String, List<Map<String, dynamic>>>{};
+      for (final h in payload.highlights) {
+        final bookId = h['book_id'] as String;
+        highlightsMap.putIfAbsent(bookId, () => []).add(h);
+      }
+
+      final bookmarksMap = <String, List<Map<String, dynamic>>>{};
+      for (final b in payload.bookmarks) {
+        final bookId = b['book_id'] as String;
+        bookmarksMap.putIfAbsent(bookId, () => []).add(b);
+      }
+
+      // 2. 构建嵌套树
+      final assembledBooksList = payload.books.map((book) {
+        final bookId = book['id'] as String;
+        final mutableBook = Map<String, dynamic>.from(book);
+        mutableBook['highlights'] = highlightsMap[bookId] ?? [];
+        mutableBook['bookmarks'] = bookmarksMap[bookId] ?? [];
+        return mutableBook;
+      }).toList();
+
+      final exportMap = {
+        'version': 1,
+        'export_date': DateTime.now().toIso8601String(),
+        'app_name': 'Nyan Read',
+        'books': assembledBooksList,
+      };
+
+      // 3. 绞肉机：极其沉重的 JSON 序列化 (现在完全与 UI 线程隔离)
+      final jsonString = jsonEncode(exportMap);
+
+      // 4. I/O 写入临时沙盒目录
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final tempFile =
+          File(join(payload.tempDirPath, 'nyan_read_export_$timestamp.json'));
+      await tempFile.writeAsString(jsonString, flush: true);
+
+      debugPrint(
+          '--- [Isolate Serialize] 完成! 尺寸: ${(tempFile.lengthSync() / 1024).toStringAsFixed(2)} KB ---');
+      return tempFile.path;
+    } catch (e, stack) {
+      debugPrint('--- [Isolate Serialize Error] $e\n$stack ---');
+      throw Exception('Data export failed: $e');
+    }
+  }
+
+  /// 机制 E: 全局资产导入恢复 (Data Restore)
+  /// file_picker 选文件 → Isolate 负责 readAsString + jsonDecode → 主线程 restoreDataBatch
+  Future<int> importGlobalUserData() async {
+    // 1. 在主线程唤起文件选择器（Platform Channel）
+    final pick = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+      allowMultiple: false,
+    );
+
+    if (pick == null || pick.files.single.path == null) {
+      return -1; // 用户取消，无需报错
+    }
+
+    final filePath = pick.files.single.path!;
+
+    // 2. 将 readAsString + jsonDecode 推入 Isolate 防 OOM 与掉帧
+    final parsedJson = await Isolate.run(() => _heavyJsonParseTask(filePath));
+
+    // 3. 将解析后的纯 Dart Map 交给主线程 DatabaseService 批量写入
+    final dbService = getIt<DatabaseService>();
+    final restoredCount = await dbService.restoreDataBatch(parsedJson);
+    return restoredCount;
+  }
+
+  /// [Isolate 内部] 单纯做文件读取和 JSON 解析，无任何 Platform Channel 调用
+  static Map<String, dynamic> _heavyJsonParseTask(String filePath) {
+    final content = File(filePath).readAsStringSync();
+    return jsonDecode(content) as Map<String, dynamic>;
+  }
+}
+
+class _ExportPayload {
+  final String tempDirPath;
+  final List<Map<String, dynamic>> books;
+  final List<Map<String, dynamic>> highlights;
+  final List<Map<String, dynamic>> bookmarks;
+
+  _ExportPayload({
+    required this.tempDirPath,
+    required this.books,
+    required this.highlights,
+    required this.bookmarks,
+  });
 }

@@ -979,6 +979,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Import a book to start reading'**
   String get emptyShelfSubtitle;
+
+  /// No description provided for @exportData.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Reading Assets'**
+  String get exportData;
+
+  /// No description provided for @exportDataSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup books, highlights & bookmarks as JSON'**
+  String get exportDataSubtitle;
+
+  /// No description provided for @saveToDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to Device'**
+  String get saveToDevice;
+
+  /// No description provided for @saveToDeviceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a folder on your device'**
+  String get saveToDeviceSubtitle;
+
+  /// No description provided for @shareVia.
+  ///
+  /// In en, this message translates to:
+  /// **'Share via…'**
+  String get shareVia;
+
+  /// No description provided for @shareViaSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Gmail, Drive, Quick Share, etc.'**
+  String get shareViaSubtitle;
+
+  /// No description provided for @importData.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Reading Assets'**
+  String get importData;
+
+  /// No description provided for @importDataSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from a previously exported JSON file'**
+  String get importDataSubtitle;
+
+  /// No description provided for @importSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully restored {count} books!'**
+  String importSuccess(int count);
+
+  /// No description provided for @importFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed: {error}'**
+  String importFailed(String error);
 }
 
 class _AppLocalizationsDelegate

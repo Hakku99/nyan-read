@@ -9,6 +9,130 @@ import '../../core/services/language_manager.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../core/theme/theme_presets.dart';
 import '../../core/services/service_locator.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:go_router/go_router.dart';
+import 'dart:io';
+import '../../core/services/backup_recovery_service.dart';
+
+Future<void> _handleExportData(BuildContext context) async {
+  // 1. 挂载 Loading 遮罩
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const Center(child: CircularProgressIndicator()),
+  );
+
+  try {
+    final backupService = getIt<BackupRecoveryService>();
+    final exportFilePath = await backupService.exportGlobalUserData();
+    if (context.mounted) Navigator.pop(context); // 关闭 Loading
+
+    if (!context.mounted) return;
+
+    // 2. 弹出选择面板：保存到本地 or 系统分享
+    await showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        // 在 Builder 内从外层 context 取 loc（外层 context 的 Localizations已挂载完成）
+        final loc = AppLocalizations.of(context)!;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.download_rounded),
+                title: Text(loc.saveToDevice),
+                subtitle: Text(loc.saveToDeviceSubtitle),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final savedPath = await FilePicker.platform.saveFile(
+                    dialogTitle: loc.saveToDevice,
+                    fileName: 'nyan_read_export.json',
+                    bytes: await File(exportFilePath).readAsBytes(),
+                  );
+                  if (savedPath != null && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Saved to: $savedPath')),
+                    );
+                  }
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.share_rounded),
+                title: Text(loc.shareVia),
+                subtitle: Text(loc.shareViaSubtitle),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  final xFile =
+                      XFile(exportFilePath, mimeType: 'application/json');
+                  await Share.shareXFiles([xFile], subject: 'Nyan Read Export');
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  } catch (e) {
+    if (context.mounted) {
+      Navigator.pop(context); // 出错时关闭 Loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Export failed: $e')),
+      );
+    }
+  }
+}
+
+Future<void> _handleImportData(BuildContext context) async {
+  final loc = AppLocalizations.of(context)!;
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const Center(child: CircularProgressIndicator()),
+  );
+
+  try {
+    final backupService = getIt<BackupRecoveryService>();
+    final restoredCount = await backupService.importGlobalUserData();
+
+    if (context.mounted) Navigator.pop(context);
+    if (!context.mounted) return;
+
+    if (restoredCount == -1) return; // 用户取消，静默
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(loc.importSuccess(restoredCount)),
+        backgroundColor: Colors.green,
+      ),
+    );
+  } catch (e) {
+    if (context.mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(loc.importFailed(e.toString())),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -38,7 +162,13 @@ class _SettingsPageState extends State<SettingsPage> {
         title: Text(loc.settingsTitle),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          24,
+          16,
+          // SafeArea fix: 避免内容被底部导航栏遮挡
+          16 + MediaQuery.of(context).padding.bottom,
+        ),
         children: [
           // Appearance Section
           _SectionHeader(title: loc.appearance.toUpperCase()),
@@ -183,6 +313,29 @@ class _SettingsPageState extends State<SettingsPage> {
 
           // Data & Privacy Section
           _SectionHeader(title: loc.dataManagement.toUpperCase()),
+          _SettingsCard(
+            children: [
+              _SettingRow(
+                icon: Icons.save_alt,
+                title: loc.exportData,
+                subtitle: loc.exportDataSubtitle,
+                trailing: const Icon(Icons.chevron_right, size: 20),
+                onTap: () => _handleExportData(context),
+              ),
+              Divider(
+                  height: 1,
+                  thickness: 0.5,
+                  color: theme.dividerColor.withOpacity(0.15)),
+              _SettingRow(
+                icon: Icons.upload_file_rounded,
+                title: loc.importData,
+                subtitle: loc.importDataSubtitle,
+                trailing: const Icon(Icons.chevron_right, size: 20),
+                onTap: () => _handleImportData(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           StatefulBuilder(
             builder: (context, setState) {
               final bookshelfPrefs = getIt<BookshelfPreferencesService>();
@@ -225,7 +378,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: loc.adminPanel,
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
-                  Navigator.pushNamed(context, '/admin');
+                  context.push('/admin');
                 },
               ),
             ],

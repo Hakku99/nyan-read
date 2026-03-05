@@ -488,4 +488,38 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get emptyShelfSubtitle => '导入一本书，开始今天的阅读吧';
+
+  @override
+  String get exportData => '导出阅读资产';
+
+  @override
+  String get exportDataSubtitle => '将书籍、高亮与书签备份为 JSON 文件';
+
+  @override
+  String get saveToDevice => '保存到设备';
+
+  @override
+  String get saveToDeviceSubtitle => '在你的设备上选择一个文件夹';
+
+  @override
+  String get shareVia => '分享到…';
+
+  @override
+  String get shareViaSubtitle => '微信、邮件、网盘等';
+
+  @override
+  String get importData => '导入阅读资产';
+
+  @override
+  String get importDataSubtitle => '从之前导出的 JSON 文件恢复数据';
+
+  @override
+  String importSuccess(int count) {
+    return '成功恢复 $count 本书！';
+  }
+
+  @override
+  String importFailed(String error) {
+    return '导入失败：$error';
+  }
 }

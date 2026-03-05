@@ -20,7 +20,7 @@ dependencies:
   sqflite: ^2.3.0
   path: ^1.8.3
   shared_preferences: ^2.2.0
-  path_provider: ^2.0.0
+  path_provider: ^2.1.5
   
   # Privacy & Utils
   encrypt: ^5.0.1
@@ -45,6 +45,7 @@ dependencies:
   permission_handler: ^12.0.1
   screen_brightness: ^2.0.1
   url_launcher: ^6.2.6
+  share_plus: ^12.0.1
 
 
 dev_dependencies:

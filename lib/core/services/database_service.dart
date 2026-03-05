@@ -434,6 +434,121 @@ class DatabaseService {
       whereArgs: [id],
     );
     debugPrint(
-        '--- [DatabaseService] 高亮坐标自愈回写完成: id=\$id, newStart=\$newStart ---');
+        '--- [DatabaseService] 高亮坐标自愈回写完成: id=$id, newStart=$newStart ---');
+  }
+
+  // --- 全量数据导出接口 (For Global Export) ---
+
+  Future<List<Map<String, dynamic>>> getAllBooks() async {
+    final db = await database;
+    return await db.query('books');
+  }
+
+  Future<List<Map<String, dynamic>>> getAllBookmarks() async {
+    final db = await database;
+    return await db.query('bookmarks');
+  }
+
+  Future<List<Map<String, dynamic>>> getAllHighlights() async {
+    final db = await database;
+    return await db.query('highlights');
+  }
+
+  /// 全局资产恢复批处理接口 v2 — 基于 Title 的柔性元数据同步 (Logical Match Sync)
+  ///
+  /// 核心合约：
+  ///   - 绝不 INSERT 新书，只 UPDATE 已有书籍的进度元数据。
+  ///   - 以书名 (title) 作为逻辑主键进行匹配，彻底消灭 UUID 割裂导致的重复书问题。
+  ///   - 属于匹配成功书籍的 highlights/bookmarks，强制换血为本地 UUID，再 Upsert。
+  Future<int> restoreDataBatch(Map<String, dynamic> parsedJson) async {
+    final db = await database;
+
+    // 1. 建立本地书目索引字典：title → local UUID (O(1) 查询)
+    final localBooksRaw = await db.query('books', columns: ['id', 'title']);
+    final Map<String, String> localBooksMap = {
+      for (final row in localBooksRaw)
+        (row['title'] as String): (row['id'] as String)
+    };
+
+    // [Schema 自愈] 查出各子表实际存在的列名，防幽灵列崩溃
+    Future<Set<String>> getValidColumns(String table) async {
+      final pragma = await db.rawQuery('PRAGMA table_info($table)');
+      return pragma.map((row) => row['name'] as String).toSet();
+    }
+
+    final validHighlightCols = await getValidColumns('highlights');
+    final validBookmarkCols = await getValidColumns('bookmarks');
+
+    Map<String, dynamic> sanitize(
+            Map<String, dynamic> raw, Set<String> validCols) =>
+        Map.fromEntries(raw.entries.where((e) => validCols.contains(e.key)));
+
+    final batch = db.batch();
+    int syncedBookCount = 0;
+
+    final books = (parsedJson['books'] as List?) ?? [];
+    for (final book in books) {
+      if (book is! Map<String, dynamic>) continue;
+
+      final title = book['title'] as String?;
+      if (title == null) continue;
+
+      // 2. 匹配失败 → 直接跳过，绝不插入新书
+      final localBookId = localBooksMap[title];
+      if (localBookId == null) {
+        debugPrint('--- [Restore] 跳过无对应本地书籍: "$title" ---');
+        continue;
+      }
+
+      debugPrint('--- [Restore] 命中本地书籍: "$title" → $localBookId ---');
+
+      // 3. 只更新进度元数据，严禁改变 id / file_path
+      final progressUpdate = <String, dynamic>{};
+      if (book['current_progress'] != null)
+        progressUpdate['current_progress'] = book['current_progress'];
+      if (book['last_position_type'] != null)
+        progressUpdate['last_position_type'] = book['last_position_type'];
+      if (book['last_position_payload'] != null)
+        progressUpdate['last_position_payload'] = book['last_position_payload'];
+      if (book['last_read_at'] != null)
+        progressUpdate['last_read_at'] = book['last_read_at'];
+
+      if (progressUpdate.isNotEmpty) {
+        batch.update('books', progressUpdate,
+            where: 'id = ?', whereArgs: [localBookId]);
+      }
+
+      // 4. 灵魂转移：将 highlights/bookmarks 的 book_id 强制换血为本地 UUID
+      final highlights = (book['highlights'] as List?) ?? [];
+      for (final h in highlights) {
+        if (h is Map<String, dynamic>) {
+          final sanitized = sanitize(
+            Map<String, dynamic>.from(h)..['book_id'] = localBookId,
+            validHighlightCols,
+          );
+          batch.insert('highlights', sanitized,
+              conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+      }
+
+      final bookmarks = (book['bookmarks'] as List?) ?? [];
+      for (final b in bookmarks) {
+        if (b is Map<String, dynamic>) {
+          final sanitized = sanitize(
+            Map<String, dynamic>.from(b)..['book_id'] = localBookId,
+            validBookmarkCols,
+          );
+          batch.insert('bookmarks', sanitized,
+              conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+      }
+
+      syncedBookCount++;
+    }
+
+    // 5. noResult: true 避免返回每行 rowId，大幅降低内存压力
+    await batch.commit(noResult: true);
+    debugPrint('--- [DatabaseService] 柔性同步完成：$syncedBookCount 本书的资产已归入本地 ---');
+    return syncedBookCount;
   }
 }

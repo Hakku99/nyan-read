@@ -293,6 +293,30 @@
   "errorParseFailed": "The pages are stuck together.\nFailed to parse file, it might be corrupted.",
   "errorUnknown": "Something unexpected happened.\nPlease try again later.",
   "emptyShelfTitle": "Bookshelf is waiting for stories",
-  "emptyShelfSubtitle": "Import a book to start reading"
+  "emptyShelfSubtitle": "Import a book to start reading",
+  "exportData": "Export Reading Assets",
+  "exportDataSubtitle": "Backup books, highlights & bookmarks as JSON",
+  "saveToDevice": "Save to Device",
+  "saveToDeviceSubtitle": "Choose a folder on your device",
+  "shareVia": "Share via…",
+  "shareViaSubtitle": "Gmail, Drive, Quick Share, etc.",
+  "importData": "Import Reading Assets",
+  "importDataSubtitle": "Restore from a previously exported JSON file",
+  "importSuccess": "Successfully restored {count} books!",
+  "@importSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importFailed": "Import failed: {error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }
 

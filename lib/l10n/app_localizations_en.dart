@@ -494,4 +494,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emptyShelfSubtitle => 'Import a book to start reading';
+
+  @override
+  String get exportData => 'Export Reading Assets';
+
+  @override
+  String get exportDataSubtitle =>
+      'Backup books, highlights & bookmarks as JSON';
+
+  @override
+  String get saveToDevice => 'Save to Device';
+
+  @override
+  String get saveToDeviceSubtitle => 'Choose a folder on your device';
+
+  @override
+  String get shareVia => 'Share via…';
+
+  @override
+  String get shareViaSubtitle => 'Gmail, Drive, Quick Share, etc.';
+
+  @override
+  String get importData => 'Import Reading Assets';
+
+  @override
+  String get importDataSubtitle =>
+      'Restore from a previously exported JSON file';
+
+  @override
+  String importSuccess(int count) {
+    return 'Successfully restored $count books!';
+  }
+
+  @override
+  String importFailed(String error) {
+    return 'Import failed: $error';
+  }
 }
