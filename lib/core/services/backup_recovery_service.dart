@@ -3,6 +3,7 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:intl/intl.dart';
 import 'database_service.dart';
@@ -155,6 +156,65 @@ class BackupRecoveryService extends WidgetsBindingObserver {
     } catch (e, stack) {
       debugPrint('--- [BackupRecoveryService] 导出Markdown失败: $e\n$stack ---');
       return '# Error\nFailed to export notes: $e';
+    }
+  }
+
+  /// 机制 B: 全局沙盒清道夫 (Global Cache Scavenger)
+  /// 在后台 Isolate 中静默清除 getTemporaryDirectory() 下的 EPUB 解压碎片和孤儿缓存。
+  /// 绝对不触碰 getApplicationDocumentsDirectory()，保护书库资产。
+  /// 增加老化过滤：仅清除超过 24 小时的文件，避免误杀正常缓存。
+  Future<void> runCacheScavenger() async {
+    try {
+      // 在主线程获取路径
+      final tempDir = await getTemporaryDirectory();
+
+      debugPrint('--- [Cache Scavenger] 启动全局临时碎片扫荡，目标沙盒: ${tempDir.path} ---');
+
+      // 绞肉机隔离：将耗时的目录遍历和成百上千个小文件的物理删除推送至 Isolate
+      await Isolate.run(() => _heavyCacheCleanupTask(tempDir.path));
+    } catch (e, stack) {
+      debugPrint('--- [Cache Scavenger] 清道夫防线崩溃: $e\n$stack ---');
+    }
+  }
+
+  /// 顶级方法，用于被 Isolate.run() 调用
+  static void _heavyCacheCleanupTask(String tempDirPath) {
+    try {
+      final tempDir = Directory(tempDirPath);
+      if (!tempDir.existsSync()) return;
+
+      int deletedFilesCount = 0;
+      int deletedSize = 0;
+      final now = DateTime.now();
+
+      // 同步遍历，避免在 Isolate 中产生过多 Future 微任务导致内存冲刷
+      final entities = tempDir.listSync(recursive: true, followLinks: false);
+
+      for (final entity in entities) {
+        if (entity is File) {
+          try {
+            // 敌我识别：获取最后修改时间
+            final lastModified = entity.lastModifiedSync();
+            final differenceHours = now.difference(lastModified).inHours;
+
+            // 仅清理老化超过 24 小时（24小时）的残留物
+            if (differenceHours >= 24) {
+              final size = entity.lengthSync();
+              entity.deleteSync();
+              deletedSize += size;
+              deletedFilesCount++;
+            }
+          } catch (e) {
+            // 忽略单文件删除失败（如文件正被底层持有关联或无权限）
+          }
+        }
+      }
+
+      final megabytes = (deletedSize / (1024 * 1024)).toStringAsFixed(2);
+      debugPrint(
+          '--- [Isolate Scavenger] 扫荡完成！共抹除 $deletedFilesCount 个临时碎片，释放 $megabytes MB 缓存空间 ---');
+    } catch (e) {
+      debugPrint('--- [Isolate Scavenger] 清理任务异常: $e ---');
     }
   }
 }

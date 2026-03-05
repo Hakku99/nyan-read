@@ -138,6 +138,19 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     try {
       _errorState = null;
       notifyListeners();
+
+      // [Safety Net]: Missing file fallback.
+      // If the user manually deleted the file in Document map, intercept it before engine crash.
+      if (!File(book.filePath).existsSync()) {
+        _errorState = ReaderErrorState(
+          type: ReaderErrorType.fileNotFound,
+          technicalMessage:
+              "源文件 [${book.filePath}] 不存在。该书的本地实体文件可能已被清理或移动。\n请返回书架并删除此记录。",
+        );
+        notifyListeners();
+        return;
+      }
+
       await engine.initialize();
 
       // 加载章节信息

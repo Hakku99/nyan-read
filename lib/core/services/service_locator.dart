@@ -58,8 +58,14 @@ Future<void> setupServiceLocator() async {
   getIt.registerSingleton<LanguageManager>(LanguageManager()..init());
 
   debugPrint('--- [DI] 104. 正在装载 BackupRecoveryService (末日地堡系统) ---');
-  getIt.registerSingleton<BackupRecoveryService>(
-      BackupRecoveryService()..init());
+  final backupService = BackupRecoveryService()..init();
+  getIt.registerSingleton<BackupRecoveryService>(backupService);
+
+  // 🛡️ 错峰出行：启动全局沙盒清道夫 (Fire-and-Forget)
+  // 延迟 5 秒，避开核心的 SQLite 初始化与首屏渲染 I/O 抢夺
+  Future.delayed(const Duration(seconds: 5), () {
+    backupService.runCacheScavenger();
+  });
 
   debugPrint('--- [DI] 105. 同步服务装载完毕！ ---');
 }

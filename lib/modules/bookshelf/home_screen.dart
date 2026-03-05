@@ -6,7 +6,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/services/feature_manager.dart';
 import '../../core/services/database_service.dart';
@@ -173,6 +172,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       int successCount = 0;
       int skippedCount = 0;
       final appDir = await getApplicationDocumentsDirectory();
+      final tempDir = await getTemporaryDirectory();
 
       for (final file in result.files) {
         if (file.path != null) {
@@ -184,11 +184,31 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
             if (existingFilenames.contains(fileName)) {
               skippedCount++;
               debugPrint("Skipping duplicate file: $fileName");
+
+              // Clean Copy: Even if skipped, we MUST destroy the file_picker temp cache
+              if (originalFile.existsSync() &&
+                  originalFile.path.startsWith(tempDir.path)) {
+                try {
+                  originalFile.deleteSync();
+                } catch (_) {}
+              }
               continue;
             }
 
             final savedFile =
                 await originalFile.copy(path.join(appDir.path, fileName));
+
+            // [Clean Copy Pipeline]: Destroy the temporary file_picker cache payload
+            if (originalFile.existsSync() &&
+                originalFile.path.startsWith(tempDir.path)) {
+              try {
+                originalFile.deleteSync();
+                debugPrint(
+                    '--- [Clean Copy] 阅后即焚: 已销毁临时导入副本 ${originalFile.path} ---');
+              } catch (e) {
+                debugPrint('--- [Clean Copy Error] 销毁临时副本失败: $e ---');
+              }
+            }
 
             final book = Book(
               id: const Uuid().v4(),
@@ -355,32 +375,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
 
     if (result != null) {
       try {
-        // Request storage permission on Android
-        if (Platform.isAndroid) {
-          PermissionStatus status;
-
-          // Android 13+ (API 33+) uses granular media permissions
-          // For reading books, we need all media permissions
-          if (await Permission.photos.request().isGranted ||
-              await Permission.videos.request().isGranted ||
-              await Permission.audio.request().isGranted) {
-            status = PermissionStatus.granted;
-          } else {
-            // Android 12 and below uses READ_EXTERNAL_STORAGE
-            status = await Permission.storage.request();
-          }
-
-          if (!status.isGranted) {
-            if (mounted) {
-              SnackBarUtils.show(
-                context,
-                'Storage permission is required to import folders',
-              );
-            }
-            return;
-          }
-        }
-
         final importService = FolderImportService.instance;
 
         // Show initial loading snackbar
