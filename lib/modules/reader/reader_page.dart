@@ -398,6 +398,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   void dispose() {
     progressManager
         .saveCurrentPosition(); // 最后保存一次 (backup save, may not complete)
+    // 确保 settingsManager 的 ScreenBrightness 订阅和 ValueNotifier 监听被绝对销毁。
+    settingsManager.dispose();
     _lifecycle.disposeAll();
     _layoutDebouncer.dispose();
     WidgetsBinding.instance.removeObserver(this);
@@ -518,6 +520,9 @@ class _ReaderPageState extends State<ReaderPage> {
                           return SubZeroBrightnessWrapper(
                             brightnessNotifier:
                                 _brightnessController.uiBrightnessValue,
+                            // 注入统一底线，消除三处独立常量的漂移风险。
+                            hardwareFloor: getIt<ReaderPreferencesService>()
+                                .minPhysicalBrightness,
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
@@ -679,6 +684,9 @@ class _ReaderPageState extends State<ReaderPage> {
                                 )),
 
                                 // 4. Edge Gesture Binding for Brightness
+                                // 修复漏洞 #2：删除冗余的 setBrightness 调用，断绝双写竞争。
+                                // BrightnessController 内部已通过 uiBrightnessValue (ValueNotifier)
+                                // 实时驱动 HUD 与 Slider，无需再绕道 ReaderController。
                                 Positioned(
                                   left: 0,
                                   top: 0,
@@ -686,18 +694,13 @@ class _ReaderPageState extends State<ReaderPage> {
                                   width: 50.0,
                                   child: GestureDetector(
                                     behavior: HitTestBehavior.translucent,
+                                    onVerticalDragStart: (_) =>
+                                        _brightnessController.handleDragStart(),
                                     onVerticalDragUpdate: (details) {
                                       _brightnessController.handleDragUpdate(
                                         details.primaryDelta ?? 0.0,
                                         MediaQuery.of(context).size.height,
                                       );
-
-                                      // Optionally sync slider in reader menu
-                                      // This drives the slider to follow the finger synchronously
-                                      context
-                                          .read<ReaderController>()
-                                          .setBrightness(_brightnessController
-                                              .uiBrightnessValue.value);
                                     },
                                     onVerticalDragEnd: (details) {
                                       _brightnessController
@@ -705,6 +708,23 @@ class _ReaderPageState extends State<ReaderPage> {
                                     },
                                     child: const SizedBox.expand(),
                                   ),
+                                ),
+
+                                // 5a. Night Shield 暖色滤镜层（迁移自已废弃的 BrightnessManager）
+                                // 使用 Selector 精细颗粒度，warmth 不变则不触发重绘。
+                                Selector<ReaderPreferencesService, double>(
+                                  selector: (_, prefs) => prefs.warmth,
+                                  builder: (_, warmth, __) {
+                                    if (warmth <= 0.01) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    return IgnorePointer(
+                                      child: Container(
+                                        color: const Color(0xFFFF8C00)
+                                            .withOpacity(warmth * 0.25),
+                                      ),
+                                    );
+                                  },
                                 ),
 
                                 // 5. Brightness HUD Overlay
@@ -816,7 +836,11 @@ class _ReaderPageState extends State<ReaderPage> {
           // Padding removed here to allow ReaderMenu to manage its own padding.
           child: ChangeNotifierProvider<ReaderController>.value(
             value: controller,
-            child: ReaderMenu(scaffoldKey: readerPageScaffoldKey),
+            child: ReaderMenu(
+              scaffoldKey: readerPageScaffoldKey,
+              // 方案 A：构造参数直接传入，使 Slider 监听 uiBrightnessValue。
+              brightnessController: _brightnessController,
+            ),
           ),
         );
       },

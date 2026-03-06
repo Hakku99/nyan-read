@@ -18,9 +18,6 @@ class BrightnessController {
   double _lastCommittedLevel = -1.0;
   double? _originalSystemBrightness;
 
-  // ===== 硬件防砖底线防御参数 =====
-  static const double hardwareSafeClamp = 0.10;
-
   BrightnessController(this._prefs) {
     _initBrightnessTracking();
   }

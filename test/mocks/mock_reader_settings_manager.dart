@@ -56,4 +56,10 @@ class MockReaderSettingsManager implements ReaderSettingsManager {
 
   @override
   Future<void> toggleFollowSystem() async {}
+
+  @override
+  void detachBrightnessController() {}
+
+  @override
+  Future<void> dispose() async {}
 }

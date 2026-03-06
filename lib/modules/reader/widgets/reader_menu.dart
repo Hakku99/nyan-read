@@ -11,11 +11,20 @@ import '../../../../core/models/highlight.dart';
 import '../../../../core/theme/theme_presets.dart';
 import '../../../../core/theme/theme_manager.dart';
 import '../../../../core/services/reader_preferences_service.dart';
+import '../controllers/brightness_controller.dart';
 
 class ReaderMenu extends StatelessWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
 
-  const ReaderMenu({Key? key, required this.scaffoldKey}) : super(key: key);
+  /// 直接注入 BrightnessController，使亮度 Slider 监听 uiBrightnessValue
+  /// 而非 controller.brightness，彻底解耦 Slider 与旧缓存链路。
+  final BrightnessController brightnessController;
+
+  const ReaderMenu({
+    Key? key,
+    required this.scaffoldKey,
+    required this.brightnessController,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -149,6 +158,8 @@ class ReaderMenu extends StatelessWidget {
     return Column(
       children: [
         // 1. Brightness Slider
+        // 使用 ValueListenableBuilder 监听 BrightnessController.uiBrightnessValue，
+        // 不再依赖 controller.brightness 中间缓存，系统干预后 Slider 始终显示真实亮度。
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -167,14 +178,18 @@ class ReaderMenu extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: SliderWithFloatingLabel(
-                value: controller.brightness,
-                min: 0.0,
-                max: 1.0,
-                onChanged: (val) => controller.setBrightness(val),
-                activeColor: theme.textSecondary
-                    .withOpacity(0.8), // Darker grey for brightness
-                inactiveColor: theme.divider.withOpacity(0.5),
+              child: ValueListenableBuilder<double>(
+                valueListenable: brightnessController.uiBrightnessValue,
+                builder: (context, brightnessVal, _) {
+                  return SliderWithFloatingLabel(
+                    value: brightnessVal.clamp(0.0, 1.0),
+                    min: 0.0,
+                    max: 1.0,
+                    onChanged: (val) => brightnessController.setFromSlider(val),
+                    activeColor: theme.textSecondary.withOpacity(0.8),
+                    inactiveColor: theme.divider.withOpacity(0.5),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 16),
@@ -189,8 +204,8 @@ class ReaderMenu extends StatelessWidget {
                   duration: const Duration(milliseconds: 200),
                   width: 36,
                   height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.transparent, // Removed background
+                  decoration: const BoxDecoration(
+                    color: Colors.transparent,
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
@@ -211,7 +226,7 @@ class ReaderMenu extends StatelessWidget {
 
         const SizedBox(height: 24),
 
-        // 2. Warmth Slider (New Design)
+        // 2. Warmth Slider
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -226,7 +241,7 @@ class ReaderMenu extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: Icon(Icons.thermostat_rounded,
-                  size: 22, color: const Color(0xFFFFCCBC)), // Apricot icon
+                  size: 22, color: const Color(0xFFFFCCBC)),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -235,13 +250,12 @@ class ReaderMenu extends StatelessWidget {
                 min: 0.0,
                 max: 1.0,
                 onChanged: (val) => prefs.setWarmth(val),
-                activeColor: const Color(0xFFFFCCBC), // Apricot
-                thumbColor: const Color(0xFFFFAB91), // Peach
+                activeColor: const Color(0xFFFFCCBC),
+                thumbColor: const Color(0xFFFFAB91),
                 inactiveColor: const Color(0xFFFFE0B2).withOpacity(0.3),
               ),
             ),
             const SizedBox(width: 16),
-            // Placeholder to balance layout
             const SizedBox(width: 36),
           ],
         ),

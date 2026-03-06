@@ -19,6 +19,8 @@ import 'package:nyan_read/core/utils/lifecycle_registry.dart';
 import 'mocks/mock_reader_settings_manager.dart';
 import 'mocks/mock_content_meta_manager.dart';
 import 'mocks/mock_reading_progress_manager.dart';
+import 'package:nyan_read/modules/reader/controllers/brightness_controller.dart';
+import 'package:nyan_read/core/services/reader_preferences_service.dart';
 
 class MockReaderController extends ChangeNotifier
     with WidgetsBindingObserver
@@ -245,7 +247,10 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
-              body: ReaderMenu(scaffoldKey: GlobalKey<ScaffoldState>())),
+              body: ReaderMenu(
+                  scaffoldKey: GlobalKey<ScaffoldState>(),
+                  brightnessController:
+                      BrightnessController(ReaderPreferencesService()))),
         ),
       ),
     );
