@@ -3,7 +3,9 @@ import '../../lib/modules/reader/reader_engine/reader_engine.dart';
 import '../../lib/core/utils/lifecycle_registry.dart';
 import '../../lib/modules/reader/controllers/reader_settings_manager.dart';
 
-class MockReaderSettingsManager implements ReaderSettingsManager {
+class MockReaderSettingsManager
+    with WidgetsBindingObserver
+    implements ReaderSettingsManager {
   @override
   final ReaderEngine engine;
   @override

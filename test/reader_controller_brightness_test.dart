@@ -1,14 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
+import 'package:get_it/get_it.dart';
 import 'package:nyan_read/modules/reader/reader_page.dart';
 import 'package:nyan_read/core/models/book.dart';
 import 'package:nyan_read/core/services/reader_preferences_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
+import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
+import 'dart:async';
 
 // Mock ReaderPreferencesService
-class MockReaderPreferencesService extends Mock
-    implements ReaderPreferencesService {
+class MockReaderPreferencesService implements ReaderPreferencesService {
   @override
   double? get brightness => 0.5;
 
@@ -74,20 +75,80 @@ class MockReaderPreferencesService extends Mock
   void dispose() {}
 }
 
+class MockScreenBrightnessPlatform extends ScreenBrightnessPlatform {
+  @override
+  Future<double> get current async => 0.5;
+
+  @override
+  Future<double> get system async => 0.5;
+
+  @override
+  Future<double> get application async => 0.5;
+
+  @override
+  Future<void> setScreenBrightness(double brightness) async {}
+
+  @override
+  Future<void> resetScreenBrightness() async {}
+
+  @override
+  Future<void> setApplicationScreenBrightness(double brightness) async {}
+
+  @override
+  Future<void> resetApplicationScreenBrightness() async {}
+
+  @override
+  Stream<double> get onSystemScreenBrightnessChanged => const Stream.empty();
+
+  @override
+  Stream<double> get onApplicationScreenBrightnessChanged =>
+      const Stream.empty();
+
+  @override
+  Future<bool> get hasApplicationScreenBrightnessChanged async => false;
+
+  @override
+  Future<bool> get isAutoReset async => false;
+
+  @override
+  Future<void> setAutoReset(bool isAutoReset) async {}
+
+  @override
+  Future<bool> get isAnimate async => true;
+
+  @override
+  Future<void> setAnimate(bool isAnimate) async {}
+
+  @override
+  Future<bool> get canChangeSystemBrightness async => true;
+}
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   // Setup SharedPreferences for testing
   SharedPreferences.setMockInitialValues({});
 
+  setUp(() {
+    ScreenBrightnessPlatform.instance = MockScreenBrightnessPlatform();
+    final getIt = GetIt.instance;
+    getIt.allowReassignment = true;
+    getIt.registerSingleton<ReaderPreferencesService>(
+        MockReaderPreferencesService());
+  });
+
+  tearDown(() {
+    GetIt.instance.reset();
+  });
+
   test('ReaderController setBrightness breaks Follow System mode', () async {
-    // 1. Setup
-    final book = const Book(
+    // Setup
+    final book = Book(
       id: 'test_book',
       title: 'Test Title',
-      path: '/test/path',
+      author: 'Unknown',
+      filePath: '/test/path',
       format: 'txt',
-      size: 1000,
-      lastReadPosition: '',
-      addedAt: 0,
     );
 
     final controller = ReaderController(book);

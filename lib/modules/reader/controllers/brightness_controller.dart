@@ -17,6 +17,7 @@ class BrightnessController {
   StreamSubscription<double>? _systemBrightnessSubscription;
   double _lastCommittedLevel = -1.0;
   double? _originalSystemBrightness;
+  bool _isDisposed = false;
 
   BrightnessController(this._prefs) {
     _initBrightnessTracking();
@@ -66,9 +67,13 @@ class BrightnessController {
 
   /// 来自操作系统的抢占干涉
   void _onSystemBrightnessInterfered(double systemLevel) {
+    if (_isDisposed) return;
     if (_lastCommittedLevel < 0) return;
 
     // 如果偏差大于 5%，认为是用户在控制中心动手了
+    // 阶段二：系统自动亮度的微环境光变化容易导致大于 0.05 的跳变。
+    // 暂时注释退网逻辑，防止滑块时效或被系统强制顶掉。
+    /*
     if ((systemLevel - _lastCommittedLevel).abs() > 0.05) {
       if (_prefs.brightness != null) {
         _lastCommittedLevel = -1.0;
@@ -77,6 +82,7 @@ class BrightnessController {
         uiBrightnessValue.value = systemLevel;
       }
     }
+    */
   }
 
   /// Preferences 变化事件 (滑动 slider 或手势导致的设定变化都会走到这里)
@@ -92,6 +98,8 @@ class BrightnessController {
 
   /// 执行最后的单向流同步：计算 -> Native
   Future<void> _applyBrightnessState() async {
+    if (_isDisposed) return;
+
     if (_prefs.brightness == null) {
       await _restoreOriginalBrightness();
       return;
@@ -119,8 +127,12 @@ class BrightnessController {
 
   // 统一的手势/滑动结束 (隐藏 HUD)
   void handleInteractionEnd() {
+    // 阶段一：持久化落盘，移除每帧的 I/O 写盘
+    _prefs.setBrightness(uiBrightnessValue.value);
+
     _hudHideTimer?.cancel();
     _hudHideTimer = Timer(const Duration(milliseconds: 800), () {
+      if (_isDisposed) return;
       isAdjusting.value = false;
     });
   }
@@ -138,15 +150,15 @@ class BrightnessController {
     final sensitivity = 2.0 / screenHeight;
     final change = -(dragDeltaY * sensitivity);
 
-    final currentBase = _prefs.brightness ?? 0.5;
+    // 阶段一：仅基于当前内存值进行增减计算
+    final currentBase = uiBrightnessValue.value;
     final newBrightness = (currentBase + change).clamp(0.0, 1.0);
 
     // 1. 无阻塞：直接驱动 120Hz HUD
     uiBrightnessValue.value = newBrightness;
 
     // 2. 将计算结果丢进数据源管线。
-    // 这不会立刻触发 IO，会被内部的 100ms _applyBrightnessState 拦截并组装
-    _prefs.setBrightness(newBrightness);
+    // 阶段一：已移除此处的 _prefs.setBrightness(newBrightness); 以防 I/O 绞肉机
   }
 
   /// Called from the slider in ReaderMenu.
@@ -164,6 +176,7 @@ class BrightnessController {
 
   /// 控制器销毁
   void dispose() {
+    _isDisposed = true;
     _prefs.removeListener(_handlePrefsChange);
     _systemBrightnessSubscription?.cancel();
     _restoreOriginalBrightness();

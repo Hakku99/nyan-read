@@ -7,7 +7,7 @@ import '../reader_engine/reader_engine.dart';
 import '../../../core/utils/lifecycle_registry.dart';
 import 'brightness_controller.dart';
 
-class ReaderSettingsManager {
+class ReaderSettingsManager with WidgetsBindingObserver {
   final ReaderEngine engine;
   final LifecycleRegistry lifecycle;
   final VoidCallback onSettingsChanged;
@@ -33,6 +33,7 @@ class ReaderSettingsManager {
     required this.onSettingsChanged,
   }) {
     _loadPreferences();
+    WidgetsBinding.instance.addObserver(this);
   }
 
   double get fontSize => _fontSize;
@@ -61,6 +62,12 @@ class ReaderSettingsManager {
   }
 
   void attachBrightnessController(BrightnessController bc) {
+    // 阶段三：订阅关系泄漏清创
+    if (_brightnessControllerRef != null && _brightnessValueListener != null) {
+      _brightnessControllerRef!.uiBrightnessValue
+          .removeListener(_brightnessValueListener!);
+    }
+
     _brightnessControllerRef = bc;
     bc.uiBrightnessValue.value = _brightness;
 
@@ -165,6 +172,40 @@ class ReaderSettingsManager {
     onSettingsChanged();
   }
 
+  // 阶段五：生命周期主动补偿机制（AppLifecycleState）
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      _restoreBrightnessOnResume();
+    }
+  }
+
+  Future<void> _restoreBrightnessOnResume() async {
+    if (_followSystem) return; // 跟随系统的由插件自己去处理或者由流恢复
+
+    try {
+      final prefs = getIt<ReaderPreferencesService>();
+      final b = prefs.brightness;
+
+      if (b != null) {
+        final perceptual = prefs.getPerceptualBrightness(b);
+        final minPhys = prefs.minPhysicalBrightness;
+        double systemLevel = perceptual > minPhys ? perceptual : minPhys;
+
+        // 强制重新下发一次硬件亮度设定
+        await ScreenBrightness().setScreenBrightness(systemLevel);
+
+        // 同步 UI 状态
+        _brightness = b;
+        _brightnessControllerRef?.uiBrightnessValue.value = b;
+        onSettingsChanged();
+      }
+    } catch (_) {
+      // 忽略平台通道异常
+    }
+  }
+
   void handleLayoutChange(Size newSize, Size? lastSize, VoidCallback onUpdate) {
     if (lastSize != null &&
         (newSize.width - lastSize.width).abs() < 10 &&
@@ -188,6 +229,7 @@ class ReaderSettingsManager {
   /// 1. ScreenBrightness 的系统事件流监听被绝对销毁。
   /// 2. BrightnessController.uiBrightnessValue 的监听器被移除。
   Future<void> dispose() async {
+    WidgetsBinding.instance.removeObserver(this);
     await _followSystemSubscription?.cancel();
     _followSystemSubscription = null;
     detachBrightnessController();
