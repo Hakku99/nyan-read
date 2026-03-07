@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/services/reader_preferences_service.dart';
 
-/// 极限暗黑无阻塞遮罩
+/// 极限暗黑无阻塞遮罩与暖色滤镜
 /// [hardwareFloor]：与 ReaderPreferencesService.minPhysicalBrightness 保持同源注入，
 /// 确保软件遮罩的切入点与硬件底线完全一致。
 class SubZeroBrightnessWrapper extends StatelessWidget {
@@ -34,6 +36,24 @@ class SubZeroBrightnessWrapper extends StatelessWidget {
           children: [
             // 你的基础阅读器 (核心内容区)
             child,
+
+            // 暖色护眼滤镜层 (Warmth Layer)
+            // 依赖 Provider 选择性监听，warmth 不变不重绘
+            Selector<ReaderPreferencesService, double>(
+              selector: (context, prefs) => prefs.warmth,
+              builder: (context, warmth, child) {
+                if (warmth <= 0.01) return const SizedBox.shrink();
+                return IgnorePointer(
+                  child: Container(
+                    color: Colors.amber.withOpacity(warmth * 0.3),
+                    foregroundDecoration: BoxDecoration(
+                      backgroundBlendMode: BlendMode.multiply,
+                      color: Colors.orangeAccent.withOpacity(warmth * 0.2),
+                    ),
+                  ),
+                );
+              },
+            ),
 
             // 软件级暗黑遮罩层
             if (dimOpacity > 0.01)

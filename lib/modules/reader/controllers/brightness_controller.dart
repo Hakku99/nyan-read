@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import '../../../../core/services/reader_preferences_service.dart';
 
-class BrightnessController {
+class BrightnessController with WidgetsBindingObserver {
   // 核心 UI 驱动状态：绝对全量程 (0.00 到 1.00)
   final ValueNotifier<double> uiBrightnessValue = ValueNotifier(0.5);
 
@@ -16,11 +16,25 @@ class BrightnessController {
   Timer? _debounceTimer;
   StreamSubscription<double>? _systemBrightnessSubscription;
   double _lastCommittedLevel = -1.0;
+  double? _lastAppliedBrightness;
   double? _originalSystemBrightness;
   bool _isDisposed = false;
+  bool _isActiveReader = true;
+  bool _isFlutterUpdating = false;
 
   BrightnessController(this._prefs) {
+    WidgetsBinding.instance.addObserver(this);
     _initBrightnessTracking();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _restoreOriginalBrightness();
+    } else if (state == AppLifecycleState.resumed && _isActiveReader) {
+      _applyBrightnessState();
+    }
   }
 
   /// 异步初始化：连接物理世界与软件感知的单向数据流桥梁
@@ -53,15 +67,23 @@ class BrightnessController {
   Future<void> _restoreOriginalBrightness() async {
     if (_originalSystemBrightness != null) {
       try {
+        _isFlutterUpdating = true;
         _lastCommittedLevel = _originalSystemBrightness!;
         await ScreenBrightness()
             .setScreenBrightness(_originalSystemBrightness!);
-      } catch (_) {}
+      } catch (_) {
+      } finally {
+        _isFlutterUpdating = false;
+      }
     } else {
       try {
+        _isFlutterUpdating = true;
         _lastCommittedLevel = -1.0;
         await ScreenBrightness().resetScreenBrightness();
-      } catch (_) {}
+      } catch (_) {
+      } finally {
+        _isFlutterUpdating = false;
+      }
     }
   }
 
@@ -69,11 +91,8 @@ class BrightnessController {
   void _onSystemBrightnessInterfered(double systemLevel) {
     if (_isDisposed) return;
     if (_lastCommittedLevel < 0) return;
+    if (_isFlutterUpdating) return;
 
-    // 如果偏差大于 5%，认为是用户在控制中心动手了
-    // 阶段二：系统自动亮度的微环境光变化容易导致大于 0.05 的跳变。
-    // 暂时注释退网逻辑，防止滑块时效或被系统强制顶掉。
-    /*
     if ((systemLevel - _lastCommittedLevel).abs() > 0.05) {
       if (_prefs.brightness != null) {
         _lastCommittedLevel = -1.0;
@@ -82,11 +101,15 @@ class BrightnessController {
         uiBrightnessValue.value = systemLevel;
       }
     }
-    */
   }
 
   /// Preferences 变化事件 (滑动 slider 或手势导致的设定变化都会走到这里)
   void _handlePrefsChange() {
+    if (_prefs.brightness != null &&
+        _prefs.brightness != uiBrightnessValue.value) {
+      uiBrightnessValue.value = _prefs.brightness!;
+    }
+
     // 100ms Debounce 防抖，组装一波 IO
     if (_debounceTimer?.isActive ?? false) {
       _debounceTimer!.cancel();
@@ -112,11 +135,21 @@ class BrightnessController {
 
       double systemLevel = perceptual > minPhys ? perceptual : minPhys;
 
-      // 双层 API 防抖：拦截相同的亮度值
-      if ((_lastCommittedLevel - systemLevel).abs() < 0.01) return;
+      // 新增 last applied filter Threshold
+      if (_lastAppliedBrightness != null &&
+          (systemLevel - _lastAppliedBrightness!).abs() < 0.01) {
+        return;
+      }
 
+      _lastAppliedBrightness = systemLevel;
       _lastCommittedLevel = systemLevel;
-      await ScreenBrightness().setScreenBrightness(systemLevel);
+
+      try {
+        _isFlutterUpdating = true;
+        await ScreenBrightness().setScreenBrightness(systemLevel);
+      } finally {
+        _isFlutterUpdating = false;
+      }
     } catch (_) {}
   }
 
@@ -176,7 +209,9 @@ class BrightnessController {
 
   /// 控制器销毁
   void dispose() {
+    _isActiveReader = false;
     _isDisposed = true;
+    WidgetsBinding.instance.removeObserver(this);
     _prefs.removeListener(_handlePrefsChange);
     _systemBrightnessSubscription?.cancel();
     _restoreOriginalBrightness();

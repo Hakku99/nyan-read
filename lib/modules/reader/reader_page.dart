@@ -710,23 +710,6 @@ class _ReaderPageState extends State<ReaderPage> {
                                   ),
                                 ),
 
-                                // 5a. Night Shield 暖色滤镜层（迁移自已废弃的 BrightnessManager）
-                                // 使用 Selector 精细颗粒度，warmth 不变则不触发重绘。
-                                Selector<ReaderPreferencesService, double>(
-                                  selector: (_, prefs) => prefs.warmth,
-                                  builder: (_, warmth, __) {
-                                    if (warmth <= 0.01) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    return IgnorePointer(
-                                      child: Container(
-                                        color: const Color(0xFFFF8C00)
-                                            .withOpacity(warmth * 0.25),
-                                      ),
-                                    );
-                                  },
-                                ),
-
                                 // 5. Brightness HUD Overlay
                                 // Injected just below overlays and gesture catchers
                                 BrightnessHudWidget(
