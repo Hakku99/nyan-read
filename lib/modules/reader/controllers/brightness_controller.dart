@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import '../../../../core/services/reader_preferences_service.dart';
@@ -69,8 +70,9 @@ class BrightnessController with WidgetsBindingObserver {
       try {
         _isFlutterUpdating = true;
         _lastCommittedLevel = _originalSystemBrightness!;
-        await ScreenBrightness()
-            .setScreenBrightness(_originalSystemBrightness!);
+        await ScreenBrightness().setScreenBrightness(
+          _originalSystemBrightness!,
+        );
       } catch (_) {
       } finally {
         _isFlutterUpdating = false;
@@ -98,7 +100,11 @@ class BrightnessController with WidgetsBindingObserver {
         _lastCommittedLevel = -1.0;
         // 退回跟随系统
         _prefs.setBrightness(null);
-        uiBrightnessValue.value = systemLevel;
+
+        // 系统回调返回的是基于 Gamma 处理过的绝对物理亮度 (perceptual)
+        // 需要进行逆 Gamma 去线性化，再反推回 UI Slider 可以显示的范围
+        // （与 getPerceptualBrightness 的 power 2.0 对应，这里使用 sqrt）
+        uiBrightnessValue.value = math.sqrt(systemLevel);
       }
     }
   }

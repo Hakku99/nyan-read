@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import '../../../core/services/reader_preferences_service.dart';
@@ -17,12 +18,7 @@ class ReaderSettingsManager with WidgetsBindingObserver {
   double _brightness = 1.0;
   Color _backgroundColor = const Color(0xFFFDFCF8);
   Color _textColor = const Color(0xFF4A453E);
-  bool _followSystem = false;
   BrightnessController? _brightnessControllerRef;
-
-  /// 按需说明：不使用 lifecycle.registerSubscription，
-  /// 而是用命名引用来防止多次调用 toggleFollowSystem 日累积订阅。
-  StreamSubscription<double>? _followSystemSubscription;
 
   /// 监听 BrightnessController 的 uiBrightnessValue 变化的移除函数引用
   VoidCallback? _brightnessValueListener;
@@ -41,7 +37,7 @@ class ReaderSettingsManager with WidgetsBindingObserver {
   double get brightness => _brightness;
   Color get backgroundColor => _backgroundColor;
   Color get textColor => _textColor;
-  bool get followSystem => _followSystem;
+  bool get followSystem => getIt<ReaderPreferencesService>().brightness == null;
 
   void _loadPreferences() {
     final prefs = getIt<ReaderPreferencesService>();
@@ -127,9 +123,6 @@ class ReaderSettingsManager with WidgetsBindingObserver {
   }
 
   Future<void> setBrightness(double b) async {
-    if (_followSystem) {
-      _followSystem = false;
-    }
     _brightness = b;
     _brightnessControllerRef?.setFromSlider(b);
     await getIt<ReaderPreferencesService>().setBrightness(b);
@@ -137,34 +130,23 @@ class ReaderSettingsManager with WidgetsBindingObserver {
   }
 
   Future<void> toggleFollowSystem() async {
-    // 修复漏洞 #4：先取消上一次的订阅，应对用户快速反复拨动 Toggle 导致的订阅累积。
-    await _followSystemSubscription?.cancel();
-    _followSystemSubscription = null;
+    final isCurrentlyFollowing = followSystem;
 
-    _followSystem = !_followSystem;
-    if (_followSystem) {
+    if (!isCurrentlyFollowing) {
       try {
         await _brightnessControllerRef?.resetToSystem();
         if (_brightnessControllerRef == null) {
           await ScreenBrightness().resetScreenBrightness();
         }
-        double systemBrightness = await ScreenBrightness().current;
-        _brightness = systemBrightness;
-        _brightnessControllerRef?.uiBrightnessValue.value = systemBrightness;
-        await getIt<ReaderPreferencesService>().setBrightness(null);
 
-        // 单一命名引用，确保后续可以一次性取消。
-        _followSystemSubscription =
-            ScreenBrightness().onCurrentBrightnessChanged.listen((double b) {
-          if (_followSystem) {
-            _brightness = b;
-            _brightnessControllerRef?.uiBrightnessValue.value = b;
-            onSettingsChanged();
-          }
-        });
+        double systemBrightness = await ScreenBrightness().current;
+        final linearBrightness = math.sqrt(systemBrightness);
+        _brightness = linearBrightness;
+        if (_brightnessControllerRef != null) {
+          _brightnessControllerRef!.uiBrightnessValue.value = linearBrightness;
+        }
       } catch (e) {
-        debugPrint("Failed to get system brightness: $e");
-        _followSystem = false;
+        debugPrint("Failed to reset system brightness: $e");
       }
     } else {
       await setBrightness(_brightness);
@@ -182,7 +164,7 @@ class ReaderSettingsManager with WidgetsBindingObserver {
   }
 
   Future<void> _restoreBrightnessOnResume() async {
-    if (_followSystem) return; // 跟随系统的由插件自己去处理或者由流恢复
+    if (followSystem) return; // 跟随系统的由插件自己去处理或者由流恢复
 
     try {
       final prefs = getIt<ReaderPreferencesService>();
@@ -230,8 +212,6 @@ class ReaderSettingsManager with WidgetsBindingObserver {
   /// 2. BrightnessController.uiBrightnessValue 的监听器被移除。
   Future<void> dispose() async {
     WidgetsBinding.instance.removeObserver(this);
-    await _followSystemSubscription?.cancel();
-    _followSystemSubscription = null;
     detachBrightnessController();
   }
 }
