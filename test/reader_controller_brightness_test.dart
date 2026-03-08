@@ -1,169 +1,135 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:get_it/get_it.dart';
-import 'package:nyan_read/modules/reader/reader_page.dart';
-import 'package:nyan_read/core/models/book.dart';
-import 'package:nyan_read/core/services/reader_preferences_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/material.dart';
-import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 import 'dart:async';
 
-// Mock ReaderPreferencesService
-class MockReaderPreferencesService implements ReaderPreferencesService {
-  @override
-  double? get brightness => 0.5;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
+import 'package:nyan_read/core/models/book.dart';
+import 'package:nyan_read/core/services/reader_preferences_service.dart';
+import 'package:nyan_read/modules/reader/brightness/brightness_orchestrator.dart';
+import 'package:nyan_read/modules/reader/brightness/brightness_repository.dart';
+import 'package:nyan_read/modules/reader/brightness/system_brightness_adapter.dart';
+import 'package:nyan_read/modules/reader/controllers/brightness_controller.dart';
+import 'package:nyan_read/modules/reader/reader_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class FakeSystemBrightnessAdapter extends SystemBrightnessAdapter {
+  FakeSystemBrightnessAdapter({this.currentValue = 0.5});
+
+  double currentValue;
+  final List<double> setCalls = <double>[];
+  int resetCalls = 0;
+  final StreamController<double> _changes = StreamController<double>.broadcast();
 
   @override
-  double get fontSize => 18.0;
+  Future<double> currentBrightness() async => currentValue;
 
   @override
-  double get lineHeight => 1.5;
+  Stream<double> brightnessChanges() => _changes.stream;
 
   @override
-  Color get backgroundColor => const Color(0xFFFDFCF8);
+  Future<void> setSystemBrightness(double brightness) async {
+    currentValue = brightness;
+    setCalls.add(brightness);
+    _changes.add(brightness);
+  }
 
   @override
-  double get minPhysicalBrightness => 0.1;
+  Future<void> resetSystemBrightness() async {
+    resetCalls += 1;
+    currentValue = 0.5;
+    _changes.add(currentValue);
+  }
 
-  @override
-  double get followSystemOffset => 0.0;
+  void emitExternalBrightness(double brightness) {
+    currentValue = brightness;
+    _changes.add(brightness);
+  }
 
-  @override
-  double get warmth => 0.0;
-
-  @override
-  PageTurnMode get pageTurnMode => PageTurnMode.swipe;
-
-  @override
-  PageAnimation get pageAnimation => PageAnimation.fade;
-
-  @override
-  bool get hasListeners => false;
-
-  @override
-  double getPerceptualBrightness(double val) => val * val;
-
-  @override
-  Future<void> setFontSize(double size) async {}
-  @override
-  Future<void> setLineHeight(double height) async {}
-  @override
-  Future<void> setBackgroundColor(Color color) async {}
-  @override
-  Future<void> setPageTurnMode(PageTurnMode mode) async {}
-  @override
-  Future<void> setPageAnimation(PageAnimation animation) async {}
-  @override
-  Future<void> initialize() async {}
-  @override
-  Future<void> resetToDefaults() async {}
-  @override
-  Future<void> setBrightness(double? b) async {}
-  @override
-  Future<void> setWarmth(double w) async {}
-  @override
-  Future<void> setMinPhysicalBrightness(double m) async {}
-  @override
-  Future<void> setFollowSystemOffset(double o) async {}
-  @override
-  void addListener(VoidCallback listener) {}
-  @override
-  void removeListener(VoidCallback listener) {}
-  @override
-  void notifyListeners() {}
-  @override
-  void dispose() {}
-}
-
-class MockScreenBrightnessPlatform extends ScreenBrightnessPlatform {
-  @override
-  Future<double> get current async => 0.5;
-
-  @override
-  Future<double> get system async => 0.5;
-
-  @override
-  Future<double> get application async => 0.5;
-
-  @override
-  Future<void> setScreenBrightness(double brightness) async {}
-
-  @override
-  Future<void> resetScreenBrightness() async {}
-
-  @override
-  Future<void> setApplicationScreenBrightness(double brightness) async {}
-
-  @override
-  Future<void> resetApplicationScreenBrightness() async {}
-
-  @override
-  Stream<double> get onSystemScreenBrightnessChanged => const Stream.empty();
-
-  @override
-  Stream<double> get onApplicationScreenBrightnessChanged =>
-      const Stream.empty();
-
-  @override
-  Future<bool> get hasApplicationScreenBrightnessChanged async => false;
-
-  @override
-  Future<bool> get isAutoReset async => false;
-
-  @override
-  Future<void> setAutoReset(bool isAutoReset) async {}
-
-  @override
-  Future<bool> get isAnimate async => true;
-
-  @override
-  Future<void> setAnimate(bool isAnimate) async {}
-
-  @override
-  Future<bool> get canChangeSystemBrightness async => true;
+  Future<void> close() async {
+    await _changes.close();
+  }
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  // Setup SharedPreferences for testing
-  SharedPreferences.setMockInitialValues({});
-
-  setUp(() {
-    ScreenBrightnessPlatform.instance = MockScreenBrightnessPlatform();
-    final getIt = GetIt.instance;
-    getIt.allowReassignment = true;
-    getIt.registerSingleton<ReaderPreferencesService>(
-        MockReaderPreferencesService());
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    await GetIt.instance.reset();
+    GetIt.instance.allowReassignment = true;
   });
 
-  tearDown(() {
-    GetIt.instance.reset();
+  tearDown(() async {
+    await GetIt.instance.reset();
   });
 
-  test('ReaderController setBrightness breaks Follow System mode', () async {
-    // Setup
-    final book = Book(
-      id: 'test_book',
-      title: 'Test Title',
-      author: 'Unknown',
-      filePath: '/test/path',
-      format: 'txt',
+  test('ReaderController manual adjustment exits Follow System mode', () async {
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    GetIt.instance.registerSingleton<ReaderPreferencesService>(prefs);
+
+    final adapter = FakeSystemBrightnessAdapter(currentValue: 0.5);
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: adapter,
+      ),
     );
+    await brightnessController.initialize();
 
-    final controller = ReaderController(book);
+    final controller = ReaderController(
+      Book(
+        id: 'test_book',
+        title: 'Test Title',
+        author: 'Unknown',
+        filePath: '/test/path',
+        format: 'txt',
+      ),
+    );
+    controller.attachBrightnessController(brightnessController);
 
-    // 2. Enable Follow System
-    await controller.toggleFollowSystem();
-    expect(controller.followSystem, true, reason: "Follow System should be ON");
+    expect(controller.followSystem, true);
 
-    // 3. Manually set brightness
     await controller.setBrightness(0.8);
 
-    // 4. Verify
-    expect(controller.followSystem, false,
-        reason: "Follow System should be OFF after manual adjustment");
-    expect(controller.brightness, 0.8,
-        reason: "Brightness should be updated to 0.8");
+    expect(controller.followSystem, false);
+    expect(controller.brightness, 0.8);
+    expect(adapter.setCalls.last, 0.8);
+
+    await brightnessController.shutdown();
+    brightnessController.dispose();
+    await adapter.close();
+    controller.dispose();
+  });
+
+  test('Follow System mode stops writing brightness and tracks external changes', () async {
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    GetIt.instance.registerSingleton<ReaderPreferencesService>(prefs);
+
+    final adapter = FakeSystemBrightnessAdapter(currentValue: 0.5);
+    final orchestrator = BrightnessOrchestrator(
+      repository: BrightnessRepository(prefs),
+      systemAdapter: adapter,
+    );
+    final brightnessController = BrightnessController(orchestrator);
+    await brightnessController.initialize();
+
+    await brightnessController.setBrightness(0.7);
+    final manualWriteCount = adapter.setCalls.length;
+
+    await brightnessController.resetToSystem();
+    expect(brightnessController.followSystem, true);
+    expect(adapter.setCalls.length, manualWriteCount);
+    expect(adapter.resetCalls, 1);
+
+    adapter.emitExternalBrightness(0.35);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(brightnessController.uiBrightnessValue.value, 0.35);
+    expect(adapter.setCalls.length, manualWriteCount);
+
+    await brightnessController.shutdown();
+    brightnessController.dispose();
+    await adapter.close();
   });
 }

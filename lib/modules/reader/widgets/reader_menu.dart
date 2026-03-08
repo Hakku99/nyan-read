@@ -17,7 +17,7 @@ class ReaderMenu extends StatelessWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
 
   /// 直接注入 BrightnessController，使亮度 Slider 监听 uiBrightnessValue
-  /// 而非 controller.brightness，彻底解耦 Slider 与旧缓存链路。
+  /// listens to uiBrightnessValue instead of the cached controller value.
   final BrightnessController brightnessController;
 
   const ReaderMenu({
@@ -158,8 +158,8 @@ class ReaderMenu extends StatelessWidget {
     return Column(
       children: [
         // 1. Brightness Slider
-        // 使用 ValueListenableBuilder 监听 BrightnessController.uiBrightnessValue，
-        // 不再依赖 controller.brightness 中间缓存，系统干预后 Slider 始终显示真实亮度。
+        // Listen to BrightnessController.uiBrightnessValue directly so the
+        // slider always reflects the live reader brightness state.
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -186,6 +186,9 @@ class ReaderMenu extends StatelessWidget {
                     min: 0.0,
                     max: 1.0,
                     onChanged: (val) => brightnessController.setFromSlider(val),
+                    onChangeEnd: (val) {
+                      brightnessController.commitFromSlider(val);
+                    },
                     activeColor: theme.textSecondary.withOpacity(0.8),
                     inactiveColor: theme.divider.withOpacity(0.5),
                   );
@@ -266,7 +269,7 @@ class ReaderMenu extends StatelessWidget {
   Widget _buildTypographySection(
       BuildContext context, ReaderController controller, NyanTheme theme) {
     final loc = AppLocalizations.of(context)!;
-    // Flat layout — no wrapping Container, same visual layer as sliders above.
+    // Flat layout, no wrapping Container, same visual layer as sliders above.
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [

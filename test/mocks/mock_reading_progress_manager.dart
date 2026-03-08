@@ -1,26 +1,30 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
-import '../../lib/core/models/book.dart';
-import '../../lib/modules/reader/reader_engine/reader_engine.dart';
-import '../../lib/core/utils/lifecycle_registry.dart';
-import '../../lib/modules/reader/controllers/reading_progress_manager.dart';
+import 'package:nyan_read/core/models/book.dart';
+import 'package:nyan_read/core/utils/lifecycle_registry.dart';
+import 'package:nyan_read/modules/reader/controllers/reading_progress_manager.dart';
+import 'package:nyan_read/modules/reader/reader_engine/reader_engine.dart';
 
 class MockReadingProgressManager implements ReadingProgressManager {
-  @override
-  final ReaderEngine engine;
-  @override
-  final Book book;
-  @override
-  final LifecycleRegistry lifecycle;
-  @override
-  final VoidCallback onProgressUpdated;
-
   MockReadingProgressManager({
     required this.engine,
     required this.book,
     required this.lifecycle,
     required this.onProgressUpdated,
   });
+
+  @override
+  final ReaderEngine engine;
+
+  @override
+  final Book book;
+
+  @override
+  final LifecycleRegistry lifecycle;
+
+  @override
+  final VoidCallback onProgressUpdated;
 
   @override
   int get readSeconds => 0;

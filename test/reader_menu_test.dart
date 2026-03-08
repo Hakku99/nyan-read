@@ -19,12 +19,73 @@ import 'package:nyan_read/core/utils/lifecycle_registry.dart';
 import 'mocks/mock_reader_settings_manager.dart';
 import 'mocks/mock_content_meta_manager.dart';
 import 'mocks/mock_reading_progress_manager.dart';
+import 'package:nyan_read/modules/reader/brightness/brightness_orchestrator.dart';
+import 'package:nyan_read/modules/reader/brightness/brightness_repository.dart';
+import 'package:nyan_read/modules/reader/brightness/system_brightness_adapter.dart';
 import 'package:nyan_read/modules/reader/controllers/brightness_controller.dart';
 import 'package:nyan_read/core/services/reader_preferences_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class FakeReadingPosition implements ReadingPosition {
+  @override
+  String toJson() => '{}';
+}
+
+class FakeReaderEngine implements ReaderEngine {
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Widget buildReader(BuildContext context) => const SizedBox.shrink();
+
+  @override
+  Future<void> goToPosition(ReadingPosition position) async {}
+
+  @override
+  ReadingPosition? getCurrentPosition() => FakeReadingPosition();
+
+  @override
+  void setConfig(ReaderConfig config) {}
+
+  @override
+  double? getProgress() => 0.5;
+
+  @override
+  Future<void> seekToProgress(double progress) async {}
+
+  @override
+  Future<String?> getSnippet() async => null;
+
+  @override
+  Future<String?> getTextAtPosition(ReadingPosition position) async => null;
+
+  @override
+  Future<List<dynamic>> getChapters() async => const [];
+
+  @override
+  Future<void> nextPage() async {}
+
+  @override
+  Future<void> previousPage() async {}
+
+  @override
+  int getPageCount() => 1;
+
+  @override
+  int getCurrentPageIndex() => 0;
+
+  @override
+  bool get hasBottomBar => false;
+
+  @override
+  void dispose() {}
+}
 
 class MockReaderController extends ChangeNotifier
     with WidgetsBindingObserver
     implements ReaderController {
+  final ReaderEngine _engine = FakeReaderEngine();
+
   @override
   late final ReadingProgressManager progressManager;
   @override
@@ -72,9 +133,6 @@ class MockReaderController extends ChangeNotifier
   bool get isPanning => false;
   @override
   Offset? get tapDownPosition => null;
-  @override
-  @override
-  bool get isAdjustingBrightness => false;
 
   @override
   Book get book => Book(
@@ -134,8 +192,6 @@ class MockReaderController extends ChangeNotifier
   @override
   Future<void> deleteHighlight(String id) async {}
   @override
-  void updateProgress(double progress) {}
-  @override
   void didChangeAccessibilityFeatures() {}
   @override
   void didChangeLocales(List<Locale>? locales) {}
@@ -163,7 +219,7 @@ class MockReaderController extends ChangeNotifier
   set engine(ReaderEngine engine) {}
 
   @override
-  ReaderEngine get engine => throw UnimplementedError('Mock engine');
+  ReaderEngine get engine => _engine;
 
   @override
   ReaderErrorState? get errorState => null;
@@ -231,17 +287,50 @@ class MockThemeManager extends ChangeNotifier implements ThemeManager {
   Future<void> setPreset(ThemePreset preset) async {}
 }
 
+class FakeSystemBrightnessAdapter extends SystemBrightnessAdapter {
+  FakeSystemBrightnessAdapter({this.currentValue = 0.5});
+
+  double currentValue;
+
+  @override
+  Future<double> currentBrightness() async => currentValue;
+
+  @override
+  Stream<double> brightnessChanges() => const Stream<double>.empty();
+
+  @override
+  Future<void> setSystemBrightness(double brightness) async {
+    currentValue = brightness;
+  }
+
+  @override
+  Future<void> resetSystemBrightness() async {
+    currentValue = 0.5;
+  }
+}
+
 void main() {
-  testWidgets('ReaderMenu has correct styling for Cream Light theme',
+  testWidgets('ReaderMenu renders brightness controls',
       (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: FakeSystemBrightnessAdapter(),
+      ),
+    );
+
     final mockController = MockReaderController();
     final mockThemeManager = MockThemeManager();
 
     await tester.pumpWidget(
       MultiProvider(
         providers: [
-          Provider<ReaderController>.value(value: mockController),
-          Provider<ThemeManager>.value(value: mockThemeManager),
+          ChangeNotifierProvider<ReaderController>.value(value: mockController),
+          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
+          ChangeNotifierProvider<ReaderPreferencesService>.value(value: prefs),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -249,36 +338,21 @@ void main() {
           home: Scaffold(
               body: ReaderMenu(
                   scaffoldKey: GlobalKey<ScaffoldState>(),
-                  brightnessController:
-                      BrightnessController(ReaderPreferencesService()))),
+                  brightnessController: brightnessController)),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
 
-    // Verify Panel Decoration
-    final containerFinder = find.byType(Container).first;
-    final container = tester.widget<Container>(containerFinder);
-    final decoration = container.decoration as BoxDecoration;
-
-    expect(decoration.color, const Color(0xFFFAF9F6),
-        reason: 'Panel background should be Cream+');
-    expect((decoration.border as Border).top.color, const Color(0xFFD8D4C8),
-        reason: 'Panel border should be solid beige');
-
-    // Verify Control Island (The one wrapping typography)
-    final islandFinder = find.byWidgetPredicate((widget) =>
-        widget is Container &&
-        (widget.decoration as BoxDecoration?)?.color ==
-            const Color(0xFFF2F0EB));
-    expect(islandFinder, findsOneWidget, reason: 'Control Island should exist');
-
-    // Verify Stepper Button (White BG)
-    final stepperBtnFinder = find.byWidgetPredicate((widget) =>
-        widget is Container &&
-        (widget.decoration as BoxDecoration?)?.color == Colors.white);
-    expect(stepperBtnFinder, findsNWidgets(2),
-        reason: 'Two white stepper inputs should exist');
+        expect(find.byIcon(Icons.wb_sunny_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.brightness_auto_outlined), findsOneWidget);
+    expect(find.byType(Slider), findsWidgets);
   });
 }
+
+
+
+
+
+

@@ -24,8 +24,11 @@ import 'dart:async';
 import 'dart:io';
 import '../../core/utils/lifecycle_registry.dart';
 import 'controllers/reading_progress_manager.dart';
+import 'brightness/brightness_orchestrator.dart';
+import 'brightness/brightness_repository.dart';
+import 'brightness/system_brightness_adapter.dart';
 import 'controllers/brightness_controller.dart';
-import 'widgets/sub_zero_brightness_wrapper.dart';
+import 'brightness/overlay_widget.dart';
 import 'widgets/brightness_hud_widget.dart';
 import 'widgets/chapter_list_widget.dart';
 import 'controllers/reader_settings_manager.dart';
@@ -47,6 +50,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   final Debouncer _layoutDebouncer =
       Debouncer(delay: const Duration(milliseconds: 300));
   Size? _lastLayoutSize;
+  BrightnessController? _brightnessControllerRef;
+  VoidCallback? _brightnessControllerListener;
 
   Function(Highlight)? onShowNoteDialog;
   Function(Offset)? onContentTapDelegate;
@@ -83,15 +88,27 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
   double get fontSize => settingsManager.fontSize;
   double get lineHeight => settingsManager.lineHeight;
-  double get brightness => settingsManager.brightness;
+  double get brightness => _brightnessControllerRef?.uiBrightnessValue.value ??
+      getIt<ReaderPreferencesService>().brightness ??
+      0.5;
   Color get backgroundColor => settingsManager.backgroundColor;
   Color get textColor => settingsManager.textColor;
   bool get showControls => _showControls;
-  bool get followSystem => settingsManager.followSystem;
+  bool get followSystem =>
+      _brightnessControllerRef?.followSystem ??
+      (getIt<ReaderPreferencesService>().brightness == null);
   double get currentProgress => progressManager.currentProgress;
 
   void attachBrightnessController(BrightnessController bc) {
-    settingsManager.attachBrightnessController(bc);
+    if (_brightnessControllerRef != null &&
+        _brightnessControllerListener != null) {
+      _brightnessControllerRef!.removeListener(_brightnessControllerListener!);
+    }
+
+    _brightnessControllerRef = bc;
+    _brightnessControllerListener = notifyListeners;
+    bc.addListener(_brightnessControllerListener!);
+    notifyListeners();
   }
 
   ReaderErrorState? get errorState => _errorState;
@@ -145,7 +162,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
         _errorState = ReaderErrorState(
           type: ReaderErrorType.fileNotFound,
           technicalMessage:
-              "源文件 [${book.filePath}] 不存在。该书的本地实体文件可能已被清理或移动。\n请返回书架并删除此记录。",
+              "Source file [${book.filePath}] does not exist. The local book file may have been moved or deleted.\nPlease return to the bookshelf and remove this entry.",
         );
         notifyListeners();
         return;
@@ -153,16 +170,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
       await engine.initialize();
 
-      // 加载章节信息
       await metaManager.loadChapters();
-
-      // 恢复上次阅读位置
       await _restoreLastPosition();
-
-      // Update chapter index after restoring position
       await metaManager.updateCurrentChapterIndex();
-
-      // Load highlights and wire up callbacks for TxtReaderEngine
       await metaManager.loadHighlights();
       if (engine is TxtReaderEngine) {
         final txtEngine = engine as TxtReaderEngine;
@@ -171,7 +181,13 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
           final paragraphText =
               txtEngine.getParagraphText(paragraphIndex) ?? '';
           metaManager.addHighlight(
-              paragraphIndex, start, end, text, colorCode, paragraphText);
+            paragraphIndex,
+            start,
+            end,
+            text,
+            colorCode,
+            paragraphText,
+          );
         };
         txtEngine.onHighlightTapped = (highlight) {
           onShowNoteDialog?.call(highlight);
@@ -181,9 +197,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
         };
       }
 
-      // Backfill bookmark snippets in background
       _backfillBookmarkSnippets();
-
       notifyListeners();
     } catch (e, stack) {
       ReaderErrorType type = ReaderErrorType.unknown;
@@ -253,8 +267,11 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> jumpToChapter(int index, dynamic chapterData) async {
-    await metaManager.jumpToChapter(index, chapterData,
-        () async => await progressManager.saveCurrentPosition());
+    await metaManager.jumpToChapter(
+      index,
+      chapterData,
+      () async => await progressManager.saveCurrentPosition(),
+    );
   }
 
   Future<void> previousPage() async {
@@ -277,7 +294,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       'page_index': 0,
       'position_type': book.format,
       'position_payload': position.toJson(),
-      'content_snippet': snippet, // Save snippet
+      'content_snippet': snippet,
       'note': '',
       'created_at': DateTime.now().millisecondsSinceEpoch,
     };
@@ -316,8 +333,23 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   void setFontSize(double size) => settingsManager.setFontSize(size);
   void setLineHeight(double height) => settingsManager.setLineHeight(height);
   void setBackground(Color color) => settingsManager.setBackground(color);
-  Future<void> setBrightness(double b) => settingsManager.setBrightness(b);
-  Future<void> toggleFollowSystem() => settingsManager.toggleFollowSystem();
+  Future<void> setBrightness(double b) async {
+    await _brightnessControllerRef?.setBrightness(b);
+    notifyListeners();
+  }
+
+  Future<void> toggleFollowSystem() async {
+    final controller = _brightnessControllerRef;
+    if (controller == null) return;
+
+    if (controller.followSystem) {
+      await controller.setBrightness(controller.uiBrightnessValue.value);
+    } else {
+      await controller.resetToSystem();
+    }
+
+    notifyListeners();
+  }
 
   Future<void> jumpToPreviousChapter() async =>
       await metaManager.jumpToPreviousChapter(
@@ -397,8 +429,11 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void dispose() {
     progressManager
-        .saveCurrentPosition(); // 最后保存一次 (backup save, may not complete)
-    // 确保 settingsManager 的 ScreenBrightness 订阅和 ValueNotifier 监听被绝对销毁。
+        .saveCurrentPosition(); // Final backup save, may not complete.
+    // Ensure the brightness listener bridge is always detached during dispose.
+    if (_brightnessControllerRef != null && _brightnessControllerListener != null) {
+      _brightnessControllerRef!.removeListener(_brightnessControllerListener!);
+    }
     settingsManager.dispose();
     _lifecycle.disposeAll();
     _layoutDebouncer.dispose();
@@ -432,13 +467,19 @@ class _ReaderPageState extends State<ReaderPage> {
   void initState() {
     super.initState();
     _bookFuture = getIt<DatabaseService>().getBookById(widget.bookId);
-    // DI: Inject the global preferences singleton into the controller
-    _brightnessController =
-        BrightnessController(getIt<ReaderPreferencesService>());
+    final brightnessRepository =
+        BrightnessRepository(getIt<ReaderPreferencesService>());
+    final brightnessOrchestrator = BrightnessOrchestrator(
+      repository: brightnessRepository,
+      systemAdapter: SystemBrightnessAdapter(),
+    );
+    _brightnessController = BrightnessController(brightnessOrchestrator);
+    unawaited(_brightnessController.initialize());
   }
 
   @override
   void dispose() {
+    unawaited(_brightnessController.shutdown());
     _brightnessController.dispose();
     super.dispose();
   }
@@ -486,6 +527,7 @@ class _ReaderPageState extends State<ReaderPage> {
                       // Save progress before navigating away
                       final controller = context.read<ReaderController>();
                       await controller.saveBeforeExit();
+                      await _brightnessController.shutdown();
                       if (context.mounted) {
                         Navigator.of(context).pop();
                       }
@@ -517,12 +559,8 @@ class _ReaderPageState extends State<ReaderPage> {
                       ),
                       body: Consumer<ReaderController>(
                         builder: (context, controller, child) {
-                          return SubZeroBrightnessWrapper(
-                            brightnessNotifier:
-                                _brightnessController.uiBrightnessValue,
-                            // 注入统一底线，消除三处独立常量的漂移风险。
-                            hardwareFloor: getIt<ReaderPreferencesService>()
-                                .minPhysicalBrightness,
+                          return BrightnessOverlayWidget(
+                            stateListenable: _brightnessController.stateListenable,
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
@@ -684,9 +722,9 @@ class _ReaderPageState extends State<ReaderPage> {
                                 )),
 
                                 // 4. Edge Gesture Binding for Brightness
-                                // 修复漏洞 #2：删除冗余的 setBrightness 调用，断绝双写竞争。
+                                // Avoid duplicate setBrightness calls here to prevent double writes.
                                 // BrightnessController 内部已通过 uiBrightnessValue (ValueNotifier)
-                                // 实时驱动 HUD 与 Slider，无需再绕道 ReaderController。
+                                // HUD and slider state already come from uiBrightnessValue directly.
                                 Positioned(
                                   left: 0,
                                   top: 0,
@@ -821,7 +859,7 @@ class _ReaderPageState extends State<ReaderPage> {
             value: controller,
             child: ReaderMenu(
               scaffoldKey: readerPageScaffoldKey,
-              // 方案 A：构造参数直接传入，使 Slider 监听 uiBrightnessValue。
+              // Pass the BrightnessController directly so the slider binds to uiBrightnessValue.
               brightnessController: _brightnessController,
             ),
           ),

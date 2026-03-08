@@ -1,89 +1,39 @@
-import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:screen_brightness/screen_brightness.dart';
+
 import '../../../core/services/reader_preferences_service.dart';
 import '../../../core/services/service_locator.dart';
-import '../reader_engine/reader_engine.dart';
 import '../../../core/utils/lifecycle_registry.dart';
-import 'brightness_controller.dart';
+import '../reader_engine/reader_engine.dart';
 
-class ReaderSettingsManager with WidgetsBindingObserver {
-  final ReaderEngine engine;
-  final LifecycleRegistry lifecycle;
-  final VoidCallback onSettingsChanged;
-
-  double _fontSize = 18.0;
-  double _lineHeight = 1.5;
-  double _brightness = 1.0;
-  Color _backgroundColor = const Color(0xFFFDFCF8);
-  Color _textColor = const Color(0xFF4A453E);
-  BrightnessController? _brightnessControllerRef;
-
-  /// 监听 BrightnessController 的 uiBrightnessValue 变化的移除函数引用
-  VoidCallback? _brightnessValueListener;
-
+class ReaderSettingsManager {
   ReaderSettingsManager({
     required this.engine,
     required this.lifecycle,
     required this.onSettingsChanged,
   }) {
     _loadPreferences();
-    WidgetsBinding.instance.addObserver(this);
   }
+
+  final ReaderEngine engine;
+  final LifecycleRegistry lifecycle;
+  final VoidCallback onSettingsChanged;
+
+  double _fontSize = 18.0;
+  double _lineHeight = 1.5;
+  Color _backgroundColor = const Color(0xFFFDFCF8);
+  Color _textColor = const Color(0xFF4A453E);
 
   double get fontSize => _fontSize;
   double get lineHeight => _lineHeight;
-  double get brightness => _brightness;
   Color get backgroundColor => _backgroundColor;
   Color get textColor => _textColor;
-  bool get followSystem => getIt<ReaderPreferencesService>().brightness == null;
 
   void _loadPreferences() {
     final prefs = getIt<ReaderPreferencesService>();
     _fontSize = prefs.fontSize;
     _lineHeight = prefs.lineHeight;
     _backgroundColor = prefs.backgroundColor;
-
-    // Load or sync brightness
-    _brightness = prefs.brightness ?? 0.5;
-    if (prefs.brightness == null) {
-      ScreenBrightness().current.then((b) {
-        _brightness = b;
-        onSettingsChanged();
-      });
-    }
-
     _updateEngineConfig();
-  }
-
-  void attachBrightnessController(BrightnessController bc) {
-    // 阶段三：订阅关系泄漏清创
-    if (_brightnessControllerRef != null && _brightnessValueListener != null) {
-      _brightnessControllerRef!.uiBrightnessValue
-          .removeListener(_brightnessValueListener!);
-    }
-
-    _brightnessControllerRef = bc;
-    bc.uiBrightnessValue.value = _brightness;
-
-    // 修复漏洞 #1：监听系统干预导致的亮度变化，同步回_brightness防止 Slider 错位。
-    // 当用户拉下系统控制中心改变亮度时，_onSystemBrightnessInterfered
-    // 会更新 uiBrightnessValue，这里同步回本地缓存使 Slider 始终显示正确值。
-    _brightnessValueListener = () {
-      _brightness = bc.uiBrightnessValue.value;
-      onSettingsChanged();
-    };
-    bc.uiBrightnessValue.addListener(_brightnessValueListener!);
-  }
-
-  void detachBrightnessController() {
-    if (_brightnessControllerRef != null && _brightnessValueListener != null) {
-      _brightnessControllerRef!.uiBrightnessValue
-          .removeListener(_brightnessValueListener!);
-    }
-    _brightnessValueListener = null;
-    _brightnessControllerRef = null;
   }
 
   void _updateEngineConfig() {
@@ -122,72 +72,6 @@ class ReaderSettingsManager with WidgetsBindingObserver {
     onSettingsChanged();
   }
 
-  Future<void> setBrightness(double b) async {
-    _brightness = b;
-    _brightnessControllerRef?.setFromSlider(b);
-    await getIt<ReaderPreferencesService>().setBrightness(b);
-    onSettingsChanged();
-  }
-
-  Future<void> toggleFollowSystem() async {
-    final isCurrentlyFollowing = followSystem;
-
-    if (!isCurrentlyFollowing) {
-      try {
-        await _brightnessControllerRef?.resetToSystem();
-        if (_brightnessControllerRef == null) {
-          await ScreenBrightness().resetScreenBrightness();
-        }
-
-        double systemBrightness = await ScreenBrightness().current;
-        final linearBrightness = math.sqrt(systemBrightness);
-        _brightness = linearBrightness;
-        if (_brightnessControllerRef != null) {
-          _brightnessControllerRef!.uiBrightnessValue.value = linearBrightness;
-        }
-      } catch (e) {
-        debugPrint("Failed to reset system brightness: $e");
-      }
-    } else {
-      await setBrightness(_brightness);
-    }
-    onSettingsChanged();
-  }
-
-  // 阶段五：生命周期主动补偿机制（AppLifecycleState）
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed) {
-      _restoreBrightnessOnResume();
-    }
-  }
-
-  Future<void> _restoreBrightnessOnResume() async {
-    if (followSystem) return; // 跟随系统的由插件自己去处理或者由流恢复
-
-    try {
-      final prefs = getIt<ReaderPreferencesService>();
-      final b = prefs.brightness;
-
-      if (b != null) {
-        final perceptual = prefs.getPerceptualBrightness(b);
-        final minPhys = prefs.minPhysicalBrightness;
-        double systemLevel = perceptual > minPhys ? perceptual : minPhys;
-
-        // 强制重新下发一次硬件亮度设定
-        await ScreenBrightness().setScreenBrightness(systemLevel);
-
-        // 同步 UI 状态
-        _brightness = b;
-        _brightnessControllerRef?.uiBrightnessValue.value = b;
-        onSettingsChanged();
-      }
-    } catch (_) {
-      // 忽略平台通道异常
-    }
-  }
-
   void handleLayoutChange(Size newSize, Size? lastSize, VoidCallback onUpdate) {
     if (lastSize != null &&
         (newSize.width - lastSize.width).abs() < 10 &&
@@ -195,7 +79,7 @@ class ReaderSettingsManager with WidgetsBindingObserver {
       return;
     }
 
-    final baseFontSize = 18.0;
+    const baseFontSize = 18.0;
     final scaleFactor = (newSize.width / 800).clamp(0.7, 1.5);
     final adjustedFontSize = (baseFontSize * scaleFactor).clamp(12.0, 32.0);
 
@@ -206,12 +90,5 @@ class ReaderSettingsManager with WidgetsBindingObserver {
     }
   }
 
-  /// 生命周期终结清理。
-  /// 必须在 ReaderController.dispose() 中调用，确保
-  /// 1. ScreenBrightness 的系统事件流监听被绝对销毁。
-  /// 2. BrightnessController.uiBrightnessValue 的监听器被移除。
-  Future<void> dispose() async {
-    WidgetsBinding.instance.removeObserver(this);
-    detachBrightnessController();
-  }
+  Future<void> dispose() async {}
 }
