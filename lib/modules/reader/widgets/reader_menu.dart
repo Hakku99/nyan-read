@@ -15,9 +15,8 @@ import '../controllers/brightness_controller.dart';
 
 class ReaderMenu extends StatelessWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
-
-  /// 直接注入 BrightnessController，使亮度 Slider 监听 uiBrightnessValue
-  /// listens to uiBrightnessValue instead of the cached controller value.
+  /// Inject the BrightnessController directly so the brightness slider
+  /// follows the shared reader brightness state in real time.
   final BrightnessController brightnessController;
 
   const ReaderMenu({

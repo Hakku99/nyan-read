@@ -502,8 +502,7 @@ class _ReaderPageState extends State<ReaderPage> {
         return ChangeNotifierProvider(
           create: (_) {
             final controller = ReaderController(book)..init();
-            // Bridge the two brightness systems so the slider and gesture-drag
-            // both drive the same BrightnessController (native API + overlay).
+            // Attach the page-level brightness binding for menu and gesture input.
             controller.attachBrightnessController(_brightnessController);
             controller.onShowNoteDialog = ((h) {
               if (context.mounted) {
@@ -722,9 +721,8 @@ class _ReaderPageState extends State<ReaderPage> {
                                 )),
 
                                 // 4. Edge Gesture Binding for Brightness
-                                // Avoid duplicate setBrightness calls here to prevent double writes.
-                                // BrightnessController 内部已通过 uiBrightnessValue (ValueNotifier)
-                                // HUD and slider state already come from uiBrightnessValue directly.
+                                // Keep gesture preview on the shared controller to avoid
+                                // duplicate writes through multiple state owners.
                                 Positioned(
                                   left: 0,
                                   top: 0,
@@ -859,7 +857,8 @@ class _ReaderPageState extends State<ReaderPage> {
             value: controller,
             child: ReaderMenu(
               scaffoldKey: readerPageScaffoldKey,
-              // Pass the BrightnessController directly so the slider binds to uiBrightnessValue.
+              // Pass the BrightnessController directly so the menu binds to
+              // the shared reader brightness state.
               brightnessController: _brightnessController,
             ),
           ),
