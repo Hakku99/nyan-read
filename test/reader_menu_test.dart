@@ -128,13 +128,6 @@ class MockReaderController extends ChangeNotifier
   @override
   bool get followSystem => false;
   @override
-  bool get showControls => true;
-  @override
-  bool get isPanning => false;
-  @override
-  Offset? get tapDownPosition => null;
-
-  @override
   Book get book => Book(
       id: 'test_id',
       title: 'Test Book',
@@ -157,7 +150,7 @@ class MockReaderController extends ChangeNotifier
   @override
   void setLineHeight(double value) {}
   @override
-  Future<void> addBookmark(BuildContext context) async {}
+  Future<bool> addBookmark() async => true;
   @override
   Future<void> loadHighlights() async {}
   @override
@@ -167,25 +160,17 @@ class MockReaderController extends ChangeNotifier
   @override
   Future<void> jumpToNextChapter() async {}
   @override
-  Future<void> init() async {}
+  Future<void> refreshCurrentChapterIndex() async {}
   @override
-  void toggleControls() {}
+  Future<void> init() async {}
   @override
   Future<void> nextPage() async {}
   @override
   Future<void> previousPage() async {}
   @override
-  void setTapDownPosition(Offset pos) {}
-  @override
-  void updatePanPosition(Offset pos) {}
-  @override
-  void resetPanState() {}
-  @override
   Future<void> jumpToChapter(int index, dynamic chapter) async {}
   @override
   Future<void> retry() async {}
-  @override
-  void showNoteDialog(BuildContext context, dynamic highlight) {}
   @override
   Future<void> updateHighlight(String id,
       {String? colorCode, String? note}) async {}
@@ -235,18 +220,6 @@ class MockReaderController extends ChangeNotifier
 
   @override
   List<Highlight> get highlights => [];
-
-  @override
-  Function(Offset)? get onContentTapDelegate => null;
-
-  @override
-  set onContentTapDelegate(Function(Offset)? delegate) {}
-
-  @override
-  Function(Highlight)? get onShowNoteDialog => null;
-
-  @override
-  set onShowNoteDialog(Function(Highlight)? delegate) {}
 
   @override
   Future<bool> didPopRoute() => Future.value(false);

@@ -1,14 +1,12 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 import '../../core/models/book.dart';
 import '../../core/models/highlight.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/service_locator.dart';
 import '../../core/utils/layout_debouncer.dart';
-import '../../core/utils/snackbar_utils.dart';
 import 'reader_engine/reader_engine.dart';
 import 'reader_engine/reader_factory.dart';
 import 'reader_engine/epub/epub_position.dart';
@@ -38,7 +36,6 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   final Book book;
   late ReaderEngine engine;
 
-  bool _showControls = false;
   ReaderErrorState? _errorState;
 
   // Managers & Lifecycle
@@ -52,13 +49,6 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   Size? _lastLayoutSize;
   BrightnessController? _brightnessControllerRef;
   VoidCallback? _brightnessControllerListener;
-
-  Function(Highlight)? onShowNoteDialog;
-  Function(Offset)? onContentTapDelegate;
-  Offset? _tapDownPosition;
-  Offset? _panStartPosition;
-  bool _isPanning = false;
-  static const double _swipeThreshold = 10.0; // Pixels to consider it a swipe
 
   ReaderController(this.book) {
     engine = ReaderEngineFactory.create(book);
@@ -93,7 +83,6 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       0.5;
   Color get backgroundColor => settingsManager.backgroundColor;
   Color get textColor => settingsManager.textColor;
-  bool get showControls => _showControls;
   bool get followSystem =>
       _brightnessControllerRef?.followSystem ??
       (getIt<ReaderPreferencesService>().brightness == null);
@@ -115,34 +104,12 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   List<dynamic> get chapters => metaManager.chapters;
   int? get currentChapterIndex => metaManager.currentChapterIndex;
   List<Highlight> get highlights => metaManager.highlights;
-  Offset? get tapDownPosition => _tapDownPosition;
-  bool get isPanning => _isPanning;
-
-  void setTapDownPosition(Offset pos) {
-    _tapDownPosition = pos;
-    _panStartPosition = pos;
-    _isPanning = false;
-  }
-
-  void updatePanPosition(Offset pos) {
-    if (_panStartPosition != null) {
-      final distance = (pos - _panStartPosition!).distance;
-      if (distance > _swipeThreshold) {
-        _isPanning = true;
-      }
-    }
-  }
-
-  void resetPanState() {
-    _isPanning = false;
-    _panStartPosition = null;
-  }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
-      progressManager.saveCurrentPosition();
+      unawaited(progressManager.saveForLifecyclePause());
     }
   }
 
@@ -171,7 +138,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       await engine.initialize();
 
       await metaManager.loadChapters();
-      await _restoreLastPosition();
+      await progressManager.restoreLastPosition();
       await metaManager.updateCurrentChapterIndex();
       await metaManager.loadHighlights();
       if (engine is TxtReaderEngine) {
@@ -189,15 +156,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
             paragraphText,
           );
         };
-        txtEngine.onHighlightTapped = (highlight) {
-          onShowNoteDialog?.call(highlight);
-        };
-        txtEngine.onContentTap = (position) {
-          onContentTapDelegate?.call(position);
-        };
       }
 
-      _backfillBookmarkSnippets();
+      unawaited(metaManager.backfillBookmarkSnippets());
       notifyListeners();
     } catch (e, stack) {
       ReaderErrorType type = ReaderErrorType.unknown;
@@ -219,47 +180,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _restoreLastPosition() async {
-    try {
-      debugPrint("DEBUG: _restoreLastPosition called for book ${book.id}");
-      final positionData = await DatabaseService().getBookPosition(book.id);
-      if (positionData == null) {
-        debugPrint("DEBUG: No saved position found in DB");
-        return;
-      }
-
-      final type = positionData['position_type'] as String;
-      final payload = positionData['position_payload'] as String;
-      debugPrint("DEBUG: RESTORING position: type=$type, payload=$payload");
-
-      ReadingPosition? position;
-      if (type == 'epub') {
-        position = EpubReadingPosition.fromJson(payload);
-      } else if (type == 'pdf') {
-        position = PdfReadingPosition.fromJson(payload);
-      } else if (type == 'txt') {
-        position = TxtReadingPosition.fromJson(payload);
-      }
-
-      if (position != null) {
-        await engine.goToPosition(position);
-        debugPrint("DEBUG: Position restored to engine successfully");
-      }
-    } catch (e) {
-      debugPrint('Error restoring position: $e');
-    }
-  }
-
   void retry() {
     _loadBook();
-  }
-
-  void toggleControls() {
-    _showControls = !_showControls;
-    if (_showControls) {
-      metaManager.updateCurrentChapterIndex();
-    }
-    notifyListeners();
   }
 
   Future<void> seekTo(double val) async {
@@ -282,28 +204,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     await engine.nextPage();
   }
 
-  Future<void> addBookmark(BuildContext context) async {
-    final position = engine.getCurrentPosition();
-    if (position == null) return;
-
-    final snippet = await engine.getSnippet();
-
-    final bookmark = {
-      'id': const Uuid().v4(),
-      'book_id': book.id,
-      'page_index': 0,
-      'position_type': book.format,
-      'position_payload': position.toJson(),
-      'content_snippet': snippet,
-      'note': '',
-      'created_at': DateTime.now().millisecondsSinceEpoch,
-    };
-
-    await DatabaseService().insertBookmark(bookmark);
-    if (context.mounted) {
-      SnackBarUtils.show(context, "Bookmark Added!");
-    }
-  }
+  Future<bool> addBookmark() => metaManager.addBookmark();
 
   Future<void> restorePosition(Map<String, dynamic> bookmarkData) async {
     final type =
@@ -356,6 +257,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
           () async => await progressManager.saveCurrentPosition());
   Future<void> jumpToNextChapter() async => await metaManager.jumpToNextChapter(
       () async => await progressManager.saveCurrentPosition());
+  Future<void> refreshCurrentChapterIndex() async =>
+      await metaManager.updateCurrentChapterIndex();
 
   Future<void> loadHighlights() => metaManager.loadHighlights();
   Future<void> addHighlight(int paragraphIndex, int start, int end, String text,
@@ -369,67 +272,21 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> deleteHighlight(String highlightId) =>
       metaManager.deleteHighlight(highlightId);
 
-  void showNoteDialog(BuildContext context, Highlight highlight) {
-    showHighlightNoteDialog(
-      context,
-      highlight: highlight,
-      onSave: (note, colorCode) => metaManager.updateHighlight(highlight.id,
-          note: note, colorCode: colorCode),
-      onDelete: () => metaManager.deleteHighlight(highlight.id),
-    );
-  }
-
   void handleLayoutChange(Size newSize) {
     settingsManager.handleLayoutChange(
         newSize, _lastLayoutSize, notifyListeners);
     _lastLayoutSize = newSize;
   }
 
-  Future<void> _backfillBookmarkSnippets() async {
-    try {
-      final bookmarks = await DatabaseService().getBookmarks(book.id);
-      for (final bm in bookmarks) {
-        if (bm['content_snippet'] == null ||
-            (bm['content_snippet'] as String).isEmpty) {
-          final payload = bm['position_payload'];
-          final type = bm['position_type'] ?? book.format;
-
-          if (payload != null) {
-            ReadingPosition? pos;
-            if (type == 'txt') {
-              pos = TxtReadingPosition.fromJson(payload);
-            } else if (type == 'epub') {
-              pos = EpubReadingPosition.fromJson(payload);
-            } else if (type == 'pdf') {
-              pos = PdfReadingPosition.fromJson(payload);
-            }
-
-            if (pos != null) {
-              final text = await engine.getTextAtPosition(pos);
-              if (text != null && text.isNotEmpty) {
-                await DatabaseService().updateBookmark(bm['id'], {
-                  'content_snippet': text,
-                });
-                debugPrint("Backfilled snippet for bookmark ${bm['id']}");
-              }
-            }
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint("Error backfilling snippets: $e");
-    }
-  }
 
   /// Public method to save progress before exiting - can be awaited
   Future<void> saveBeforeExit() async {
-    await progressManager.saveCurrentPosition();
+    await progressManager.prepareForExit();
   }
 
   @override
   void dispose() {
-    progressManager
-        .saveCurrentPosition(); // Final backup save, may not complete.
+    progressManager.scheduleDisposeFallbackSave(); // Transitional fallback.
     // Ensure the brightness listener bridge is always detached during dispose.
     if (_brightnessControllerRef != null && _brightnessControllerListener != null) {
       _brightnessControllerRef!.removeListener(_brightnessControllerListener!);
@@ -462,6 +319,11 @@ class _ReaderPageState extends State<ReaderPage> {
   late final BrightnessController _brightnessController;
   final GlobalKey<ScaffoldState> readerPageScaffoldKey =
       GlobalKey<ScaffoldState>();
+  bool _showControls = false;
+  Offset? _tapDownPosition;
+  Offset? _panStartPosition;
+  bool _isPanning = false;
+  static const double _swipeThreshold = 10.0;
 
   @override
   void initState() {
@@ -501,16 +363,21 @@ class _ReaderPageState extends State<ReaderPage> {
 
         return ChangeNotifierProvider(
           create: (_) {
-            final controller = ReaderController(book)..init();
+            final controller = ReaderController(book);
             // Attach the page-level brightness binding for menu and gesture input.
             controller.attachBrightnessController(_brightnessController);
-            controller.onShowNoteDialog = ((h) {
-              if (context.mounted) {
-                controller.showNoteDialog(context, h);
-              }
-            });
-            controller.onContentTapDelegate =
-                (pos) => _handleContentTap(context, pos, controller);
+            if (controller.engine is TxtReaderEngine) {
+              final txtEngine = controller.engine as TxtReaderEngine;
+              txtEngine.onHighlightTapped = (highlight) {
+                if (!mounted) return;
+                _showHighlightNoteDialog(context, controller, highlight);
+              };
+              txtEngine.onContentTap = (pos) {
+                if (!mounted) return;
+                _handleContentTap(context, pos, controller);
+              };
+            }
+            controller.init();
             return controller;
           },
           child: Builder(
@@ -631,8 +498,7 @@ class _ReaderPageState extends State<ReaderPage> {
                                                         ? padding.bottom + 4
                                                         : 16,
                                                     child: Opacity(
-                                                      opacity: (controller
-                                                                  .showControls ||
+                                                      opacity: (_showControls ||
                                                               controller.engine
                                                                   .hasBottomBar)
                                                           ? 0
@@ -707,9 +573,7 @@ class _ReaderPageState extends State<ReaderPage> {
                                           child: AnimatedOpacity(
                                             duration: const Duration(
                                                 milliseconds: 200),
-                                            opacity: controller.showControls
-                                                ? 1.0
-                                                : 0.0,
+                                            opacity: _showControls ? 1.0 : 0.0,
                                             child: Container(
                                                 color: theme.colorScheme.surface
                                                     .withOpacity(0.95)),
@@ -767,40 +631,43 @@ class _ReaderPageState extends State<ReaderPage> {
   }
 
   void _handleTapDown(BuildContext context, TapDownDetails details) {
-    context.read<ReaderController>().setTapDownPosition(details.globalPosition);
+    _tapDownPosition = details.globalPosition;
+    _panStartPosition = details.globalPosition;
+    _isPanning = false;
   }
 
   void _handleTapUp(BuildContext context, TapUpDetails details) {
-    final controller = context.read<ReaderController>();
     // Only process tap if we weren't panning
-    if (!controller.isPanning) {
-      final pos = controller.tapDownPosition;
-      if (pos != null) {
-        _handleTapLogic(context, pos.dy);
-      }
+    if (!_isPanning && _tapDownPosition != null) {
+      _handleTapLogic(context, _tapDownPosition!.dy);
     }
-    controller.resetPanState();
+    _resetPanState();
   }
 
   void _handlePanStart(BuildContext context, DragStartDetails details) {
-    context.read<ReaderController>().setTapDownPosition(details.globalPosition);
+    _tapDownPosition = details.globalPosition;
+    _panStartPosition = details.globalPosition;
+    _isPanning = false;
   }
 
   void _handlePanUpdate(BuildContext context, DragUpdateDetails details) {
-    context.read<ReaderController>().updatePanPosition(details.globalPosition);
+    if (_panStartPosition != null) {
+      final distance = (details.globalPosition - _panStartPosition!).distance;
+      if (distance > _swipeThreshold) {
+        _isPanning = true;
+      }
+    }
   }
 
   void _handlePanEnd(BuildContext context, DragEndDetails details) {
-    final controller = context.read<ReaderController>();
-    // Reset pan state - if user was panning, the gestures were handled by the scroll view
-    controller.resetPanState();
+    _resetPanState();
   }
 
   void _handleContentTap(
       BuildContext context, Offset position, ReaderController controller) {
     // For content taps (like internal links or custom engine gestures),
     // only process if not panning
-    if (!controller.isPanning) {
+    if (!_isPanning) {
       _handleTapLogic(context, position.dy, controller: controller);
     }
   }
@@ -810,10 +677,10 @@ class _ReaderPageState extends State<ReaderPage> {
     final c = controller ?? context.read<ReaderController>();
 
     // If user was swiping, don't process as tap
-    if (c.isPanning) return;
+    if (_isPanning) return;
 
-    if (c.showControls) {
-      c.toggleControls();
+    if (_showControls) {
+      _setControlsVisible(false);
       return;
     }
 
@@ -834,9 +701,10 @@ class _ReaderPageState extends State<ReaderPage> {
 
   void _showSettingsBottomSheet(
       BuildContext context, ReaderController controller) {
-    // Notify controller to toggle the status bar controls helper if needed.
+    // Notify the page shell to toggle the status bar controls helper if needed.
     // In many reader apps tapping center shows status bar too.
-    controller.toggleControls();
+    _setControlsVisible(true);
+    unawaited(controller.refreshCurrentChapterIndex());
 
     showModalBottomSheet(
       context: context,
@@ -866,9 +734,38 @@ class _ReaderPageState extends State<ReaderPage> {
       },
     ).whenComplete(() {
       // Hide the status bar controls helper when the bottom sheet closes
-      if (controller.showControls) {
-        controller.toggleControls();
+      if (_showControls) {
+        _setControlsVisible(false);
       }
     });
+  }
+
+  void _setControlsVisible(bool visible) {
+    if (_showControls == visible) return;
+    setState(() {
+      _showControls = visible;
+    });
+  }
+
+  void _resetPanState() {
+    _isPanning = false;
+    _panStartPosition = null;
+  }
+
+  void _showHighlightNoteDialog(
+    BuildContext context,
+    ReaderController controller,
+    Highlight highlight,
+  ) {
+    showHighlightNoteDialog(
+      context,
+      highlight: highlight,
+      onSave: (note, colorCode) => controller.updateHighlight(
+        highlight.id,
+        note: note,
+        colorCode: colorCode,
+      ),
+      onDelete: () => controller.deleteHighlight(highlight.id),
+    );
   }
 }

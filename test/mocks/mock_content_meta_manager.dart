@@ -30,6 +30,12 @@ class MockContentMetaManager implements ContentMetaManager {
   List<Highlight> get highlights => [];
 
   @override
+  Future<bool> addBookmark() async => true;
+
+  @override
+  Future<void> backfillBookmarkSnippets() async {}
+
+  @override
   Future<void> addHighlight(
     int paragraphIndex,
     int start,

@@ -229,6 +229,62 @@ class ContentMetaManager {
         _chapters[_currentChapterIndex! + 1], saveProgressFn);
   }
 
+  Future<bool> addBookmark() async {
+    final position = engine.getCurrentPosition();
+    if (position == null) return false;
+
+    final snippet = await engine.getSnippet();
+    final bookmark = {
+      'id': const Uuid().v4(),
+      'book_id': book.id,
+      'page_index': 0,
+      'position_type': book.format,
+      'position_payload': position.toJson(),
+      'content_snippet': snippet,
+      'note': '',
+      'created_at': DateTime.now().millisecondsSinceEpoch,
+    };
+
+    await _db.insertBookmark(bookmark);
+    return true;
+  }
+
+  Future<void> backfillBookmarkSnippets() async {
+    try {
+      final bookmarks = await _db.getBookmarks(book.id);
+      for (final bm in bookmarks) {
+        if (bm['content_snippet'] == null ||
+            (bm['content_snippet'] as String).isEmpty) {
+          final payload = bm['position_payload'];
+          final type = bm['position_type'] ?? book.format;
+
+          if (payload != null) {
+            ReadingPosition? pos;
+            if (type == 'txt') {
+              pos = TxtReadingPosition.fromJson(payload);
+            } else if (type == 'epub') {
+              pos = EpubReadingPosition.fromJson(payload);
+            } else if (type == 'pdf') {
+              pos = PdfReadingPosition.fromJson(payload);
+            }
+
+            if (pos != null) {
+              final text = await engine.getTextAtPosition(pos);
+              if (text != null && text.isNotEmpty) {
+                await _db.updateBookmark(bm['id'], {
+                  'content_snippet': text,
+                });
+                debugPrint('Backfilled snippet for bookmark ${bm['id']}');
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error backfilling snippets: $e');
+    }
+  }
+
   /// 新增高亮时，同步采样 pre/post context 锚点，存入 DB
   Future<void> addHighlight(int paragraphIndex, int start, int end, String text,
       String colorCode, String paragraphText) async {

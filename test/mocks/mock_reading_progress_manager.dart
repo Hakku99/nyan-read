@@ -39,7 +39,19 @@ class MockReadingProgressManager implements ReadingProgressManager {
   void startTracking() {}
 
   @override
+  Future<void> restoreLastPosition() async {}
+
+  @override
   Future<void> saveCurrentPosition() async {}
+
+  @override
+  Future<void> saveForLifecyclePause() async {}
+
+  @override
+  Future<void> prepareForExit() async {}
+
+  @override
+  void scheduleDisposeFallbackSave() {}
 
   @override
   Future<void> seekTo(double val) async {}

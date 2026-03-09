@@ -7,6 +7,7 @@ import '../../bookmark/bookmark_list_page.dart';
 import '../../notes/notes_list_page.dart';
 import '../../settings/settings_page.dart';
 import '../reader_engine/txt/txt_position.dart';
+import '../widgets/highlight_note_dialog.dart';
 import '../../../../core/models/highlight.dart';
 import '../../../../core/theme/theme_presets.dart';
 import '../../../../core/theme/theme_manager.dart';
@@ -492,7 +493,15 @@ class ReaderMenu extends StatelessWidget {
             });
           }),
           buildActionBtn(Icons.bookmark_border_rounded, loc.addBookmark,
-              () => controller.addBookmark(context)),
+              () {
+            controller.addBookmark().then((added) {
+              if (added && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Bookmark Added!')),
+                );
+              }
+            });
+          }),
           buildActionBtn(Icons.bookmarks_rounded, loc.bookmarks, () async {
             final result = await Navigator.push(
               context,
@@ -528,7 +537,7 @@ class ReaderMenu extends StatelessWidget {
                 await controller.engine.goToPosition(pos);
               }
               if (context.mounted) {
-                controller.showNoteDialog(context, result);
+                _showHighlightNoteDialog(context, controller, result);
               }
             }
           }),
@@ -542,6 +551,23 @@ class ReaderMenu extends StatelessWidget {
           }),
         ],
       ),
+    );
+  }
+
+  void _showHighlightNoteDialog(
+    BuildContext context,
+    ReaderController controller,
+    Highlight highlight,
+  ) {
+    showHighlightNoteDialog(
+      context,
+      highlight: highlight,
+      onSave: (note, colorCode) => controller.updateHighlight(
+        highlight.id,
+        note: note,
+        colorCode: colorCode,
+      ),
+      onDelete: () => controller.deleteHighlight(highlight.id),
     );
   }
 }
