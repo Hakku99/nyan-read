@@ -311,6 +311,8 @@ void main() {
     final mockController = MockReaderController();
     final mockThemeManager = MockThemeManager();
 
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+
     await tester.pumpWidget(
       MultiProvider(
         providers: [
@@ -321,9 +323,12 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
-              body: ReaderMenu(
-                  scaffoldKey: GlobalKey<ScaffoldState>(),
-                  brightnessController: brightnessController)),
+            key: scaffoldKey,
+            body: ReaderMenu(
+              scaffoldKey: scaffoldKey,
+              brightnessController: brightnessController,
+            ),
+          ),
         ),
       ),
     );
@@ -331,9 +336,75 @@ void main() {
     await tester.pumpAndSettle();
 
         expect(find.byIcon(Icons.wb_sunny_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.brightness_auto_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.brightness_auto), findsOneWidget);
     expect(find.byType(Slider), findsWidgets);
   });
+
+  testWidgets('ReaderMenu shows closeable bookmark feedback',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1200, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: FakeSystemBrightnessAdapter(),
+      ),
+    );
+
+    final mockController = MockReaderController();
+    final mockThemeManager = MockThemeManager();
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<ReaderController>.value(value: mockController),
+          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            key: scaffoldKey,
+            body: ReaderMenu(
+              scaffoldKey: scaffoldKey,
+              brightnessController: brightnessController,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final bookmarkButton = find.byIcon(Icons.bookmark_border_rounded);
+    await tester.ensureVisible(bookmarkButton);
+    await tester.pumpAndSettle();
+
+    await tester.tap(bookmarkButton);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Bookmark Added!'), findsOneWidget);
+    final closeButton = find.byIcon(Icons.close);
+    expect(closeButton, findsOneWidget);
+
+    await tester.ensureVisible(closeButton);
+    await tester.pumpAndSettle();
+    await tester.tap(closeButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bookmark Added!'), findsNothing);
+  });
+
 }
 
 

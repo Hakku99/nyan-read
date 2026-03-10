@@ -40,7 +40,6 @@ class HighlightableText extends StatefulWidget {
 }
 
 class _HighlightableTextState extends State<HighlightableText> {
-  bool _showHighlightMenu = false;
   TextSelection? _currentSelection;
   final List<TapGestureRecognizer> _recognizers = [];
   Timer? _tapTimer;
@@ -110,12 +109,6 @@ class _HighlightableTextState extends State<HighlightableText> {
           style: widget.style,
           onSelectionChanged: (selection, cause) {
             _currentSelection = selection;
-            // Reset menu state when selection changes
-            if (_showHighlightMenu) {
-              setState(() {
-                _showHighlightMenu = false;
-              });
-            }
           },
           contextMenuBuilder: (context, editableTextState) {
             return _buildContextMenu(context, editableTextState);
@@ -235,13 +228,8 @@ class _HighlightableTextState extends State<HighlightableText> {
       }
     }
 
-    final buttonItems = <ContextMenuButtonItem>[];
-
-    if (!_showHighlightMenu) {
-      // Main Menu: Copy, Search, Highlight
-
-      // Copy button
-      buttonItems.add(ContextMenuButtonItem(
+    final buttonItems = <ContextMenuButtonItem>[
+      ContextMenuButtonItem(
         label: 'Copy',
         onPressed: () {
           if (selectedText.isNotEmpty) {
@@ -250,10 +238,8 @@ class _HighlightableTextState extends State<HighlightableText> {
           }
           editableTextState.hideToolbar();
         },
-      ));
-
-      // Search button
-      buttonItems.add(ContextMenuButtonItem(
+      ),
+      ContextMenuButtonItem(
         label: 'Search',
         onPressed: () {
           if (selectedText.isNotEmpty) {
@@ -261,50 +247,23 @@ class _HighlightableTextState extends State<HighlightableText> {
           }
           editableTextState.hideToolbar();
         },
-      ));
+      ),
+    ];
 
-      // Highlight button
+    for (final color in HighlightColors.all) {
       buttonItems.add(ContextMenuButtonItem(
-        label: 'Highlight',
+        label: '${_getColorEmoji(color)} ${HighlightColors.getName(color)}',
         onPressed: () {
-          setState(() {
-            _showHighlightMenu = true;
-          });
-        },
-      ));
-    } else {
-      // Color Menu: Colors...
-
-      for (final color in HighlightColors.all) {
-        buttonItems.add(ContextMenuButtonItem(
-          label: '${_getColorEmoji(color)} ${HighlightColors.getName(color)}',
-          onPressed: () {
-            if (selectedText.isNotEmpty) {
-              // Call callback with the selected color - ONLY ONCE
-              widget.onTextSelected?.call(
-                widget.paragraphIndex,
-                selectionStart,
-                selectionEnd,
-                selectedText,
-                color,
-              );
-            }
-            // Reset state and hide toolbar
-            setState(() {
-              _showHighlightMenu = false;
-            });
-            editableTextState.hideToolbar();
-          },
-        ));
-      }
-
-      // Back button (optional, but good for UX)
-      buttonItems.add(ContextMenuButtonItem(
-        label: 'Back',
-        onPressed: () {
-          setState(() {
-            _showHighlightMenu = false;
-          });
+          if (selectedText.isNotEmpty) {
+            widget.onTextSelected?.call(
+              widget.paragraphIndex,
+              selectionStart,
+              selectionEnd,
+              selectedText,
+              color,
+            );
+          }
+          editableTextState.hideToolbar();
         },
       ));
     }

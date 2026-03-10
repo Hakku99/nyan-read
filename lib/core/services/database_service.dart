@@ -21,12 +21,35 @@ class DatabaseService {
     // 机制 B：启动期自我疗愈 (Self-Healing)
     await _checkAndHealDatabase(path);
 
-    return await openDatabase(
+    final db = await openDatabase(
       path,
       version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
+    await _ensureHighlightColumns(db);
+    return db;
+  }
+
+  Future<void> _ensureHighlightColumns(Database db) async {
+    final columns = await db.rawQuery('PRAGMA table_info(highlights)');
+    final columnNames = columns
+        .map((row) => row['name'])
+        .whereType<String>()
+        .toSet();
+
+    if (!columnNames.contains('pre_context')) {
+      await db.execute(
+          'ALTER TABLE highlights ADD COLUMN pre_context TEXT DEFAULT ""');
+    }
+    if (!columnNames.contains('post_context')) {
+      await db.execute(
+          'ALTER TABLE highlights ADD COLUMN post_context TEXT DEFAULT ""');
+    }
+    if (!columnNames.contains('is_healed')) {
+      await db.execute(
+          'ALTER TABLE highlights ADD COLUMN is_healed INTEGER DEFAULT 0');
+    }
   }
 
   Future<void> _checkAndHealDatabase(String mainDbPath) async {
@@ -202,6 +225,9 @@ class DatabaseService {
         note TEXT,
         created_at INTEGER,
         updated_at INTEGER,
+        pre_context TEXT DEFAULT '',
+        post_context TEXT DEFAULT '',
+        is_healed INTEGER DEFAULT 0,
         FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE
       )
     ''');

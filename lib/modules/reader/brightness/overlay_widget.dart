@@ -1,8 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-import '../../../core/services/reader_preferences_service.dart';
 import 'brightness_state.dart';
 
 class BrightnessOverlayWidget extends StatelessWidget {
@@ -10,10 +7,12 @@ class BrightnessOverlayWidget extends StatelessWidget {
     Key? key,
     required this.child,
     required this.stateListenable,
+    required this.warmthListenable,
   }) : super(key: key);
 
   final Widget child;
   final ValueListenable<BrightnessState> stateListenable;
+  final ValueListenable<double> warmthListenable;
 
   @override
   Widget build(BuildContext context) {
@@ -24,8 +23,8 @@ class BrightnessOverlayWidget extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             child,
-            Selector<ReaderPreferencesService, double>(
-              selector: (_, prefs) => prefs.warmth,
+            ValueListenableBuilder<double>(
+              valueListenable: warmthListenable,
               builder: (context, warmth, _) {
                 if (warmth <= 0.01) return const SizedBox.shrink();
                 return IgnorePointer(

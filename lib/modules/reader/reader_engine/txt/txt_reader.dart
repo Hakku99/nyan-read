@@ -28,8 +28,8 @@ class TxtReaderEngine implements ReaderEngine {
     lineHeight: 1.5,
   );
 
-  // Highlights for this book
-  List<Highlight> _highlights = [];
+  // Render-only highlight snapshot owned by ContentMetaManager.
+  List<Highlight> _renderHighlights = const [];
 
   // Callbacks for text selection
   Function(int paragraphIndex, int start, int end, String text,
@@ -60,6 +60,7 @@ class TxtReaderEngine implements ReaderEngine {
     fontSize: 18,
     lineHeight: 1.5,
   ));
+  final ValueNotifier<int> _highlightRenderVersion = ValueNotifier(0);
 
   TxtReaderEngine(this.book) {
     _itemPositionsListener.itemPositions.addListener(_updateCurrentPosition);
@@ -111,11 +112,10 @@ class TxtReaderEngine implements ReaderEngine {
     }
   }
 
-  /// Set the highlights to display
+  /// Accepts the latest render snapshot from ContentMetaManager.
   void setHighlights(List<Highlight> highlights) {
-    _highlights = highlights;
-    // Trigger rebuild by reassigning config value
-    _configNotifier.value = _config;
+    _renderHighlights = List<Highlight>.unmodifiable(highlights);
+    _highlightRenderVersion.value++;
   }
 
   /// 返回指定段落的原始文字（同步，供 AnchorHealer 自愈管线使用）
@@ -125,8 +125,6 @@ class TxtReaderEngine implements ReaderEngine {
     return _lines[paragraphIndex].trim();
   }
 
-  /// Get current highlights
-  List<Highlight> get highlights => _highlights;
 
   @override
   void setConfig(ReaderConfig config) {
@@ -193,9 +191,14 @@ class TxtReaderEngine implements ReaderEngine {
             child: ValueListenableBuilder<ReaderConfig>(
               valueListenable: _configNotifier,
               builder: (context, config, child) {
-                debugPrint(
-                    "DEBUG: ValueListenableBuilder building with config: fontSize=${config.fontSize}, bg=${config.backgroundColor}");
-                return _buildList(context, config);
+                return ValueListenableBuilder<int>(
+                  valueListenable: _highlightRenderVersion,
+                  builder: (context, _, __) {
+                    debugPrint(
+                        "DEBUG: ValueListenableBuilder building with config: fontSize=${config.fontSize}, bg=${config.backgroundColor}, highlights=${_renderHighlights.length}");
+                    return _buildList(context, config);
+                  },
+                );
               },
             ),
           ),
@@ -353,7 +356,7 @@ class TxtReaderEngine implements ReaderEngine {
         return HighlightableText(
           text: line,
           paragraphIndex: index,
-          highlights: _highlights,
+          highlights: _renderHighlights,
           style: TextStyle(
             fontSize: config.fontSize,
             height: config.lineHeight,
@@ -764,6 +767,7 @@ class TxtReaderEngine implements ReaderEngine {
   void dispose() {
     _itemPositionsListener.itemPositions.removeListener(_updateCurrentPosition);
     _configNotifier.dispose();
+    _highlightRenderVersion.dispose();
     _pageInfoNotifier.dispose();
   }
 }

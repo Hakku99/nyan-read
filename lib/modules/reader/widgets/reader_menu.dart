@@ -10,6 +10,7 @@ import '../widgets/highlight_note_dialog.dart';
 import '../../../../core/models/highlight.dart';
 import '../../../../core/theme/theme_presets.dart';
 import '../../../../core/theme/theme_manager.dart';
+import '../../../../core/utils/snackbar_utils.dart';
 import '../controllers/brightness_controller.dart';
 
 class ReaderMenu extends StatelessWidget {
@@ -56,7 +57,7 @@ class ReaderMenu extends StatelessWidget {
                 const SizedBox(height: 24),
 
                 // 2. Brightness Slider
-                _buildBrightnessSection(context, controller, nyanTheme),
+                _buildBrightnessSection(context, nyanTheme),
 
                 const SizedBox(height: 24),
                 Divider(
@@ -150,7 +151,7 @@ class ReaderMenu extends StatelessWidget {
   }
 
   Widget _buildBrightnessSection(
-      BuildContext context, ReaderController controller, NyanTheme theme) {
+      BuildContext context, NyanTheme theme) {
     return Column(
       children: [
         // 1. Brightness Slider
@@ -192,33 +193,38 @@ class ReaderMenu extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            Tooltip(
-              message: controller.followSystem
-                  ? "Stop Following System"
-                  : "Follow System Brightness",
-              child: InkWell(
-                onTap: () => controller.toggleFollowSystem(),
-                borderRadius: BorderRadius.circular(20),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 36,
-                  height: 36,
-                  decoration: const BoxDecoration(
-                    color: Colors.transparent,
-                    shape: BoxShape.circle,
+            ListenableBuilder(
+              listenable: brightnessController,
+              builder: (context, _) {
+                return Tooltip(
+                  message: brightnessController.followSystem
+                      ? "Stop Following System"
+                      : "Follow System Brightness",
+                  child: InkWell(
+                    onTap: () => brightnessController.toggleFollowSystem(),
+                    borderRadius: BorderRadius.circular(20),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 36,
+                      height: 36,
+                      decoration: const BoxDecoration(
+                        color: Colors.transparent,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        brightnessController.followSystem
+                            ? Icons.brightness_auto
+                            : Icons.brightness_auto_outlined,
+                        size: 24,
+                        color: brightnessController.followSystem
+                            ? theme.primary
+                            : Colors.grey.withOpacity(0.5),
+                      ),
+                    ),
                   ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    controller.followSystem
-                        ? Icons.brightness_auto
-                        : Icons.brightness_auto_outlined,
-                    size: 24,
-                    color: controller.followSystem
-                        ? theme.primary
-                        : Colors.grey.withOpacity(0.5),
-                  ),
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),
@@ -244,14 +250,19 @@ class ReaderMenu extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: SliderWithFloatingLabel(
-                value: controller.warmth,
-                min: 0.0,
-                max: 1.0,
-                onChanged: (val) => controller.setWarmth(val),
-                activeColor: const Color(0xFFFFCCBC),
-                thumbColor: const Color(0xFFFFAB91),
-                inactiveColor: const Color(0xFFFFE0B2).withOpacity(0.3),
+              child: ValueListenableBuilder<double>(
+                valueListenable: brightnessController.warmthListenable,
+                builder: (context, warmth, _) {
+                  return SliderWithFloatingLabel(
+                    value: warmth,
+                    min: 0.0,
+                    max: 1.0,
+                    onChanged: (val) => brightnessController.setWarmth(val),
+                    activeColor: const Color(0xFFFFCCBC),
+                    thumbColor: const Color(0xFFFFAB91),
+                    inactiveColor: const Color(0xFFFFE0B2).withOpacity(0.3),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 16),
@@ -489,13 +500,19 @@ class ReaderMenu extends StatelessWidget {
             });
           }),
           buildActionBtn(Icons.bookmark_border_rounded, loc.addBookmark,
-              () {
-            controller.addBookmark().then((added) {
-              if (added && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Bookmark Added!')),
-                );
-              }
+              () async {
+            final added = await controller.addBookmark();
+            if (!added) return;
+
+            final feedbackContext = scaffoldKey.currentContext;
+            if (context.mounted && Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              final targetContext = feedbackContext ?? scaffoldKey.currentContext;
+              if (targetContext == null || !targetContext.mounted) return;
+              SnackBarUtils.show(targetContext, 'Bookmark Added!');
             });
           }),
           buildActionBtn(Icons.bookmarks_rounded, loc.bookmarks, () async {
@@ -524,6 +541,8 @@ class ReaderMenu extends StatelessWidget {
                 ),
               ),
             );
+
+            await controller.loadHighlights();
 
             if (result != null && result is Highlight) {
               final selectedHighlight =

@@ -30,6 +30,9 @@ class MockReadingProgressManager implements ReadingProgressManager {
   int get readSeconds => 0;
 
   @override
+  ReadingPosition? get currentPosition => null;
+
+  @override
   double get currentProgress => 0.5;
 
   @override
@@ -37,6 +40,9 @@ class MockReadingProgressManager implements ReadingProgressManager {
 
   @override
   void startTracking() {}
+
+  @override
+  void refreshFromEngine() {}
 
   @override
   Future<void> restoreLastPosition() async {}

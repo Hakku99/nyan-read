@@ -31,7 +31,7 @@ class ContentMetaManager {
 
   List<dynamic> get chapters => _chapters;
   int? get currentChapterIndex => _currentChapterIndex;
-  List<Highlight> get highlights => _highlights;
+  List<Highlight> get highlights => List<Highlight>.unmodifiable(_highlights);
 
   Highlight? findHighlightById(String highlightId) {
     for (final highlight in _highlights) {
@@ -54,8 +54,6 @@ class ContentMetaManager {
       final rawData = await _db.getHighlights(book.id);
       final rawHighlights = rawData.map((m) => Highlight.fromMap(m)).toList();
 
-      // 如果当前是 TXT 格式，可以获取段落文本进行坐标校验。
-      // 其他格式（EPUB/PDF）暂时透传原始坐标。
       List<Highlight> healthyHighlights;
       if (engine is TxtReaderEngine) {
         healthyHighlights = await _healHighlights(
@@ -66,13 +64,21 @@ class ContentMetaManager {
         healthyHighlights = rawHighlights;
       }
 
-      _highlights = healthyHighlights;
-      if (engine is TxtReaderEngine) {
-        (engine as TxtReaderEngine).setHighlights(_highlights);
-      }
-      onMetaChanged();
+      _replaceSessionHighlights(healthyHighlights);
     } catch (e) {
       debugPrint('[ContentMetaManager] Error loading highlights: $e');
+    }
+  }
+
+  void _replaceSessionHighlights(List<Highlight> highlights) {
+    _highlights = List<Highlight>.unmodifiable(highlights);
+    _syncTxtRenderHighlights();
+    onMetaChanged();
+  }
+
+  void _syncTxtRenderHighlights() {
+    if (engine is TxtReaderEngine) {
+      (engine as TxtReaderEngine).setHighlights(_highlights);
     }
   }
 
@@ -149,12 +155,16 @@ class ContentMetaManager {
   }
 
   Future<void> updateCurrentChapterIndex() async {
-    if (_chapters.isEmpty) return;
+    await syncCurrentChapterFromPosition(engine.getCurrentPosition());
+  }
 
-    final position = engine.getCurrentPosition();
-    if (position == null) return;
+  Future<void> syncCurrentChapterFromPosition(
+    ReadingPosition? position, {
+    int? preferredIndex,
+  }) async {
+    if (_chapters.isEmpty || position == null) return;
 
-    int newIndex = 0;
+    int newIndex = preferredIndex ?? 0;
 
     if ((position is TxtReadingPosition && book.format == 'txt') ||
         (book.format == 'txt')) {
@@ -186,10 +196,8 @@ class ContentMetaManager {
           }
         }
       }
-    } else {
-      if (_currentChapterIndex != null) {
-        newIndex = _currentChapterIndex!;
-      }
+    } else if (_currentChapterIndex != null) {
+      newIndex = preferredIndex ?? _currentChapterIndex!;
     }
 
     if (_currentChapterIndex != newIndex) {
@@ -201,8 +209,6 @@ class ContentMetaManager {
   Future<void> jumpToChapter(int index, dynamic chapterData,
       Future<void> Function() saveProgressFn) async {
     try {
-      _currentChapterIndex = index;
-
       if (book.format == 'epub' && chapterData['anchor'] != null) {
         await engine
             .goToPosition(EpubReadingPosition(cfi: chapterData['anchor']));
@@ -215,8 +221,11 @@ class ContentMetaManager {
             PdfReadingPosition(pageNumber: chapterData['pageNumber']));
       }
 
+      await syncCurrentChapterFromPosition(
+        engine.getCurrentPosition(),
+        preferredIndex: index,
+      );
       await saveProgressFn();
-      onMetaChanged();
     } catch (e) {
       debugPrint('[ContentMetaManager] Error jumping to chapter: $e');
     }

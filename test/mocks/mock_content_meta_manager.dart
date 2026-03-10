@@ -81,6 +81,12 @@ class MockContentMetaManager implements ContentMetaManager {
   Future<void> restoreBookmarkPosition(Map<String, dynamic> bookmarkData) async {}
 
   @override
+  Future<void> syncCurrentChapterFromPosition(
+    ReadingPosition? position, {
+    int? preferredIndex,
+  }) async {}
+
+  @override
   Future<void> updateCurrentChapterIndex() async {}
 
   @override

@@ -17,6 +17,7 @@ class BrightnessController extends ChangeNotifier {
 
   late final VoidCallback _stateListener;
   final ValueNotifier<double> uiBrightnessValue = ValueNotifier(0.5);
+  final ValueNotifier<double> warmthValue = ValueNotifier(0.0);
   final ValueNotifier<bool> isAdjusting = ValueNotifier(false);
   final ValueNotifier<BrightnessState> _stateNotifier =
       ValueNotifier(BrightnessState.initial());
@@ -25,14 +26,24 @@ class BrightnessController extends ChangeNotifier {
   bool _isDisposed = false;
 
   ValueListenable<BrightnessState> get stateListenable => _stateNotifier;
+  ValueListenable<double> get warmthListenable => warmthValue;
   BrightnessState get state => _stateNotifier.value;
   bool get followSystem => state.followSystem;
-  double get warmth => _orchestrator.warmth;
+  double get warmth => warmthValue.value;
 
   Future<void> setWarmth(double value) async {
     await _orchestrator.setWarmth(value);
     if (_isDisposed) return;
+    warmthValue.value = _normalize(value);
     notifyListeners();
+  }
+
+  Future<void> toggleFollowSystem() async {
+    if (followSystem) {
+      await setBrightness(uiBrightnessValue.value);
+    } else {
+      await resetToSystem();
+    }
   }
 
   Future<void> initialize() async {
@@ -109,6 +120,7 @@ class BrightnessController extends ChangeNotifier {
     _orchestrator.removeListener(_stateListener);
     _orchestrator.dispose();
     uiBrightnessValue.dispose();
+    warmthValue.dispose();
     isAdjusting.dispose();
     _stateNotifier.dispose();
     super.dispose();
@@ -137,6 +149,7 @@ class BrightnessController extends ChangeNotifier {
   void _syncLocalState(BrightnessState nextState) {
     _stateNotifier.value = nextState;
     uiBrightnessValue.value = nextState.clampedUiBrightness;
+    warmthValue.value = _orchestrator.warmth;
     notifyListeners();
   }
 

@@ -137,7 +137,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
       await metaManager.loadChapters();
       await progressManager.restoreLastPosition();
-      await metaManager.updateCurrentChapterIndex();
+      await metaManager.syncCurrentChapterFromPosition(
+        progressManager.currentPosition,
+      );
       await metaManager.loadHighlights();
       if (engine is TxtReaderEngine) {
         final txtEngine = engine as TxtReaderEngine;
@@ -184,6 +186,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> seekTo(double val) async {
     await progressManager.seekTo(val);
+    await metaManager.syncCurrentChapterFromPosition(
+      progressManager.currentPosition,
+    );
   }
 
   Future<void> jumpToChapter(int index, dynamic chapterData) async {
@@ -192,26 +197,44 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       chapterData,
       () async => await progressManager.saveCurrentPosition(),
     );
+    progressManager.refreshFromEngine();
   }
 
   Future<void> previousPage() async {
     await engine.previousPage();
+    progressManager.refreshFromEngine();
+    await metaManager.syncCurrentChapterFromPosition(
+      progressManager.currentPosition,
+    );
   }
 
   Future<void> nextPage() async {
     await engine.nextPage();
+    progressManager.refreshFromEngine();
+    await metaManager.syncCurrentChapterFromPosition(
+      progressManager.currentPosition,
+    );
   }
 
   Future<bool> addBookmark() => metaManager.addBookmark();
 
   Future<void> handleBookmarkSelection(
     Map<String, dynamic> bookmarkData,
-  ) =>
-      metaManager.restoreBookmarkPosition(bookmarkData);
+  ) async {
+    await metaManager.restoreBookmarkPosition(bookmarkData);
+    progressManager.refreshFromEngine();
+    await metaManager.syncCurrentChapterFromPosition(
+      progressManager.currentPosition,
+    );
+  }
 
   Future<Highlight?> handleHighlightSelection(Highlight highlight) async {
     await metaManager.loadHighlights();
     await metaManager.openHighlight(highlight);
+    progressManager.refreshFromEngine();
+    await metaManager.syncCurrentChapterFromPosition(
+      progressManager.currentPosition,
+    );
     return metaManager.findHighlightById(highlight.id) ?? highlight;
   }
 
@@ -244,11 +267,19 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  Future<void> jumpToPreviousChapter() async =>
-      await metaManager.jumpToPreviousChapter(
-          () async => await progressManager.saveCurrentPosition());
-  Future<void> jumpToNextChapter() async => await metaManager.jumpToNextChapter(
-      () async => await progressManager.saveCurrentPosition());
+  Future<void> jumpToPreviousChapter() async {
+    await metaManager.jumpToPreviousChapter(
+      () async => await progressManager.saveCurrentPosition(),
+    );
+    progressManager.refreshFromEngine();
+  }
+
+  Future<void> jumpToNextChapter() async {
+    await metaManager.jumpToNextChapter(
+      () async => await progressManager.saveCurrentPosition(),
+    );
+    progressManager.refreshFromEngine();
+  }
   Future<void> refreshCurrentChapterIndex() async =>
       await metaManager.updateCurrentChapterIndex();
 
@@ -420,7 +451,10 @@ class _ReaderPageState extends State<ReaderPage> {
                       body: Consumer<ReaderController>(
                         builder: (context, controller, child) {
                           return BrightnessOverlayWidget(
-                            stateListenable: _brightnessController.stateListenable,
+                            stateListenable:
+                                _brightnessController.stateListenable,
+                            warmthListenable:
+                                _brightnessController.warmthListenable,
                             child: Stack(
                               fit: StackFit.expand,
                               children: [

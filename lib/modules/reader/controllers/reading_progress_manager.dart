@@ -17,6 +17,7 @@ class ReadingProgressManager {
   final VoidCallback onProgressUpdated;
 
   int _readSeconds = 0;
+  ReadingPosition? _currentPosition;
   double _currentProgress = 0.0;
   bool _trackingStarted = false;
   bool _prepareForExitRequested = false;
@@ -30,6 +31,7 @@ class ReadingProgressManager {
   });
 
   int get readSeconds => _readSeconds;
+  ReadingPosition? get currentPosition => _currentPosition;
   double get currentProgress => _currentProgress;
   bool get shouldShowReminder => _readSeconds > 0 && _readSeconds % 3600 == 0;
 
@@ -44,7 +46,7 @@ class ReadingProgressManager {
         if (_readSeconds > 0 && _readSeconds % 3600 == 0) {
           onProgressUpdated();
         }
-        _syncProgress();
+        refreshFromEngine();
       }),
     );
 
@@ -80,7 +82,7 @@ class ReadingProgressManager {
 
       if (position != null) {
         await engine.goToPosition(position);
-        _syncProgress();
+        refreshFromEngine();
         debugPrint("DEBUG: Position restored to engine successfully");
       }
     } catch (e) {
@@ -88,10 +90,18 @@ class ReadingProgressManager {
     }
   }
 
-  void _syncProgress() {
-    final p = engine.getProgress() ?? 0.0;
-    if (p != _currentProgress) {
-      _currentProgress = p;
+  void refreshFromEngine() {
+    final position = engine.getCurrentPosition();
+    final progress = engine.getProgress() ?? 0.0;
+
+    final didPositionChange =
+        _currentPosition?.toJson() != position?.toJson();
+    final didProgressChange = progress != _currentProgress;
+
+    _currentPosition = position;
+    _currentProgress = progress;
+
+    if (didPositionChange || didProgressChange) {
       onProgressUpdated();
     }
   }
@@ -100,6 +110,7 @@ class ReadingProgressManager {
     _currentProgress = val;
     onProgressUpdated();
     await engine.seekToProgress(val);
+    refreshFromEngine();
     await saveCurrentPosition();
   }
 
@@ -134,6 +145,8 @@ class ReadingProgressManager {
     try {
       final position = engine.getCurrentPosition();
       final progress = engine.getProgress() ?? _currentProgress;
+      _currentPosition = position;
+      _currentProgress = progress;
 
       debugPrint(
           "DEBUG: _saveCurrentPosition called. Engine returned: ${position?.toJson()}, progress: $progress");
