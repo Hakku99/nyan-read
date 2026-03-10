@@ -78,14 +78,12 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
   double get fontSize => settingsManager.fontSize;
   double get lineHeight => settingsManager.lineHeight;
-  double get brightness => _brightnessControllerRef?.uiBrightnessValue.value ??
-      getIt<ReaderPreferencesService>().brightness ??
-      0.5;
+  double get warmth => _brightnessControllerRef?.warmth ?? 0.0;
+  double get brightness =>
+      _brightnessControllerRef?.uiBrightnessValue.value ?? 0.5;
   Color get backgroundColor => settingsManager.backgroundColor;
   Color get textColor => settingsManager.textColor;
-  bool get followSystem =>
-      _brightnessControllerRef?.followSystem ??
-      (getIt<ReaderPreferencesService>().brightness == null);
+  bool get followSystem => _brightnessControllerRef?.followSystem ?? true;
   double get currentProgress => progressManager.currentProgress;
 
   void attachBrightnessController(BrightnessController bc) {
@@ -206,34 +204,28 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<bool> addBookmark() => metaManager.addBookmark();
 
-  Future<void> restorePosition(Map<String, dynamic> bookmarkData) async {
-    final type =
-        (bookmarkData['position_type'] ?? book.format).toString().toLowerCase();
-    final payload = bookmarkData['position_payload'];
+  Future<void> handleBookmarkSelection(
+    Map<String, dynamic> bookmarkData,
+  ) =>
+      metaManager.restoreBookmarkPosition(bookmarkData);
 
-    if (payload == null) return;
-
-    ReadingPosition? pos;
-    try {
-      if (type == 'epub') {
-        pos = EpubReadingPosition.fromJson(payload);
-      } else if (type == 'pdf') {
-        pos = PdfReadingPosition.fromJson(payload);
-      } else if (type == 'txt') {
-        pos = TxtReadingPosition.fromJson(payload);
-      }
-
-      if (pos != null) {
-        await engine.goToPosition(pos);
-      }
-    } catch (e) {
-      debugPrint("Error restoring position: $e");
-    }
+  Future<Highlight?> handleHighlightSelection(Highlight highlight) async {
+    await metaManager.loadHighlights();
+    await metaManager.openHighlight(highlight);
+    return metaManager.findHighlightById(highlight.id) ?? highlight;
   }
+
+  Future<void> restorePosition(Map<String, dynamic> bookmarkData) =>
+      handleBookmarkSelection(bookmarkData);
 
   void setFontSize(double size) => settingsManager.setFontSize(size);
   void setLineHeight(double height) => settingsManager.setLineHeight(height);
   void setBackground(Color color) => settingsManager.setBackground(color);
+  Future<void> setWarmth(double value) async {
+    await _brightnessControllerRef?.setWarmth(value);
+    notifyListeners();
+  }
+
   Future<void> setBrightness(double b) async {
     await _brightnessControllerRef?.setBrightness(b);
     notifyListeners();
@@ -271,6 +263,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
           note: note, colorCode: colorCode);
   Future<void> deleteHighlight(String highlightId) =>
       metaManager.deleteHighlight(highlightId);
+  Future<void> openHighlight(Highlight highlight) =>
+      metaManager.openHighlight(highlight);
 
   void handleLayoutChange(Size newSize) {
     settingsManager.handleLayoutChange(

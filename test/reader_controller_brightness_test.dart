@@ -101,6 +101,44 @@ void main() {
     controller.dispose();
   });
 
+  test('ReaderController warmth delegates through brightness boundary', () async {
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    GetIt.instance.registerSingleton<ReaderPreferencesService>(prefs);
+
+    final adapter = FakeSystemBrightnessAdapter(currentValue: 0.5);
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: adapter,
+      ),
+    );
+    await brightnessController.initialize();
+
+    final controller = ReaderController(
+      Book(
+        id: 'test_book',
+        title: 'Test Title',
+        author: 'Unknown',
+        filePath: '/test/path',
+        format: 'txt',
+      ),
+    );
+    controller.attachBrightnessController(brightnessController);
+
+    expect(controller.warmth, 0.0);
+
+    await controller.setWarmth(0.4);
+
+    expect(controller.warmth, 0.4);
+    expect(prefs.warmth, 0.4);
+
+    await brightnessController.shutdown();
+    brightnessController.dispose();
+    await adapter.close();
+    controller.dispose();
+  });
+
   test('Follow System mode stops writing brightness and tracks external changes', () async {
     final prefs = ReaderPreferencesService();
     await prefs.initialize();

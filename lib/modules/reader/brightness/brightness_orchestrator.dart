@@ -31,6 +31,11 @@ class BrightnessOrchestrator extends ChangeNotifier with WidgetsBindingObserver 
   double? _ignoredSystemBrightness;
 
   BrightnessState get state => _state;
+  double get warmth => _repository.warmth;
+
+  Future<void> setWarmth(double value) async {
+    await _repository.saveWarmth(value);
+  }
 
   Future<void> initialize() async {
     if (_initialized || _isDisposed) return;

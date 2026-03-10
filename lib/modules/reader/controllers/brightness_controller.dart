@@ -27,6 +27,13 @@ class BrightnessController extends ChangeNotifier {
   ValueListenable<BrightnessState> get stateListenable => _stateNotifier;
   BrightnessState get state => _stateNotifier.value;
   bool get followSystem => state.followSystem;
+  double get warmth => _orchestrator.warmth;
+
+  Future<void> setWarmth(double value) async {
+    await _orchestrator.setWarmth(value);
+    if (_isDisposed) return;
+    notifyListeners();
+  }
 
   Future<void> initialize() async {
     await _orchestrator.initialize();

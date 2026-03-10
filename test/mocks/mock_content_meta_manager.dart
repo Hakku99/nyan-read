@@ -30,6 +30,9 @@ class MockContentMetaManager implements ContentMetaManager {
   List<Highlight> get highlights => [];
 
   @override
+  Highlight? findHighlightById(String highlightId) => null;
+
+  @override
   Future<bool> addBookmark() async => true;
 
   @override
@@ -70,6 +73,12 @@ class MockContentMetaManager implements ContentMetaManager {
 
   @override
   Future<void> loadHighlights() async {}
+
+  @override
+  Future<void> openHighlight(Highlight highlight) async {}
+
+  @override
+  Future<void> restoreBookmarkPosition(Map<String, dynamic> bookmarkData) async {}
 
   @override
   Future<void> updateCurrentChapterIndex() async {}

@@ -17,5 +17,11 @@ class BrightnessRepository {
     await _preferences.setBrightness(null);
   }
 
+  double get warmth => _preferences.warmth;
+
+  Future<void> saveWarmth(double warmth) async {
+    await _preferences.setWarmth(warmth.clamp(0.0, 1.0).toDouble());
+  }
+
   bool get isFollowingSystem => _preferences.brightness == null;
 }

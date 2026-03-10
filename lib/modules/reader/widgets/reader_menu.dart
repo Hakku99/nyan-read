@@ -6,12 +6,10 @@ import '../reader_page.dart';
 import '../../bookmark/bookmark_list_page.dart';
 import '../../notes/notes_list_page.dart';
 import '../../settings/settings_page.dart';
-import '../reader_engine/txt/txt_position.dart';
 import '../widgets/highlight_note_dialog.dart';
 import '../../../../core/models/highlight.dart';
 import '../../../../core/theme/theme_presets.dart';
 import '../../../../core/theme/theme_manager.dart';
-import '../../../../core/services/reader_preferences_service.dart';
 import '../controllers/brightness_controller.dart';
 
 class ReaderMenu extends StatelessWidget {
@@ -153,8 +151,6 @@ class ReaderMenu extends StatelessWidget {
 
   Widget _buildBrightnessSection(
       BuildContext context, ReaderController controller, NyanTheme theme) {
-    final prefs = context.watch<ReaderPreferencesService>();
-
     return Column(
       children: [
         // 1. Brightness Slider
@@ -249,10 +245,10 @@ class ReaderMenu extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: SliderWithFloatingLabel(
-                value: prefs.warmth,
+                value: controller.warmth,
                 min: 0.0,
                 max: 1.0,
-                onChanged: (val) => prefs.setWarmth(val),
+                onChanged: (val) => controller.setWarmth(val),
                 activeColor: const Color(0xFFFFCCBC),
                 thumbColor: const Color(0xFFFFAB91),
                 inactiveColor: const Color(0xFFFFE0B2).withOpacity(0.3),
@@ -513,7 +509,7 @@ class ReaderMenu extends StatelessWidget {
               ),
             );
             if (result != null && result is Map<String, dynamic>) {
-              controller.restorePosition(result);
+              await controller.handleBookmarkSelection(result);
             }
           }),
           buildActionBtn(Icons.edit_note_rounded, loc.highlightsAndNotes,
@@ -524,20 +520,20 @@ class ReaderMenu extends StatelessWidget {
                 builder: (_) => NotesListPage(
                   bookId: controller.book.id,
                   bookTitle: controller.book.title,
+                  onJumpToHighlight: (_) {},
                 ),
               ),
             );
 
-            await controller.loadHighlights();
-
             if (result != null && result is Highlight) {
-              if (controller.book.format == 'txt') {
-                final pos =
-                    TxtReadingPosition(paragraphIndex: result.paragraphIndex);
-                await controller.engine.goToPosition(pos);
-              }
-              if (context.mounted) {
-                _showHighlightNoteDialog(context, controller, result);
+              final selectedHighlight =
+                  await controller.handleHighlightSelection(result);
+              if (context.mounted && selectedHighlight != null) {
+                _showHighlightNoteDialog(
+                  context,
+                  controller,
+                  selectedHighlight,
+                );
               }
             }
           }),

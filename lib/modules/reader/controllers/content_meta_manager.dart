@@ -33,6 +33,13 @@ class ContentMetaManager {
   int? get currentChapterIndex => _currentChapterIndex;
   List<Highlight> get highlights => _highlights;
 
+  Highlight? findHighlightById(String highlightId) {
+    for (final highlight in _highlights) {
+      if (highlight.id == highlightId) return highlight;
+    }
+    return null;
+  }
+
   Future<void> loadChapters() async {
     _chapters = await engine.getChapters();
     onMetaChanged();
@@ -229,6 +236,31 @@ class ContentMetaManager {
         _chapters[_currentChapterIndex! + 1], saveProgressFn);
   }
 
+  Future<void> restoreBookmarkPosition(Map<String, dynamic> bookmarkData) async {
+    final type =
+        (bookmarkData['position_type'] ?? book.format).toString().toLowerCase();
+    final payload = bookmarkData['position_payload'];
+
+    if (payload == null) return;
+
+    try {
+      ReadingPosition? position;
+      if (type == 'epub') {
+        position = EpubReadingPosition.fromJson(payload);
+      } else if (type == 'pdf') {
+        position = PdfReadingPosition.fromJson(payload);
+      } else if (type == 'txt') {
+        position = TxtReadingPosition.fromJson(payload);
+      }
+
+      if (position != null) {
+        await engine.goToPosition(position);
+      }
+    } catch (e) {
+      debugPrint('[ContentMetaManager] Error restoring bookmark position: $e');
+    }
+  }
+
   Future<bool> addBookmark() async {
     final position = engine.getCurrentPosition();
     if (position == null) return false;
@@ -282,6 +314,18 @@ class ContentMetaManager {
       }
     } catch (e) {
       debugPrint('Error backfilling snippets: $e');
+    }
+  }
+
+  Future<void> openHighlight(Highlight highlight) async {
+    try {
+      if (book.format == 'txt') {
+        await engine.goToPosition(
+          TxtReadingPosition(paragraphIndex: highlight.paragraphIndex),
+        );
+      }
+    } catch (e) {
+      debugPrint('[ContentMetaManager] Error opening highlight: $e');
     }
   }
 

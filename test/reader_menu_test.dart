@@ -118,6 +118,8 @@ class MockReaderController extends ChangeNotifier
   @override
   double get brightness => 0.8;
   @override
+  double get warmth => 0.3;
+  @override
   double get fontSize => 18.0;
   @override
   double get lineHeight => 1.5;
@@ -146,6 +148,8 @@ class MockReaderController extends ChangeNotifier
   @override
   Future<void> setBrightness(double value) async {}
   @override
+  Future<void> setWarmth(double value) async {}
+  @override
   void setFontSize(double value) {}
   @override
   void setLineHeight(double value) {}
@@ -153,6 +157,8 @@ class MockReaderController extends ChangeNotifier
   Future<bool> addBookmark() async => true;
   @override
   Future<void> loadHighlights() async {}
+  @override
+  Future<void> openHighlight(Highlight highlight) async {}
   @override
   Future<void> toggleFollowSystem() async {}
   @override
@@ -196,6 +202,13 @@ class MockReaderController extends ChangeNotifier
 
   @override
   void handleLayoutChange(Size size) {}
+
+  @override
+  Future<void> handleBookmarkSelection(Map<String, dynamic> bookmarkData) async {}
+
+  @override
+  Future<Highlight?> handleHighlightSelection(Highlight highlight) async =>
+      highlight;
 
   @override
   Future<void> restorePosition(Map<String, dynamic> bookmarkData) async {}
@@ -303,7 +316,6 @@ void main() {
         providers: [
           ChangeNotifierProvider<ReaderController>.value(value: mockController),
           ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
-          ChangeNotifierProvider<ReaderPreferencesService>.value(value: prefs),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
