@@ -295,13 +295,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emptyShelfInstructions =>
-      'Your shelf is empty!\nTap the + button below to import some books.\nYou can import individual files or an entire folder.';
+      'Your shelf is empty!\nTap the + button below to import some books.';
 
   @override
   String get importFiles => 'Import Files';
-
-  @override
-  String get importFolder => 'Import Folder';
 
   @override
   String importedBooks(int count, String shelf) {
@@ -366,19 +363,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get highlightsAndNotes => 'Highlights & Notes';
 
   @override
-  String get noSupportedBooksFound => 'No supported books found.';
-
-  @override
-  String scannedFiles(int count) {
-    return 'Scanned $count.';
-  }
-
-  @override
-  String skippedExtensions(String extensions) {
-    return 'Skipped: $extensions';
-  }
-
-  @override
   String allBooksInLibrary(int count) {
     return 'All books already in library ($count duplicates skipped).';
   }
@@ -386,11 +370,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String duplicatesSkipped(int count) {
     return '$count duplicates skipped.';
-  }
-
-  @override
-  String errorScanningFolder(String error) {
-    return 'Error scanning folder: $error';
   }
 
   @override

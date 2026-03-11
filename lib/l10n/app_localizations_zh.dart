@@ -220,7 +220,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deselectAll => '取消全选';
 
   @override
-  String get appTitle => '喵阅 ฅ^•ﻌ•^ฅ';
+  String get appTitle => 'Nyan Read ฅ^•ﻌ•^ฅ';
 
   @override
   String get enjoyReading => '享受阅读时光';
@@ -244,10 +244,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sortOrderDesc => '降序';
 
   @override
-  String get lastReadAsc => '最后阅读升序';
+  String get lastReadAsc => '最近阅读升序';
 
   @override
-  String get lastReadDesc => '最后阅读降序';
+  String get lastReadDesc => '最近阅读降序';
 
   @override
   String get addedAsc => '添加时间升序';
@@ -256,10 +256,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get addedDesc => '添加时间降序';
 
   @override
-  String get titleAsc => '标题升序';
+  String get titleAsc => '书名升序';
 
   @override
-  String get titleDesc => '标题降序';
+  String get titleDesc => '书名降序';
 
   @override
   String get lockPrivacyShelf => '锁定隐私书架';
@@ -285,26 +285,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String movedBooks(int count, String shelf) {
-    return '已将 $count 本书移至$shelf';
+    return '已将 $count 本书移至$shelf书架';
   }
 
   @override
-  String get emptyPrivateShelf =>
-      '这里空空如也喵~\n在公开书架中长按书籍进入多选，\n然后点击锁定按钮将它们移入私密书架。';
+  String get emptyPrivateShelf => '这个私密空间还是空的。\n在公开书架选择书籍，点击锁定图标即可移动到这里。';
 
   @override
-  String get emptyShelfInstructions =>
-      '你的书架还是空的！\n点击下方的 + 按钮导入书籍。\n你可以导入单个文件或整个文件夹。';
+  String get emptyShelfInstructions => '你的书架还是空的！\n点击下方的 + 按钮导入书籍。';
 
   @override
   String get importFiles => '导入文件';
 
   @override
-  String get importFolder => '导入文件夹';
-
-  @override
   String importedBooks(int count, String shelf) {
-    return '已将 $count 本书导入$shelf！';
+    return '已将 $count 本书导入$shelf书架！';
   }
 
   @override
@@ -365,19 +360,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get highlightsAndNotes => '高亮与笔记';
 
   @override
-  String get noSupportedBooksFound => '未找到支持的书籍。';
-
-  @override
-  String scannedFiles(int count) {
-    return '已扫描 $count 个文件。';
-  }
-
-  @override
-  String skippedExtensions(String extensions) {
-    return '已跳过：$extensions';
-  }
-
-  @override
   String allBooksInLibrary(int count) {
     return '所有书籍已在书库中（已跳过 $count 个重复项）。';
   }
@@ -385,11 +367,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String duplicatesSkipped(int count) {
     return '已跳过 $count 个重复项。';
-  }
-
-  @override
-  String errorScanningFolder(String error) {
-    return '扫描文件夹时出错：$error';
   }
 
   @override
@@ -460,58 +437,58 @@ class AppLocalizationsZh extends AppLocalizations {
   String get timeYesterday => '昨天';
 
   @override
-  String get timeThreeDaysAgo => '三天前';
+  String get timeThreeDaysAgo => '3天前';
 
   @override
-  String get timeSevenDaysAgo => '七天前';
+  String get timeSevenDaysAgo => '7天前';
 
   @override
-  String get timeLongAgo => '许久以前';
+  String get timeLongAgo => '很久以前';
 
   @override
-  String get neverRead => '未读';
+  String get neverRead => '从未阅读';
 
   @override
-  String get errorFileNotFound => '这本书好像迷路了。\n文件找不到了，可能被移动或删除。';
+  String get errorFileNotFound => '这本书好像迷路了。\n找不到源文件，它可能已被移动或删除。';
 
   @override
-  String get errorUnsupportedFormat => '猫娘看不懂这种格式。\n暂时不支持打开此类型的文件。';
+  String get errorUnsupportedFormat => 'Nyan 还不能读取这种格式。\n当前暂不支持该文件类型。';
 
   @override
-  String get errorParseFailed => '书页粘在一起了。\n文件解析失败，可能是文件已损坏。';
+  String get errorParseFailed => '书页像是粘在一起了。\n文件解析失败，可能已经损坏。';
 
   @override
-  String get errorUnknown => '发生了意想不到的事情。\n请稍后再试。';
+  String get errorUnknown => '发生了意外错误。\n请稍后再试。';
 
   @override
-  String get emptyShelfTitle => '书架还在等待故事';
+  String get emptyShelfTitle => '书架正在等待新的故事';
 
   @override
-  String get emptyShelfSubtitle => '导入一本书，开始今天的阅读吧';
+  String get emptyShelfSubtitle => '导入一本书开始阅读';
 
   @override
-  String get exportData => '导出阅读资产';
+  String get exportData => '导出阅读数据';
 
   @override
-  String get exportDataSubtitle => '将书籍、高亮与书签备份为 JSON 文件';
+  String get exportDataSubtitle => '将书籍、高亮和书签备份为 JSON';
 
   @override
   String get saveToDevice => '保存到设备';
 
   @override
-  String get saveToDeviceSubtitle => '在你的设备上选择一个文件夹';
+  String get saveToDeviceSubtitle => '选择设备上的文件夹';
 
   @override
-  String get shareVia => '分享到…';
+  String get shareVia => '通过以下方式分享';
 
   @override
-  String get shareViaSubtitle => '微信、邮件、网盘等';
+  String get shareViaSubtitle => 'Gmail、Drive、Quick Share 等';
 
   @override
-  String get importData => '导入阅读资产';
+  String get importData => '导入阅读数据';
 
   @override
-  String get importDataSubtitle => '从之前导出的 JSON 文件恢复数据';
+  String get importDataSubtitle => '从之前导出的 JSON 文件恢复';
 
   @override
   String importSuccess(int count) {

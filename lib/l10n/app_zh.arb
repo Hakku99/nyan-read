@@ -44,7 +44,7 @@
   "author": "作者",
   "format": "格式",
   "privacy": "隐私",
-  "privateShelf": "私密书架",
+  "privateShelf": "隐私书架",
   "publicShelf": "公开书架",
   "readingProgress": "阅读进度",
   "added": "添加时间",
@@ -83,7 +83,7 @@
   "moveToPrivate": "移至隐私书架",
   "selectAll": "全选",
   "deselectAll": "取消全选",
-  "appTitle": "喵阅 ฅ^•ﻌ•^ฅ",
+  "appTitle": "Nyan Read ฅ^•ﻌ•^ฅ",
   "enjoyReading": "享受阅读时光",
   "listView": "列表视图",
   "gridView": "网格视图",
@@ -91,16 +91,14 @@
   "sortBy": "排序方式",
   "sortOrderAsc": "升序",
   "sortOrderDesc": "降序",
-  "lastReadAsc": "最后阅读升序",
-  "lastReadDesc": "最后阅读降序",
+  "lastReadAsc": "最近阅读升序",
+  "lastReadDesc": "最近阅读降序",
   "addedAsc": "添加时间升序",
   "addedDesc": "添加时间降序",
-  "titleAsc": "标题升序",
-  "titleDesc": "标题降序",
+  "titleAsc": "书名升序",
+  "titleDesc": "书名降序",
   "lockPrivacyShelf": "锁定隐私书架",
   "unlockPrivacyShelf": "解锁隐私书架",
-  "publicShelf": "公开书架",
-  "privateShelf": "隐私书架",
   "deleteBooksTitle": "⚠️ 删除 {count} 本书？",
   "@deleteBooksTitle": {
     "placeholders": {
@@ -119,9 +117,7 @@
       }
     }
   },
-  "movedBooks": "已将 {count} 本书移至{shelf}",
-  "emptyPrivateShelf": "这里空空如也喵~\n在公开书架中长按书籍进入多选，\n然后点击锁定按钮将它们移入私密书架。",
-  "emptyShelfInstructions": "你的书架还是空的！\n点击下方的 + 按钮导入书籍。\n你可以导入单个文件或整个文件夹。",
+  "movedBooks": "已将 {count} 本书移至{shelf}书架",
   "@movedBooks": {
     "placeholders": {
       "count": {
@@ -132,9 +128,10 @@
       }
     }
   },
+  "emptyPrivateShelf": "这个私密空间还是空的。\n在公开书架选择书籍，点击锁定图标即可移动到这里。",
+  "emptyShelfInstructions": "你的书架还是空的！\n点击下方的 + 按钮导入书籍。",
   "importFiles": "导入文件",
-  "importFolder": "导入文件夹",
-  "importedBooks": "已将 {count} 本书导入{shelf}！",
+  "importedBooks": "已将 {count} 本书导入{shelf}书架！",
   "@importedBooks": {
     "placeholders": {
       "count": {
@@ -164,23 +161,6 @@
   "addBookmark": "添加书签",
   "bookmarks": "书签",
   "highlightsAndNotes": "高亮与笔记",
-  "noSupportedBooksFound": "未找到支持的书籍。",
-  "scannedFiles": "已扫描 {count} 个文件。",
-  "@scannedFiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "skippedExtensions": "已跳过：{extensions}",
-  "@skippedExtensions": {
-    "placeholders": {
-      "extensions": {
-        "type": "String"
-      }
-    }
-  },
   "allBooksInLibrary": "所有书籍已在书库中（已跳过 {count} 个重复项）。",
   "@allBooksInLibrary": {
     "placeholders": {
@@ -197,17 +177,7 @@
       }
     }
   },
-  "errorScanningFolder": "扫描文件夹时出错：{error}",
-  "@errorScanningFolder": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-
   "noChaptersDetected": "未检测到章节",
-  "tableOfContents": "目录",
   "chapterCount": "{count} 章",
   "@chapterCount": {
     "placeholders": {
@@ -224,7 +194,6 @@
       }
     }
   },
-
   "bookmarksTitle": "书签 ({count})",
   "@bookmarksTitle": {
     "placeholders": {
@@ -250,7 +219,6 @@
       }
     }
   },
-
   "notesAndHighlightsTitle": "笔记与高亮 ({count})",
   "@notesAndHighlightsTitle": {
     "placeholders": {
@@ -277,31 +245,29 @@
       }
     }
   },
-
   "themeCreamLight": "奶油白",
   "themeSumiDark": "墨色黑",
   "themeSepiaWarm": "复古褐",
   "timeToday": "今天",
   "timeYesterday": "昨天",
-  "timeThreeDaysAgo": "三天前",
-  "timeSevenDaysAgo": "七天前",
-  "timeLongAgo": "许久以前",
-  "neverRead": "未读",
-
-  "errorFileNotFound": "这本书好像迷路了。\n文件找不到了，可能被移动或删除。",
-  "errorUnsupportedFormat": "猫娘看不懂这种格式。\n暂时不支持打开此类型的文件。",
-  "errorParseFailed": "书页粘在一起了。\n文件解析失败，可能是文件已损坏。",
-  "errorUnknown": "发生了意想不到的事情。\n请稍后再试。",
-  "emptyShelfTitle": "书架还在等待故事",
-  "emptyShelfSubtitle": "导入一本书，开始今天的阅读吧",
-  "exportData": "导出阅读资产",
-  "exportDataSubtitle": "将书籍、高亮与书签备份为 JSON 文件",
+  "timeThreeDaysAgo": "3天前",
+  "timeSevenDaysAgo": "7天前",
+  "timeLongAgo": "很久以前",
+  "neverRead": "从未阅读",
+  "errorFileNotFound": "这本书好像迷路了。\n找不到源文件，它可能已被移动或删除。",
+  "errorUnsupportedFormat": "Nyan 还不能读取这种格式。\n当前暂不支持该文件类型。",
+  "errorParseFailed": "书页像是粘在一起了。\n文件解析失败，可能已经损坏。",
+  "errorUnknown": "发生了意外错误。\n请稍后再试。",
+  "emptyShelfTitle": "书架正在等待新的故事",
+  "emptyShelfSubtitle": "导入一本书开始阅读",
+  "exportData": "导出阅读数据",
+  "exportDataSubtitle": "将书籍、高亮和书签备份为 JSON",
   "saveToDevice": "保存到设备",
-  "saveToDeviceSubtitle": "在你的设备上选择一个文件夹",
-  "shareVia": "分享到…",
-  "shareViaSubtitle": "微信、邮件、网盘等",
-  "importData": "导入阅读资产",
-  "importDataSubtitle": "从之前导出的 JSON 文件恢复数据",
+  "saveToDeviceSubtitle": "选择设备上的文件夹",
+  "shareVia": "通过以下方式分享",
+  "shareViaSubtitle": "Gmail、Drive、Quick Share 等",
+  "importData": "导入阅读数据",
+  "importDataSubtitle": "从之前导出的 JSON 文件恢复",
   "importSuccess": "成功恢复 {count} 本书！",
   "@importSuccess": {
     "placeholders": {
@@ -319,4 +285,3 @@
     }
   }
 }
-

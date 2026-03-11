@@ -1,4 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+
 import '../../core/models/book.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
@@ -98,21 +103,22 @@ class BookshelfViewModel extends ChangeNotifier {
   Future<void> deleteSelectedBooks(bool deleteFiles) async {
     if (_selectedBookIds.isEmpty) return;
 
-    // We must collect paths before deleting from db if deleteFiles is true
-    List<String> pathsToDelete = [];
-    if (deleteFiles) {
-      for (final id in _selectedBookIds) {
-        final book = _publicBooks.followedBy(_privateBooks).firstWhere(
-            (b) => b.id == id,
-            orElse: () => throw Exception('Book missing'));
-        pathsToDelete.add(book.filePath);
-      }
-    }
+    final idsToDelete = _selectedBookIds.toList(growable: false);
+    final booksById = {
+      for (final book in _publicBooks.followedBy(_privateBooks)) book.id: book,
+    };
+    final selectedBooks =
+        idsToDelete.map((id) => booksById[id]).whereType<Book>().toList();
+    final pathsToDelete = deleteFiles
+        ? await _collectPrivateCopyPaths(selectedBooks)
+        : const <String>[];
 
     try {
-      await _db.deleteBooks(_selectedBookIds.toList());
-
-      // TODO: Actual file deletion would go here using dart:io on pathsToDelete
+      // Remove database state first so bookshelf and associated metadata are
+      // updated atomically. Private-copy cleanup stays best-effort afterwards
+      // to avoid deleting user-managed external source files by mistake.
+      await _db.deleteBooksWithAssociatedData(idsToDelete);
+      await _deletePrivateCopiesBestEffort(pathsToDelete);
 
       _selectedBookIds.clear();
       _isSelectionMode = false;
@@ -123,6 +129,49 @@ class BookshelfViewModel extends ChangeNotifier {
       rethrow;
     }
   }
+
+  Future<List<String>> _collectPrivateCopyPaths(List<Book> books) async {
+    if (books.isEmpty) return const [];
+
+    final appDocsDir = await getApplicationDocumentsDirectory();
+    final normalizedAppDocsPath = _normalizePath(appDocsDir.path);
+    final pathsToDelete = <String>{};
+
+    for (final book in books) {
+      if (!book.isFilePathSource) {
+        continue;
+      }
+
+      final normalizedFilePath = _normalizePath(book.sourceLocator);
+      if (_isWithinDirectory(normalizedFilePath, normalizedAppDocsPath)) {
+        pathsToDelete.add(book.sourceLocator);
+      }
+    }
+
+    return pathsToDelete.toList(growable: false);
+  }
+
+  Future<void> _deletePrivateCopiesBestEffort(List<String> filePaths) async {
+    for (final filePath in filePaths) {
+      try {
+        final file = File(filePath);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (e, stackTrace) {
+        debugPrint(
+          'Failed to delete imported private copy: $filePath\n$e\n$stackTrace',
+        );
+      }
+    }
+  }
+
+  bool _isWithinDirectory(String filePath, String directoryPath) {
+    if (filePath == directoryPath) return false;
+    return path.isWithin(directoryPath, filePath);
+  }
+
+  String _normalizePath(String value) => path.normalize(value).toLowerCase();
 
   /// Moves selected books between public and private shelf
   Future<void> moveSelectedBooks(bool toPrivate) async {
@@ -143,3 +192,4 @@ class BookshelfViewModel extends ChangeNotifier {
     }
   }
 }
+

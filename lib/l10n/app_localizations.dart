@@ -647,7 +647,7 @@ abstract class AppLocalizations {
   /// No description provided for @emptyShelfInstructions.
   ///
   /// In en, this message translates to:
-  /// **'Your shelf is empty!\nTap the + button below to import some books.\nYou can import individual files or an entire folder.'**
+  /// **'Your shelf is empty!\nTap the + button below to import some books.'**
   String get emptyShelfInstructions;
 
   /// No description provided for @importFiles.
@@ -655,12 +655,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Import Files'**
   String get importFiles;
-
-  /// No description provided for @importFolder.
-  ///
-  /// In en, this message translates to:
-  /// **'Import Folder'**
-  String get importFolder;
 
   /// No description provided for @importedBooks.
   ///
@@ -782,24 +776,6 @@ abstract class AppLocalizations {
   /// **'Highlights & Notes'**
   String get highlightsAndNotes;
 
-  /// No description provided for @noSupportedBooksFound.
-  ///
-  /// In en, this message translates to:
-  /// **'No supported books found.'**
-  String get noSupportedBooksFound;
-
-  /// No description provided for @scannedFiles.
-  ///
-  /// In en, this message translates to:
-  /// **'Scanned {count}.'**
-  String scannedFiles(int count);
-
-  /// No description provided for @skippedExtensions.
-  ///
-  /// In en, this message translates to:
-  /// **'Skipped: {extensions}'**
-  String skippedExtensions(String extensions);
-
   /// No description provided for @allBooksInLibrary.
   ///
   /// In en, this message translates to:
@@ -811,12 +787,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} duplicates skipped.'**
   String duplicatesSkipped(int count);
-
-  /// No description provided for @errorScanningFolder.
-  ///
-  /// In en, this message translates to:
-  /// **'Error scanning folder: {error}'**
-  String errorScanningFolder(String error);
 
   /// No description provided for @noChaptersDetected.
   ///

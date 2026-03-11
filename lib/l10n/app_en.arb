@@ -131,9 +131,8 @@
     }
   },
   "emptyPrivateShelf": "This private space is empty.\nSelect books from the public shelf and tap the Lock icon to move them here.",
-  "emptyShelfInstructions": "Your shelf is empty!\nTap the + button below to import some books.\nYou can import individual files or an entire folder.",
+  "emptyShelfInstructions": "Your shelf is empty!\nTap the + button below to import some books.",
   "importFiles": "Import Files",
-  "importFolder": "Import Folder",
   "importedBooks": "Imported {count} books into {shelf}!",
   "@importedBooks": {
     "placeholders": {
@@ -164,23 +163,6 @@
   "addBookmark": "Add Bookmark",
   "bookmarks": "Bookmarks",
   "highlightsAndNotes": "Highlights & Notes",
-  "noSupportedBooksFound": "No supported books found.",
-  "scannedFiles": "Scanned {count}.",
-  "@scannedFiles": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "skippedExtensions": "Skipped: {extensions}",
-  "@skippedExtensions": {
-    "placeholders": {
-      "extensions": {
-        "type": "String"
-      }
-    }
-  },
   "allBooksInLibrary": "All books already in library ({count} duplicates skipped).",
   "@allBooksInLibrary": {
     "placeholders": {
@@ -194,14 +176,6 @@
     "placeholders": {
       "count": {
         "type": "int"
-      }
-    }
-  },
-  "errorScanningFolder": "Error scanning folder: {error}",
-  "@errorScanningFolder": {
-    "placeholders": {
-      "error": {
-        "type": "String"
       }
     }
   },

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
+import 'package:path_provider/path_provider.dart';
 class DatabaseService {
   Database? _database;
 
@@ -18,16 +19,22 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, 'nyan_read.db');
 
-    // 机制 B：启动期自我疗愈 (Self-Healing)
+    // Self-heal the database before opening it.
     await _checkAndHealDatabase(path);
 
     final db = await openDatabase(
       path,
-      version: 5,
+      version: 8,
+      onConfigure: (db) async {
+        await db.execute('PRAGMA foreign_keys = ON');
+      },
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
     await _ensureHighlightColumns(db);
+    await _ensureBookColumns(db);
+    final appDocsDir = await getApplicationDocumentsDirectory();
+    await _backfillBookStorageTypes(db, appDocsDir.path);
     return db;
   }
 
@@ -52,13 +59,73 @@ class DatabaseService {
     }
   }
 
+  Future<void> _ensureBookColumns(Database db) async {
+    final columns = await db.rawQuery('PRAGMA table_info(books)');
+    final columnNames = columns
+        .map((row) => row['name'])
+        .whereType<String>()
+        .toSet();
+
+    if (!columnNames.contains('content_signature')) {
+      await db.execute('ALTER TABLE books ADD COLUMN content_signature TEXT');
+    }
+    if (!columnNames.contains('storage_type')) {
+      await db.execute(
+          "ALTER TABLE books ADD COLUMN storage_type TEXT DEFAULT 'external_path'");
+    }
+    if (!columnNames.contains('source_type')) {
+      await db.execute(
+          "ALTER TABLE books ADD COLUMN source_type TEXT DEFAULT 'file_path'");
+    }
+  }
+
+
+  Future<void> _backfillBookStorageTypes(Database db, String appDocsPath) async {
+    final rows = await db.query(
+      'books',
+      columns: ['id', 'file_path', 'storage_type', 'source_type'],
+      where: 'storage_type IS NULL OR storage_type = ?',
+      whereArgs: [''],
+    );
+    if (rows.isEmpty) return;
+
+    final normalizedAppDocsPath = normalize(appDocsPath).toLowerCase();
+    final batch = db.batch();
+
+    for (final row in rows) {
+      final id = row['id'] as String?;
+      final filePath = row['file_path'] as String?;
+      final sourceType = row['source_type'] as String?;
+      if (sourceType != null && sourceType != 'file_path') {
+        continue;
+      }
+      if (id == null || id.isEmpty || filePath == null || filePath.isEmpty) {
+        continue;
+      }
+
+      final normalizedFilePath = normalize(filePath).toLowerCase();
+      final storageType = isWithin(normalizedAppDocsPath, normalizedFilePath)
+          ? 'app_private_copy'
+          : 'external_path';
+
+      batch.update(
+        'books',
+        {'storage_type': storageType},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    }
+
+    await batch.commit(noResult: true);
+  }
+
   Future<void> _checkAndHealDatabase(String mainDbPath) async {
     final file = File(mainDbPath);
     if (!file.existsSync()) return;
 
     try {
-      // 避免使用 openReadOnlyDatabase 触发 WAL 丢失。
-      // 使用单离单开读写模式强制执行 SQLite WAL Checkpoint 合并日志，再查验。
+      // Avoid openReadOnlyDatabase here because WAL files may be missed.
+      // Open a dedicated writable connection, force a WAL checkpoint, then verify integrity.
       final db = await openDatabase(mainDbPath, singleInstance: false);
       final result = await db.rawQuery('PRAGMA integrity_check;');
       await db.close();
@@ -66,13 +133,13 @@ class DatabaseService {
       final status = result.first.values.first as String;
       if (status.toLowerCase() != 'ok') {
         debugPrint(
-            '--- [DatabaseService] 致命破损: 主库 PRAGMA integrity_check = $status ---');
+            '--- [DatabaseService] integrity_check failed: PRAGMA integrity_check = $status ---');
         throw Exception('Database corrupted');
       } else {
-        debugPrint('--- [DatabaseService] 主库完整性校验通过 (ok) ---');
+        debugPrint('--- [DatabaseService] 涓诲簱瀹屾暣鎬ф牎楠岄€氳繃 (ok) ---');
       }
     } catch (e) {
-      debugPrint('--- [DatabaseService] 熔断机制激活！准备加载沙盒冷备... 异常原因: $e ---');
+      debugPrint('--- [DatabaseService] Database self-heal triggered. Recovery reason: $e ---');
       await _restoreFromLatestBackup(mainDbPath);
     }
   }
@@ -83,24 +150,24 @@ class DatabaseService {
       final backupDir = Directory(join(dbPath, 'backups'));
 
       if (!backupDir.existsSync()) {
-        debugPrint('--- [DatabaseService] 破防：无可用冷备目录，放弃疗愈！ ---');
+        debugPrint('--- [DatabaseService] 鐮撮槻锛氭棤鍙敤鍐峰鐩綍锛屾斁寮冪枟鎰堬紒 ---');
         return;
       }
 
       final snapshotDirs = backupDir.listSync().whereType<Directory>().toList();
       snapshotDirs.sort((a, b) =>
-          b.statSync().modified.compareTo(a.statSync().modified)); // 从新到旧
+          b.statSync().modified.compareTo(a.statSync().modified)); // 浠庢柊鍒版棫
 
       if (snapshotDirs.isEmpty) {
-        debugPrint('--- [DatabaseService] 破防：无可用冷备快照，放弃疗愈！ ---');
+        debugPrint('--- [DatabaseService] 鐮撮槻锛氭棤鍙敤鍐峰蹇収锛屾斁寮冪枟鎰堬紒 ---');
         return;
       }
 
       final latestBackupDir = snapshotDirs.first;
       debugPrint(
-          '--- [DatabaseService] 捕获最新冷备: ${latestBackupDir.path}，正在覆盖主库序列 ---');
+          '--- [DatabaseService] Captured latest cold backup ${latestBackupDir.path}, restoring main database snapshot ---');
 
-      // 两步走：先将受损源文件归档剥离，彻底焚毁旧魂 (WAL/SHM)，再切入热备
+      // Two-step restore: archive the corrupted main files first, then replace with the latest backup set.
       final corruptFile = File(mainDbPath);
       final ts = DateTime.now().millisecondsSinceEpoch;
       if (corruptFile.existsSync()) {
@@ -112,7 +179,7 @@ class DatabaseService {
       if (oldWal.existsSync()) oldWal.deleteSync();
       if (oldShm.existsSync()) oldShm.deleteSync();
 
-      // 恢复快照目录中的所有文件
+      // Restore every database file from the snapshot directory.
       final backupDb = File(join(latestBackupDir.path, 'nyan_read.db'));
       final backupWal = File(join(latestBackupDir.path, 'nyan_read.db-wal'));
       final backupShm = File(join(latestBackupDir.path, 'nyan_read.db-shm'));
@@ -121,9 +188,9 @@ class DatabaseService {
       if (backupWal.existsSync()) backupWal.copySync('$mainDbPath-wal');
       if (backupShm.existsSync()) backupShm.copySync('$mainDbPath-shm');
 
-      debugPrint('--- [DatabaseService] 冷备降落覆盖完成，即刻重新点火！ ---');
+      debugPrint('--- [DatabaseService] Cold backup restore completed successfully ---');
     } catch (e, stack) {
-      debugPrint('--- [DatabaseService] 灾难性异常: 自愈机制执行失败 - $e\n$stack ---');
+      debugPrint('--- [DatabaseService] Catastrophic recovery failed - $e\n$stack ---');
     }
   }
 
@@ -163,6 +230,17 @@ class DatabaseService {
       await db.execute(
           'ALTER TABLE highlights ADD COLUMN is_healed INTEGER DEFAULT 0');
     }
+    if (oldVersion < 6) {
+      await db.execute('ALTER TABLE books ADD COLUMN content_signature TEXT');
+    }
+    if (oldVersion < 7) {
+      await db.execute(
+          "ALTER TABLE books ADD COLUMN storage_type TEXT DEFAULT 'external_path'");
+    }
+    if (oldVersion < 8) {
+      await db.execute(
+          "ALTER TABLE books ADD COLUMN source_type TEXT DEFAULT 'file_path'");
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -173,6 +251,7 @@ class DatabaseService {
         title TEXT NOT NULL,
         author TEXT,
         file_path TEXT NOT NULL,
+        source_type TEXT NOT NULL DEFAULT 'file_path',
         cover_path TEXT,
         format TEXT NOT NULL,
         is_private INTEGER DEFAULT 0,
@@ -181,7 +260,9 @@ class DatabaseService {
         last_read_at INTEGER,
         added_at INTEGER,
         last_position_type TEXT,
-        last_position_payload TEXT
+        last_position_payload TEXT,
+        content_signature TEXT,
+        storage_type TEXT NOT NULL DEFAULT 'external_path'
       )
     ''');
 
@@ -254,20 +335,23 @@ class DatabaseService {
       orderBy: orderBy,
     );
   }
-
-  /// 批量插入书籍 (Batch Insert)
-  /// 使用独立事务，极大提升性能并防止主线程因反复 DB Lock 而阻塞
-  Future<void> batchInsertBooks(List<Map<String, dynamic>> books) async {
-    if (books.isEmpty) return;
+  Future<List<Map<String, dynamic>>> getBookImportEntries() async {
     final db = await database;
-    final batch = db.batch();
+    return await db.query(
+      'books',
+        columns: ['id', 'file_path', 'source_type', 'content_signature', 'storage_type'],
+    );
+  }
 
-    for (final book in books) {
-      batch.insert('books', book, conflictAlgorithm: ConflictAlgorithm.ignore);
-    }
-
-    // 执行批处理且无需返回每一行的结果
-    await batch.commit(noResult: true);
+  Future<void> updateBookContentSignature(
+      String bookId, String contentSignature) async {
+    final db = await database;
+    await db.update(
+      'books',
+      {'content_signature': contentSignature},
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
   }
 
   Future<Set<String>> getAllBookFilenames() async {
@@ -290,19 +374,18 @@ class DatabaseService {
     return results.isEmpty ? null : results.first;
   }
 
+  @Deprecated(
+    'Use deleteBooksWithAssociatedData or the bookshelf delete flow instead.',
+  )
   Future<void> deleteBook(String bookId) async {
-    final db = await database;
-    await db.delete('books', where: 'id = ?', whereArgs: [bookId]);
+    await deleteBooksWithAssociatedData([bookId]);
   }
 
+  @Deprecated(
+    'Use deleteBooksWithAssociatedData or the bookshelf delete flow instead.',
+  )
   Future<void> deleteBooks(List<String> bookIds) async {
-    if (bookIds.isEmpty) return;
-    final db = await database;
-    final batch = db.batch();
-    for (final id in bookIds) {
-      batch.delete('books', where: 'id = ?', whereArgs: [id]);
-    }
-    await batch.commit(noResult: true);
+    await deleteBooksWithAssociatedData(bookIds);
   }
 
   Future<void> updateBook(String bookId, Map<String, dynamic> data) async {
@@ -349,9 +432,30 @@ class DatabaseService {
     await db.delete('bookmarks', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<void> deleteBookmarksForBook(String bookId) async {
+    final db = await database;
+    await db.delete('bookmarks', where: 'book_id = ?', whereArgs: [bookId]);
+  }
+
+  /// Preferred safe deletion path for books and their associated metadata.
+  Future<void> deleteBooksWithAssociatedData(List<String> bookIds) async {
+    if (bookIds.isEmpty) return;
+
+    final db = await database;
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final id in bookIds) {
+        batch.delete('bookmarks', where: 'book_id = ?', whereArgs: [id]);
+        batch.delete('highlights', where: 'book_id = ?', whereArgs: [id]);
+        batch.delete('books', where: 'id = ?', whereArgs: [id]);
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
   // --- Reading Position Management ---
 
-  /// 更新书籍的最后阅读位置
+  /// Update the last reading position for a book.
   Future<void> updateBookPosition(
       String bookId, String positionType, String positionPayload,
       {double? progress}) async {
@@ -375,7 +479,7 @@ class DatabaseService {
     );
   }
 
-  /// 获取书籍的最后阅读位置
+  /// Get the last reading position for a book.
   Future<Map<String, dynamic>?> getBookPosition(String bookId) async {
     final db = await database;
     final results = await db.query(
@@ -444,7 +548,7 @@ class DatabaseService {
     await db.delete('highlights', where: 'book_id = ?', whereArgs: [bookId]);
   }
 
-  /// 自愈偏移回写接口：即发即弃，不阻塞 UI (Fire-and-forget)
+  /// Fire-and-forget healed offset writeback; should not block the UI.
   Future<void> updateHighlightHealedOffset(
       String id, int newStart, int newEnd) async {
     final db = await database;
@@ -460,10 +564,10 @@ class DatabaseService {
       whereArgs: [id],
     );
     debugPrint(
-        '--- [DatabaseService] 高亮坐标自愈回写完成: id=$id, newStart=$newStart ---');
+        '--- [DatabaseService] Highlight healed offset persisted: id=$id, newStart=$newStart ---');
   }
 
-  // --- 全量数据导出接口 (For Global Export) ---
+  // --- 鍏ㄩ噺鏁版嵁瀵煎嚭鎺ュ彛 (For Global Export) ---
 
   Future<List<Map<String, dynamic>>> getAllBooks() async {
     final db = await database;
@@ -480,23 +584,23 @@ class DatabaseService {
     return await db.query('highlights');
   }
 
-  /// 全局资产恢复批处理接口 v2 — 基于 Title 的柔性元数据同步 (Logical Match Sync)
+  /// Batch restore entry point v2: logical metadata sync by title.
   ///
-  /// 核心合约：
-  ///   - 绝不 INSERT 新书，只 UPDATE 已有书籍的进度元数据。
-  ///   - 以书名 (title) 作为逻辑主键进行匹配，彻底消灭 UUID 割裂导致的重复书问题。
-  ///   - 属于匹配成功书籍的 highlights/bookmarks，强制换血为本地 UUID，再 Upsert。
+  /// Core contract:
+  ///   - Never INSERT a new book here; only UPDATE metadata for existing local books.
+  ///   - Match by title as the logical key to avoid duplicate books caused by UUID splits.
+  ///   - Rebind matched highlights/bookmarks to the local UUID before upsert.
   Future<int> restoreDataBatch(Map<String, dynamic> parsedJson) async {
     final db = await database;
 
-    // 1. 建立本地书目索引字典：title → local UUID (O(1) 查询)
+    // 1. Build a local title -> UUID index for O(1) lookup.
     final localBooksRaw = await db.query('books', columns: ['id', 'title']);
     final Map<String, String> localBooksMap = {
       for (final row in localBooksRaw)
         (row['title'] as String): (row['id'] as String)
     };
 
-    // [Schema 自愈] 查出各子表实际存在的列名，防幽灵列崩溃
+    // [Schema self-heal] Read actual child-table columns to avoid crashes on unexpected schema drift.
     Future<Set<String>> getValidColumns(String table) async {
       final pragma = await db.rawQuery('PRAGMA table_info($table)');
       return pragma.map((row) => row['name'] as String).toSet();
@@ -519,16 +623,16 @@ class DatabaseService {
       final title = book['title'] as String?;
       if (title == null) continue;
 
-      // 2. 匹配失败 → 直接跳过，绝不插入新书
+      // 2. Skip unmatched books; never insert a new local book during restore.
       final localBookId = localBooksMap[title];
       if (localBookId == null) {
-        debugPrint('--- [Restore] 跳过无对应本地书籍: "$title" ---');
+        debugPrint('--- [Restore] Skip book with no local match: "$title" ---');
         continue;
       }
 
-      debugPrint('--- [Restore] 命中本地书籍: "$title" → $localBookId ---');
+      debugPrint('--- [Restore] Matched local book: "$title" -> $localBookId ---');
 
-      // 3. 只更新进度元数据，严禁改变 id / file_path
+      // 3. Only update progress metadata; never rewrite id or file_path.
       final progressUpdate = <String, dynamic>{};
       if (book['current_progress'] != null)
         progressUpdate['current_progress'] = book['current_progress'];
@@ -544,7 +648,7 @@ class DatabaseService {
             where: 'id = ?', whereArgs: [localBookId]);
       }
 
-      // 4. 灵魂转移：将 highlights/bookmarks 的 book_id 强制换血为本地 UUID
+      // 4. Rebind highlights/bookmarks book_id to the local UUID before upsert.
       final highlights = (book['highlights'] as List?) ?? [];
       for (final h in highlights) {
         if (h is Map<String, dynamic>) {
@@ -572,9 +676,18 @@ class DatabaseService {
       syncedBookCount++;
     }
 
-    // 5. noResult: true 避免返回每行 rowId，大幅降低内存压力
+    // 5. noResult: true avoids returning rowIds for every row and reduces memory pressure.
     await batch.commit(noResult: true);
-    debugPrint('--- [DatabaseService] 柔性同步完成：$syncedBookCount 本书的资产已归入本地 ---');
+    debugPrint('--- [DatabaseService] Logical restore finished: $syncedBookCount books synced into local assets ---');
     return syncedBookCount;
   }
 }
+
+
+
+
+
+
+
+
+

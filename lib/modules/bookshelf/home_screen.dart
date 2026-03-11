@@ -1,8 +1,9 @@
 import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
@@ -11,13 +12,14 @@ import '../../core/services/feature_manager.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
 import '../../core/services/service_locator.dart';
-import '../../core/services/folder_import_service.dart';
 import '../../core/models/book.dart';
 import '../../core/services/mascot_manager.dart';
 import '../../modules/privacy/privacy_lock_service.dart';
 import 'package:go_router/go_router.dart';
 import '../settings/settings_page.dart';
 import '../ads/ads_ui.dart';
+import '../../core/utils/book_import_fingerprint.dart';
+import '../../core/utils/book_source_platform.dart';
 import '../../core/utils/snackbar_utils.dart';
 import 'book_details_page.dart';
 import 'widgets/segmented_tab_control.dart';
@@ -120,10 +122,11 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     );
 
     if (confirmed == true && mounted) {
+      final deletedCount = vm.selectedCount;
       try {
         await vm.deleteSelectedBooks(deleteFile);
         if (mounted) {
-          SnackBarUtils.show(context, loc.deletedBooks(vm.selectedCount));
+          SnackBarUtils.show(context, loc.deletedBooks(deletedCount));
         }
       } catch (e) {
         if (mounted) {
@@ -154,84 +157,75 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     );
 
     if (result != null && result.files.isNotEmpty) {
-      // Get existing filenames from database to check for duplicates
       final db = getIt<DatabaseService>();
-      final existingFilenames = await db.getAllBookFilenames();
+      final existingIndex = await BookImportFingerprint.buildExistingIndex(db);
 
-      // Determine privacy based on current tab
-      // If we are on the second tab (index 1), it's private.
-      // But we need to make sure the second tab IS the private shelf.
       final featureManager = context.read<FeatureManager>();
       final isPrivateShelfUnlocked =
           featureManager.isPro && featureManager.isPrivateShelfUnlocked;
-
-      // If private shelf is not visible, we can't be on it.
-      // If it is visible, check tab index.
       final isPrivate = isPrivateShelfUnlocked && _tabController.index == 1;
 
       int successCount = 0;
       int skippedCount = 0;
-      final appDir = await getApplicationDocumentsDirectory();
-      final tempDir = await getTemporaryDirectory();
+      final knownSignatures = <String>{...existingIndex.signatures};
+      final knownLocators = <String>{...existingIndex.normalizedLocators};
 
       for (final file in result.files) {
-        if (file.path != null) {
-          try {
-            final originalFile = File(file.path!);
-            final fileName = path.basename(originalFile.path);
+        final importSource = await _resolveImportedSource(file);
+        if (importSource == null) continue;
 
-            // Check if file with this name already exists in the database
-            if (existingFilenames.contains(fileName)) {
-              skippedCount++;
-              debugPrint("Skipping duplicate file: $fileName");
+        try {
+          final fileName = importSource.displayName;
+          final normalizedSourceLocator =
+              BookImportFingerprint.normalizeLocator(
+            importSource.sourceType,
+            importSource.sourceLocator,
+          );
+          final contentSignature = await BookImportFingerprint.computeForSource(
+            sourceType: importSource.sourceType,
+            sourceLocator: importSource.sourceLocator,
+            locatorHint: importSource.signatureHint,
+            transientFilePath: file.path,
+          );
 
-              // Clean Copy: Even if skipped, we MUST destroy the file_picker temp cache
-              if (originalFile.existsSync() &&
-                  originalFile.path.startsWith(tempDir.path)) {
-                try {
-                  originalFile.deleteSync();
-                } catch (_) {}
-              }
-              continue;
-            }
-
-            final savedFile =
-                await originalFile.copy(path.join(appDir.path, fileName));
-
-            // [Clean Copy Pipeline]: Destroy the temporary file_picker cache payload
-            if (originalFile.existsSync() &&
-                originalFile.path.startsWith(tempDir.path)) {
-              try {
-                originalFile.deleteSync();
-                debugPrint(
-                    '--- [Clean Copy] 阅后即焚: 已销毁临时导入副本 ${originalFile.path} ---');
-              } catch (e) {
-                debugPrint('--- [Clean Copy Error] 销毁临时副本失败: $e ---');
-              }
-            }
-
-            final book = Book(
-              id: const Uuid().v4(),
-              title: path.basenameWithoutExtension(fileName),
-              author: "Unknown",
-              filePath: savedFile.path,
-              format: path.extension(fileName).replaceAll('.', ''),
-              isPrivate: isPrivate,
-            );
-
-            await db.insertBook(book.toMap());
-            successCount++;
-          } catch (e) {
-            debugPrint("Error importing file ${file.name}: $e");
+          final isDuplicate = knownLocators.contains(normalizedSourceLocator) ||
+              (contentSignature != null &&
+                  knownSignatures.contains(contentSignature));
+          if (isDuplicate) {
+            skippedCount++;
+            debugPrint('Skipping duplicate import: $fileName');
+            continue;
           }
+
+          final book = Book(
+            id: const Uuid().v4(),
+            title: path.basenameWithoutExtension(fileName),
+            author: 'Unknown',
+            sourceLocator: importSource.sourceLocator,
+            sourceType: importSource.sourceType,
+            format: path.extension(fileName).replaceAll('.', ''),
+            isPrivate: isPrivate,
+            contentSignature: contentSignature,
+            storageType: BookStorageType.externalPath,
+          );
+
+          await db.insertBook(book.toMap());
+          knownLocators.add(normalizedSourceLocator);
+          if (contentSignature != null) {
+            knownSignatures.add(contentSignature);
+          }
+          successCount++;
+        } catch (e) {
+          debugPrint('Error importing file ${file.name}: $e');
         }
       }
+
+      await _cleanupPickerTempFiles();
 
       if (mounted) {
         final loc = AppLocalizations.of(context)!;
         final shelf = isPrivate ? loc.privateShelf : loc.publicShelf;
 
-        // Show appropriate feedback based on results
         if (successCount > 0 && skippedCount > 0) {
           SnackBarUtils.show(
             context,
@@ -250,9 +244,56 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     }
   }
 
+  Future<_ImportedBookSource?> _resolveImportedSource(PlatformFile file) async {
+    final fileName = file.name;
+    final identifier = file.identifier;
+    final isAndroid = !kIsWeb && Platform.isAndroid;
+
+    if (isAndroid &&
+        identifier != null &&
+        identifier.isNotEmpty &&
+        identifier.startsWith('content://')) {
+      final persisted =
+          await BookSourcePlatform.persistReadPermission(identifier);
+      if (!persisted) {
+        debugPrint('Failed to persist read permission for $identifier');
+        return null;
+      }
+      return _ImportedBookSource(
+        sourceLocator: identifier,
+        sourceType: BookSourceType.androidContentUri,
+        displayName: fileName,
+        signatureHint: fileName,
+      );
+    }
+
+    final pickedPath = file.path;
+    if (pickedPath != null && pickedPath.isNotEmpty) {
+      return _ImportedBookSource(
+        sourceLocator: pickedPath,
+        sourceType: BookSourceType.filePath,
+        displayName: path.basename(pickedPath),
+        signatureHint: pickedPath,
+      );
+    }
+
+    debugPrint('Unable to resolve a stable import source for ${file.name}');
+    return null;
+  }
+
+  Future<void> _cleanupPickerTempFiles() async {
+    final isAndroid = !kIsWeb && Platform.isAndroid;
+    if (!isAndroid) return;
+
+    try {
+      await FilePicker.platform.clearTemporaryFiles();
+    } catch (e) {
+      debugPrint('Failed to clear file picker temporary files: ' + e.toString());
+    }
+  }
+
   void _showImportMenu(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    // Capture the parent context to ensure provider access
     final parentContext = context;
 
     showModalBottomSheet(
@@ -270,15 +311,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
                   _importBook(parentContext);
                 },
               ),
-              if (!Platform.isAndroid)
-                ListTile(
-                  leading: const Icon(Icons.folder_open),
-                  title: Text(loc.importFolder),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _importFolder(parentContext);
-                  },
-                ),
             ],
           ),
         );
@@ -368,92 +400,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       },
     );
   }
-
-  Future<void> _importFolder(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
-    final result = await FilePicker.platform.getDirectoryPath();
-
-    if (result != null) {
-      try {
-        final importService = FolderImportService.instance;
-
-        // Show initial loading snackbar
-        if (mounted) {
-          SnackBarUtils.show(context, 'Starting background scan...');
-        }
-
-        // Get existing filenames first to pass to the Isolate
-        final db = getIt<DatabaseService>();
-        final existingFilenames = await db.getAllBookFilenames();
-
-        // Scan folder using Isolate
-        final scanResult = await importService.scanFolderBackground(
-          result,
-          existingFilenames,
-          includeHidden: false,
-          onProgress: (progress) {
-            // Optional: You can update a ValueNotifier here to show live progress
-            debugPrint(
-                'Background Scan Progress: Scanned: ${progress.totalScanned}, Found New: ${progress.validFound}');
-          },
-        );
-
-        if (scanResult.filePaths.isEmpty) {
-          if (mounted) {
-            // Check for errors first
-            if (scanResult.errors.isNotEmpty) {
-              final errorMsg = scanResult.errors.first;
-              SnackBarUtils.show(context, errorMsg);
-              return;
-            }
-
-            // On Android, if we successfully got permission but still found 0 files,
-            // it's likely due to Scoped Storage limitations
-            if (Platform.isAndroid && scanResult.totalScanned == 0) {
-              SnackBarUtils.show(
-                context,
-                'Folder import is limited on Android 10+. Please use "Import Files" to select multiple books at once.',
-              );
-              return;
-            }
-
-            final skippedExts = scanResult.skippedExtensions.entries.toList()
-              ..sort((a, b) => b.value.compareTo(a.value));
-
-            final topSkipped = skippedExts.take(3).map((e) => e.key).join(', ');
-
-            String msg = loc.noSupportedBooksFound;
-            if (scanResult.totalScanned > 0) {
-              msg += ' ${loc.scannedFiles(scanResult.totalScanned)}';
-              if (topSkipped.isNotEmpty)
-                msg += ' ${loc.skippedExtensions(topSkipped)}';
-            }
-
-            SnackBarUtils.show(context, msg);
-          }
-          return;
-        }
-
-        // Duplicates were already filtered out inside the Isolate!
-        final uniqueBooksMap = scanResult.parsedBooks;
-
-        // Execute batch insert into database
-        await db.batchInsertBooks(uniqueBooksMap);
-
-        if (mounted) {
-          SnackBarUtils.show(
-              context, 'Successfully imported ${uniqueBooksMap.length} books!');
-          context.read<BookshelfViewModel>().loadBooks();
-        }
-      } catch (e) {
-        if (mounted) {
-          final loc = AppLocalizations.of(context)!;
-          SnackBarUtils.show(context, loc.errorScanningFolder(e.toString()));
-        }
-      }
-    }
-  }
-
   Future<void> _handlePrivacyLock(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
     final fm = context.read<FeatureManager>();
@@ -999,3 +945,27 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     );
   }
 }
+
+
+
+
+
+class _ImportedBookSource {
+  final String sourceLocator;
+  final String sourceType;
+  final String displayName;
+  final String signatureHint;
+
+  const _ImportedBookSource({
+    required this.sourceLocator,
+    required this.sourceType,
+    required this.displayName,
+    required this.signatureHint,
+  });
+}
+
+
+
+
+
+

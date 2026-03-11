@@ -1,10 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/models/book.dart';
+import '../../core/utils/book_source_access.dart';
 import '../../core/utils/snackbar_utils.dart';
 
 class BookDetailsPage extends StatelessWidget {
@@ -17,16 +17,18 @@ class BookDetailsPage extends StatelessWidget {
     required this.bookData,
   }) : super(key: key);
 
+  void _openReader(BuildContext context) {
+    context.pushReplacement('/reader/${book.id}');
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
 
-    // Calculate progress
     final progress = (bookData['current_progress'] as num?)?.toDouble() ?? 0.0;
     final progressPercent = (progress * 100).toInt();
 
-    // Format dates
     String addedAt = loc.unknown;
     if (bookData['added_at'] != null) {
       addedAt = dateFormat.format(
@@ -45,12 +47,16 @@ class BookDetailsPage extends StatelessWidget {
       appBar: AppBar(
         title: Text(loc.bookDetails),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.menu_book),
-            onPressed: () {
-              context.pushReplacement('/reader/${book.id}');
+          FutureBuilder<bool>(
+            future: BookSourceAccess.isAvailable(book),
+            builder: (context, snapshot) {
+              final isAvailable = snapshot.data ?? true;
+              return IconButton(
+                icon: const Icon(Icons.menu_book),
+                onPressed: isAvailable ? () => _openReader(context) : null,
+                tooltip: loc.startReading,
+              );
             },
-            tooltip: loc.startReading,
           ),
         ],
       ),
@@ -59,7 +65,6 @@ class BookDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Book Icon/Cover
             Center(
               child: Container(
                 width: 120,
@@ -76,46 +81,23 @@ class BookDetailsPage extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 24),
-
-            // Title
-            _buildInfoSection(
-              loc.title,
-              book.title,
-              icon: Icons.title,
-            ),
-
+            _buildInfoSection(loc.title, book.title, icon: Icons.title),
             const Divider(),
-
-            // Author
-            _buildInfoSection(
-              loc.author,
-              book.author,
-              icon: Icons.person,
-            ),
-
+            _buildInfoSection(loc.author, book.author, icon: Icons.person),
             const Divider(),
-
-            // Format
             _buildInfoSection(
               loc.format,
               book.format.toUpperCase(),
               icon: Icons.description,
             ),
-
             const Divider(),
-
-            // Privacy Status
             _buildInfoSection(
               loc.privacy,
               book.isPrivate ? loc.privateShelf : loc.publicShelf,
               icon: book.isPrivate ? Icons.lock : Icons.lock_open,
             ),
-
             const Divider(),
-
-            // Reading Progress
             _buildInfoSection(
               loc.readingProgress,
               '$progressPercent%',
@@ -126,49 +108,22 @@ class BookDetailsPage extends StatelessWidget {
                 valueColor: const AlwaysStoppedAnimation<Color>(Colors.pink),
               ),
             ),
-
             const Divider(),
-
-            // Added Date
             _buildInfoSection(
               loc.added,
               addedAt,
               icon: Icons.add_circle_outline,
             ),
-
             const Divider(),
-
-            // Last Read
             _buildInfoSection(
               loc.lastRead,
               lastReadAt,
               icon: Icons.access_time,
             ),
-
             const Divider(),
-
-            // File Path (with copy button)
             _buildFilePathSection(context),
-
             const SizedBox(height: 24),
-
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      context.pushReplacement('/reader/${book.id}');
-                    },
-                    icon: const Icon(Icons.menu_book),
-                    label: Text(loc.startReading),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            _buildStartReadingButton(context),
           ],
         ),
       ),
@@ -254,7 +209,7 @@ class BookDetailsPage extends StatelessWidget {
               children: [
                 Expanded(
                   child: SelectableText(
-                    book.filePath,
+                    book.sourceLocator,
                     style: const TextStyle(
                       fontSize: 12,
                       fontFamily: 'monospace',
@@ -264,7 +219,7 @@ class BookDetailsPage extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.copy, size: 18),
                   onPressed: () {
-                    Clipboard.setData(ClipboardData(text: book.filePath));
+                    Clipboard.setData(ClipboardData(text: book.sourceLocator));
                     SnackBarUtils.show(context, loc.filePathCopied);
                   },
                   tooltip: loc.copyPath,
@@ -273,35 +228,98 @@ class BookDetailsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          // File existence check
           FutureBuilder<bool>(
-            future: File(book.filePath).exists(),
+            future: BookSourceAccess.isAvailable(book),
             builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                final exists = snapshot.data!;
-                return Row(
-                  children: [
-                    Icon(
-                      exists ? Icons.check_circle : Icons.error,
-                      size: 16,
-                      color: exists ? Colors.green : Colors.red,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      exists ? loc.fileExists : loc.fileNotFound,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: exists ? Colors.green : Colors.red,
+              if (!snapshot.hasData) {
+                return const SizedBox.shrink();
+              }
+
+              final isAvailable = snapshot.data!;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        isAvailable ? Icons.check_circle : Icons.error,
+                        size: 16,
+                        color: isAvailable ? Colors.green : Colors.red,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          isAvailable ? loc.fileExists : loc.fileNotFound,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isAvailable ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (!isAvailable) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Text(
+                        BookSourceAccess.unavailableMessage,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.red.shade800,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                   ],
-                );
-              }
-              return const SizedBox.shrink();
+                ],
+              );
             },
           ),
         ],
       ),
     );
   }
+
+  Widget _buildStartReadingButton(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return FutureBuilder<bool>(
+      future: BookSourceAccess.isAvailable(book),
+      builder: (context, snapshot) {
+        final isAvailable = snapshot.data ?? true;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ElevatedButton.icon(
+              onPressed: isAvailable ? () => _openReader(context) : null,
+              icon: const Icon(Icons.menu_book),
+              label: Text(loc.startReading),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+            if (snapshot.hasData && !isAvailable) ...[
+              const SizedBox(height: 8),
+              Text(
+                BookSourceAccess.unavailableMessage,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.red.shade700,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
 }
+

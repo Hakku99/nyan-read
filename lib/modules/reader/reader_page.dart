@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -19,8 +21,8 @@ import 'widgets/reader_error_view.dart';
 import 'widgets/highlight_note_dialog.dart';
 import 'widgets/reader_menu.dart';
 import 'dart:async';
-import 'dart:io';
 import '../../core/utils/lifecycle_registry.dart';
+import '../../core/utils/book_source_access.dart';
 import 'controllers/reading_progress_manager.dart';
 import 'brightness/brightness_orchestrator.dart';
 import 'brightness/brightness_repository.dart';
@@ -123,11 +125,11 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
       // [Safety Net]: Missing file fallback.
       // If the user manually deleted the file in Document map, intercept it before engine crash.
-      if (!File(book.filePath).existsSync()) {
+      if (!await BookSourceAccess.isAvailable(book)) {
         _errorState = ReaderErrorState(
           type: ReaderErrorType.fileNotFound,
-          technicalMessage:
-              "Source file [${book.filePath}] does not exist. The local book file may have been moved or deleted.\nPlease return to the bookshelf and remove this entry.",
+          userMessage: BookSourceAccess.unavailableMessage,
+          technicalMessage: BookSourceAccess.technicalMessage(book),
         );
         notifyListeners();
         return;
@@ -174,6 +176,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
       _errorState = ReaderErrorState(
         type: type,
+        userMessage: type == ReaderErrorType.fileNotFound
+            ? BookSourceAccess.unavailableMessage
+            : null,
         technicalMessage: "$e\n$stack",
       );
       notifyListeners();
@@ -797,3 +802,5 @@ class _ReaderPageState extends State<ReaderPage> {
     );
   }
 }
+
+

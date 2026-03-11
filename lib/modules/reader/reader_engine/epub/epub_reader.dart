@@ -1,7 +1,11 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
+import 'dart:typed_data';
+
 import 'package:epub_view/epub_view.dart';
+import 'package:epub_view/src/data/epub_parser.dart';
+import 'package:flutter/material.dart';
+
 import '../../../../core/models/book.dart';
+import '../../../../core/utils/book_source_access.dart';
 import '../reader_engine.dart';
 import 'epub_position.dart';
 
@@ -9,6 +13,8 @@ class EpubReaderEngine implements ReaderEngine {
   final Book book;
   late EpubController _epubController;
   bool _isInit = false;
+  EpubBook? _document;
+  List<Map<String, dynamic>> _chapters = const [];
 
   EpubReaderEngine(this.book);
 
@@ -16,37 +22,50 @@ class EpubReaderEngine implements ReaderEngine {
   Future<void> initialize() async {
     if (_isInit) return;
 
-    final file = File(book.filePath);
-    if (!await file.exists()) {
-      throw const FileSystemException("File not found");
-    }
-
     try {
+      final bytes = Uint8List.fromList(await BookSourceAccess.readBytes(book));
+      final document = await EpubDocument.openData(bytes);
+      final parsedChapters = parseChapters(document);
+      final paragraphResult = parseParagraphs(parsedChapters, document.Content);
+
+      _document = document;
+      _chapters = List<Map<String, dynamic>>.generate(
+        parsedChapters.length,
+        (index) {
+          final chapter = parsedChapters[index];
+          final startIndex = index < paragraphResult.chapterIndexes.length
+              ? paragraphResult.chapterIndexes[index]
+              : 0;
+          return {
+            'title': chapter.Title ?? 'Chapter ${index + 1}',
+            'index': index,
+            'startIndex': startIndex,
+            'anchor': chapter.Anchor,
+          };
+        },
+        growable: false,
+      );
+
       _epubController = EpubController(
-        document: EpubDocument.openFile(file),
+        document: Future<EpubBook>.value(document),
       );
       _isInit = true;
     } catch (e) {
-      throw FormatException("Failed to open EPUB: $e");
+      throw FormatException('Failed to open EPUB: $e');
     }
   }
 
   @override
-  void setConfig(ReaderConfig config) {
-    // EpubView handles its own styling usually, or we need to rebuild it with builders.
-    // For MVP, we might not support dynamic font change inside EpubView easily without rebuilding.
-  }
+  void setConfig(ReaderConfig config) {}
 
   @override
   double? getProgress() {
-    // Parsing CFI to percentage is complex without EpubController exposing it directly.
     return 0.0;
   }
 
   @override
   Future<void> seekToProgress(double progress) async {
-    // TODO: Implement EPUB seeking based on spine/progress mapping.
-    debugPrint("EPUB seeking not yet supported.");
+    debugPrint('EPUB seeking not yet supported.');
   }
 
   String? _pendingCfi;
@@ -69,30 +88,18 @@ class EpubReaderEngine implements ReaderEngine {
   @override
   Future<void> goToPosition(ReadingPosition position) async {
     if (position is EpubReadingPosition) {
-      // If controller is attached (approximated by _isInit for now, but really depends on View)
-      // Since we don't have isAttached, we'll try to set it.
-      // Ideally, EpubView should expose 'onCreated'.
-      // For now, we rely on onDocumentLoaded to consume the pending CFI.
-      // If we are already loaded, we can just jump?
-      // Since we can't easily check if View is mounted, we just set the pending CFI always
-      // and let onDocumentLoaded handle it IF it fires again?
-      // No, onDocumentLoaded fires once.
-
-      // Better strategy: Try to jump. If it fails (exception), queue it?
-      // Or just queue it if we think we haven't loaded?
-      // We'll set _pendingCfi. If the view is building, onDocumentLoaded will pick it up.
-      // If the view is ALREADY built and loaded, onDocumentLoaded won't fire again.
-      // So we need to know if we are "ready".
-
       _pendingCfi = position.cfi;
-      // Try to jump immediately as well, in case we are already loaded.
       try {
         _epubController.gotoEpubCfi(position.cfi);
-        _pendingCfi = null; // If success, clear pending
-      } catch (e) {
-        // Ignore error, assume view not ready, leave _pendingCfi set for onDocumentLoaded
+        _pendingCfi = null;
+      } catch (_) {
+        // Leave _pendingCfi queued until the document finishes loading.
       }
     }
+  }
+
+  Future<void> jumpToChapterStart(int startIndex) async {
+    _epubController.jumpTo(index: startIndex, alignment: 0);
   }
 
   @override
@@ -106,69 +113,30 @@ class EpubReaderEngine implements ReaderEngine {
 
   @override
   Future<List<dynamic>> getChapters() async {
-    if (!_isInit) return [];
-
-    try {
-      // EpubController provides access to table of contents
-      // We'll extract chapter information from the controller
-      final document = await _epubController.document;
-      if (document == null) return [];
-
-      final chapters = <Map<String, dynamic>>[];
-      int index = 0;
-
-      // Extract chapters from EPUB table of contents
-      for (final chapter in document.Chapters ?? []) {
-        chapters.add({
-          'title': chapter.Title ?? 'Chapter ${index + 1}',
-          'index': index,
-          'anchor': chapter.Anchor,
-        });
-        index++;
-      }
-
-      return chapters;
-    } catch (e) {
-      debugPrint('Error extracting EPUB chapters: $e');
-      return [];
-    }
+    if (!_isInit || _document == null) return [];
+    return _chapters;
   }
 
   @override
-  Future<void> nextPage() async {
-    // EpubView handles its own gestures.
-    // TODO: Implement programmatic navigation if supported by controller.
-  }
+  Future<void> nextPage() async {}
 
   @override
-  Future<void> previousPage() async {
-    // EpubView handles its own gestures.
-    // TODO: Implement programmatic navigation if supported by controller.
-  }
+  Future<void> previousPage() async {}
 
   @override
-  int getPageCount() {
-    return 0; // Not supported yet
-  }
+  int getPageCount() => 0;
 
   @override
-  int getCurrentPageIndex() {
-    return 0; // Not supported yet
-  }
+  int getCurrentPageIndex() => 0;
 
   @override
   bool get hasBottomBar => false;
 
   @override
-  Future<String?> getSnippet() async {
-    // TODO: Implement snippet extraction for EPUB
-    return null;
-  }
+  Future<String?> getSnippet() async => null;
 
   @override
-  Future<String?> getTextAtPosition(ReadingPosition position) async {
-    return null;
-  }
+  Future<String?> getTextAtPosition(ReadingPosition position) async => null;
 
   @override
   void dispose() {

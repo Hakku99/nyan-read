@@ -8,6 +8,7 @@ import '../../../core/utils/anchor_healer.dart';
 import '../reader_engine/reader_engine.dart';
 import '../reader_engine/txt/txt_reader.dart';
 import '../reader_engine/epub/epub_position.dart';
+import '../reader_engine/epub/epub_reader.dart';
 import '../reader_engine/pdf/pdf_position.dart';
 import '../reader_engine/txt/txt_position.dart';
 
@@ -20,7 +21,7 @@ class ContentMetaManager {
   int? _currentChapterIndex;
   List<Highlight> _highlights = [];
 
-  // DI: 通过 get_it 获取 DatabaseService，禁止直接 new DatabaseService()
+  // DI: 闁俺绻?get_it 閼惧嘲褰?DatabaseService閿涘瞼顩﹀銏㈡纯閹?new DatabaseService()
   DatabaseService get _db => GetIt.instance<DatabaseService>();
 
   ContentMetaManager({
@@ -45,10 +46,10 @@ class ContentMetaManager {
     onMetaChanged();
   }
 
-  /// 加载高亮 + 前置状态自愈 (State Pre-processing)
+  /// 閸旂姾娴囨妯瑰瘨 + 閸撳秶鐤嗛悩鑸碘偓浣藉殰閹?(State Pre-processing)
   ///
-  /// 遵循单向数据流原则：此方法是唯一的"自愈流水线"。
-  /// UI 层 (TxtReaderEngine) 只会收到坐标绝对健康的 List<Highlight>。
+  /// 闁潧鎯婇崡鏇炴倻閺佺増宓佸ù浣稿斧閸掓瑱绱板銈嗘煙濞夋洘妲搁崬顖欑閻?閼奉亝鍓ゅù浣规寜缁?閵?
+  /// UI 鐏?(TxtReaderEngine) 閸欘亙绱伴弨璺哄煂閸ф劖鐖ｇ紒婵嗩嚠閸嬨儱鎮嶉惃?List<Highlight>閵?
   Future<void> loadHighlights() async {
     try {
       final rawData = await _db.getHighlights(book.id);
@@ -82,10 +83,10 @@ class ContentMetaManager {
     }
   }
 
-  /// 单次章节高亮自愈管线 (内部)
+  /// 閸楁洘顐肩粩鐘哄Ν妤傛ü瀵掗懛顏呭墹缁狅紕鍤?(閸愬懘鍎?
   ///
-  /// Fast-Path: offset 比对即可，0 I/O。
-  /// Slow-Path: AnchorHealer 双向权重仲裁 + 即发即弃(fire-and-forget)回写 DB。
+  /// Fast-Path: offset 濮ｆ柨顕崡鍐插讲閿? I/O閵?
+  /// Slow-Path: AnchorHealer 閸欏苯鎮滈弶鍐櫢娴犺尪顥?+ 閸楀啿褰傞崡鍐茬磾(fire-and-forget)閸ョ偛鍟?DB閵?
   Future<List<Highlight>> _healHighlights(
     List<Highlight> raw,
     TxtReaderEngine txtEngine,
@@ -93,15 +94,15 @@ class ContentMetaManager {
     final healedList = <Highlight>[];
 
     for (final h in raw) {
-      // 1. 取出段落原文
+      // 1. 閸欐牕鍤▓浣冩儰閸樼喐鏋?
       final paragraphText = txtEngine.getParagraphText(h.paragraphIndex);
       if (paragraphText == null) {
-        // 段落不存在，保留原样（防止崩溃）
+        // 濞堜絻鎯ゆ稉宥呯摠閸︻煉绱濇穱婵堟殌閸樼喐鐗遍敍鍫ユЩ濮濄垹绌垮┃鍐跨礆
         healedList.add(h);
         continue;
       }
 
-      // 2. Fast-Path：用原始 offset 截取并与 selectedText 比对
+      // 2. Fast-Path閿涙氨鏁ら崢鐔奉潗 offset 閹搭亜褰囬獮鏈电瑢 selectedText 濮ｆ柨顕?
       final start = h.startOffset;
       final end = h.endOffset;
       final isOffsetValid = start >= 0 &&
@@ -110,19 +111,19 @@ class ContentMetaManager {
           paragraphText.substring(start, end) == h.selectedText;
 
       if (isOffsetValid) {
-        // 坐标健康，直接入队
+        // 閸ф劖鐖ｉ崑銉ユ倣閿涘瞼娲块幒銉ュ弳闂?
         healedList.add(h);
         continue;
       }
 
-      // 如果 preContext 为空（v4 旧数据），跳过自愈，透传原始值
+      // 婵″倹鐏?preContext 娑撹櫣鈹栭敍鍧? 閺冄勬殶閹诡噯绱氶敍宀冪儲鏉╁洩鍤滈幇鍫礉闁繋绱堕崢鐔奉潗閸?
       if (h.preContext.isEmpty && h.postContext.isEmpty) {
-        debugPrint('[ContentMetaManager] 旧数据无锚点信息，跳过自愈: ${h.selectedText}');
+        debugPrint('[ContentMetaManager] 閺冄勬殶閹诡喗妫ら柨姘卞仯娣団剝浼呴敍宀冪儲鏉╁洩鍤滈幇? ${h.selectedText}');
         healedList.add(h);
         continue;
       }
 
-      // 3. Slow-Path：AnchorHealer 搜救
+      // 3. Slow-Path閿涙nchorHealer 閹兼粍鏅?
       final newStart = AnchorHealer.findHealedOffset(
         paragraphText,
         h.preContext,
@@ -133,7 +134,7 @@ class ContentMetaManager {
       if (newStart != null) {
         final newEnd = newStart + h.selectedText.length;
         debugPrint(
-            '[ContentMetaManager] 高亮坐标自愈成功: "${h.selectedText}" $start→$newStart');
+            '[ContentMetaManager] 妤傛ü瀵掗崸鎰垼閼奉亝鍓ら幋鎰: "${h.selectedText}" $start閳?newStart');
 
         final healed = h.copyWith(
           startOffset: newStart,
@@ -142,12 +143,12 @@ class ContentMetaManager {
         );
         healedList.add(healed);
 
-        // 即发即弃：异步回写 DB，绝对不阻塞 UI 渲染帧
+        // 閸楀啿褰傞崡鍐茬磾閿涙艾绱撳銉ユ礀閸?DB閿涘瞼绮风€甸€涚瑝闂冭顢?UI 濞撳弶鐓嬬敮?
         _db.updateHighlightHealedOffset(h.id, newStart, newEnd);
       } else {
         debugPrint(
-            '[ContentMetaManager] 高亮坐标搜救失败，丢弃渲染（不崩溃）: ${h.selectedText}');
-        // 搜救失败：丢弃，不加入健康列表，防止错误渲染
+            '[ContentMetaManager] 妤傛ü瀵掗崸鎰垼閹兼粍鏅虫径杈Е閿涘奔娑鍐╄閺屾搫绱欐稉宥呯┛濠у喛绱? ${h.selectedText}');
+        // 閹兼粍鏅虫径杈Е閿涙矮娑鍐跨礉娑撳秴濮為崗銉ヤ淮鎼村嘲鍨悰顭掔礉闂冨弶顒涢柨娆掝嚖濞撳弶鐓?
       }
     }
 
@@ -209,9 +210,9 @@ class ContentMetaManager {
   Future<void> jumpToChapter(int index, dynamic chapterData,
       Future<void> Function() saveProgressFn) async {
     try {
-      if (book.format == 'epub' && chapterData['anchor'] != null) {
-        await engine
-            .goToPosition(EpubReadingPosition(cfi: chapterData['anchor']));
+      if (book.format == 'epub' && chapterData['startIndex'] != null && engine is EpubReaderEngine) {
+        await (engine as EpubReaderEngine)
+            .jumpToChapterStart(chapterData['startIndex'] as int);
       } else if (book.format == 'txt' &&
           chapterData['paragraphIndex'] != null) {
         await engine.goToPosition(
@@ -338,10 +339,10 @@ class ContentMetaManager {
     }
   }
 
-  /// 新增高亮时，同步采样 pre/post context 锚点，存入 DB
+  /// 閺傛澘顤冩妯瑰瘨閺冭绱濋崥灞绢劄闁插洦鐗?pre/post context 闁挎氨鍋ｉ敍灞界摠閸?DB
   Future<void> addHighlight(int paragraphIndex, int start, int end, String text,
       String colorCode, String paragraphText) async {
-    // 采样阶段：提取前后15字符特征
+    // 闁插洦鐗遍梼鑸殿唽閿涙碍褰侀崣鏍у閸?5鐎涙顑侀悧鐟扮窙
     final preContext = start > 0
         ? paragraphText.substring((start - 15).clamp(0, start), start)
         : '';
@@ -377,3 +378,5 @@ class ContentMetaManager {
     await loadHighlights();
   }
 }
+
+

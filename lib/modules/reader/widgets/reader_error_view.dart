@@ -88,7 +88,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
     final errorSecondary = nyanTheme.errorSecondaryTextColor;
     final errorAccent = nyanTheme.errorAccentColor;
 
-    final userMessage = _getErrorMessage(loc);
+    final userMessage = widget.errorState.userMessage ?? _getErrorMessage(loc);
 
     return Container(
       color: errorBg,
@@ -191,3 +191,4 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
     );
   }
 }
+
