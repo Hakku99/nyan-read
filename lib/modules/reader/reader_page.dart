@@ -136,6 +136,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       }
 
       await engine.initialize();
+      notifyListeners();
+      await WidgetsBinding.instance.endOfFrame;
 
       await metaManager.loadChapters();
       await progressManager.restoreLastPosition();

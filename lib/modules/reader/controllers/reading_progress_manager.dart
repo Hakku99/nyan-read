@@ -82,7 +82,22 @@ class ReadingProgressManager {
 
       if (position != null) {
         await engine.goToPosition(position);
+        await Future<void>.delayed(const Duration(milliseconds: 180));
         refreshFromEngine();
+
+        final shouldFallbackToProgress =
+            book.format == 'epub' &&
+            book.currentProgress > 0 &&
+            ((_currentPosition == null) || _currentProgress <= 0.0);
+
+        if (shouldFallbackToProgress) {
+          debugPrint(
+              "DEBUG: EPUB position restore did not advance, falling back to saved progress ${book.currentProgress}");
+          await engine.seekToProgress(book.currentProgress);
+          await Future<void>.delayed(const Duration(milliseconds: 120));
+          refreshFromEngine();
+        }
+
         debugPrint("DEBUG: Position restored to engine successfully");
       }
     } catch (e) {
