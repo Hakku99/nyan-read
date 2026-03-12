@@ -43,7 +43,7 @@ class TxtReaderEngine implements ReaderEngine {
   int _totalPages = 1;
   int _charsPerPage = 1;
   bool _isPaginationCalculated = false;
-  Size? _lastSize;
+  _PaginationLayoutKey? _lastPaginationKey;
   final ValueNotifier<int> _pageInfoNotifier = ValueNotifier(0);
 
   List<Map<String, dynamic>> _chapters = [];
@@ -56,6 +56,8 @@ class TxtReaderEngine implements ReaderEngine {
     lineHeight: 1.5,
   ));
   final ValueNotifier<int> _highlightRenderVersion = ValueNotifier(0);
+  static const EdgeInsets _paginationPadding =
+      EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0);
 
   int _initialIndex = 0;
   bool _hasRestoredPosition = false;
@@ -210,8 +212,7 @@ class TxtReaderEngine implements ReaderEngine {
 
                           return Container(
                             height: 20,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             color: config.backgroundColor,
                             child: Row(
                               children: [
@@ -271,7 +272,8 @@ class TxtReaderEngine implements ReaderEngine {
 
     if (_initialIndex > 0 && !_hasRestoredPosition) {
       _hasRestoredPosition = true;
-      debugPrint('DEBUG: Scheduling position restoration to index $_initialIndex');
+      debugPrint(
+          'DEBUG: Scheduling position restoration to index $_initialIndex');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         debugPrint(
           'DEBUG: PostFrameCallback executing - isAttached=${_itemScrollController.isAttached}',
@@ -592,10 +594,21 @@ class TxtReaderEngine implements ReaderEngine {
 
   Future<void> _recalculatePagination(Size size) async {
     if (_fullContent.isEmpty) return;
-    if (_lastSize == size && _isPaginationCalculated) return;
 
-    _lastSize = size;
-    debugPrint('Recalculating pagination for size: $size');
+    final paginationKey = _PaginationLayoutKey(
+      viewportSize: size,
+      fontSize: _config.fontSize,
+      lineHeight: _config.lineHeight,
+      padding: _paginationPadding,
+      orientation: size.width >= size.height
+          ? Orientation.landscape
+          : Orientation.portrait,
+    );
+    if (_lastPaginationKey == paginationKey && _isPaginationCalculated) return;
+
+    _lastPaginationKey = paginationKey;
+    _isPaginationCalculated = false;
+    debugPrint('Recalculating pagination for key: $paginationKey');
 
     final style = TextStyle(
       fontSize: _config.fontSize,
@@ -603,23 +616,19 @@ class TxtReaderEngine implements ReaderEngine {
       fontFamily: 'Roboto',
     );
 
-    final padding =
-        const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0);
-
-    final captureSize = size;
-
     try {
       final result = await PaginationHelper.calculatePageEstimate(
         text: _fullContent,
         style: style,
         maxWidth: size.width,
         maxHeight: size.height,
-        padding: padding,
+        padding: _paginationPadding,
       );
 
-      if (_lastSize != captureSize) {
+      if (_lastPaginationKey != paginationKey) {
         debugPrint(
-          'Pagination calculation discarded: size changed from $captureSize to $_lastSize',
+          'Pagination calculation discarded: layout changed from '
+          '$paginationKey to $_lastPaginationKey',
         );
         return;
       }
@@ -676,5 +685,52 @@ class TxtReaderEngine implements ReaderEngine {
     _configNotifier.dispose();
     _highlightRenderVersion.dispose();
     _pageInfoNotifier.dispose();
+  }
+}
+
+class _PaginationLayoutKey {
+  const _PaginationLayoutKey({
+    required this.viewportSize,
+    required this.fontSize,
+    required this.lineHeight,
+    required this.padding,
+    required this.orientation,
+  });
+
+  final Size viewportSize;
+  final double fontSize;
+  final double lineHeight;
+  final EdgeInsets padding;
+  final Orientation orientation;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _PaginationLayoutKey &&
+        other.viewportSize == viewportSize &&
+        other.fontSize == fontSize &&
+        other.lineHeight == lineHeight &&
+        other.padding == padding &&
+        other.orientation == orientation;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        viewportSize,
+        fontSize,
+        lineHeight,
+        padding,
+        orientation,
+      );
+
+  @override
+  String toString() {
+    return '_PaginationLayoutKey('
+        'viewportSize: $viewportSize, '
+        'fontSize: $fontSize, '
+        'lineHeight: $lineHeight, '
+        'padding: $padding, '
+        'orientation: $orientation'
+        ')';
   }
 }

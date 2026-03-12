@@ -1,12 +1,15 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+
 import '../../../core/models/book.dart';
 import '../../../core/services/database_service.dart';
-import '../reader_engine/reader_engine.dart';
+import '../../../core/services/service_locator.dart';
+import '../../../core/utils/lifecycle_registry.dart';
 import '../reader_engine/epub/epub_position.dart';
 import '../reader_engine/pdf/pdf_position.dart';
+import '../reader_engine/reader_engine.dart';
 import '../reader_engine/txt/txt_position.dart';
-import '../../../core/utils/lifecycle_registry.dart';
 
 class ReadingProgressManager {
   final ReaderEngine engine;
@@ -22,6 +25,8 @@ class ReadingProgressManager {
   bool _trackingStarted = false;
   bool _prepareForExitRequested = false;
   Future<void>? _saveInFlight;
+
+  DatabaseService get _db => getIt<DatabaseService>();
 
   ReadingProgressManager({
     required this.engine,
@@ -61,7 +66,7 @@ class ReadingProgressManager {
   Future<void> restoreLastPosition() async {
     try {
       debugPrint("DEBUG: restoreLastPosition called for book ${book.id}");
-      final positionData = await DatabaseService().getBookPosition(book.id);
+      final positionData = await _db.getBookPosition(book.id);
       if (positionData == null) {
         debugPrint("DEBUG: No saved position found in DB");
         return;
@@ -85,8 +90,7 @@ class ReadingProgressManager {
         await Future<void>.delayed(const Duration(milliseconds: 180));
         refreshFromEngine();
 
-        final shouldFallbackToProgress =
-            book.format == 'epub' &&
+        final shouldFallbackToProgress = book.format == 'epub' &&
             book.currentProgress > 0 &&
             ((_currentPosition == null) || _currentProgress <= 0.0);
 
@@ -109,8 +113,7 @@ class ReadingProgressManager {
     final position = engine.getCurrentPosition();
     final progress = engine.getProgress() ?? 0.0;
 
-    final didPositionChange =
-        _currentPosition?.toJson() != position?.toJson();
+    final didPositionChange = _currentPosition?.toJson() != position?.toJson();
     final didProgressChange = progress != _currentProgress;
 
     _currentPosition = position;
@@ -167,7 +170,7 @@ class ReadingProgressManager {
           "DEBUG: _saveCurrentPosition called. Engine returned: ${position?.toJson()}, progress: $progress");
 
       if (position != null) {
-        await DatabaseService().updateBookPosition(
+        await _db.updateBookPosition(
           book.id,
           book.format,
           position.toJson(),
