@@ -5,12 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 
 import '../../../../core/models/book.dart';
-import '../../../../core/models/highlight.dart';
 import '../../../../core/utils/book_source_access.dart';
 import '../reader_engine.dart';
 import 'pdf_position.dart';
 
-class PdfReaderEngine implements ReaderEngine {
+class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
   static const ReaderCapabilities _capabilities = ReaderCapabilities(
     supportsTypography: false,
     supportsTheme: false,
@@ -29,19 +28,6 @@ class PdfReaderEngine implements ReaderEngine {
 
   @override
   ReaderCapabilities get capabilities => _capabilities;
-
-  @override
-  void configureInteractions({
-    ReaderTextHighlightCallback? onTextHighlighted,
-    ReaderHighlightTapCallback? onHighlightTapped,
-    ReaderContentTapCallback? onContentTap,
-  }) {}
-
-  @override
-  void setHighlights(List<Highlight> highlights) {}
-
-  @override
-  String? getParagraphText(int paragraphIndex) => null;
 
   @override
   Future<void> initialize() async {
@@ -110,21 +96,24 @@ class PdfReaderEngine implements ReaderEngine {
   }
 
   @override
-  Future<List<dynamic>> getChapters() async {
+  Future<List<ReaderChapter>> getChapters() async {
     if (!_isInit) return [];
 
     try {
       final count = _pdfController.pagesCount;
       if (count == null || count == 0) return [];
 
-      final chapters = <Map<String, dynamic>>[];
+      final chapters = <ReaderChapter>[];
       const pagesPerChapter = 10;
       for (int i = 1; i <= count; i += pagesPerChapter) {
-        chapters.add({
-          'title': 'Page $i',
-          'index': chapters.length,
-          'pageNumber': i,
-        });
+        chapters.add(
+          ReaderChapter(
+            title: 'Page $i',
+            index: chapters.length,
+            locator: ChapterLocator(pageNumber: i),
+            isSynthetic: true,
+          ),
+        );
       }
 
       return chapters;
@@ -159,11 +148,6 @@ class PdfReaderEngine implements ReaderEngine {
   @override
   bool get hasBottomBar => false;
 
-  @override
-  Future<String?> getSnippet() async => null;
-
-  @override
-  Future<String?> getTextAtPosition(ReadingPosition position) async => null;
 
   @override
   void dispose() {

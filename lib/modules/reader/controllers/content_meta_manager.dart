@@ -12,12 +12,15 @@ class ContentMetaManager {
   final Book book;
   final VoidCallback onMetaChanged;
 
-  List<dynamic> _chapters = [];
+  List<ReaderChapter> _chapters = const [];
   int? _currentChapterIndex;
   List<Highlight> _highlights = [];
 
   // DI: 闁俺绻?get_it 閼惧嘲褰?DatabaseService閿涘瞼顩﹀銏㈡纯閹?new DatabaseService()
   DatabaseService get _db => GetIt.instance<DatabaseService>();
+  TextReaderCapability? get _textCapability => engine.textCapability;
+  TextExtractionCapability? get _textExtractionCapability =>
+      engine.textExtractionCapability;
 
   ContentMetaManager({
     required this.engine,
@@ -25,7 +28,7 @@ class ContentMetaManager {
     required this.onMetaChanged,
   });
 
-  List<dynamic> get chapters => _chapters;
+  List<ReaderChapter> get chapters => _chapters;
   int? get currentChapterIndex => _currentChapterIndex;
   List<Highlight> get highlights => List<Highlight>.unmodifiable(_highlights);
 
@@ -51,8 +54,8 @@ class ContentMetaManager {
       final rawHighlights = rawData.map((m) => Highlight.fromMap(m)).toList();
 
       List<Highlight> healthyHighlights;
-      if (engine.capabilities.supportsHighlights) {
-        healthyHighlights = await _healHighlights(rawHighlights, engine);
+      if (engine.capabilities.supportsHighlights && _textCapability != null) {
+        healthyHighlights = await _healHighlights(rawHighlights, _textCapability!);
       } else {
         healthyHighlights = rawHighlights;
       }
@@ -70,7 +73,7 @@ class ContentMetaManager {
   }
 
   void _syncTxtRenderHighlights() {
-    engine.setHighlights(_highlights);
+    _textCapability?.setHighlights(_highlights);
   }
 
   /// 閸楁洘顐肩粩鐘哄Ν妤傛ü瀵掗懛顏呭墹缁狅紕鍤?(閸愬懘鍎?
@@ -79,13 +82,13 @@ class ContentMetaManager {
   /// Slow-Path: AnchorHealer 閸欏苯鎮滈弶鍐櫢娴犺尪顥?+ 閸楀啿褰傞崡鍐茬磾(fire-and-forget)閸ョ偛鍟?DB閵?
   Future<List<Highlight>> _healHighlights(
     List<Highlight> raw,
-    ReaderEngine engine,
+    TextReaderCapability textCapability,
   ) async {
     final healedList = <Highlight>[];
 
     for (final h in raw) {
       // 1. 閸欐牕鍤▓浣冩儰閸樼喐鏋?
-      final paragraphText = engine.getParagraphText(h.paragraphIndex);
+      final paragraphText = textCapability.getParagraphText(h.paragraphIndex);
       if (paragraphText == null) {
         // 濞堜絻鎯ゆ稉宥呯摠閸︻煉绱濇穱婵堟殌閸樼喐鐗遍敍鍫ユЩ濮濄垹绌垮┃鍐跨礆
         healedList.add(h);
@@ -162,7 +165,7 @@ class ContentMetaManager {
       int maxStartPara = -1;
 
       for (int i = 0; i < _chapters.length; i++) {
-        final chapterPara = _chapters[i]['paragraphIndex'] as int? ?? -1;
+        final chapterPara = _chapters[i].locator.chapterIndex ?? -1;
         if (chapterPara != -1 && chapterPara <= currentPara) {
           if (chapterPara > maxStartPara) {
             maxStartPara = chapterPara;
@@ -177,7 +180,7 @@ class ContentMetaManager {
       int maxStartPage = -1;
 
       for (int i = 0; i < _chapters.length; i++) {
-        final chapterPage = _chapters[i]['pageNumber'] as int? ?? -1;
+        final chapterPage = _chapters[i].locator.pageNumber ?? -1;
         if (chapterPage != -1 && chapterPage <= currentPage) {
           if (chapterPage > maxStartPage) {
             maxStartPage = chapterPage;
@@ -218,9 +221,7 @@ class ContentMetaManager {
     if (_currentChapterIndex == null || _currentChapterIndex! <= 0) return;
     await jumpToChapter(
       _currentChapterIndex! - 1,
-      ChapterLocator.fromChapterData(
-        _chapters[_currentChapterIndex! - 1] as Map<String, dynamic>,
-      ),
+      _chapters[_currentChapterIndex! - 1].locator,
       saveProgressFn,
     );
   }
@@ -230,9 +231,7 @@ class ContentMetaManager {
         _currentChapterIndex! >= _chapters.length - 1) return;
     await jumpToChapter(
       _currentChapterIndex! + 1,
-      ChapterLocator.fromChapterData(
-        _chapters[_currentChapterIndex! + 1] as Map<String, dynamic>,
-      ),
+      _chapters[_currentChapterIndex! + 1].locator,
       saveProgressFn,
     );
   }
@@ -258,7 +257,7 @@ class ContentMetaManager {
     final position = engine.getCurrentPosition();
     if (position == null) return false;
 
-    final snippet = await engine.getSnippet();
+    final snippet = await _textExtractionCapability?.getSnippet();
     final bookmark = {
       'id': const Uuid().v4(),
       'book_id': book.id,
@@ -286,7 +285,7 @@ class ContentMetaManager {
           if (payload != null) {
             final pos = ReadingPosition.fromJson(type.toString(), payload);
             if (pos.hasLocation) {
-              final text = await engine.getTextAtPosition(pos);
+              final text = await _textExtractionCapability?.getTextAtPosition(pos);
               if (text != null && text.isNotEmpty) {
                 await _db.updateBookmark(bm['id'], {
                   'content_snippet': text,

@@ -6,7 +6,6 @@ import 'package:epub_view/src/data/epub_parser.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/models/book.dart';
-import '../../../../core/models/highlight.dart';
 import '../../../../core/utils/book_source_access.dart';
 import '../reader_engine.dart';
 import 'epub_position.dart';
@@ -28,7 +27,7 @@ class EpubReaderEngine implements ReaderEngine {
   late EpubController _epubController;
   bool _isInit = false;
   EpubBook? _document;
-  List<Map<String, dynamic>> _chapters = const [];
+  List<ReaderChapter> _chapters = const [];
   int _paragraphCount = 0;
   double _lastKnownProgress = 0.0;
   String? _pendingCfi;
@@ -41,19 +40,6 @@ class EpubReaderEngine implements ReaderEngine {
 
   @override
   ReaderCapabilities get capabilities => _capabilities;
-
-  @override
-  void configureInteractions({
-    ReaderTextHighlightCallback? onTextHighlighted,
-    ReaderHighlightTapCallback? onHighlightTapped,
-    ReaderContentTapCallback? onContentTap,
-  }) {}
-
-  @override
-  void setHighlights(List<Highlight> highlights) {}
-
-  @override
-  String? getParagraphText(int paragraphIndex) => null;
 
   @override
   Future<void> initialize() async {
@@ -71,19 +57,18 @@ class EpubReaderEngine implements ReaderEngine {
       _lastKnownCfi = _initialCfi;
       _pendingCfi = _initialCfi;
       _viewReadyCompleter = Completer<void>();
-      _chapters = List<Map<String, dynamic>>.generate(
+      _chapters = List<ReaderChapter>.generate(
         parsedChapters.length,
         (index) {
           final chapter = parsedChapters[index];
           final startIndex = index < paragraphResult.chapterIndexes.length
               ? paragraphResult.chapterIndexes[index]
               : 0;
-          return {
-            'title': chapter.Title ?? 'Chapter ${index + 1}',
-            'index': index,
-            'startIndex': startIndex,
-            'anchor': chapter.Anchor,
-          };
+          return ReaderChapter(
+            title: chapter.Title ?? 'Chapter ${index + 1}',
+            index: index,
+            locator: ChapterLocator(contentIndex: startIndex),
+          );
         },
         growable: false,
       );
@@ -195,7 +180,7 @@ class EpubReaderEngine implements ReaderEngine {
   }
 
   @override
-  Future<List<dynamic>> getChapters() async {
+  Future<List<ReaderChapter>> getChapters() async {
     if (!_isInit || _document == null) return [];
     return _chapters;
   }
@@ -223,21 +208,9 @@ class EpubReaderEngine implements ReaderEngine {
     final targetIndex = (currentIndex - 1).clamp(0, maxIndex) as int;
     await seekToProgress(maxIndex == 0 ? 0.0 : targetIndex / maxIndex);
   }
-
-  @override
-  int getPageCount() => 0;
-
-  @override
-  int getCurrentPageIndex() => 0;
-
   @override
   bool get hasBottomBar => false;
 
-  @override
-  Future<String?> getSnippet() async => null;
-
-  @override
-  Future<String?> getTextAtPosition(ReadingPosition position) async => null;
 
   void _handleCurrentValueChanged() {
     final cfi = _epubController.generateEpubCfi();

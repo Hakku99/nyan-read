@@ -22,7 +22,12 @@ typedef PaginationEstimateCalculator = Future<List<int>> Function({
   required EdgeInsets padding,
 });
 
-class TxtReaderEngine implements ReaderEngine {
+class TxtReaderEngine
+    implements
+        ReaderEngine,
+        TextReaderCapability,
+        TextExtractionCapability,
+        PageMetricsCapability {
   static const ReaderCapabilities _capabilities = ReaderCapabilities(
     supportsTypography: true,
     supportsTheme: true,
@@ -65,7 +70,7 @@ class TxtReaderEngine implements ReaderEngine {
       <_PaginationLayoutKey>{};
   final ValueNotifier<int> _pageInfoNotifier = ValueNotifier(0);
 
-  List<Map<String, dynamic>> _chapters = [];
+  List<ReaderChapter> _chapters = const [];
 
   final ValueNotifier<ReaderConfig> _configNotifier =
       ValueNotifier(const ReaderConfig(
@@ -77,6 +82,43 @@ class TxtReaderEngine implements ReaderEngine {
   final ValueNotifier<int> _highlightRenderVersion = ValueNotifier(0);
   static const EdgeInsets _paginationPadding =
       EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0);
+  static final List<RegExp> _chapterHeadingPatterns = [
+    RegExp(
+      r'^\s*.{1,40}?[\uff1a:]\s*\u7b2c\s*[\u96f6\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\u4e24\dIVXLCDMivxlcdm]+\s*[\u5377\u518c\u90e8\u7bc7\u96c6\u7ae0\u56de\u8282\u8bdd\u5e55](?:\s*(?:[\uff1a:._\-\uff0c\u3001 ]\s*)?.*)?$',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'^\s*\u7b2c\s*[\u96f6\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\u4e24\dIVXLCDMivxlcdm]+\s*[\u5377\u518c\u90e8\u7bc7\u96c6\u7ae0\u56de\u8282\u8bdd\u5e55](?:\s*(?:[\uff1a:._\-\uff0c\u3001 ]\s*)?.*)?$',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'^\s*[\u5377\u518c\u90e8\u7bc7\u96c6]\s*[\u96f6\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\u4e24\dIVXLCDMivxlcdm]+\s*(?:[\uff1a:._\-\u3001 ]\s*.*)?$',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'^\s*(?:chapter|chap\.)\s+(?:\d+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b(?:[\uff1a:._\- ]\s*.*)?$',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'^\s*(?:volume|vol\.?|book|part)\s+(?:\d+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b(?:[\uff1a:._\- ]\s*.*)?$',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'^\s*(?:volume|vol\.?|book|part)\s+(?:\d+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b\s+(?:chapter|chap\.)\s+(?:\d+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b(?:[\uff1a:._\- ]\s*.*)?$',
+      caseSensitive: false,
+    ),
+    RegExp(r'^\s*\d{1,4}[\u3001\uff0c.,:\uff1a\-]\s*\S.+$'),
+    RegExp(r'^\s*\d{1,4}\s+\S.+$'),
+  ];
+  static final List<RegExp> _specialHeadingPatterns = [
+    RegExp(
+      r'^\s*(?:\u5e8f\u7ae0|\u5e8f\u8a00|\u524d\u8a00|\u7ec8\u7ae0|\u5c3e\u58f0|\u540e\u8bb0|\u9644\u5f55|\u756a\u5916(?:\u7bc7|\u7f16)?|\u5916\u4f20|\u95f4\u7ae0|\u5e55\u95f4|\u6954\u5b50|\u5f15\u5b50|\u7ec8\u5e55|\u7ec8\u66f2|\u540e\u65e5\u8c08|\u77ed\u7bc7|\u7279\u5178)(?:[\uff1a:._\-\u3001 ]\s*.*)?$',
+    ),
+    RegExp(
+      r'^\s*(?:prologue|epilogue|afterword|interlude|side story|side-story|extra|extras|appendix|preface)(?:[\uff1a:._\- ]\s*.*)?$',
+      caseSensitive: false,
+    ),
+  ];
 
   int _initialIndex = 0;
   bool _hasRestoredPosition = false;
@@ -123,8 +165,7 @@ class TxtReaderEngine implements ReaderEngine {
         currentOffset += _lines[i].length + 1;
       }
 
-      final rawChapters = await getChapters();
-      _chapters = rawChapters.cast<Map<String, dynamic>>();
+      _chapters = await getChapters();
       _isLoading = false;
     } catch (e) {
       throw FormatException('Failed to parse TXT file: $e');
@@ -247,7 +288,7 @@ class TxtReaderEngine implements ReaderEngine {
                           final total = getPageCount();
                           String chapterTitle = _getCurrentChapterTitle();
                           if (chapterTitle.isEmpty && _chapters.isNotEmpty) {
-                            chapterTitle = _chapters.first['title'] as String;
+                            chapterTitle = _chapters.first.title;
                           }
 
                           return Container(
@@ -466,53 +507,117 @@ class TxtReaderEngine implements ReaderEngine {
     return null;
   }
 
+  bool _looksLikeNarrativeLine(String line) {
+    if (line.length > 72 && RegExp(r'[\u3002\uff01\uff1f!?\uff1b;]').hasMatch(line)) {
+      return true;
+    }
+    return false;
+  }
+
+  Iterable<String> _chapterHeadingCandidates(String line) sync* {
+    final normalized = line.trim().replaceAll('\u3000', ' ');
+    if (normalized.isEmpty) {
+      return;
+    }
+
+    final collapsedWhitespace = normalized.replaceAll(RegExp(r'\s+'), ' ');
+    yield collapsedWhitespace;
+
+    final strippedLeadingTag = collapsedWhitespace
+        .replaceFirst(
+          RegExp(r'^[\[\(\uff08\u3010\u300a\u300c\u300e\u3014\u3008].{1,20}[\]\)\uff09\u3011\u300b\u300d\u300f\u3015\u3009]\s*'),
+          '',
+        )
+        .trim();
+    if (strippedLeadingTag.isNotEmpty &&
+        strippedLeadingTag != collapsedWhitespace) {
+      yield strippedLeadingTag;
+    }
+
+    final unwrapped = collapsedWhitespace
+        .replaceFirst(RegExp(r'^[\[\(\uff08\u3010\u300a\u300c\u300e\u3014\u3008]'), '')
+        .replaceFirst(RegExp(r'[\]\)\uff09\u3011\u300b\u300d\u300f\u3015\u3009]$'), '')
+        .trim();
+    if (unwrapped.isNotEmpty && unwrapped != collapsedWhitespace) {
+      yield unwrapped;
+    }
+  }
+
+  bool _looksLikeChapterHeading(String line) {
+    for (final candidate in _chapterHeadingCandidates(line)) {
+      if (candidate.isEmpty || candidate.length > 80) {
+        continue;
+      }
+      if (_looksLikeNarrativeLine(candidate)) {
+        continue;
+      }
+
+      for (final pattern in _chapterHeadingPatterns) {
+        if (pattern.hasMatch(candidate)) {
+          return true;
+        }
+      }
+
+      for (final pattern in _specialHeadingPatterns) {
+        if (pattern.hasMatch(candidate)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _isStandaloneNumericHeading(String line) {
+    return RegExp(
+      r'^\s*(?:\d{1,4}|[IVXLCDMivxlcdm]{1,8}|[\u96f6\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\u4e24]{1,8})\s*$',
+    ).hasMatch(line);
+  }
+
+  String? _nextNonEmptyLine(int startIndex) {
+    for (int i = startIndex; i < _lines.length; i++) {
+      final candidate = _lines[i].trim();
+      if (candidate.isNotEmpty) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  bool _looksLikeChapterSubtitle(String line) {
+    final normalized = line.trim();
+    if (normalized.isEmpty || normalized.length > 40) {
+      return false;
+    }
+    return !_looksLikeNarrativeLine(normalized);
+  }
+
   @override
-  Future<List<dynamic>> getChapters() async {
+  Future<List<ReaderChapter>> getChapters() async {
     if (_lines.isEmpty) return [];
 
-    final chapters = <Map<String, dynamic>>[];
-    final chapterPatterns = [
-      RegExp('^\u7b2c[\u96f6\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\d]+[\u7ae0\u56de\u8282\u8bdd]', multiLine: false),
-      RegExp(r'^Chapter\s+\d+', caseSensitive: false),
-      RegExp(r'^\d+[.,.]\s*\S+', multiLine: false),
-      RegExp(r'^\d+\s+\S+', multiLine: false),
-      RegExp('^[\u96f6\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07]+[\u3001.]?\s*\S+', multiLine: false),
-      RegExp(
-        '^\u7b2c[\u96f6\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\dIVXLCDMivxlcdm]+\u5377[\uff1a: ]*\u7b2c[\u96f6\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\d]+[\u7ae0\u56de\u8282\u8bdd]',
-        caseSensitive: false,
-      ),
-      RegExp(
-        '^.+[\uff1a:]\s*\u7b2c[\u96f6\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\d]+[\u7ae0\u56de\u8282\u8bdd]',
-        multiLine: false,
-      ),
-    ];
-    final standaloneNumberPattern = RegExp(r'^\d+$', multiLine: false);
-
+    final chapters = <ReaderChapter>[];
     int chapterIndex = 0;
     for (int i = 0; i < _lines.length; i++) {
       final line = _lines[i].trim();
       if (line.isEmpty) continue;
 
-      bool isChapter = false;
-      for (final pattern in chapterPatterns) {
-        if (pattern.hasMatch(line)) {
-          isChapter = true;
-          break;
-        }
-      }
-
-      if (!isChapter && standaloneNumberPattern.hasMatch(line)) {
-        if (i + 1 >= _lines.length || _lines[i + 1].trim().isEmpty) {
-          isChapter = true;
-        }
+      var isChapter = _looksLikeChapterHeading(line);
+      if (!isChapter && _isStandaloneNumericHeading(line)) {
+        final nextLine = _nextNonEmptyLine(i + 1);
+        isChapter = nextLine == null ||
+            (_looksLikeChapterSubtitle(nextLine) &&
+                !_looksLikeChapterHeading(nextLine));
       }
 
       if (isChapter) {
-        chapters.add({
-          'title': line,
-          'index': chapterIndex,
-          'paragraphIndex': i,
-        });
+        chapters.add(
+          ReaderChapter(
+            title: line,
+            index: chapterIndex,
+            // TXT chapter navigation jumps to the chapter's starting paragraph.
+            locator: ChapterLocator(chapterIndex: i),
+          ),
+        );
         chapterIndex++;
       }
     }
@@ -537,9 +642,9 @@ class TxtReaderEngine implements ReaderEngine {
     }
 
     for (int i = _chapters.length - 1; i >= 0; i--) {
-      final chParaIndex = _chapters[i]['paragraphIndex'] as int;
-      if (chParaIndex <= paraIndex) {
-        return _chapters[i]['title'] as String;
+      final chParaIndex = _chapters[i].locator.chapterIndex;
+      if (chParaIndex != null && chParaIndex <= paraIndex) {
+        return _chapters[i].title;
       }
     }
     return '';

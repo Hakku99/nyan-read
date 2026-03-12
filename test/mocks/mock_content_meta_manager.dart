@@ -21,7 +21,7 @@ class MockContentMetaManager implements ContentMetaManager {
   final VoidCallback onMetaChanged;
 
   @override
-  List<dynamic> get chapters => [];
+  List<ReaderChapter> get chapters => const [];
 
   @override
   int? get currentChapterIndex => 0;
@@ -54,7 +54,7 @@ class MockContentMetaManager implements ContentMetaManager {
   @override
   Future<void> jumpToChapter(
     int index,
-    dynamic chapterData,
+    ChapterLocator locator,
     Future<void> Function() saveProgressFn,
   ) async {}
 

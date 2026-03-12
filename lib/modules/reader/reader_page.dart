@@ -97,7 +97,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   ReaderErrorState? get errorState => _errorState;
-  List<dynamic> get chapters => metaManager.chapters;
+  List<ReaderChapter> get chapters => metaManager.chapters;
   int? get currentChapterIndex => metaManager.currentChapterIndex;
   List<Highlight> get highlights => metaManager.highlights;
 
@@ -379,11 +379,13 @@ class _ReaderPageState extends State<ReaderPage> {
             final controller = ReaderController(book);
             // Attach the page-level brightness binding for menu and gesture input.
             controller.attachBrightnessController(_brightnessController);
-            controller.engine.configureInteractions(
+            controller.engine.textCapability?.configureInteractions(
               onTextHighlighted:
                   (paragraphIndex, start, end, text, colorCode) {
-                final paragraphText =
-                    controller.engine.getParagraphText(paragraphIndex) ?? '';
+                final paragraphText = controller
+                        .engine.textCapability
+                        ?.getParagraphText(paragraphIndex) ??
+                    '';
                 unawaited(
                   controller.addHighlight(
                     paragraphIndex,

@@ -7,7 +7,7 @@ import '../reader_engine/reader_engine.dart';
 /// 章节列表组件
 /// 显示书籍章节目录,支持当前章节高亮和已读章节弱化
 class ChapterListWidget extends StatefulWidget {
-  final List<dynamic> chapters;
+  final List<ReaderChapter> chapters;
   final int? currentChapterIndex;
   final double currentProgress;
   final ScrollController? scrollController;
@@ -129,9 +129,10 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
                       padding: EdgeInsets.zero,
                       itemBuilder: (context, index) {
                         final chapter = widget.chapters[index];
-                        final chapterIndex = chapter['index'] ?? index;
-                        final title =
-                            chapter['title'] ?? loc.chapterName(index + 1);
+                        final chapterIndex = chapter.index ?? index;
+                        final title = chapter.title.isNotEmpty
+                            ? chapter.title
+                            : loc.chapterName(index + 1);
 
                         // 判断是否为当前章节
                         final isCurrent =
@@ -149,9 +150,7 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
                           isRead: isRead,
                           onTap: () => widget.onChapterTap(
                             index,
-                            ChapterLocator.fromChapterData(
-                              chapter as Map<String, dynamic>,
-                            ),
+                            chapter.locator,
                           ),
                         );
                       },

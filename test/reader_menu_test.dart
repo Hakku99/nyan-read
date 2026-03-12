@@ -26,12 +26,15 @@ import 'package:nyan_read/modules/reader/controllers/brightness_controller.dart'
 import 'package:nyan_read/core/services/reader_preferences_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class FakeReadingPosition implements ReadingPosition {
+class FakeReadingPosition extends ReadingPosition {
+  const FakeReadingPosition();
+
   @override
   String toJson() => '{}';
 }
 
-class FakeReaderEngine implements ReaderEngine {
+class FakeReaderEngine
+    implements ReaderEngine, TextExtractionCapability, PageMetricsCapability {
   FakeReaderEngine({
     this.capabilities = const ReaderCapabilities(
       supportsTypography: true,
@@ -74,7 +77,7 @@ class FakeReaderEngine implements ReaderEngine {
   Future<String?> getTextAtPosition(ReadingPosition position) async => null;
 
   @override
-  Future<List<dynamic>> getChapters() async => const [];
+  Future<List<ReaderChapter>> getChapters() async => const [];
 
   @override
   Future<void> nextPage() async {}
@@ -155,7 +158,7 @@ class MockReaderController extends ChangeNotifier
       filePath: '/test/path');
 
   @override
-  List<dynamic> get chapters => [];
+  List<ReaderChapter> get chapters => const [];
 
   @override
   int get currentChapterIndex => 0;
@@ -191,7 +194,7 @@ class MockReaderController extends ChangeNotifier
   @override
   Future<void> previousPage() async {}
   @override
-  Future<void> jumpToChapter(int index, dynamic chapter) async {}
+  Future<void> jumpToChapter(int index, ChapterLocator locator) async {}
   @override
   Future<void> retry() async {}
   @override

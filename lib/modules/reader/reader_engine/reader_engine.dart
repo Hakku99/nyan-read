@@ -86,6 +86,20 @@ class ChapterLocator {
   }
 }
 
+class ReaderChapter {
+  final String title;
+  final ChapterLocator locator;
+  final int? index;
+  final bool isSynthetic;
+
+  const ReaderChapter({
+    required this.title,
+    required this.locator,
+    this.index,
+    this.isSynthetic = false,
+  });
+}
+
 class ReaderConfig {
   final Color backgroundColor;
   final Color textColor;
@@ -144,6 +158,41 @@ class ReaderCapabilities {
       );
 }
 
+abstract class TextReaderCapability {
+  void configureInteractions({
+    ReaderTextHighlightCallback? onTextHighlighted,
+    ReaderHighlightTapCallback? onHighlightTapped,
+    ReaderContentTapCallback? onContentTap,
+  });
+
+  void setHighlights(List<Highlight> highlights);
+
+  String? getParagraphText(int paragraphIndex);
+}
+
+abstract class TextExtractionCapability {
+  Future<String?> getSnippet();
+
+  Future<String?> getTextAtPosition(ReadingPosition position);
+}
+
+abstract class PageMetricsCapability {
+  int getPageCount();
+
+  int getCurrentPageIndex();
+}
+
+extension ReaderEngineCapabilityAccess on ReaderEngine {
+  TextReaderCapability? get textCapability =>
+      this is TextReaderCapability ? this as TextReaderCapability : null;
+
+  TextExtractionCapability? get textExtractionCapability =>
+      this is TextExtractionCapability ? this as TextExtractionCapability : null;
+
+  PageMetricsCapability? get pageMetricsCapability =>
+      this is PageMetricsCapability ? this as PageMetricsCapability : null;
+}
+
 abstract class ReaderEngine {
   ReaderCapabilities get capabilities;
 
@@ -153,13 +202,6 @@ abstract class ReaderEngine {
 
   /// Builds the widget that renders the book content.
   Widget buildReader(BuildContext context);
-
-  /// Configures optional engine interaction callbacks.
-  void configureInteractions({
-    ReaderTextHighlightCallback? onTextHighlighted,
-    ReaderHighlightTapCallback? onHighlightTapped,
-    ReaderContentTapCallback? onContentTap,
-  }) {}
 
   /// Navigates to a specific position.
   Future<void> goToPosition(ReadingPosition position);
@@ -176,36 +218,18 @@ abstract class ReaderEngine {
   /// Seeks to a specific progress (0.0 to 1.0).
   Future<void> seekToProgress(double progress);
 
-  /// Returns a snippet of text from the current position.
-  Future<String?> getSnippet();
-
-  /// Returns text at a specific position (used for backfilling).
-  Future<String?> getTextAtPosition(ReadingPosition position);
-
   /// Returns list of chapters/table of contents.
   /// Returns empty list if chapters cannot be extracted.
-  Future<List<dynamic>> getChapters();
+  Future<List<ReaderChapter>> getChapters();
 
   /// Navigates to a chapter described by a typed locator.
   Future<void> goToChapter(ChapterLocator locator) async {}
-
-  /// Updates render highlights if supported by the engine.
-  void setHighlights(List<Highlight> highlights) {}
-
-  /// Returns paragraph text at an engine-specific paragraph index if available.
-  String? getParagraphText(int paragraphIndex) => null;
 
   /// Navigates to the next page/screen.
   Future<void> nextPage();
 
   /// Navigates to the previous page/screen.
   Future<void> previousPage();
-
-  /// Returns total calculated pages.
-  int getPageCount();
-
-  /// Returns current page index (0-based).
-  int getCurrentPageIndex();
 
   /// Whether the engine provides its own bottom information bar.
   bool get hasBottomBar;
