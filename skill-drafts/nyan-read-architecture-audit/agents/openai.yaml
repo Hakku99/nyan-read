@@ -1,0 +1,4 @@
+interface:
+  display_name: "Nyan Read Architecture Audit"
+  short_description: "Flutter reader architecture audit for deep codebase analysis."
+  default_prompt: "Use $nyan-read-architecture-audit to analyze this Flutter reader repo and produce a detailed architecture report."
