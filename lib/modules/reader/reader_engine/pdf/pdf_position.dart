@@ -1,16 +1,19 @@
-import 'dart:convert';
 import '../reader_engine.dart';
 
-class PdfReadingPosition implements ReadingPosition {
-  final int pageNumber;
+class PdfReadingPosition extends ReadingPosition {
+  PdfReadingPosition({required int pageNumber, int? chapterIndex})
+      : super(
+          pageNumber: pageNumber,
+          chapterIndex: chapterIndex,
+        );
 
-  PdfReadingPosition({required this.pageNumber});
-
-  @override
-  String toJson() => jsonEncode({'pageNumber': pageNumber});
+  int get pageNumber => super.pageNumber ?? 1;
 
   factory PdfReadingPosition.fromJson(String json) {
-    final map = jsonDecode(json);
-    return PdfReadingPosition(pageNumber: map['pageNumber'] ?? 1);
+    final position = ReadingPosition.fromJson('pdf', json);
+    return PdfReadingPosition(
+      pageNumber: position.pageNumber ?? 1,
+      chapterIndex: position.chapterIndex,
+    );
   }
 }

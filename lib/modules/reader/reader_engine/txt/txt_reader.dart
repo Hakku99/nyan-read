@@ -14,7 +14,24 @@ import '../reader_engine.dart';
 import 'pagination_helper.dart';
 import 'txt_position.dart';
 
+typedef PaginationEstimateCalculator = Future<List<int>> Function({
+  required String text,
+  required TextStyle style,
+  required double maxWidth,
+  required double maxHeight,
+  required EdgeInsets padding,
+});
+
 class TxtReaderEngine implements ReaderEngine {
+  static const ReaderCapabilities _capabilities = ReaderCapabilities(
+    supportsTypography: true,
+    supportsTheme: true,
+    supportsHighlights: true,
+    supportsAnnotations: true,
+    supportsPageAnimation: false,
+    supportsSemanticChapters: true,
+  );
+
   final Book book;
   final ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener =
@@ -44,6 +61,8 @@ class TxtReaderEngine implements ReaderEngine {
   int _charsPerPage = 1;
   bool _isPaginationCalculated = false;
   _PaginationLayoutKey? _lastPaginationKey;
+  final Set<_PaginationLayoutKey> _inFlightPaginationKeys =
+      <_PaginationLayoutKey>{};
   final ValueNotifier<int> _pageInfoNotifier = ValueNotifier(0);
 
   List<Map<String, dynamic>> _chapters = [];
@@ -61,10 +80,18 @@ class TxtReaderEngine implements ReaderEngine {
 
   int _initialIndex = 0;
   bool _hasRestoredPosition = false;
+  final PaginationEstimateCalculator _paginationCalculator;
 
-  TxtReaderEngine(this.book) {
+  TxtReaderEngine(
+    this.book, {
+    PaginationEstimateCalculator paginationCalculator =
+        PaginationHelper.calculatePageEstimate,
+  }) : _paginationCalculator = paginationCalculator {
     _itemPositionsListener.itemPositions.addListener(_updateCurrentPosition);
   }
+
+  @override
+  ReaderCapabilities get capabilities => _capabilities;
 
   void _updateCurrentPosition() {
     final positions = _itemPositionsListener.itemPositions.value;
@@ -104,11 +131,13 @@ class TxtReaderEngine implements ReaderEngine {
     }
   }
 
+  @override
   void setHighlights(List<Highlight> highlights) {
     _renderHighlights = List<Highlight>.unmodifiable(highlights);
     _highlightRenderVersion.value++;
   }
 
+  @override
   String? getParagraphText(int paragraphIndex) {
     if (paragraphIndex < 0 || paragraphIndex >= _lines.length) return null;
     return _lines[paragraphIndex].trim();
@@ -124,8 +153,8 @@ class TxtReaderEngine implements ReaderEngine {
   double? getProgress() {
     if (_lines.isEmpty) return 0.0;
     final pos = getCurrentPosition();
-    if (pos is TxtReadingPosition) {
-      return pos.paragraphIndex / _lines.length;
+    if (pos?.paragraphIndex != null) {
+      return pos!.paragraphIndex! / _lines.length;
     }
     return 0.0;
   }
@@ -142,6 +171,17 @@ class TxtReaderEngine implements ReaderEngine {
         return latin1.decode(bytes);
       }
     }
+  }
+
+  @override
+  void configureInteractions({
+    ReaderTextHighlightCallback? onTextHighlighted,
+    ReaderHighlightTapCallback? onHighlightTapped,
+    ReaderContentTapCallback? onContentTap,
+  }) {
+    this.onTextHighlighted = onTextHighlighted;
+    this.onHighlightTapped = onHighlightTapped;
+    this.onContentTap = onContentTap;
   }
 
   @override
@@ -346,16 +386,28 @@ class TxtReaderEngine implements ReaderEngine {
 
   @override
   Future<void> goToPosition(ReadingPosition position) async {
-    if (position is TxtReadingPosition) {
-      if (_itemScrollController.isAttached) {
-        _itemScrollController.jumpTo(
-          index: position.paragraphIndex,
-          alignment: 0.0,
-        );
-      } else {
-        _initialIndex = position.paragraphIndex;
-        _hasRestoredPosition = false;
-      }
+    final paragraphIndex = position.paragraphIndex;
+    if (paragraphIndex == null) {
+      return;
+    }
+
+    if (_itemScrollController.isAttached) {
+      _itemScrollController.jumpTo(
+        index: paragraphIndex,
+        alignment: 0.0,
+      );
+    } else {
+      _initialIndex = paragraphIndex;
+      _hasRestoredPosition = false;
+    }
+  }
+
+  @override
+  Future<void> goToChapter(ChapterLocator locator) async {
+    if (locator.chapterIndex != null) {
+      await goToPosition(
+        TxtReadingPosition(paragraphIndex: locator.chapterIndex!),
+      );
     }
   }
 
@@ -398,18 +450,18 @@ class TxtReaderEngine implements ReaderEngine {
   @override
   Future<String?> getSnippet() async {
     final pos = getCurrentPosition();
-    if (pos is TxtReadingPosition && pos.paragraphIndex < _lines.length) {
-      return _lines[pos.paragraphIndex].trim();
+    final paragraphIndex = pos?.paragraphIndex;
+    if (paragraphIndex != null && paragraphIndex < _lines.length) {
+      return _lines[paragraphIndex].trim();
     }
     return null;
   }
 
   @override
   Future<String?> getTextAtPosition(ReadingPosition position) async {
-    if (position is TxtReadingPosition) {
-      if (position.paragraphIndex < _lines.length) {
-        return _lines[position.paragraphIndex].trim();
-      }
+    final paragraphIndex = position.paragraphIndex;
+    if (paragraphIndex != null && paragraphIndex < _lines.length) {
+      return _lines[paragraphIndex].trim();
     }
     return null;
   }
@@ -420,17 +472,17 @@ class TxtReaderEngine implements ReaderEngine {
 
     final chapters = <Map<String, dynamic>>[];
     final chapterPatterns = [
-      RegExp(r'^第[零一二三四五六七八九十百千万\d]+[章回节话]', multiLine: false),
+      RegExp('^\u7b2c[\u96f6\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\d]+[\u7ae0\u56de\u8282\u8bdd]', multiLine: false),
       RegExp(r'^Chapter\s+\d+', caseSensitive: false),
-      RegExp(r'^\d+[\.，,]\s*\S+', multiLine: false),
+      RegExp(r'^\d+[.,.]\s*\S+', multiLine: false),
       RegExp(r'^\d+\s+\S+', multiLine: false),
-      RegExp(r'^[零一二三四五六七八九十百千万]+、', multiLine: false),
+      RegExp('^[\u96f6\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07]+[\u3001.]?\s*\S+', multiLine: false),
       RegExp(
-        r'^第[零一二三四五六七八九十百千万\dIVXLCDMivxlcdm]+卷[：:\s]*第[零一二三四五六七八九十百千万\d]+[章回节话]',
+        '^\u7b2c[\u96f6\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\dIVXLCDMivxlcdm]+\u5377[\uff1a: ]*\u7b2c[\u96f6\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\d]+[\u7ae0\u56de\u8282\u8bdd]',
         caseSensitive: false,
       ),
       RegExp(
-        r'^.+[：:]\s*第[零一二三四五六七八九十百千万\d]+[章回节话]',
+        '^.+[\uff1a:]\s*\u7b2c[\u96f6\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\d]+[\u7ae0\u56de\u8282\u8bdd]',
         multiLine: false,
       ),
     ];
@@ -605,8 +657,16 @@ class TxtReaderEngine implements ReaderEngine {
           : Orientation.portrait,
     );
     if (_lastPaginationKey == paginationKey && _isPaginationCalculated) return;
+    if (_inFlightPaginationKeys.contains(paginationKey)) {
+      debugPrint(
+        'Skipping duplicate pagination request for in-flight key: '
+        '$paginationKey',
+      );
+      return;
+    }
 
     _lastPaginationKey = paginationKey;
+    _inFlightPaginationKeys.add(paginationKey);
     _isPaginationCalculated = false;
     debugPrint('Recalculating pagination for key: $paginationKey');
 
@@ -617,7 +677,7 @@ class TxtReaderEngine implements ReaderEngine {
     );
 
     try {
-      final result = await PaginationHelper.calculatePageEstimate(
+      final result = await _paginationCalculator(
         text: _fullContent,
         style: style,
         maxWidth: size.width,
@@ -630,17 +690,20 @@ class TxtReaderEngine implements ReaderEngine {
           'Pagination calculation discarded: layout changed from '
           '$paginationKey to $_lastPaginationKey',
         );
+        _inFlightPaginationKeys.remove(paginationKey);
         return;
       }
 
       _totalPages = result[0];
       _charsPerPage = result[1];
       _isPaginationCalculated = true;
+      _inFlightPaginationKeys.remove(paginationKey);
       _pageInfoNotifier.value++;
       debugPrint(
         'Pagination calculated: $_totalPages pages, $_charsPerPage chars/page',
       );
     } catch (e) {
+      _inFlightPaginationKeys.remove(paginationKey);
       debugPrint('Pagination error: $e');
     }
   }

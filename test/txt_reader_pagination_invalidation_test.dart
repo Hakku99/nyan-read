@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -95,6 +96,58 @@ void main() {
       await _pumpReader(tester, engine, const Size(320, 480));
 
       expect(engine.getPageCount(), isNot(initialPageCount));
+    });
+
+    testWidgets(
+        'does not start duplicate pagination for the same in-flight layout key',
+        (tester) async {
+      final pendingCalculations = <Completer<List<int>>>[];
+      var calculationCount = 0;
+
+      engine.dispose();
+      engine = TxtReaderEngine(
+        Book(
+          id: 'txt-test-book',
+          title: 'TXT Test',
+          author: 'Tester',
+          filePath: txtFile.path,
+          format: 'txt',
+        ),
+        paginationCalculator: ({
+          required String text,
+          required TextStyle style,
+          required double maxWidth,
+          required double maxHeight,
+          required EdgeInsets padding,
+        }) {
+          calculationCount++;
+          final completer = Completer<List<int>>();
+          pendingCalculations.add(completer);
+          return completer.future;
+        },
+      );
+      await engine.initialize();
+      engine.setConfig(const ReaderConfig(
+        backgroundColor: Colors.white,
+        textColor: Colors.black,
+        fontSize: 16,
+        lineHeight: 1.4,
+      ));
+
+      await _pumpReader(tester, engine, const Size(320, 640));
+      await _pumpReader(tester, engine, const Size(320, 640));
+
+      expect(calculationCount, 1);
+
+      for (final completer in pendingCalculations) {
+        if (!completer.isCompleted) {
+          completer.complete([107, 312]);
+        }
+      }
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(engine.getPageCount(), 107);
     });
 
     testWidgets(

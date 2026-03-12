@@ -6,11 +6,21 @@ import 'package:epub_view/src/data/epub_parser.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/models/book.dart';
+import '../../../../core/models/highlight.dart';
 import '../../../../core/utils/book_source_access.dart';
 import '../reader_engine.dart';
 import 'epub_position.dart';
 
 class EpubReaderEngine implements ReaderEngine {
+  static const ReaderCapabilities _capabilities = ReaderCapabilities(
+    supportsTypography: false,
+    supportsTheme: false,
+    supportsHighlights: false,
+    supportsAnnotations: false,
+    supportsPageAnimation: false,
+    supportsSemanticChapters: true,
+  );
+
   static const double _minTrailingEdge = 0.55;
   static const double _minLeadingEdge = -0.05;
 
@@ -28,6 +38,22 @@ class EpubReaderEngine implements ReaderEngine {
   VoidCallback? _currentValueListener;
 
   EpubReaderEngine(this.book);
+
+  @override
+  ReaderCapabilities get capabilities => _capabilities;
+
+  @override
+  void configureInteractions({
+    ReaderTextHighlightCallback? onTextHighlighted,
+    ReaderHighlightTapCallback? onHighlightTapped,
+    ReaderContentTapCallback? onContentTap,
+  }) {}
+
+  @override
+  void setHighlights(List<Highlight> highlights) {}
+
+  @override
+  String? getParagraphText(int paragraphIndex) => null;
 
   @override
   Future<void> initialize() async {
@@ -134,12 +160,13 @@ class EpubReaderEngine implements ReaderEngine {
 
   @override
   Future<void> goToPosition(ReadingPosition position) async {
-    if (position is! EpubReadingPosition) {
+    final cfi = position.cfi;
+    if (cfi == null || cfi.isEmpty) {
       return;
     }
 
-    _pendingCfi = position.cfi;
-    _lastKnownCfi = position.cfi;
+    _pendingCfi = cfi;
+    _lastKnownCfi = cfi;
     await _waitForViewReady();
     await _applyPendingCfi();
   }
@@ -158,6 +185,13 @@ class EpubReaderEngine implements ReaderEngine {
       return EpubReadingPosition(cfi: cfi);
     }
     return null;
+  }
+
+  @override
+  Future<void> goToChapter(ChapterLocator locator) async {
+    if (locator.contentIndex != null) {
+      await jumpToChapterStart(locator.contentIndex!);
+    }
   }
 
   @override
@@ -212,7 +246,6 @@ class EpubReaderEngine implements ReaderEngine {
     }
     getProgress();
   }
-
 
   String? _readInitialCfiFromBook() {
     if (book.lastPositionType != 'epub') {

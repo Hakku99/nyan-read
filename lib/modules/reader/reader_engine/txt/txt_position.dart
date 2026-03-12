@@ -1,18 +1,19 @@
-import 'dart:convert';
 import '../reader_engine.dart';
 
-class TxtReadingPosition implements ReadingPosition {
-  final int paragraphIndex;
+class TxtReadingPosition extends ReadingPosition {
+  TxtReadingPosition({required int paragraphIndex, int? chapterIndex})
+      : super(
+          paragraphIndex: paragraphIndex,
+          chapterIndex: chapterIndex,
+        );
 
-  TxtReadingPosition({required this.paragraphIndex});
-
-  @override
-  String toJson() => jsonEncode({'paragraphIndex': paragraphIndex});
+  int get paragraphIndex => super.paragraphIndex ?? 0;
 
   factory TxtReadingPosition.fromJson(String json) {
-    final map = jsonDecode(json);
+    final position = ReadingPosition.fromJson('txt', json);
     return TxtReadingPosition(
-      paragraphIndex: map['paragraphIndex'] ?? 0,
+      paragraphIndex: position.paragraphIndex ?? 0,
+      chapterIndex: position.chapterIndex,
     );
   }
 }

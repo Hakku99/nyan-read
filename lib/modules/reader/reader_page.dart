@@ -11,11 +11,6 @@ import '../../core/services/service_locator.dart';
 import '../../core/utils/layout_debouncer.dart';
 import 'reader_engine/reader_engine.dart';
 import 'reader_engine/reader_factory.dart';
-import 'reader_engine/epub/epub_position.dart';
-import 'reader_engine/txt/txt_position.dart';
-import 'reader_engine/txt/txt_reader.dart';
-
-import 'reader_engine/pdf/pdf_position.dart';
 import 'reader_error.dart';
 import 'widgets/reader_error_view.dart';
 import 'widgets/highlight_note_dialog.dart';
@@ -87,6 +82,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   Color get textColor => settingsManager.textColor;
   bool get followSystem => _brightnessControllerRef?.followSystem ?? true;
   double get currentProgress => progressManager.currentProgress;
+  ReaderCapabilities get capabilities => engine.capabilities;
 
   void attachBrightnessController(BrightnessController bc) {
     if (_brightnessControllerRef != null &&
@@ -145,22 +141,6 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
         progressManager.currentPosition,
       );
       await metaManager.loadHighlights();
-      if (engine is TxtReaderEngine) {
-        final txtEngine = engine as TxtReaderEngine;
-        txtEngine.onTextHighlighted =
-            (paragraphIndex, start, end, text, colorCode) {
-          final paragraphText =
-              txtEngine.getParagraphText(paragraphIndex) ?? '';
-          metaManager.addHighlight(
-            paragraphIndex,
-            start,
-            end,
-            text,
-            colorCode,
-            paragraphText,
-          );
-        };
-      }
 
       unawaited(metaManager.backfillBookmarkSnippets());
       notifyListeners();
@@ -198,10 +178,10 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
-  Future<void> jumpToChapter(int index, dynamic chapterData) async {
+  Future<void> jumpToChapter(int index, ChapterLocator locator) async {
     await metaManager.jumpToChapter(
       index,
-      chapterData,
+      locator,
       () async => await progressManager.saveCurrentPosition(),
     );
     progressManager.refreshFromEngine();
@@ -287,6 +267,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     );
     progressManager.refreshFromEngine();
   }
+
   Future<void> refreshCurrentChapterIndex() async =>
       await metaManager.updateCurrentChapterIndex();
 
@@ -310,7 +291,6 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     _lastLayoutSize = newSize;
   }
 
-
   /// Public method to save progress before exiting - can be awaited
   Future<void> saveBeforeExit() async {
     await progressManager.prepareForExit();
@@ -320,7 +300,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   void dispose() {
     progressManager.scheduleDisposeFallbackSave(); // Transitional fallback.
     // Ensure the brightness listener bridge is always detached during dispose.
-    if (_brightnessControllerRef != null && _brightnessControllerListener != null) {
+    if (_brightnessControllerRef != null &&
+        _brightnessControllerListener != null) {
       _brightnessControllerRef!.removeListener(_brightnessControllerListener!);
     }
     settingsManager.dispose();
@@ -398,17 +379,31 @@ class _ReaderPageState extends State<ReaderPage> {
             final controller = ReaderController(book);
             // Attach the page-level brightness binding for menu and gesture input.
             controller.attachBrightnessController(_brightnessController);
-            if (controller.engine is TxtReaderEngine) {
-              final txtEngine = controller.engine as TxtReaderEngine;
-              txtEngine.onHighlightTapped = (highlight) {
+            controller.engine.configureInteractions(
+              onTextHighlighted:
+                  (paragraphIndex, start, end, text, colorCode) {
+                final paragraphText =
+                    controller.engine.getParagraphText(paragraphIndex) ?? '';
+                unawaited(
+                  controller.addHighlight(
+                    paragraphIndex,
+                    start,
+                    end,
+                    text,
+                    colorCode,
+                    paragraphText,
+                  ),
+                );
+              },
+              onHighlightTapped: (highlight) {
                 if (!mounted) return;
                 _showHighlightNoteDialog(context, controller, highlight);
-              };
-              txtEngine.onContentTap = (pos) {
+              },
+              onContentTap: (pos) {
                 if (!mounted) return;
                 _handleContentTap(context, pos, controller);
-              };
-            }
+              },
+            );
             controller.init();
             return controller;
           },
@@ -418,6 +413,11 @@ class _ReaderPageState extends State<ReaderPage> {
               return Selector<ReaderController, Color>(
                 selector: (_, c) => c.backgroundColor,
                 builder: (context, bgColor, _) {
+                  final supportsSemanticChapters =
+                      context.select<ReaderController, bool>(
+                    (c) => c.capabilities.supportsSemanticChapters,
+                  );
+
                   return PopScope(
                     canPop: false,
                     onPopInvokedWithResult: (didPop, result) async {
@@ -434,27 +434,31 @@ class _ReaderPageState extends State<ReaderPage> {
                       key: readerPageScaffoldKey,
                       backgroundColor: bgColor,
                       resizeToAvoidBottomInset: false,
-                      drawer: Drawer(
-                        backgroundColor: bgColor,
-                        width: MediaQuery.of(context).size.width * 0.9,
-                        shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.zero),
-                        child: SafeArea(
-                          child: Consumer<ReaderController>(
-                              builder: (context, controller, child) {
-                            return ChapterListWidget(
-                              chapters: controller.chapters,
-                              currentChapterIndex:
-                                  controller.currentChapterIndex,
-                              currentProgress: controller.currentProgress,
-                              onChapterTap: (index, chapterData) {
-                                Navigator.pop(context);
-                                controller.jumpToChapter(index, chapterData);
-                              },
-                            );
-                          }),
-                        ),
-                      ),
+                      drawerEnableOpenDragGesture: supportsSemanticChapters,
+                      drawer: supportsSemanticChapters
+                          ? Drawer(
+                              backgroundColor: bgColor,
+                              width: MediaQuery.of(context).size.width * 0.9,
+                              shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.zero),
+                              child: SafeArea(
+                                child: Consumer<ReaderController>(
+                                    builder: (context, controller, child) {
+                                  return ChapterListWidget(
+                                    chapters: controller.chapters,
+                                    currentChapterIndex:
+                                        controller.currentChapterIndex,
+                                    currentProgress: controller.currentProgress,
+                                    onChapterTap: (index, locator) {
+                                      Navigator.pop(context);
+                                      controller.jumpToChapter(
+                                          index, locator);
+                                    },
+                                  );
+                                }),
+                              ),
+                            )
+                          : null,
                       body: Consumer<ReaderController>(
                         builder: (context, controller, child) {
                           return BrightnessOverlayWidget(
@@ -804,5 +808,3 @@ class _ReaderPageState extends State<ReaderPage> {
     );
   }
 }
-
-

@@ -32,6 +32,20 @@ class FakeReadingPosition implements ReadingPosition {
 }
 
 class FakeReaderEngine implements ReaderEngine {
+  FakeReaderEngine({
+    this.capabilities = const ReaderCapabilities(
+      supportsTypography: true,
+      supportsTheme: true,
+      supportsHighlights: true,
+      supportsAnnotations: true,
+      supportsPageAnimation: false,
+      supportsSemanticChapters: true,
+    ),
+  });
+
+  @override
+  final ReaderCapabilities capabilities;
+
   @override
   Future<void> initialize() async {}
 
@@ -84,7 +98,7 @@ class FakeReaderEngine implements ReaderEngine {
 class MockReaderController extends ChangeNotifier
     with WidgetsBindingObserver
     implements ReaderController {
-  final ReaderEngine _engine = FakeReaderEngine();
+  final ReaderEngine _engine;
 
   @override
   late final ReadingProgressManager progressManager;
@@ -93,21 +107,22 @@ class MockReaderController extends ChangeNotifier
   @override
   late final ContentMetaManager metaManager;
 
-  MockReaderController() {
+  MockReaderController({ReaderEngine? engine})
+      : _engine = engine ?? FakeReaderEngine() {
     final lifecycle = LifecycleRegistry();
     progressManager = MockReadingProgressManager(
-      engine: engine,
+      engine: _engine,
       book: book,
       lifecycle: lifecycle,
       onProgressUpdated: () {},
     );
     settingsManager = MockReaderSettingsManager(
-      engine: engine,
+      engine: _engine,
       lifecycle: lifecycle,
       onSettingsChanged: () {},
     );
     metaManager = MockContentMetaManager(
-      engine: engine,
+      engine: _engine,
       book: book,
       onMetaChanged: () {},
     );
@@ -129,6 +144,8 @@ class MockReaderController extends ChangeNotifier
   Color get textColor => Colors.black;
   @override
   bool get followSystem => false;
+  @override
+  ReaderCapabilities get capabilities => _engine.capabilities;
   @override
   Book get book => Book(
       id: 'test_id',
@@ -204,7 +221,8 @@ class MockReaderController extends ChangeNotifier
   void handleLayoutChange(Size size) {}
 
   @override
-  Future<void> handleBookmarkSelection(Map<String, dynamic> bookmarkData) async {}
+  Future<void> handleBookmarkSelection(
+      Map<String, dynamic> bookmarkData) async {}
 
   @override
   Future<Highlight?> handleHighlightSelection(Highlight highlight) async =>
@@ -335,7 +353,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-        expect(find.byIcon(Icons.wb_sunny_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.wb_sunny_rounded), findsOneWidget);
     expect(find.byIcon(Icons.brightness_auto), findsOneWidget);
     expect(find.byType(Slider), findsWidgets);
   });
@@ -405,10 +423,113 @@ void main() {
     expect(find.text('Bookmark Added!'), findsNothing);
   });
 
+  testWidgets(
+      'ReaderMenu hides unsupported typography theme and notes controls',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: FakeSystemBrightnessAdapter(),
+      ),
+    );
+
+    final mockController = MockReaderController(
+      engine: FakeReaderEngine(
+        capabilities: const ReaderCapabilities(
+          supportsTypography: false,
+          supportsTheme: false,
+          supportsHighlights: false,
+          supportsAnnotations: false,
+          supportsPageAnimation: false,
+          supportsSemanticChapters: false,
+        ),
+      ),
+    );
+    final mockThemeManager = MockThemeManager();
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<ReaderController>.value(value: mockController),
+          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            key: scaffoldKey,
+            body: ReaderMenu(
+              scaffoldKey: scaffoldKey,
+              brightnessController: brightnessController,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final loc = AppLocalizations.of(tester.element(find.byType(ReaderMenu)))!;
+
+    expect(find.text(loc.fontSize), findsNothing);
+    expect(find.text(loc.lineHeight), findsNothing);
+    expect(find.text(loc.themeCream), findsNothing);
+    expect(find.byIcon(Icons.edit_note_rounded), findsNothing);
+    expect(find.byIcon(Icons.toc_rounded), findsNothing);
+    expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
+  });
+
+  testWidgets('ReaderMenu shows capability-gated controls for TXT-like engines',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: FakeSystemBrightnessAdapter(),
+      ),
+    );
+
+    final mockController = MockReaderController();
+    final mockThemeManager = MockThemeManager();
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<ReaderController>.value(value: mockController),
+          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            key: scaffoldKey,
+            body: ReaderMenu(
+              scaffoldKey: scaffoldKey,
+              brightnessController: brightnessController,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final loc = AppLocalizations.of(tester.element(find.byType(ReaderMenu)))!;
+
+    expect(find.text(loc.fontSize), findsOneWidget);
+    expect(find.text(loc.lineHeight), findsOneWidget);
+    expect(find.text(loc.themeCream), findsOneWidget);
+    expect(find.byIcon(Icons.edit_note_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.toc_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+  });
 }
-
-
-
-
-
-

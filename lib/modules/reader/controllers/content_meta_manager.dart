@@ -6,11 +6,6 @@ import '../../../core/models/highlight.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/utils/anchor_healer.dart';
 import '../reader_engine/reader_engine.dart';
-import '../reader_engine/txt/txt_reader.dart';
-import '../reader_engine/epub/epub_position.dart';
-import '../reader_engine/epub/epub_reader.dart';
-import '../reader_engine/pdf/pdf_position.dart';
-import '../reader_engine/txt/txt_position.dart';
 
 class ContentMetaManager {
   final ReaderEngine engine;
@@ -56,11 +51,8 @@ class ContentMetaManager {
       final rawHighlights = rawData.map((m) => Highlight.fromMap(m)).toList();
 
       List<Highlight> healthyHighlights;
-      if (engine is TxtReaderEngine) {
-        healthyHighlights = await _healHighlights(
-          rawHighlights,
-          engine as TxtReaderEngine,
-        );
+      if (engine.capabilities.supportsHighlights) {
+        healthyHighlights = await _healHighlights(rawHighlights, engine);
       } else {
         healthyHighlights = rawHighlights;
       }
@@ -78,9 +70,7 @@ class ContentMetaManager {
   }
 
   void _syncTxtRenderHighlights() {
-    if (engine is TxtReaderEngine) {
-      (engine as TxtReaderEngine).setHighlights(_highlights);
-    }
+    engine.setHighlights(_highlights);
   }
 
   /// 閸楁洘顐肩粩鐘哄Ν妤傛ü瀵掗懛顏呭墹缁狅紕鍤?(閸愬懘鍎?
@@ -89,13 +79,13 @@ class ContentMetaManager {
   /// Slow-Path: AnchorHealer 閸欏苯鎮滈弶鍐櫢娴犺尪顥?+ 閸楀啿褰傞崡鍐茬磾(fire-and-forget)閸ョ偛鍟?DB閵?
   Future<List<Highlight>> _healHighlights(
     List<Highlight> raw,
-    TxtReaderEngine txtEngine,
+    ReaderEngine engine,
   ) async {
     final healedList = <Highlight>[];
 
     for (final h in raw) {
       // 1. 閸欐牕鍤▓浣冩儰閸樼喐鏋?
-      final paragraphText = txtEngine.getParagraphText(h.paragraphIndex);
+      final paragraphText = engine.getParagraphText(h.paragraphIndex);
       if (paragraphText == null) {
         // 濞堜絻鎯ゆ稉宥呯摠閸︻煉绱濇穱婵堟殌閸樼喐鐗遍敍鍫ユЩ濮濄垹绌垮┃鍐跨礆
         healedList.add(h);
@@ -167,10 +157,8 @@ class ContentMetaManager {
 
     int newIndex = preferredIndex ?? 0;
 
-    if ((position is TxtReadingPosition && book.format == 'txt') ||
-        (book.format == 'txt')) {
-      final currentPara =
-          (position is TxtReadingPosition) ? position.paragraphIndex : -1;
+    if (position.paragraphIndex != null) {
+      final currentPara = position.paragraphIndex!;
       int maxStartPara = -1;
 
       for (int i = 0; i < _chapters.length; i++) {
@@ -184,8 +172,8 @@ class ContentMetaManager {
           }
         }
       }
-    } else if (position is PdfReadingPosition && book.format == 'pdf') {
-      final currentPage = position.pageNumber;
+    } else if (position.pageNumber != null) {
+      final currentPage = position.pageNumber!;
       int maxStartPage = -1;
 
       for (int i = 0; i < _chapters.length; i++) {
@@ -207,20 +195,13 @@ class ContentMetaManager {
     }
   }
 
-  Future<void> jumpToChapter(int index, dynamic chapterData,
-      Future<void> Function() saveProgressFn) async {
+  Future<void> jumpToChapter(
+    int index,
+    ChapterLocator locator,
+    Future<void> Function() saveProgressFn,
+  ) async {
     try {
-      if (book.format == 'epub' && chapterData['startIndex'] != null && engine is EpubReaderEngine) {
-        await (engine as EpubReaderEngine)
-            .jumpToChapterStart(chapterData['startIndex'] as int);
-      } else if (book.format == 'txt' &&
-          chapterData['paragraphIndex'] != null) {
-        await engine.goToPosition(
-            TxtReadingPosition(paragraphIndex: chapterData['paragraphIndex']));
-      } else if (book.format == 'pdf' && chapterData['pageNumber'] != null) {
-        await engine.goToPosition(
-            PdfReadingPosition(pageNumber: chapterData['pageNumber']));
-      }
+      await engine.goToChapter(locator);
 
       await syncCurrentChapterFromPosition(
         engine.getCurrentPosition(),
@@ -235,15 +216,25 @@ class ContentMetaManager {
   Future<void> jumpToPreviousChapter(
       Future<void> Function() saveProgressFn) async {
     if (_currentChapterIndex == null || _currentChapterIndex! <= 0) return;
-    await jumpToChapter(_currentChapterIndex! - 1,
-        _chapters[_currentChapterIndex! - 1], saveProgressFn);
+    await jumpToChapter(
+      _currentChapterIndex! - 1,
+      ChapterLocator.fromChapterData(
+        _chapters[_currentChapterIndex! - 1] as Map<String, dynamic>,
+      ),
+      saveProgressFn,
+    );
   }
 
   Future<void> jumpToNextChapter(Future<void> Function() saveProgressFn) async {
     if (_currentChapterIndex == null ||
         _currentChapterIndex! >= _chapters.length - 1) return;
-    await jumpToChapter(_currentChapterIndex! + 1,
-        _chapters[_currentChapterIndex! + 1], saveProgressFn);
+    await jumpToChapter(
+      _currentChapterIndex! + 1,
+      ChapterLocator.fromChapterData(
+        _chapters[_currentChapterIndex! + 1] as Map<String, dynamic>,
+      ),
+      saveProgressFn,
+    );
   }
 
   Future<void> restoreBookmarkPosition(Map<String, dynamic> bookmarkData) async {
@@ -254,16 +245,8 @@ class ContentMetaManager {
     if (payload == null) return;
 
     try {
-      ReadingPosition? position;
-      if (type == 'epub') {
-        position = EpubReadingPosition.fromJson(payload);
-      } else if (type == 'pdf') {
-        position = PdfReadingPosition.fromJson(payload);
-      } else if (type == 'txt') {
-        position = TxtReadingPosition.fromJson(payload);
-      }
-
-      if (position != null) {
+      final position = ReadingPosition.fromJson(type, payload);
+      if (position.hasLocation) {
         await engine.goToPosition(position);
       }
     } catch (e) {
@@ -301,16 +284,8 @@ class ContentMetaManager {
           final type = bm['position_type'] ?? book.format;
 
           if (payload != null) {
-            ReadingPosition? pos;
-            if (type == 'txt') {
-              pos = TxtReadingPosition.fromJson(payload);
-            } else if (type == 'epub') {
-              pos = EpubReadingPosition.fromJson(payload);
-            } else if (type == 'pdf') {
-              pos = PdfReadingPosition.fromJson(payload);
-            }
-
-            if (pos != null) {
+            final pos = ReadingPosition.fromJson(type.toString(), payload);
+            if (pos.hasLocation) {
               final text = await engine.getTextAtPosition(pos);
               if (text != null && text.isNotEmpty) {
                 await _db.updateBookmark(bm['id'], {
@@ -329,11 +304,9 @@ class ContentMetaManager {
 
   Future<void> openHighlight(Highlight highlight) async {
     try {
-      if (book.format == 'txt') {
-        await engine.goToPosition(
-          TxtReadingPosition(paragraphIndex: highlight.paragraphIndex),
-        );
-      }
+      await engine.goToPosition(
+        ReadingPosition(paragraphIndex: highlight.paragraphIndex),
+      );
     } catch (e) {
       debugPrint('[ContentMetaManager] Error opening highlight: $e');
     }

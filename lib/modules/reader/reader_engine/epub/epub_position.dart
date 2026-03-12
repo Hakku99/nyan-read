@@ -1,16 +1,19 @@
-import 'dart:convert';
 import '../reader_engine.dart';
 
-class EpubReadingPosition implements ReadingPosition {
-  final String cfi;
+class EpubReadingPosition extends ReadingPosition {
+  EpubReadingPosition({required String cfi, int? chapterIndex})
+      : super(
+          cfi: cfi,
+          chapterIndex: chapterIndex,
+        );
 
-  EpubReadingPosition({required this.cfi});
-
-  @override
-  String toJson() => jsonEncode({'cfi': cfi});
+  String get cfi => super.cfi ?? '';
 
   factory EpubReadingPosition.fromJson(String json) {
-    final map = jsonDecode(json);
-    return EpubReadingPosition(cfi: map['cfi']);
+    final position = ReadingPosition.fromJson('epub', json);
+    return EpubReadingPosition(
+      cfi: position.cfi ?? '',
+      chapterIndex: position.chapterIndex,
+    );
   }
 }

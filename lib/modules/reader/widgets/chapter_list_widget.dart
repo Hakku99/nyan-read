@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
+import '../reader_engine/reader_engine.dart';
+
 /// 章节列表组件
 /// 显示书籍章节目录,支持当前章节高亮和已读章节弱化
 class ChapterListWidget extends StatefulWidget {
@@ -9,7 +11,7 @@ class ChapterListWidget extends StatefulWidget {
   final int? currentChapterIndex;
   final double currentProgress;
   final ScrollController? scrollController;
-  final Function(int index, dynamic chapterData) onChapterTap;
+  final void Function(int index, ChapterLocator locator) onChapterTap;
 
   const ChapterListWidget({
     Key? key,
@@ -145,7 +147,12 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
                           index: index,
                           isCurrent: isCurrent,
                           isRead: isRead,
-                          onTap: () => widget.onChapterTap(index, chapter),
+                          onTap: () => widget.onChapterTap(
+                            index,
+                            ChapterLocator.fromChapterData(
+                              chapter as Map<String, dynamic>,
+                            ),
+                          ),
                         );
                       },
                     ),

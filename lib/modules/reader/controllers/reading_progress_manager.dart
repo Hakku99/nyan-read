@@ -6,10 +6,7 @@ import '../../../core/models/book.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/services/service_locator.dart';
 import '../../../core/utils/lifecycle_registry.dart';
-import '../reader_engine/epub/epub_position.dart';
-import '../reader_engine/pdf/pdf_position.dart';
 import '../reader_engine/reader_engine.dart';
-import '../reader_engine/txt/txt_position.dart';
 
 class ReadingProgressManager {
   final ReaderEngine engine;
@@ -76,21 +73,16 @@ class ReadingProgressManager {
       final payload = positionData['position_payload'] as String;
       debugPrint("DEBUG: RESTORING position: type=$type, payload=$payload");
 
-      ReadingPosition? position;
-      if (type == 'epub') {
-        position = EpubReadingPosition.fromJson(payload);
-      } else if (type == 'pdf') {
-        position = PdfReadingPosition.fromJson(payload);
-      } else if (type == 'txt') {
-        position = TxtReadingPosition.fromJson(payload);
-      }
+      final position = ReadingPosition.fromJson(type, payload);
 
-      if (position != null) {
+      if (position.hasLocation) {
         await engine.goToPosition(position);
         await Future<void>.delayed(const Duration(milliseconds: 180));
         refreshFromEngine();
 
-        final shouldFallbackToProgress = book.format == 'epub' &&
+        final shouldFallbackToProgress =
+            position.cfi != null &&
+            position.cfi!.isNotEmpty &&
             book.currentProgress > 0 &&
             ((_currentPosition == null) || _currentProgress <= 0.0);
 

@@ -5,17 +5,43 @@ import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 
 import '../../../../core/models/book.dart';
+import '../../../../core/models/highlight.dart';
 import '../../../../core/utils/book_source_access.dart';
 import '../reader_engine.dart';
 import 'pdf_position.dart';
 
 class PdfReaderEngine implements ReaderEngine {
+  static const ReaderCapabilities _capabilities = ReaderCapabilities(
+    supportsTypography: false,
+    supportsTheme: false,
+    supportsHighlights: false,
+    supportsAnnotations: false,
+    supportsPageAnimation: false,
+    supportsSemanticChapters: false,
+  );
+
   final Book book;
   late PdfController _pdfController;
   bool _isInit = false;
   String? _temporaryPdfPath;
 
   PdfReaderEngine(this.book);
+
+  @override
+  ReaderCapabilities get capabilities => _capabilities;
+
+  @override
+  void configureInteractions({
+    ReaderTextHighlightCallback? onTextHighlighted,
+    ReaderHighlightTapCallback? onHighlightTapped,
+    ReaderContentTapCallback? onContentTap,
+  }) {}
+
+  @override
+  void setHighlights(List<Highlight> highlights) {}
+
+  @override
+  String? getParagraphText(int paragraphIndex) => null;
 
   @override
   Future<void> initialize() async {
@@ -55,8 +81,9 @@ class PdfReaderEngine implements ReaderEngine {
 
   @override
   Future<void> goToPosition(ReadingPosition position) async {
-    if (position is PdfReadingPosition) {
-      _pdfController.jumpToPage(position.pageNumber);
+    final pageNumber = position.pageNumber;
+    if (pageNumber != null) {
+      _pdfController.jumpToPage(pageNumber);
     }
   }
 
@@ -71,6 +98,15 @@ class PdfReaderEngine implements ReaderEngine {
   @override
   ReadingPosition? getCurrentPosition() {
     return PdfReadingPosition(pageNumber: _pdfController.page);
+  }
+
+  @override
+  Future<void> goToChapter(ChapterLocator locator) async {
+    if (locator.pageNumber != null) {
+      await goToPosition(
+        PdfReadingPosition(pageNumber: locator.pageNumber!),
+      );
+    }
   }
 
   @override
@@ -153,4 +189,3 @@ class PdfReaderEngine implements ReaderEngine {
     }
   }
 }
-

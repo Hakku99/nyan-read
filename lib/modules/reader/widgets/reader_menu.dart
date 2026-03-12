@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import '../reader_page.dart';
+import '../reader_engine/reader_engine.dart';
 import '../../bookmark/bookmark_list_page.dart';
 import '../../notes/notes_list_page.dart';
 import '../../settings/settings_page.dart';
@@ -15,6 +16,7 @@ import '../controllers/brightness_controller.dart';
 
 class ReaderMenu extends StatelessWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
+
   /// Inject the BrightnessController directly so the brightness slider
   /// follows the shared reader brightness state in real time.
   final BrightnessController brightnessController;
@@ -28,10 +30,51 @@ class ReaderMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ReaderController>();
+    final capabilities = controller.capabilities;
     final themeManager = context.watch<ThemeManager>();
     // Use the global app theme for the menu, decoupled from the reader's background color
     final activeTheme = Theme.of(context);
     final nyanTheme = themePresets[themeManager.currentPreset]!;
+
+    final sections = <Widget>[
+      _buildProgressSection(context, controller, activeTheme, capabilities),
+      const SizedBox(height: 24),
+      _buildBrightnessSection(context, nyanTheme),
+    ];
+
+    if (capabilities.supportsTypography) {
+      sections.addAll([
+        const SizedBox(height: 24),
+        Divider(
+          height: 1,
+          color: activeTheme.dividerColor.withOpacity(0.5),
+        ),
+        const SizedBox(height: 24),
+        _buildTypographySection(context, controller, nyanTheme),
+      ]);
+    }
+
+    if (capabilities.supportsTheme) {
+      sections.addAll([
+        const SizedBox(height: 24),
+        Divider(
+          height: 1,
+          color: activeTheme.dividerColor.withOpacity(0.5),
+        ),
+        const SizedBox(height: 24),
+        _buildThemeSection(context, controller, nyanTheme),
+      ]);
+    }
+
+    sections.addAll([
+      const SizedBox(height: 24),
+      Divider(
+        height: 1,
+        color: activeTheme.dividerColor.withOpacity(0.5),
+      ),
+      const SizedBox(height: 20),
+      _buildBottomActions(context, controller, nyanTheme, capabilities),
+    ]);
 
     return SafeArea(
       bottom: false,
@@ -50,42 +93,7 @@ class ReaderMenu extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 1. Progress Slider
-                _buildProgressSection(context, controller, activeTheme),
-
-                const SizedBox(height: 24),
-
-                // 2. Brightness Slider
-                _buildBrightnessSection(context, nyanTheme),
-
-                const SizedBox(height: 24),
-                Divider(
-                    height: 1,
-                    color: activeTheme.dividerColor.withOpacity(0.5)),
-                const SizedBox(height: 24),
-
-                // 3. Settings Row (Font, Line Height)
-                _buildTypographySection(context, controller, nyanTheme),
-
-                const SizedBox(height: 24),
-                Divider(
-                    height: 1,
-                    color: activeTheme.dividerColor.withOpacity(0.5)),
-                const SizedBox(height: 24),
-
-                // 4. Themes (Background Colors)
-                _buildThemeSection(context, controller, nyanTheme),
-
-                const SizedBox(height: 24),
-                Divider(
-                    height: 1,
-                    color: activeTheme.dividerColor.withOpacity(0.5)),
-                const SizedBox(height: 20),
-
-                // 5. Bottom Navigation Actions
-                _buildBottomActions(context, controller, nyanTheme),
-              ],
+              children: sections,
             ),
           ),
         ),
@@ -94,7 +102,30 @@ class ReaderMenu extends StatelessWidget {
   }
 
   Widget _buildProgressSection(
-      BuildContext context, ReaderController controller, ThemeData theme) {
+    BuildContext context,
+    ReaderController controller,
+    ThemeData theme,
+    ReaderCapabilities capabilities,
+  ) {
+    final slider = Expanded(
+      child: SliderWithFloatingLabel(
+        value: controller.currentProgress,
+        min: 0.0,
+        max: 1.0,
+        divisions: 1000,
+        onChanged: (val) => controller.seekTo(val),
+        activeColor: theme.colorScheme.primary,
+        inactiveColor: theme.dividerColor.withOpacity(0.3),
+      ),
+    );
+
+    if (!capabilities.supportsSemanticChapters) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [slider],
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -104,17 +135,7 @@ class ReaderMenu extends StatelessWidget {
           theme: theme,
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: SliderWithFloatingLabel(
-            value: controller.currentProgress,
-            min: 0.0,
-            max: 1.0,
-            divisions: 1000,
-            onChanged: (val) => controller.seekTo(val),
-            activeColor: theme.colorScheme.primary,
-            inactiveColor: theme.dividerColor.withOpacity(0.3),
-          ),
-        ),
+        slider,
         const SizedBox(width: 12),
         _buildNavButton(
           icon: Icons.chevron_right_rounded,
@@ -150,8 +171,7 @@ class ReaderMenu extends StatelessWidget {
     );
   }
 
-  Widget _buildBrightnessSection(
-      BuildContext context, NyanTheme theme) {
+  Widget _buildBrightnessSection(BuildContext context, NyanTheme theme) {
     return Column(
       children: [
         // 1. Brightness Slider
@@ -459,9 +479,15 @@ class ReaderMenu extends StatelessWidget {
   }
 
   Widget _buildBottomActions(
-      BuildContext context, ReaderController controller, NyanTheme theme) {
+    BuildContext context,
+    ReaderController controller,
+    NyanTheme theme,
+    ReaderCapabilities capabilities,
+  ) {
     final loc = AppLocalizations.of(context)!;
-    // Helper for consistency
+    final supportsNotes =
+        capabilities.supportsHighlights || capabilities.supportsAnnotations;
+
     Widget buildActionBtn(IconData icon, String tooltip, VoidCallback onTap,
         {bool isActive = false}) {
       return InkWell(
@@ -476,7 +502,7 @@ class ReaderMenu extends StatelessWidget {
                 icon,
                 size: 26,
                 color: isActive
-                    ? theme.primary // Sage Green if active
+                    ? theme.primary
                     : theme.textSecondary.withOpacity(0.8),
               ),
             ],
@@ -485,86 +511,99 @@ class ReaderMenu extends StatelessWidget {
       );
     }
 
+    final actions = <Widget>[];
+
+    if (capabilities.supportsSemanticChapters) {
+      actions.add(
+        buildActionBtn(Icons.toc_rounded, loc.tableOfContents, () {
+          Navigator.of(context).pop();
+          Future.delayed(const Duration(milliseconds: 50), () {
+            scaffoldKey.currentState?.openDrawer();
+          });
+        }),
+      );
+    }
+
+    actions.addAll([
+      buildActionBtn(Icons.bookmark_border_rounded, loc.addBookmark, () async {
+        final added = await controller.addBookmark();
+        if (!added) return;
+
+        final feedbackContext = scaffoldKey.currentContext;
+        if (context.mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final targetContext = feedbackContext ?? scaffoldKey.currentContext;
+          if (targetContext == null || !targetContext.mounted) return;
+          SnackBarUtils.show(targetContext, 'Bookmark Added!');
+        });
+      }),
+      buildActionBtn(Icons.bookmarks_rounded, loc.bookmarks, () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BookmarkListPage(
+              bookId: controller.book.id,
+              bookTitle: controller.book.title,
+            ),
+          ),
+        );
+        if (result != null && result is Map<String, dynamic>) {
+          await controller.handleBookmarkSelection(result);
+        }
+      }),
+    ]);
+
+    if (supportsNotes) {
+      actions.add(
+        buildActionBtn(Icons.edit_note_rounded, loc.highlightsAndNotes,
+            () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NotesListPage(
+                bookId: controller.book.id,
+                bookTitle: controller.book.title,
+                onJumpToHighlight: (_) {},
+              ),
+            ),
+          );
+
+          await controller.loadHighlights();
+
+          if (result != null && result is Highlight) {
+            final selectedHighlight =
+                await controller.handleHighlightSelection(result);
+            if (context.mounted && selectedHighlight != null) {
+              _showHighlightNoteDialog(
+                context,
+                controller,
+                selectedHighlight,
+              );
+            }
+          }
+        }),
+      );
+    }
+
+    actions.add(
+      buildActionBtn(Icons.settings_suggest_rounded, loc.settingsTitle, () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const SettingsPage(),
+          ),
+        );
+      }),
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Better spacing
-        children: [
-          buildActionBtn(Icons.toc_rounded, loc.tableOfContents, () {
-            // Close the current settings bottom sheet
-            Navigator.of(context).pop();
-
-            // Delay slightly to let the bottom sheet animation start before opening drawer
-            Future.delayed(const Duration(milliseconds: 50), () {
-              scaffoldKey.currentState?.openDrawer();
-            });
-          }),
-          buildActionBtn(Icons.bookmark_border_rounded, loc.addBookmark,
-              () async {
-            final added = await controller.addBookmark();
-            if (!added) return;
-
-            final feedbackContext = scaffoldKey.currentContext;
-            if (context.mounted && Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
-
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              final targetContext = feedbackContext ?? scaffoldKey.currentContext;
-              if (targetContext == null || !targetContext.mounted) return;
-              SnackBarUtils.show(targetContext, 'Bookmark Added!');
-            });
-          }),
-          buildActionBtn(Icons.bookmarks_rounded, loc.bookmarks, () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BookmarkListPage(
-                  bookId: controller.book.id,
-                  bookTitle: controller.book.title,
-                ),
-              ),
-            );
-            if (result != null && result is Map<String, dynamic>) {
-              await controller.handleBookmarkSelection(result);
-            }
-          }),
-          buildActionBtn(Icons.edit_note_rounded, loc.highlightsAndNotes,
-              () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => NotesListPage(
-                  bookId: controller.book.id,
-                  bookTitle: controller.book.title,
-                  onJumpToHighlight: (_) {},
-                ),
-              ),
-            );
-
-            await controller.loadHighlights();
-
-            if (result != null && result is Highlight) {
-              final selectedHighlight =
-                  await controller.handleHighlightSelection(result);
-              if (context.mounted && selectedHighlight != null) {
-                _showHighlightNoteDialog(
-                  context,
-                  controller,
-                  selectedHighlight,
-                );
-              }
-            }
-          }),
-          buildActionBtn(Icons.settings_suggest_rounded, loc.settingsTitle, () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const SettingsPage(),
-              ),
-            );
-          }),
-        ],
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: actions,
       ),
     );
   }
