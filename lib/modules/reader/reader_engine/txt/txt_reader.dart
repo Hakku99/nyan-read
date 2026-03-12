@@ -34,7 +34,7 @@ class TxtReaderEngine
     supportsHighlights: true,
     supportsAnnotations: true,
     supportsPageAnimation: false,
-    supportsSemanticChapters: true,
+    chapterNavigation: ReaderChapterNavigation.semantic,
   );
 
   final Book book;

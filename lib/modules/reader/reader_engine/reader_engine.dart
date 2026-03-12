@@ -77,13 +77,6 @@ class ChapterLocator {
     this.contentIndex,
   });
 
-  factory ChapterLocator.fromChapterData(Map<String, dynamic> chapterData) {
-    return ChapterLocator(
-      chapterIndex: chapterData['paragraphIndex'] as int?,
-      pageNumber: chapterData['pageNumber'] as int?,
-      contentIndex: chapterData['startIndex'] as int?,
-    );
-  }
 }
 
 class ReaderChapter {
@@ -98,6 +91,12 @@ class ReaderChapter {
     this.index,
     this.isSynthetic = false,
   });
+}
+
+enum ReaderChapterNavigation {
+  none,
+  semantic,
+  synthetic,
 }
 
 class ReaderConfig {
@@ -124,7 +123,7 @@ class ReaderCapabilities {
   final bool supportsHighlights;
   final bool supportsAnnotations;
   final bool supportsPageAnimation;
-  final bool supportsSemanticChapters;
+  final ReaderChapterNavigation chapterNavigation;
 
   const ReaderCapabilities({
     required this.supportsTypography,
@@ -132,8 +131,11 @@ class ReaderCapabilities {
     required this.supportsHighlights,
     required this.supportsAnnotations,
     required this.supportsPageAnimation,
-    required this.supportsSemanticChapters,
+    required this.chapterNavigation,
   });
+
+  bool get supportsChapterNavigation =>
+      chapterNavigation != ReaderChapterNavigation.none;
 
   @override
   bool operator ==(Object other) {
@@ -144,7 +146,7 @@ class ReaderCapabilities {
         other.supportsHighlights == supportsHighlights &&
         other.supportsAnnotations == supportsAnnotations &&
         other.supportsPageAnimation == supportsPageAnimation &&
-        other.supportsSemanticChapters == supportsSemanticChapters;
+        other.chapterNavigation == chapterNavigation;
   }
 
   @override
@@ -154,7 +156,7 @@ class ReaderCapabilities {
         supportsHighlights,
         supportsAnnotations,
         supportsPageAnimation,
-        supportsSemanticChapters,
+        chapterNavigation,
       );
 }
 
@@ -223,7 +225,7 @@ abstract class ReaderEngine {
   Future<List<ReaderChapter>> getChapters();
 
   /// Navigates to a chapter described by a typed locator.
-  Future<void> goToChapter(ChapterLocator locator) async {}
+  Future<void> goToChapter(ChapterLocator locator);
 
   /// Navigates to the next page/screen.
   Future<void> nextPage();

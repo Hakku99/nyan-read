@@ -415,9 +415,9 @@ class _ReaderPageState extends State<ReaderPage> {
               return Selector<ReaderController, Color>(
                 selector: (_, c) => c.backgroundColor,
                 builder: (context, bgColor, _) {
-                  final supportsSemanticChapters =
+                  final supportsChapterNavigation =
                       context.select<ReaderController, bool>(
-                    (c) => c.capabilities.supportsSemanticChapters,
+                    (c) => c.capabilities.supportsChapterNavigation,
                   );
 
                   return PopScope(
@@ -436,8 +436,8 @@ class _ReaderPageState extends State<ReaderPage> {
                       key: readerPageScaffoldKey,
                       backgroundColor: bgColor,
                       resizeToAvoidBottomInset: false,
-                      drawerEnableOpenDragGesture: supportsSemanticChapters,
-                      drawer: supportsSemanticChapters
+                      drawerEnableOpenDragGesture: supportsChapterNavigation,
+                      drawer: supportsChapterNavigation
                           ? Drawer(
                               backgroundColor: bgColor,
                               width: MediaQuery.of(context).size.width * 0.9,

@@ -17,7 +17,7 @@ class EpubReaderEngine implements ReaderEngine {
     supportsHighlights: false,
     supportsAnnotations: false,
     supportsPageAnimation: false,
-    supportsSemanticChapters: true,
+    chapterNavigation: ReaderChapterNavigation.semantic,
   );
 
   static const double _minTrailingEdge = 0.55;

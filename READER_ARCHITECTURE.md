@@ -229,11 +229,11 @@ Fields:
 - `supportsHighlights`
 - `supportsAnnotations`
 - `supportsPageAnimation`
-- `supportsSemanticChapters`
+- `chapterNavigation`
 
 Usage:
 - `ReaderMenu` hides unsupported controls
-- `ReaderPage` hides TOC drawer behavior for engines without semantic chapter navigation
+- `ReaderPage` hides TOC drawer behavior for engines without chapter navigation
 - managers use capabilities to decide whether highlight flows should run
 
 ## 6. Engine Responsibilities and Capability Matrix
@@ -290,18 +290,18 @@ Role:
 Core characteristics:
 - true page-number navigation
 - no text highlights or snippets in the current architecture
-- synthetic TOC only, so `supportsSemanticChapters` remains `false`
+- synthetic TOC only, so `chapterNavigation` is `synthetic`
 
 Implements optional capabilities:
 - `PageMetricsCapability`
 
 ### Capability matrix
 
-| Engine | Typography | Theme | Highlights | Annotations | Page Animation | Semantic Chapters | TextReaderCapability | TextExtractionCapability | PageMetricsCapability |
+| Engine | Typography | Theme | Highlights | Annotations | Page Animation | Chapter Navigation | TextReaderCapability | TextExtractionCapability | PageMetricsCapability |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| TXT | Yes | Yes | Yes | Yes | No | Yes | Yes | Yes | Yes |
-| EPUB | No | No | No | No | No | Yes | No | No | No |
-| PDF | No | No | No | No | No | No | No | No | Yes |
+| TXT | Yes | Yes | Yes | Yes | No | Semantic | Yes | Yes | Yes |
+| EPUB | No | No | No | No | No | Semantic | No | No | No |
+| PDF | No | No | No | No | No | Synthetic | No | No | Yes |
 
 ## 7. Navigation and Restore Flows
 
@@ -376,23 +376,19 @@ The reader architecture is much cleaner than before, but a few cleanup items rem
    - `PdfReadingPosition`
    These are now mostly thin wrappers around `ReadingPosition`.
 
-2. `ChapterLocator.fromChapterData(...)` still exists as a compatibility helper.
-   - Main chapter flow no longer depends on dynamic chapter maps.
-   - This factory can likely be removed after old callers are gone.
-
-3. `ReaderEngine.goToChapter(...)` still has a default no-op implementation.
+2. `ReaderEngine.goToChapter(...)` still has a default no-op implementation.
    - It is harmless, but still a placeholder in the core contract.
 
-4. `ReaderEngine.setConfig(...)` remains a no-op in EPUB and PDF.
+3. `ReaderEngine.setConfig(...)` remains a no-op in EPUB and PDF.
    - UI capability gating hides unsupported controls, but the core contract still carries this method.
 
-5. `ReaderCapabilities` uses only booleans.
-   - It cannot express limited support levels such as partial theme support or synthetic versus semantic navigation.
+4. `ReaderCapabilities` is still mostly boolean-only.
+   - Chapter navigation is now typed, but the rest of the matrix still cannot express limited support levels such as partial theme support.
 
-6. PDF chapter data is synthetic.
+5. PDF chapter data is synthetic.
    - `ReaderChapter` supports `isSynthetic`, but there is no richer typed distinction yet.
 
-7. TXT page metrics are estimated, not exact layout pages.
+6. TXT page metrics are estimated, not exact layout pages.
    - They are still useful, but should not be interpreted as a universal page abstraction.
 
 ## 10. Future Extension Points
@@ -408,7 +404,7 @@ The current architecture is well positioned for incremental extension:
    - implement `TextReaderCapability` and/or `TextExtractionCapability` only when EPUB text lookup is reliable
 
 3. Add richer capability modeling
-   - replace some booleans with support levels such as `none / limited / full`
+   - chapter navigation is now typed, but the rest of the capability matrix still uses booleans; future work can add support levels such as `none / limited / full`
 
 4. Add typed synthetic navigation models
    - if PDF TOC evolves, split semantic chapters from synthetic navigation more explicitly

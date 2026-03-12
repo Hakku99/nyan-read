@@ -16,7 +16,7 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
     supportsHighlights: false,
     supportsAnnotations: false,
     supportsPageAnimation: false,
-    supportsSemanticChapters: false,
+    chapterNavigation: ReaderChapterNavigation.synthetic,
   );
 
   final Book book;

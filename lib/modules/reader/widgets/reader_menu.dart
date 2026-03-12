@@ -119,7 +119,7 @@ class ReaderMenu extends StatelessWidget {
       ),
     );
 
-    if (!capabilities.supportsSemanticChapters) {
+    if (!capabilities.supportsChapterNavigation) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [slider],
@@ -513,7 +513,7 @@ class ReaderMenu extends StatelessWidget {
 
     final actions = <Widget>[];
 
-    if (capabilities.supportsSemanticChapters) {
+    if (capabilities.supportsChapterNavigation) {
       actions.add(
         buildActionBtn(Icons.toc_rounded, loc.tableOfContents, () {
           Navigator.of(context).pop();

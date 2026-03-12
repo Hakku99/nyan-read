@@ -26,7 +26,7 @@ void main() {
         supportsHighlights: true,
         supportsAnnotations: true,
         supportsPageAnimation: false,
-        supportsSemanticChapters: true,
+        chapterNavigation: ReaderChapterNavigation.semantic,
       ),
     );
   });
@@ -42,7 +42,7 @@ void main() {
         supportsHighlights: false,
         supportsAnnotations: false,
         supportsPageAnimation: false,
-        supportsSemanticChapters: true,
+        chapterNavigation: ReaderChapterNavigation.semantic,
       ),
     );
   });
@@ -58,7 +58,7 @@ void main() {
         supportsHighlights: false,
         supportsAnnotations: false,
         supportsPageAnimation: false,
-        supportsSemanticChapters: false,
+        chapterNavigation: ReaderChapterNavigation.synthetic,
       ),
     );
   });

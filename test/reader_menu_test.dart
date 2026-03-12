@@ -42,7 +42,7 @@ class FakeReaderEngine
       supportsHighlights: true,
       supportsAnnotations: true,
       supportsPageAnimation: false,
-      supportsSemanticChapters: true,
+      chapterNavigation: ReaderChapterNavigation.semantic,
     ),
   });
 
@@ -78,6 +78,9 @@ class FakeReaderEngine
 
   @override
   Future<List<ReaderChapter>> getChapters() async => const [];
+
+  @override
+  Future<void> goToChapter(ChapterLocator locator) async {}
 
   @override
   Future<void> nextPage() async {}
@@ -447,7 +450,7 @@ void main() {
           supportsHighlights: false,
           supportsAnnotations: false,
           supportsPageAnimation: false,
-          supportsSemanticChapters: false,
+          chapterNavigation: ReaderChapterNavigation.none,
         ),
       ),
     );
@@ -485,6 +488,67 @@ void main() {
     expect(find.byIcon(Icons.toc_rounded), findsNothing);
     expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
     expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
+  });
+
+
+  testWidgets('ReaderMenu shows synthetic chapter navigation controls',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: FakeSystemBrightnessAdapter(),
+      ),
+    );
+
+    final mockController = MockReaderController(
+      engine: FakeReaderEngine(
+        capabilities: const ReaderCapabilities(
+          supportsTypography: false,
+          supportsTheme: false,
+          supportsHighlights: false,
+          supportsAnnotations: false,
+          supportsPageAnimation: false,
+          chapterNavigation: ReaderChapterNavigation.synthetic,
+        ),
+      ),
+    );
+    final mockThemeManager = MockThemeManager();
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<ReaderController>.value(value: mockController),
+          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            key: scaffoldKey,
+            body: ReaderMenu(
+              scaffoldKey: scaffoldKey,
+              brightnessController: brightnessController,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final loc = AppLocalizations.of(tester.element(find.byType(ReaderMenu)))!;
+
+    expect(find.text(loc.fontSize), findsNothing);
+    expect(find.text(loc.lineHeight), findsNothing);
+    expect(find.text(loc.themeCream), findsNothing);
+    expect(find.byIcon(Icons.edit_note_rounded), findsNothing);
+    expect(find.byIcon(Icons.toc_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
   });
 
   testWidgets('ReaderMenu shows capability-gated controls for TXT-like engines',
