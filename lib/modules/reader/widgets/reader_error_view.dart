@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../../../core/services/mascot_manager.dart';
-import '../../../../core/theme/theme_presets.dart';
+import '../../../../core/ui/nyan_theme_context.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../reader_error.dart';
 
@@ -77,11 +77,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final currentScaffoldColor = Theme.of(context).scaffoldBackgroundColor;
-    final nyanTheme = themePresets.values.firstWhere(
-      (t) => t.background == currentScaffoldColor,
-      orElse: () => themePresets[ThemePreset.creamLight]!,
-    );
+    final nyanTheme = context.nyanTheme;
 
     final errorBg = nyanTheme.errorBackgroundColor;
     final errorPrimary = nyanTheme.errorPrimaryTextColor;

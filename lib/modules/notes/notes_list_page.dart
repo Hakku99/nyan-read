@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/nyan_colors.dart';
+import '../../core/ui/components/components.dart';
 import '../../core/models/highlight.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/service_locator.dart';
@@ -102,23 +104,16 @@ class _NotesListPageState extends State<NotesListPage> {
 
   Widget _buildEmptyState() {
     final loc = AppLocalizations.of(context)!;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.highlight_off, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            loc.noHighlightsYet,
-            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            loc.longPressToCreateHighlight,
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-          ),
-        ],
+    final theme = Theme.of(context);
+    return NyanEmptyState(
+      icon: Icon(
+        Icons.highlight_off,
+        size: 64,
+        color:
+            theme.textTheme.bodySmall?.color ?? NyanColors.creamTextSecondary,
       ),
+      title: loc.noHighlightsYet,
+      description: loc.longPressToCreateHighlight,
     );
   }
 

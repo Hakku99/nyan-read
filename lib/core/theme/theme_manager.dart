@@ -6,8 +6,9 @@ class ThemeManager extends ChangeNotifier {
   ThemePreset _currentPreset = ThemePreset.creamLight;
 
   ThemePreset get currentPreset => _currentPreset;
+  NyanTheme get currentNyanTheme => themePresets[_currentPreset]!;
 
-  ThemeData get currentThemeData => themePresets[_currentPreset]!.themeData;
+  ThemeData get currentThemeData => currentNyanTheme.themeData;
 
   // For compatibility with MaterialApp
   ThemeData get lightTheme => currentThemeData;

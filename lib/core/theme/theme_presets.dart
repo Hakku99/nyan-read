@@ -1,45 +1,53 @@
 import 'package:flutter/material.dart';
 
+import 'nyan_colors.dart';
+import 'nyan_radius.dart';
+import 'nyan_spacing.dart';
+import 'nyan_typography.dart';
+
 enum ThemePreset {
   creamLight,
   sumiDark,
   sepiaWarm,
 }
 
-class NyanTheme {
+@immutable
+class NyanTheme extends ThemeExtension<NyanTheme> {
   final ThemePreset preset;
   final String name;
-  final Color primary; // Primary Accent (Matcha)
+  final Color primary;
+  final Color primaryDeep;
   final Color surface;
+  final Color surfaceMuted;
   final Color background;
   final Color textPrimary;
   final Color textSecondary;
-  final Color textMuted; // New
-  final Color accent; // Secondary Accent (Wood/Beige)
+  final Color textMuted;
+  final Color accent;
   final Color divider;
-  final Color borderColor; // New
+  final Color borderColor;
   final Brightness brightness;
-
-  // New Semantic Colors
-  final Color primaryButtonColor;
+  final Color primaryButtonBackground;
+  final Color primaryButtonForeground;
   final Color successColor;
   final Color warningColor;
   final Color infoColor;
-
-  // Static constants for specific UI elements
-  static const Color creamRecess = Color(0xFFF0EAD6);
-
-  // Error Theme Colors
   final Color errorBackgroundColor;
   final Color errorPrimaryTextColor;
   final Color errorSecondaryTextColor;
   final Color errorAccentColor;
+  final Color fabBackground;
+  final Color fabForeground;
+
+  static const Color creamRecess = NyanColors.creamSurfaceMuted;
 
   const NyanTheme({
     required this.preset,
     required this.name,
     required this.primary,
+    required this.primaryDeep,
     required this.surface,
+    required this.surfaceMuted,
     required this.background,
     required this.textPrimary,
     required this.textSecondary,
@@ -48,7 +56,8 @@ class NyanTheme {
     required this.divider,
     required this.borderColor,
     required this.brightness,
-    required this.primaryButtonColor,
+    required this.primaryButtonBackground,
+    required this.primaryButtonForeground,
     required this.successColor,
     required this.warningColor,
     required this.infoColor,
@@ -56,31 +65,42 @@ class NyanTheme {
     required this.errorPrimaryTextColor,
     required this.errorSecondaryTextColor,
     required this.errorAccentColor,
+    required this.fabBackground,
+    required this.fabForeground,
   });
 
+  Color get onPrimary =>
+      brightness == Brightness.dark ? const Color(0xFF1C1B1A) : NyanColors.white;
+  Color get onSecondary => NyanColors.white;
+  Color get onError => NyanColors.white;
+  Color get inverseBorder =>
+      brightness == Brightness.dark ? NyanColors.white.withOpacity(0.08) : divider;
+
   ThemeData get themeData {
+    final colorScheme = ColorScheme(
+      brightness: brightness,
+      primary: primary,
+      onPrimary: onPrimary,
+      secondary: accent,
+      onSecondary: onSecondary,
+      error: brightness == Brightness.dark
+          ? const Color(0xFFCF6679)
+          : Colors.redAccent,
+      onError: onError,
+      surface: surface,
+      onSurface: textPrimary,
+    );
+
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
+      fontFamily: NyanTypography.uiFontFamily,
       primaryColor: primary,
       scaffoldBackgroundColor: background,
-      colorScheme: ColorScheme(
-        brightness: brightness,
-        primary: primary,
-        onPrimary: brightness == Brightness.dark
-            ? const Color(0xFF1C1B1A)
-            : Colors.white,
-        secondary: accent,
-        onSecondary: Colors.white,
-        error: brightness == Brightness.dark
-            ? const Color(0xFFCF6679)
-            : Colors.redAccent, // Softer red for dark mode
-        onError: Colors.white,
-        surface: surface,
-        onSurface: textPrimary,
-      ),
+      colorScheme: colorScheme,
+      extensions: <ThemeExtension<dynamic>>[this],
       appBarTheme: AppBarTheme(
-        backgroundColor: background, // Melt into background
+        backgroundColor: background,
         foregroundColor: textPrimary,
         elevation: 0,
         centerTitle: true,
@@ -89,50 +109,56 @@ class NyanTheme {
       ),
       cardTheme: CardThemeData(
         color: surface,
-        elevation: 0, // Flat design
-        margin: const EdgeInsets.symmetric(vertical: 4),
+        elevation: 0,
+        margin: const EdgeInsets.symmetric(vertical: NyanSpacing.space4),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: preset == ThemePreset.sepiaWarm
-              ? BorderSide(
-                  color: const Color(0xFF795548).withOpacity(0.15), width: 1)
-              : BorderSide(
-                  color: brightness == Brightness.dark
-                      ? Colors.white.withOpacity(0.08)
-                      : divider,
-                  width: brightness == Brightness.dark ? 0.5 : 1,
-                ),
+          borderRadius: BorderRadius.circular(NyanRadius.card),
+          side: BorderSide(
+            color: preset == ThemePreset.sepiaWarm
+                ? accent.withOpacity(0.15)
+                : inverseBorder,
+            width: brightness == Brightness.dark ? 0.5 : 1,
+          ),
         ),
       ),
-      floatingActionButtonTheme: preset == ThemePreset.sepiaWarm
-          ? FloatingActionButtonThemeData(
-              backgroundColor: primary.withOpacity(0.15),
-              foregroundColor: primary,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: primary, width: 1),
-              ),
-            )
-          : null,
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: brightness == Brightness.dark
-              ? primary.withOpacity(0.15)
-              : primary,
-          foregroundColor: brightness == Brightness.dark
-              ? primary
-              : (brightness == Brightness.dark
-                  ? const Color(0xFF1C1B1A)
-                  : Colors.white),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: fabBackground,
+        foregroundColor: fabForeground,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NyanRadius.input),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: primaryButtonBackground,
+          foregroundColor: primaryButtonForeground,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(NyanRadius.input),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: NyanSpacing.space24,
+            vertical: NyanSpacing.space12,
+          ),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              brightness == Brightness.dark ? primary.withOpacity(0.15) : primary,
+          foregroundColor: brightness == Brightness.dark ? primary : onPrimary,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(NyanRadius.input),
             side: brightness == Brightness.dark
                 ? BorderSide(color: primary.withOpacity(0.5), width: 1)
                 : BorderSide.none,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(
+            horizontal: NyanSpacing.space24,
+            vertical: NyanSpacing.space12,
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -148,18 +174,20 @@ class NyanTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: NyanSpacing.space16,
+          vertical: NyanSpacing.space12,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(NyanRadius.input),
           borderSide: BorderSide(color: divider),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(NyanRadius.input),
           borderSide: BorderSide(color: divider),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(NyanRadius.input),
           borderSide: BorderSide(color: primary, width: 1.5),
         ),
         labelStyle: TextStyle(color: textSecondary),
@@ -169,45 +197,155 @@ class NyanTheme {
           ? SwitchThemeData(
               thumbColor: WidgetStateProperty.resolveWith((states) {
                 if (states.contains(WidgetState.selected)) {
-                  return const Color(0xFFEDE3C7); // Light thumb on ON
+                  return NyanColors.sepiaBackground;
                 }
-                return const Color(0xFFD7CCC8); // Pale Brown thumb on OFF
+                return const Color(0xFFD7CCC8);
               }),
               trackColor: WidgetStateProperty.resolveWith((states) {
                 if (states.contains(WidgetState.selected)) {
-                  return primary; // Solid Brown track on ON
+                  return primary;
                 }
-                return const Color(0xFFA1887F); // Latte track on OFF
+                return const Color(0xFFA1887F);
               }),
               trackOutlineColor: WidgetStateProperty.resolveWith((states) {
                 if (states.contains(WidgetState.selected)) {
-                  return Colors.transparent;
+                  return NyanColors.transparent;
                 }
-                return const Color(0xFFA1887F); // Latte outline
+                return const Color(0xFFA1887F);
               }),
             )
           : null,
       sliderTheme: preset == ThemePreset.sepiaWarm
           ? SliderThemeData(
               activeTrackColor: primary,
-              inactiveTrackColor:
-                  const Color(0xFFA1887F).withOpacity(0.5), // Latte @ 50%
+              inactiveTrackColor: const Color(0xFFA1887F).withOpacity(0.5),
               thumbColor: primary,
               overlayColor: primary.withOpacity(0.1),
               trackHeight: 4,
             )
           : null,
-      textTheme: TextTheme(
-        bodyLarge: TextStyle(color: textPrimary, fontSize: 16),
-        bodyMedium: TextStyle(color: textPrimary, fontSize: 14),
-        bodySmall: TextStyle(color: textSecondary, fontSize: 12),
-        titleLarge: TextStyle(
-            color: textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-            letterSpacing: -0.5),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(NyanRadius.sheet),
+          ),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NyanRadius.panel),
+        ),
+      ),
+      textTheme: NyanTypography.textTheme(
+        textMain: textPrimary,
+        textSecondary: textSecondary,
       ),
       iconTheme: IconThemeData(color: textPrimary),
+      shadowColor: textPrimary,
+    );
+  }
+
+  @override
+  NyanTheme copyWith({
+    ThemePreset? preset,
+    String? name,
+    Color? primary,
+    Color? primaryDeep,
+    Color? surface,
+    Color? surfaceMuted,
+    Color? background,
+    Color? textPrimary,
+    Color? textSecondary,
+    Color? textMuted,
+    Color? accent,
+    Color? divider,
+    Color? borderColor,
+    Brightness? brightness,
+    Color? primaryButtonBackground,
+    Color? primaryButtonForeground,
+    Color? successColor,
+    Color? warningColor,
+    Color? infoColor,
+    Color? errorBackgroundColor,
+    Color? errorPrimaryTextColor,
+    Color? errorSecondaryTextColor,
+    Color? errorAccentColor,
+    Color? fabBackground,
+    Color? fabForeground,
+  }) {
+    return NyanTheme(
+      preset: preset ?? this.preset,
+      name: name ?? this.name,
+      primary: primary ?? this.primary,
+      primaryDeep: primaryDeep ?? this.primaryDeep,
+      surface: surface ?? this.surface,
+      surfaceMuted: surfaceMuted ?? this.surfaceMuted,
+      background: background ?? this.background,
+      textPrimary: textPrimary ?? this.textPrimary,
+      textSecondary: textSecondary ?? this.textSecondary,
+      textMuted: textMuted ?? this.textMuted,
+      accent: accent ?? this.accent,
+      divider: divider ?? this.divider,
+      borderColor: borderColor ?? this.borderColor,
+      brightness: brightness ?? this.brightness,
+      primaryButtonBackground: primaryButtonBackground ?? this.primaryButtonBackground,
+      primaryButtonForeground: primaryButtonForeground ?? this.primaryButtonForeground,
+      successColor: successColor ?? this.successColor,
+      warningColor: warningColor ?? this.warningColor,
+      infoColor: infoColor ?? this.infoColor,
+      errorBackgroundColor: errorBackgroundColor ?? this.errorBackgroundColor,
+      errorPrimaryTextColor:
+          errorPrimaryTextColor ?? this.errorPrimaryTextColor,
+      errorSecondaryTextColor:
+          errorSecondaryTextColor ?? this.errorSecondaryTextColor,
+      errorAccentColor: errorAccentColor ?? this.errorAccentColor,
+      fabBackground: fabBackground ?? this.fabBackground,
+      fabForeground: fabForeground ?? this.fabForeground,
+    );
+  }
+
+  @override
+  NyanTheme lerp(ThemeExtension<NyanTheme>? other, double t) {
+    if (other is! NyanTheme) {
+      return this;
+    }
+
+    return NyanTheme(
+      preset: t < 0.5 ? preset : other.preset,
+      name: t < 0.5 ? name : other.name,
+      primary: Color.lerp(primary, other.primary, t)!,
+      primaryDeep: Color.lerp(primaryDeep, other.primaryDeep, t)!,
+      surface: Color.lerp(surface, other.surface, t)!,
+      surfaceMuted: Color.lerp(surfaceMuted, other.surfaceMuted, t)!,
+      background: Color.lerp(background, other.background, t)!,
+      textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
+      textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
+      textMuted: Color.lerp(textMuted, other.textMuted, t)!,
+      accent: Color.lerp(accent, other.accent, t)!,
+      divider: Color.lerp(divider, other.divider, t)!,
+      borderColor: Color.lerp(borderColor, other.borderColor, t)!,
+      brightness: t < 0.5 ? brightness : other.brightness,
+      primaryButtonBackground:
+          Color.lerp(primaryButtonBackground, other.primaryButtonBackground, t)!,
+      primaryButtonForeground:
+          Color.lerp(primaryButtonForeground, other.primaryButtonForeground, t)!,
+      successColor: Color.lerp(successColor, other.successColor, t)!,
+      warningColor: Color.lerp(warningColor, other.warningColor, t)!,
+      infoColor: Color.lerp(infoColor, other.infoColor, t)!,
+      errorBackgroundColor:
+          Color.lerp(errorBackgroundColor, other.errorBackgroundColor, t)!,
+      errorPrimaryTextColor:
+          Color.lerp(errorPrimaryTextColor, other.errorPrimaryTextColor, t)!,
+      errorSecondaryTextColor: Color.lerp(
+        errorSecondaryTextColor,
+        other.errorSecondaryTextColor,
+        t,
+      )!,
+      errorAccentColor: Color.lerp(errorAccentColor, other.errorAccentColor, t)!,
+      fabBackground: Color.lerp(fabBackground, other.fabBackground, t)!,
+      fabForeground: Color.lerp(fabForeground, other.fabForeground, t)!,
     );
   }
 }
@@ -215,76 +353,91 @@ class NyanTheme {
 final Map<ThemePreset, NyanTheme> themePresets = {
   ThemePreset.creamLight: const NyanTheme(
     preset: ThemePreset.creamLight,
-    name: "Cream Light",
-    primary: Color(0xFF8E9775),
-    surface: Color(0xFFFFFCF5), // Level 2: Near-white cream
-    background: Color(0xFFF7F3E8), // Level 1: Warm/Darker Cream
-    textPrimary: Color(0xFF4A453E),
-    textSecondary: Color(0xFF8C867B),
+    name: 'Cream Light',
+    primary: NyanColors.creamPrimary,
+    primaryDeep: NyanColors.creamPrimaryDeep,
+    surface: NyanColors.creamSurface,
+    surfaceMuted: NyanColors.creamSurfaceMuted,
+    background: NyanColors.creamBackground,
+    textPrimary: NyanColors.creamTextMain,
+    textSecondary: NyanColors.creamTextSecondary,
     textMuted: Color(0xFFB0ACA5),
-    accent: Color(0xFFD4A373),
-    divider: Color(0xFFE6E2D8),
-    borderColor: Color(0xFFE6E2D8),
+    accent: NyanColors.creamPrimaryDeep,
+    divider: NyanColors.creamDivider,
+    borderColor: NyanColors.creamDivider,
     brightness: Brightness.light,
-    primaryButtonColor: Color(0xFF8E9775),
+    primaryButtonBackground: NyanColors.creamPrimary,
+    primaryButtonForeground: NyanColors.creamSurface,
     successColor: Color(0xFF6B8E23),
-    warningColor: Color(0xFFD4A373),
+    warningColor: NyanColors.highlightOrange,
     infoColor: Color(0xFF7FABAC),
     errorBackgroundColor: Color(0xFFFFF0F0),
     errorPrimaryTextColor: Color(0xFFC62828),
     errorSecondaryTextColor: Color(0xFFD32F2F),
     errorAccentColor: Color(0xFFFFCDD2),
+    fabBackground: NyanColors.creamPrimaryDeep,
+    fabForeground: NyanColors.creamSurface,
   ),
-
   ThemePreset.sumiDark: const NyanTheme(
     preset: ThemePreset.sumiDark,
-    name: "Sumi Dark",
-    primary: Color(0xFFC5D0A8),
-    surface: Color(0xFF262422), // Sumi Ink (for surface/menu)
-    background: Color(0xFF141312), // Deep Charcoal (for main background)
-    textPrimary: Color(0xFFF5F3ED),
-    textSecondary: Color(0xFFC5BFB5),
+    name: 'Sumi Dark',
+    primary: NyanColors.inkNightPrimary,
+    primaryDeep: NyanColors.amoledPrimary,
+    surface: NyanColors.inkNightSurface,
+    surfaceMuted: Color(0xFF202520),
+    background: NyanColors.inkNightBackground,
+    textPrimary: NyanColors.inkNightTextMain,
+    textSecondary: NyanColors.inkNightTextSecondary,
     textMuted: Color(0xFF8F8A84),
-    accent: Color(0xFFD4A373),
-    divider: Color(0xFF4A4642),
-    borderColor: Color(0xFF4A4642),
+    accent: NyanColors.highlightOrange,
+    divider: NyanColors.inkNightDivider,
+    borderColor: NyanColors.inkNightDivider,
     brightness: Brightness.dark,
-
-    primaryButtonColor: Color(0xFFC5D0A8),
+    primaryButtonBackground: NyanColors.inkNightPrimary,
+    primaryButtonForeground: NyanColors.inkNightTextMain,
     successColor: Color(0xFF8FBC8F),
-    warningColor: Color(0xFFD4A373),
+    warningColor: NyanColors.highlightOrange,
     infoColor: Color(0xFF7FABAC),
-
     errorBackgroundColor: Color(0xFF2B2020),
     errorPrimaryTextColor: Color(0xFFFFCDD2),
     errorSecondaryTextColor: Color(0xFFE57373),
     errorAccentColor: Color(0xFFEF9A9A),
+    fabBackground: NyanColors.inkNightPrimary,
+    fabForeground: NyanColors.inkNightTextMain,
   ),
-
-  // Keeping Sepia as a variation of Cream (maybe slightly warmer/darker)
   ThemePreset.sepiaWarm: const NyanTheme(
     preset: ThemePreset.sepiaWarm,
-    name: "Sepia Warm",
-    primary: Color(0xFF795548), // Leather Brown
-    surface: Color(0xFFFDFBF7), // Warm Paper White
-    background: Color(0xFFEDE3C7), // Warm Sepia
-    textPrimary: Color(0xFF3E2723), // Dark Brown
-    textSecondary: Color(0xFF5D4037),
+    name: 'Sepia Warm',
+    primary: NyanColors.sepiaPrimary,
+    primaryDeep: Color(0xFF795548),
+    surface: NyanColors.sepiaSurface,
+    surfaceMuted: Color(0xFFFAF2E6),
+    background: NyanColors.sepiaBackground,
+    textPrimary: NyanColors.sepiaTextMain,
+    textSecondary: NyanColors.sepiaTextSecondary,
     textMuted: Color(0xFFA1887F),
     accent: Color(0xFF795548),
-    divider: Color(0xFFD7CCC8),
-    borderColor: Color(0xFFD7CCC8),
+    divider: NyanColors.sepiaDivider,
+    borderColor: NyanColors.sepiaDivider,
     brightness: Brightness.light,
-
-    primaryButtonColor: Color(0xFF795548),
+    primaryButtonBackground: Color(0xFF795548),
+    primaryButtonForeground: NyanColors.sepiaSurface,
     successColor: Color(0xFF558B2F),
     warningColor: Color(0xFFEF6C00),
     infoColor: Color(0xFF0277BD),
-
-    // Error Theme
     errorBackgroundColor: Color(0xFFFAF0E6),
     errorPrimaryTextColor: Color(0xFF5D4037),
     errorSecondaryTextColor: Color(0xFF8D6E63),
     errorAccentColor: Color(0xFFD7CCC8),
+    fabBackground: NyanColors.sepiaPrimary,
+    fabForeground: NyanColors.sepiaSurface,
   ),
 };
+
+NyanTheme resolveNyanTheme(ThemeData theme) {
+  return theme.extension<NyanTheme>() ??
+      themePresets[ThemePreset.creamLight]!;
+}
+
+
+

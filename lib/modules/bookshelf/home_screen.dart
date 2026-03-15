@@ -14,6 +14,10 @@ import '../../core/services/bookshelf_preferences_service.dart';
 import '../../core/services/service_locator.dart';
 import '../../core/models/book.dart';
 import '../../core/services/mascot_manager.dart';
+import '../../core/theme/nyan_radius.dart';
+import '../../core/theme/nyan_spacing.dart';
+import '../../core/theme/nyan_typography.dart';
+import '../../core/ui/components/components.dart';
 import '../../modules/privacy/privacy_lock_service.dart';
 import 'package:go_router/go_router.dart';
 import '../settings/settings_page.dart';
@@ -23,7 +27,6 @@ import '../../core/utils/book_source_platform.dart';
 import '../../core/utils/snackbar_utils.dart';
 import 'book_details_page.dart';
 import 'widgets/segmented_tab_control.dart';
-import 'widgets/animated_book_card.dart';
 import 'bookshelf_view_model.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -48,13 +51,6 @@ class _HomeScreenContent extends StatefulWidget {
 
 class _HomeScreenContentState extends State<_HomeScreenContent>
     with TickerProviderStateMixin {
-  // Design system constants
-  static const double _radius16 = 16.0;
-  static const double _spacing8 = 8.0;
-  static const double _spacing12 = 12.0;
-  static const double _spacing16 = 16.0;
-  static const double _minTouchTarget = 40.0;
-
   late TabController _tabController;
   final _prefs = getIt<BookshelfPreferencesService>();
 
@@ -90,7 +86,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(loc.actionCannotBeUndone),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: NyanSpacing.space16),
                   CheckboxListTile(
                     title: Text(loc.alsoDeleteLocalFiles),
                     value: deleteFile,
@@ -298,14 +294,16 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return SafeArea(
+        return NyanBottomSheet(
+          title: loc.importFiles,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
+              NyanListRow(
                 leading: const Icon(Icons.insert_drive_file),
-                title: Text(loc.importFiles),
+                title: loc.importFiles,
                 onTap: () {
                   Navigator.pop(context);
                   _importBook(parentContext);
@@ -323,26 +321,16 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return SafeArea(
+            return NyanBottomSheet(
+              title: loc.sortBy,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                    child: Text(
-                      loc.sortBy,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
                   ...() {
-                    // Define the 6 combined sort options
                     final sortOptions = [
                       (SortBy.recency, false, loc.lastReadDesc),
                       (SortBy.recency, true, loc.lastReadAsc),
@@ -359,25 +347,14 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
                       final isSelected = _prefs.sortBy == sortBy &&
                           _prefs.isAscending == isAscending;
 
-                      return ListTile(
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 24),
-                        title: Text(
-                          label,
-                          style: TextStyle(
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.primary
-                                : null,
-                          ),
-                        ),
+                      return NyanListRow(
+                        title: label,
+                        subtitle: isSelected ? loc.sortBy : null,
                         trailing: isSelected
                             ? Icon(
                                 Icons.check,
                                 color: Theme.of(context).colorScheme.primary,
-                                size: 20,
+                                size: NyanSpacing.space20,
                               )
                             : null,
                         onTap: () async {
@@ -391,7 +368,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
                       );
                     }).toList();
                   }(),
-                  const SizedBox(height: 16),
                 ],
               ),
             );
@@ -400,6 +376,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       },
     );
   }
+
   Future<void> _handlePrivacyLock(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
     final fm = context.read<FeatureManager>();
@@ -504,9 +481,314 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     );
   }
 
+  Book? _resolveContinueReadingBook(List<Book> books) {
+    for (final book in books) {
+      if (book.currentProgress > 0 && book.currentProgress < 1) {
+        return book;
+      }
+    }
+    if (books.isEmpty) {
+      return null;
+    }
+    return books.first;
+  }
+
+  PreferredSizeWidget? _buildSelectionAppBar(
+    BuildContext context,
+    FeatureManager featureManager,
+    bool showPrivacyTab,
+  ) {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(kToolbarHeight),
+      child: Selector<BookshelfViewModel, int>(
+        selector: (_, vm) => vm.selectedCount,
+        builder: (context, selectedCount, _) {
+          final vm = context.read<BookshelfViewModel>();
+          final theme = Theme.of(context);
+
+          return AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => vm.toggleSelectionMode(active: false),
+            ),
+            title: Text(
+              '$selectedCount ${AppLocalizations.of(context)!.selected}',
+            ),
+            actions: [
+              if (selectedCount == 1)
+                IconButton(
+                  icon: const Icon(Icons.info_outline),
+                  tooltip: AppLocalizations.of(context)!.viewDetails,
+                  onPressed: () async {
+                    final bookId = vm.selectedBookIds.first;
+                    final bookData =
+                        await getIt<DatabaseService>().getBookById(bookId);
+                    if (bookData != null && mounted) {
+                      final book = Book.fromMap(bookData);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BookDetailsPage(
+                            book: book,
+                            bookData: bookData,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              if (selectedCount > 0 && featureManager.isPro)
+                IconButton(
+                  icon: Icon(showPrivacyTab ? Icons.lock_open : Icons.lock),
+                  tooltip: showPrivacyTab
+                      ? AppLocalizations.of(context)!.moveToPublic
+                      : AppLocalizations.of(context)!.moveToPrivate,
+                  onPressed: () => _moveSelectedBooks(context, !showPrivacyTab),
+                ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: AppLocalizations.of(context)!.delete,
+                onPressed: () => _deleteSelectedBooks(context),
+              ),
+              Builder(
+                builder: (context) {
+                  final loc = AppLocalizations.of(context)!;
+                  final isPrivateTab =
+                      showPrivacyTab && _tabController.index == 1;
+                  final currentTotal =
+                      isPrivateTab ? vm.privateCount : vm.publicCount;
+                  final allSelected =
+                      currentTotal > 0 && selectedCount >= currentTotal;
+
+                  return IconButton(
+                    icon:
+                        Icon(allSelected ? Icons.deselect : Icons.select_all),
+                    tooltip: allSelected ? loc.deselectAll : loc.selectAll,
+                    onPressed: () => vm.selectAll(isPrivateTab),
+                  );
+                },
+              ),
+              const SizedBox(width: NyanSpacing.space8),
+            ],
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeaderActionButton({
+    required String tooltip,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(icon, size: NyanSpacing.space20),
+        constraints: const BoxConstraints(
+          minWidth: NyanSpacing.minTapTarget,
+          minHeight: NyanSpacing.minTapTarget,
+        ),
+        padding: const EdgeInsets.all(NyanSpacing.space12),
+      ),
+    );
+  }
+
+  Widget _buildLibraryActionButton({
+    required BuildContext context,
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(NyanRadius.input),
+        child: Container(
+          constraints: const BoxConstraints(
+            minWidth: NyanSpacing.minTapTarget,
+            minHeight: NyanSpacing.minTapTarget,
+          ),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(NyanRadius.input),
+          ),
+          child: Icon(icon, size: NyanSpacing.space20),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContinueReadingSection(
+    BuildContext context,
+    Book continueReadingBook,
+    bool isCompact,
+  ) {
+    final loc = AppLocalizations.of(context)!;
+    final progressPercent =
+        (continueReadingBook.currentProgress.clamp(0.0, 1.0) * 100)
+            .toStringAsFixed(0);
+
+    return NyanContinueReadingCard(
+      book: continueReadingBook,
+      compact: isCompact,
+      progressLabel: '${loc.readingProgress}  $progressPercent%',
+      buttonLabel: loc.startReading,
+      onContinue: () {
+        context.push('/reader/${continueReadingBook.id}').then((_) {
+          if (mounted) {
+            context.read<BookshelfViewModel>().loadBooks();
+          }
+        });
+      },
+    );
+  }
+  Widget _buildLibrarySurface(
+    BuildContext context, {
+    required FeatureManager featureManager,
+    required bool showPrivacyTab,
+    required List<Book> activeBooks,
+    required bool showHeaderSections,
+    required bool isSelectionMode,
+  }) {
+    final loc = AppLocalizations.of(context)!;
+    final continueReadingBook = _resolveContinueReadingBook(activeBooks);
+    final theme = Theme.of(context);
+    const useCompactContinueReading = false;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (showHeaderSections)
+          Theme(
+            data: theme.copyWith(
+              textTheme: theme.textTheme.copyWith(
+                bodySmall: theme.textTheme.bodySmall?.copyWith(
+                  fontSize: NyanTypography.meta,
+                  height: 1.35,
+                  letterSpacing: 0.15,
+                ),
+              ),
+            ),
+            child: NyanPageHeader(
+              title: loc.appTitle,
+              subtitle: loc.enjoyReading,
+              actions: [
+                _buildHeaderActionButton(
+                  tooltip: loc.settingsTitle,
+                  icon: Icons.settings_outlined,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsPage()),
+                  ).then((_) => setState(() {})),
+                ),
+              ],
+              padding: const EdgeInsets.fromLTRB(
+                NyanSpacing.space4,
+                0,
+                NyanSpacing.space4,
+                NyanSpacing.space12,
+              ),
+            ),
+          ),
+        if (showHeaderSections && continueReadingBook != null) ...[
+          _buildContinueReadingSection(
+            context,
+            continueReadingBook,
+            useCompactContinueReading,
+          ),
+          const SizedBox(height: NyanSpacing.space12),
+        ],
+        NyanInfoCard(
+          padding: const EdgeInsets.all(NyanSpacing.space8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SegmentedTabControl(
+                tabs: [
+                  SegmentedTab(label: loc.publicShelf),
+                  if (showPrivacyTab)
+                    SegmentedTab(
+                      label: loc.privateShelf,
+                      icon: Icons.lock,
+                    ),
+                ],
+                selectedIndex: _tabController.index,
+                onTabChanged: (index) {
+                  _tabController.animateTo(index);
+                  setState(() {});
+                },
+              ),
+              const SizedBox(height: NyanSpacing.space4),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: NyanSpacing.space8,
+                  runSpacing: NyanSpacing.space8,
+                  children: [
+                    _buildLibraryActionButton(
+                      context: context,
+                      icon: _prefs.viewMode == ViewMode.grid
+                          ? Icons.view_list
+                          : Icons.grid_view,
+                      tooltip: _prefs.viewMode == ViewMode.grid
+                          ? loc.listView
+                          : loc.gridView,
+                      onPressed: () async {
+                        await _prefs.setViewMode(
+                          _prefs.viewMode == ViewMode.grid
+                              ? ViewMode.list
+                              : ViewMode.grid,
+                        );
+                        setState(() {});
+                      },
+                    ),
+                    _buildLibraryActionButton(
+                      context: context,
+                      icon: Icons.sort,
+                      tooltip: loc.sortBy,
+                      onPressed: () => _showSortMenu(context),
+                    ),
+                    if (featureManager.isPro)
+                      _buildLibraryActionButton(
+                        context: context,
+                        icon: featureManager.isPrivateShelfUnlocked
+                            ? Icons.lock_open
+                            : Icons.lock,
+                        tooltip: featureManager.isPrivateShelfUnlocked
+                            ? loc.lockPrivacyShelf
+                            : loc.unlockPrivacyShelf,
+                        onPressed: () => _handlePrivacyLock(context),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: NyanSpacing.space12),
+        Expanded(
+          child: _buildShelfContent(
+            context,
+            activeBooks,
+            showPrivacyTab && _tabController.index == 1,
+            adsEnabled: featureManager.adsEnabled,
+            isSelectionMode: isSelectionMode,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final featureManager = context.watch<FeatureManager>();
+    final isSelectionMode =
+        context.select<BookshelfViewModel, bool>((vm) => vm.isSelectionMode);
 
     // Logic: Only show Privacy Tab if Pro AND Unlocked
     final showPrivacyTab =
@@ -524,374 +806,202 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     }
 
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: Selector<BookshelfViewModel,
-            ({bool isSelectionMode, int selectedCount})>(
-          selector: (_, vm) => (
-            isSelectionMode: vm.isSelectionMode,
-            selectedCount: vm.selectedCount,
-          ),
-          builder: (context, state, _) {
-            final vm = context.read<BookshelfViewModel>();
-            if (state.isSelectionMode) {
-              return AppBar(
-                leading: IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => vm.toggleSelectionMode(active: false),
-                ),
-                title: Text(
-                    '${state.selectedCount} ${AppLocalizations.of(context)!.selected}'),
-                actions: [
-                  if (state.selectedCount == 1)
-                    IconButton(
-                      icon: const Icon(Icons.info_outline),
-                      tooltip: AppLocalizations.of(context)!.viewDetails,
-                      onPressed: () async {
-                        final bookId = vm.selectedBookIds.first;
-                        final bookData =
-                            await getIt<DatabaseService>().getBookById(bookId);
-                        if (bookData != null && mounted) {
-                          final book = Book.fromMap(bookData);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BookDetailsPage(
-                                book: book,
-                                bookData: bookData,
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  if (state.selectedCount > 0) ...[
-                    if (featureManager.isPro)
-                      IconButton(
-                        icon:
-                            Icon(showPrivacyTab ? Icons.lock_open : Icons.lock),
-                        tooltip: showPrivacyTab
-                            ? AppLocalizations.of(context)!.moveToPublic
-                            : AppLocalizations.of(context)!.moveToPrivate,
-                        onPressed: () =>
-                            _moveSelectedBooks(context, !showPrivacyTab),
-                      ),
-                  ],
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    tooltip: AppLocalizations.of(context)!.delete,
-                    onPressed: () => _deleteSelectedBooks(context),
-                  ),
-                  Builder(builder: (context) {
-                    final loc = AppLocalizations.of(context)!;
-                    final isPrivateTab =
-                        showPrivacyTab && _tabController.index == 1;
-                    final currentTotal =
-                        isPrivateTab ? vm.privateCount : vm.publicCount;
-                    final allSelected =
-                        currentTotal > 0 && state.selectedCount >= currentTotal;
-
-                    return IconButton(
-                      icon:
-                          Icon(allSelected ? Icons.deselect : Icons.select_all),
-                      tooltip: allSelected ? loc.deselectAll : loc.selectAll,
-                      onPressed: () => vm.selectAll(isPrivateTab),
-                    );
-                  }),
-                  const SizedBox(width: _spacing8),
-                ],
-                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-              );
-            }
-
-            return AppBar(
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    AppLocalizations.of(context)!.appTitle,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    AppLocalizations.of(context)!.enjoyReading,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: Theme.of(context).textTheme.bodySmall?.color,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ],
-              ),
-              centerTitle: false,
-              actions: [
-                // Grouped action container
-                Container(
-                  margin:
-                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: _spacing8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(_radius16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // View Mode Toggle
-                      IconButton(
-                        icon: Icon(_prefs.viewMode == ViewMode.grid
-                            ? Icons.view_list
-                            : Icons.grid_view),
-                        iconSize: 20,
-                        constraints: const BoxConstraints(
-                          minWidth: _minTouchTarget,
-                          minHeight: _minTouchTarget,
-                        ),
-                        padding: EdgeInsets.zero,
-                        onPressed: () async {
-                          await _prefs.setViewMode(
-                              _prefs.viewMode == ViewMode.grid
-                                  ? ViewMode.list
-                                  : ViewMode.grid);
-                          setState(() {});
-                        },
-                        tooltip: _prefs.viewMode == ViewMode.grid
-                            ? AppLocalizations.of(context)!.listView
-                            : AppLocalizations.of(context)!.gridView,
-                      ),
-
-                      // Sort Menu
-                      IconButton(
-                        icon: const Icon(Icons.sort, size: 20),
-                        iconSize: 20,
-                        tooltip: AppLocalizations.of(context)!.sort,
-                        constraints: const BoxConstraints(
-                          minWidth: _minTouchTarget,
-                          minHeight: _minTouchTarget,
-                        ),
-                        padding: EdgeInsets.zero,
-                        onPressed: () => _showSortMenu(context),
-                      ),
-
-                      // Lock/Unlock Button
-                      if (featureManager.isPro)
-                        IconButton(
-                          icon: Icon(
-                            featureManager.isPrivateShelfUnlocked
-                                ? Icons.lock_open
-                                : Icons.lock,
-                            size: 20,
-                          ),
-                          iconSize: 20,
-                          constraints: const BoxConstraints(
-                            minWidth: _minTouchTarget,
-                            minHeight: _minTouchTarget,
-                          ),
-                          padding: EdgeInsets.zero,
-                          onPressed: () => _handlePrivacyLock(context),
-                          tooltip: featureManager.isPrivateShelfUnlocked
-                              ? AppLocalizations.of(context)!.lockPrivacyShelf
-                              : AppLocalizations.of(context)!
-                                  .unlockPrivacyShelf,
-                        ),
-
-                      // Settings
-                      IconButton(
-                        icon: const Icon(Icons.settings, size: 20),
-                        iconSize: 20,
-                        constraints: const BoxConstraints(
-                          minWidth: _minTouchTarget,
-                          minHeight: _minTouchTarget,
-                        ),
-                        padding: EdgeInsets.zero,
-                        onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => const SettingsPage()))
-                            .then((_) => setState(() {})), // Refresh on return
-                        tooltip: 'Settings',
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
+      appBar: isSelectionMode
+          ? _buildSelectionAppBar(context, featureManager, showPrivacyTab)
+          : null,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Ads Stub
-            if (!featureManager.isPro && featureManager.adsEnabled)
-              AdsUI.showBanner(context),
-
-            // Main Content Card
-            Expanded(
-              child: Padding(
-                padding:
-                    const EdgeInsets.only(left: _spacing16, right: _spacing16),
-                child: Card(
-                  elevation: 0,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .surfaceVariant
-                      .withOpacity(0.3),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Column(
-                    children: [
-                      // Segmented Tab Control
-                      Padding(
-                        padding: const EdgeInsets.all(_spacing12),
-                        child: SegmentedTabControl(
-                          tabs: [
-                            SegmentedTab(
-                              label: AppLocalizations.of(context)!.publicShelf,
-                            ),
-                            if (showPrivacyTab)
-                              SegmentedTab(
-                                label:
-                                    AppLocalizations.of(context)!.privateShelf,
-                                icon: Icons.lock,
-                              ),
-                          ],
-                          selectedIndex: _tabController.index,
-                          onTabChanged: (index) {
-                            _tabController.animateTo(index);
-                            setState(() {}); // Rebuild to update subtitle
-                          },
-                        ),
-                      ),
-                      Expanded(
-                        child: Selector<
-                            BookshelfViewModel,
-                            ({
-                              bool isLoading,
-                              List<Book> pub,
-                              List<Book> priv
-                            })>(
-                          selector: (_, vm) => (
-                            isLoading: vm.isLoading,
-                            pub: vm.publicBooks,
-                            priv: vm.privateBooks,
-                          ),
-                          builder: (context, state, child) {
-                            if (state.isLoading) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            }
-
-                            return TabBarView(
-                              controller: _tabController,
-                              physics:
-                                  const NeverScrollableScrollPhysics(), // Use tab bar to switch
-                              children: [
-                                _buildShelfContent(context, state.pub, false),
-                                if (showPrivacyTab)
-                                  _buildShelfContent(context, state.priv, true),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            NyanSpacing.space16,
+            NyanSpacing.space12,
+            NyanSpacing.space16,
+            0,
+          ),
+          child: Selector<
+              BookshelfViewModel,
+              ({bool isLoading, List<Book> pub, List<Book> priv})>(
+            selector: (_, vm) => (
+              isLoading: vm.isLoading,
+              pub: vm.publicBooks,
+              priv: vm.privateBooks,
             ),
-          ],
+            builder: (context, state, child) {
+              if (state.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final activeBooks =
+                  showPrivacyTab && _tabController.index == 1
+                      ? state.priv
+                      : state.pub;
+
+              return _buildLibrarySurface(
+                context,
+                featureManager: featureManager,
+                showPrivacyTab: showPrivacyTab,
+                activeBooks: activeBooks,
+                showHeaderSections: !isSelectionMode,
+                isSelectionMode: isSelectionMode,
+              );
+            },
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showImportMenu(context),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: isSelectionMode
+          ? null
+          : FloatingActionButton(
+              onPressed: () => _showImportMenu(context),
+              child: const Icon(Icons.add),
+            ),
     );
   }
 
   Widget _buildShelfContent(
-      BuildContext context, List<Book> books, bool isPrivate) {
+    BuildContext context,
+    List<Book> books,
+    bool isPrivate, {
+    required bool adsEnabled,
+    required bool isSelectionMode,
+  }) {
     if (books.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: MascotManager().render(MascotScene.emptyShelf, size: 120),
-            ),
-            Text(
-              isPrivate
-                  ? AppLocalizations.of(context)!.emptyPrivateShelf
-                  : AppLocalizations.of(context)!.emptyShelfInstructions,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Theme.of(context).textTheme.bodySmall?.color,
-                letterSpacing: 0.2,
+      AdsUI.hide();
+      final loc = AppLocalizations.of(context)!;
+
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final compactLayout = constraints.maxHeight < 520;
+
+          return Column(
+            children: [
+              Spacer(flex: compactLayout ? 1 : 2),
+              NyanEmptyState(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: NyanSpacing.space24,
+                ),
+                iconSpacing: NyanSpacing.space12,
+                descriptionSpacing: NyanSpacing.space4,
+                textMinHeight: compactLayout ? 112 : 132,
+                icon: MascotManager().render(
+                  MascotScene.emptyShelf,
+                  size: compactLayout ? 112 : 128,
+                ),
+                title: isPrivate ? loc.emptyShelfMessage : loc.emptyShelfTitle,
+                description:
+                    isPrivate ? loc.emptyPrivateShelf : loc.emptyShelfSubtitle,
               ),
-            ),
-          ],
-        ),
+              Spacer(flex: compactLayout ? 2 : 3),
+            ],
+          );
+        },
       );
     }
 
+    final showInlineAd = AdsUI.shouldShowBookshelfInlineAd(
+      adsEnabled: adsEnabled,
+      isPrivateShelf: isPrivate,
+      isSelectionMode: isSelectionMode,
+      bookCount: books.length,
+    );
+
     return _prefs.viewMode == ViewMode.grid
-        ? _buildGridView(context, books, isPrivate)
-        : _buildListView(context, books, isPrivate);
+        ? _buildGridView(context, books, showInlineAd: showInlineAd)
+        : _buildListView(context, books, showInlineAd: showInlineAd);
   }
 
   Widget _buildGridView(
-      BuildContext context, List<Book> books, bool isPrivate) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(_spacing16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 0.75, // 3:4 ratio
-        crossAxisSpacing: _spacing16,
-        mainAxisSpacing: _spacing16,
-      ),
-      itemCount: books.length,
-      itemBuilder: (context, index) {
-        final book = books[index];
+    BuildContext context,
+    List<Book> books, {
+    required bool showInlineAd,
+  }) {
+    const gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 3,
+      childAspectRatio: 0.75,
+      crossAxisSpacing: NyanSpacing.space16,
+      mainAxisSpacing: NyanSpacing.space16,
+    );
 
-        return Selector<BookshelfViewModel,
-            ({bool isSelectionMode, bool isSelected})>(
-          selector: (_, vm) => (
-            isSelectionMode: vm.isSelectionMode,
-            isSelected: vm.isBookSelected(book.id),
+    if (!showInlineAd) {
+      return GridView.builder(
+        padding: const EdgeInsets.fromLTRB(
+          0,
+          NyanSpacing.space8,
+          0,
+          NyanSpacing.space16,
+        ),
+        gridDelegate: gridDelegate,
+        itemCount: books.length,
+        itemBuilder: (context, index) => _buildGridBookTile(context, books[index]),
+      );
+    }
+
+    final leadingBooks = books.take(AdsUI.bookshelfGridInsertionCount).toList();
+    final trailingBooks = books.skip(AdsUI.bookshelfGridInsertionCount).toList();
+
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.only(top: NyanSpacing.space8),
+          sliver: SliverGrid(
+            gridDelegate: gridDelegate,
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _buildGridBookTile(context, leadingBooks[index]),
+              childCount: leadingBooks.length,
+            ),
           ),
-          builder: (context, state, child) {
-            final vm = context.read<BookshelfViewModel>();
-            return AnimatedBookCardGrid(
-              book: book,
-              isSelected: state.isSelected,
-              isSelectionMode: state.isSelectionMode,
-              onTap: () {
-                if (state.isSelectionMode) {
-                  vm.toggleBookSelection(book.id);
-                } else {
-                  context
-                      .push('/reader/${book.id}')
-                      .then((_) => vm.loadBooks());
-                }
-              },
-              onLongPress: () {
-                if (state.isSelectionMode) {
-                  vm.toggleBookSelection(book.id);
-                } else {
-                  vm.toggleSelectionMode(active: true, initialBookId: book.id);
-                }
-              },
-            );
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: NyanSpacing.space16),
+            child: AdsUI.buildBookshelfInlineAd(
+              context,
+              density: NyanInlineAdDensity.compact,
+            ),
+          ),
+        ),
+        if (trailingBooks.isNotEmpty)
+          SliverPadding(
+            padding: const EdgeInsets.only(bottom: NyanSpacing.space16),
+            sliver: SliverGrid(
+              gridDelegate: gridDelegate,
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => _buildGridBookTile(context, trailingBooks[index]),
+                childCount: trailingBooks.length,
+              ),
+            ),
+          )
+        else
+          const SliverToBoxAdapter(
+            child: SizedBox(height: NyanSpacing.space16),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildGridBookTile(BuildContext context, Book book) {
+    return Selector<BookshelfViewModel, ({bool isSelectionMode, bool isSelected})>(
+      selector: (_, vm) => (
+        isSelectionMode: vm.isSelectionMode,
+        isSelected: vm.isBookSelected(book.id),
+      ),
+      builder: (context, state, child) {
+        final vm = context.read<BookshelfViewModel>();
+        return NyanBookGridCard(
+          book: book,
+          isSelected: state.isSelected,
+          isSelectionMode: state.isSelectionMode,
+          onTap: () {
+            if (state.isSelectionMode) {
+              vm.toggleBookSelection(book.id);
+            } else {
+              context.push('/reader/${book.id}').then((_) => vm.loadBooks());
+            }
+          },
+          onLongPress: () {
+            if (state.isSelectionMode) {
+              vm.toggleBookSelection(book.id);
+            } else {
+              vm.toggleSelectionMode(active: true, initialBookId: book.id);
+            }
           },
         );
       },
@@ -899,56 +1009,67 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
   }
 
   Widget _buildListView(
-      BuildContext context, List<Book> books, bool isPrivate) {
+    BuildContext context,
+    List<Book> books, {
+    required bool showInlineAd,
+  }) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(
-          horizontal: _spacing16, vertical: _spacing8),
-      itemCount: books.length,
+      padding: const EdgeInsets.fromLTRB(
+        0,
+        NyanSpacing.space4,
+        0,
+        NyanSpacing.space16,
+      ),
+      itemCount: books.length + (showInlineAd ? 1 : 0),
       itemBuilder: (context, index) {
-        final book = books[index];
+        if (showInlineAd && index == AdsUI.bookshelfListInsertionIndex) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: NyanSpacing.space4),
+            child: AdsUI.buildBookshelfInlineAd(context),
+          );
+        }
 
-        return Selector<BookshelfViewModel,
-            ({bool isSelectionMode, bool isSelected})>(
-          selector: (_, vm) => (
-            isSelectionMode: vm.isSelectionMode,
-            isSelected: vm.isBookSelected(book.id),
-          ),
-          builder: (context, state, child) {
-            final vm = context.read<BookshelfViewModel>();
-            return AnimatedBookCardList(
-              book: book,
-              bookData: book
-                  .toMap(), // For compatibility with older list view API if needed
-              isSelected: state.isSelected,
-              isSelectionMode: state.isSelectionMode,
-              onTap: () {
-                if (state.isSelectionMode) {
-                  vm.toggleBookSelection(book.id);
-                } else {
-                  context
-                      .push('/reader/${book.id}')
-                      .then((_) => vm.loadBooks());
-                }
-              },
-              onLongPress: () {
-                if (state.isSelectionMode) {
-                  vm.toggleBookSelection(book.id);
-                } else {
-                  vm.toggleSelectionMode(active: true, initialBookId: book.id);
-                }
-              },
-              onSelectionToggle: () => vm.toggleBookSelection(book.id),
-            );
+        final bookIndex = showInlineAd && index > AdsUI.bookshelfListInsertionIndex
+            ? index - 1
+            : index;
+        return _buildListBookTile(context, books[bookIndex]);
+      },
+    );
+  }
+
+  Widget _buildListBookTile(BuildContext context, Book book) {
+    return Selector<BookshelfViewModel, ({bool isSelectionMode, bool isSelected})>(
+      selector: (_, vm) => (
+        isSelectionMode: vm.isSelectionMode,
+        isSelected: vm.isBookSelected(book.id),
+      ),
+      builder: (context, state, child) {
+        final vm = context.read<BookshelfViewModel>();
+        return NyanBookCard(
+          book: book,
+          bookData: book.toMap(),
+          isSelected: state.isSelected,
+          isSelectionMode: state.isSelectionMode,
+          onTap: () {
+            if (state.isSelectionMode) {
+              vm.toggleBookSelection(book.id);
+            } else {
+              context.push('/reader/${book.id}').then((_) => vm.loadBooks());
+            }
           },
+          onLongPress: () {
+            if (state.isSelectionMode) {
+              vm.toggleBookSelection(book.id);
+            } else {
+              vm.toggleSelectionMode(active: true, initialBookId: book.id);
+            }
+          },
+          onSelectionToggle: () => vm.toggleBookSelection(book.id),
         );
       },
     );
   }
 }
-
-
-
-
 
 class _ImportedBookSource {
   final String sourceLocator;

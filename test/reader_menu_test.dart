@@ -283,11 +283,13 @@ class MockThemeManager extends ChangeNotifier implements ThemeManager {
   @override
   ThemePreset get currentPreset => ThemePreset.creamLight;
   @override
-  ThemeData get currentThemeData => ThemeData.light();
+  NyanTheme get currentNyanTheme => themePresets[currentPreset]!;
   @override
-  ThemeData get darkTheme => ThemeData.dark();
+  ThemeData get currentThemeData => currentNyanTheme.themeData;
   @override
-  ThemeData get lightTheme => ThemeData.light();
+  ThemeData get darkTheme => currentThemeData;
+  @override
+  ThemeData get lightTheme => currentThemeData;
   @override
   ThemeMode get themeMode => ThemeMode.light;
 

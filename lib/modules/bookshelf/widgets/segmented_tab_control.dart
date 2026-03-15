@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/nyan_radius.dart';
+import '../../../core/theme/nyan_spacing.dart';
 
 /// A segmented control widget with pill-style design and sliding indicator animation.
 /// Used for the Public/Private shelf tabs in HomeScreen.
@@ -50,13 +52,13 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
       height: 40,
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(NyanRadius.card),
         border: Border.all(
           color: theme.colorScheme.onSurface.withOpacity(0.12),
           width: 1,
         ),
       ),
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(NyanSpacing.space4),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final totalWidth = constraints.maxWidth;
@@ -76,7 +78,7 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: selectedColor,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(NyanRadius.input),
                     border: isDark
                         ? Border.all(
                             color: theme.colorScheme.primary.withOpacity(0.5),
@@ -98,7 +100,9 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                       behavior: HitTestBehavior.opaque,
                       child: Container(
                         alignment: Alignment.center,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: NyanSpacing.space4,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -111,7 +115,7 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                                     ? selectedTextColor
                                     : unselectedColor,
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: NyanSpacing.space4),
                             ],
                             Flexible(
                               child: Text(

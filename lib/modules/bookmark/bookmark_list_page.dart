@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
+import '../../core/theme/nyan_colors.dart';
+import '../../core/ui/components/components.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/service_locator.dart';
 import '../../core/utils/snackbar_utils.dart';
@@ -76,6 +78,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -94,20 +97,14 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _bookmarks.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.bookmark_border,
-                            size: 64, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
-                        Text(
-                          loc.noBookmarksYet,
-                          style:
-                              TextStyle(fontSize: 18, color: Colors.grey[600]),
-                        ),
-                      ],
+                ? NyanEmptyState(
+                    icon: Icon(
+                      Icons.bookmark_border,
+                      size: 64,
+                      color: theme.textTheme.bodySmall?.color ??
+                          NyanColors.creamTextSecondary,
                     ),
+                    title: loc.noBookmarksYet,
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 8),

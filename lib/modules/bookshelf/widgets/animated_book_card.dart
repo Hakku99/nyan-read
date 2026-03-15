@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../../core/models/book.dart';
+import '../../../core/theme/nyan_radius.dart';
+import '../../../core/theme/nyan_shadows.dart';
+import '../../../core/theme/nyan_spacing.dart';
 import '../../../core/utils/datetime_utils.dart';
 
 /// Animated book card for list view mode
@@ -86,9 +89,9 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
     return ScaleTransition(
       scale: _scaleAnimation,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
+        margin: const EdgeInsets.symmetric(vertical: NyanSpacing.space4),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(NyanRadius.input),
           border: Border.all(
             color: widget.isSelected
                 ? theme.colorScheme.primary
@@ -98,14 +101,7 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
           color: widget.isSelected
               ? theme.colorScheme.primaryContainer.withOpacity(0.2)
               : theme.colorScheme.surfaceVariant.withOpacity(0.3),
-          boxShadow: [
-            BoxShadow(
-              color: theme.shadowColor.withOpacity(0.05),
-              offset: const Offset(0, 2),
-              blurRadius: 8,
-              spreadRadius: 0,
-            ),
-          ],
+          boxShadow: NyanShadows.subtle(theme.shadowColor),
         ),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -115,12 +111,12 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
           onTapUp: _handleTapUp,
           onTapCancel: _handleTapCancel,
           child: Padding(
-            padding: const EdgeInsets.all(14.0),
+            padding: const EdgeInsets.all(NyanSpacing.space12),
             child: Row(
               children: [
                 if (widget.isSelectionMode)
                   Padding(
-                    padding: const EdgeInsets.only(right: 12.0),
+                    padding: const EdgeInsets.only(right: NyanSpacing.space12),
                     child: Checkbox(
                       value: widget.isSelected,
                       onChanged: (val) => widget.onSelectionToggle?.call(),
@@ -129,10 +125,10 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
 
                 // Book icon container
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(NyanSpacing.space8),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(NyanRadius.small),
                   ),
                   child: Icon(
                     Icons.menu_book_rounded,
@@ -140,7 +136,7 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                     color: theme.colorScheme.primary,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: NyanSpacing.space16),
 
                 // Book info
                 Expanded(
@@ -158,7 +154,7 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: NyanSpacing.space8),
                       // Rounded progress bar
                       Row(
                         children: [
@@ -184,7 +180,7 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                               ),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: NyanSpacing.space8),
                           Text(
                             '$progressPercent%',
                             style: TextStyle(
@@ -199,7 +195,7 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                   ),
                 ),
 
-                const SizedBox(width: 12),
+                const SizedBox(width: NyanSpacing.space12),
 
                 // Last read time
                 if (!widget.isSelectionMode)
@@ -299,7 +295,7 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
           children: [
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(NyanRadius.input),
                 border: Border.all(
                   color: widget.isSelected
                       ? theme.colorScheme.primary
@@ -309,19 +305,10 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                 color: widget.isSelected
                     ? theme.colorScheme.primaryContainer.withOpacity(0.2)
                     : theme.colorScheme.surfaceVariant.withOpacity(0.3),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.shadowColor.withOpacity(0.05),
-                    offset: const Offset(0, 2),
-                    blurRadius: 8,
-                    spreadRadius: 0,
-                  ),
-                ],
+                boxShadow: NyanShadows.subtle(theme.shadowColor),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(
-                    15), // Slightly less to account for border? Or just 16.
-                // Using 16 matches container.
+                borderRadius: BorderRadius.circular(NyanRadius.input),
                 child: Stack(
                   children: [
                     // Main content
@@ -329,13 +316,14 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 16),
+                          const SizedBox(height: NyanSpacing.space16),
                           // Book icon container
                           Container(
-                            padding: const EdgeInsets.all(10),
+                            padding: const EdgeInsets.all(NyanSpacing.space8),
                             decoration: BoxDecoration(
                               color: theme.colorScheme.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius:
+                                  BorderRadius.circular(NyanRadius.small),
                             ),
                             child: Icon(
                               Icons.menu_book_rounded,
@@ -343,11 +331,12 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                               color: theme.colorScheme.primary,
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: NyanSpacing.space8),
                           // Title with gradient
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 6.0),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: NyanSpacing.space4,
+                            ),
                             child: Text(
                               widget.book.title,
                               textAlign: TextAlign.center,
@@ -381,8 +370,8 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                             ],
                           ),
                           borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(16),
-                            bottomRight: Radius.circular(16),
+                            bottomLeft: Radius.circular(NyanRadius.input),
+                            bottomRight: Radius.circular(NyanRadius.input),
                           ),
                         ),
                       ),
@@ -394,8 +383,8 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
             // Selection indicator
             if (widget.isSelectionMode)
               Positioned(
-                top: 8,
-                right: 8,
+                top: NyanSpacing.space8,
+                right: NyanSpacing.space8,
                 child: Container(
                   decoration: BoxDecoration(
                     color: widget.isSelected
@@ -405,7 +394,7 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                     border: Border.all(color: Colors.white, width: 2),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(NyanSpacing.space4),
                     child: widget.isSelected
                         ? const Icon(Icons.check, size: 16, color: Colors.white)
                         : const SizedBox(width: 16, height: 16),
