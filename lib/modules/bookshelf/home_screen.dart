@@ -53,6 +53,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     with TickerProviderStateMixin {
   late TabController _tabController;
   final _prefs = getIt<BookshelfPreferencesService>();
+  bool _isHeroCollapsed = false;
 
   @override
   void initState() {
@@ -635,6 +636,12 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     return NyanContinueReadingCard(
       book: continueReadingBook,
       compact: isCompact,
+      collapsed: _isHeroCollapsed,
+      onToggleCollapse: () {
+        setState(() {
+          _isHeroCollapsed = !_isHeroCollapsed;
+        });
+      },
       progressLabel: '${loc.readingProgress}  $progressPercent%',
       buttonLabel: loc.startReading,
       onContinue: () {
