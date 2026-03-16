@@ -301,6 +301,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importFiles => 'Import Files';
 
   @override
+  String get importBooksTitle => 'Import Books';
+
+  @override
+  String get importBooksSubtitle =>
+      'Choose files from your device and add them to your shelf.';
+
+  @override
+  String get importBooksEmptySubtitle =>
+      'Import your first book from this device and start reading.';
+
+  @override
+  String get importFilesSubtitle => 'Pick one or more supported ebook files.';
+
+  @override
+  String get supportedFormats => 'Supported Formats';
+
+  @override
+  String get supportedFormatsSubtitle =>
+      'TXT, EPUB, and PDF are ready to import.';
+
+  @override
+  String get supportedFormatsDescription =>
+      'Nyan Read currently supports importing TXT, EPUB, and PDF files from your device.';
+
+  @override
+  String get importingBooksTitle => 'Importing Books';
+
+  @override
+  String get importingBooksSubtitle =>
+      'Adding your selected files to the shelf...';
+
+  @override
   String importedBooks(int count, String shelf) {
     return 'Imported $count books into $shelf!';
   }

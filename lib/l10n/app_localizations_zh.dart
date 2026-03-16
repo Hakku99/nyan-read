@@ -298,6 +298,34 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importFiles => '导入文件';
 
   @override
+  String get importBooksTitle => '导入书籍';
+
+  @override
+  String get importBooksSubtitle => '从设备中选择文件，加入你的书架。';
+
+  @override
+  String get importBooksEmptySubtitle => '从设备中导入第一本书，开始阅读。';
+
+  @override
+  String get importFilesSubtitle => '选择一个或多个受支持的电子书文件。';
+
+  @override
+  String get supportedFormats => '支持的格式';
+
+  @override
+  String get supportedFormatsSubtitle => '目前支持 TXT、EPUB 和 PDF。';
+
+  @override
+  String get supportedFormatsDescription =>
+      'Nyan Read 目前支持从设备中导入 TXT、EPUB 和 PDF 文件。';
+
+  @override
+  String get importingBooksTitle => '导入中';
+
+  @override
+  String get importingBooksSubtitle => '正在将你选择的文件加入书架...';
+
+  @override
   String importedBooks(int count, String shelf) {
     return '已将 $count 本书导入$shelf书架！';
   }

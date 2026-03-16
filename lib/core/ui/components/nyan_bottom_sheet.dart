@@ -5,12 +5,14 @@ import '../../theme/nyan_spacing.dart';
 
 class NyanBottomSheet extends StatelessWidget {
   final String? title;
+  final String? description;
   final Widget child;
   final Widget? footer;
 
   const NyanBottomSheet({
     super.key,
     this.title,
+    this.description,
     required this.child,
     this.footer,
   });
@@ -54,6 +56,15 @@ class NyanBottomSheet extends StatelessWidget {
                 Text(
                   title!,
                   style: theme.textTheme.titleLarge,
+                ),
+              ],
+              if (description != null) ...[
+                const SizedBox(height: NyanSpacing.space8),
+                Text(
+                  description!,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.72),
+                  ),
                 ),
               ],
               const SizedBox(height: NyanSpacing.space16),

@@ -131,6 +131,15 @@
   "emptyPrivateShelf": "这个私密空间还是空的。\n在公开书架选择书籍，点击锁定图标即可移动到这里。",
   "emptyShelfInstructions": "你的书架还是空的！\n点击下方的 + 按钮导入书籍。",
   "importFiles": "导入文件",
+  "importBooksTitle": "导入书籍",
+  "importBooksSubtitle": "从设备中选择文件，加入你的书架。",
+  "importBooksEmptySubtitle": "从设备中导入第一本书，开始阅读。",
+  "importFilesSubtitle": "选择一个或多个受支持的电子书文件。",
+  "supportedFormats": "支持的格式",
+  "supportedFormatsSubtitle": "目前支持 TXT、EPUB 和 PDF。",
+  "supportedFormatsDescription": "Nyan Read 目前支持从设备中导入 TXT、EPUB 和 PDF 文件。",
+  "importingBooksTitle": "导入中",
+  "importingBooksSubtitle": "正在将你选择的文件加入书架...",
   "importedBooks": "已将 {count} 本书导入{shelf}书架！",
   "@importedBooks": {
     "placeholders": {

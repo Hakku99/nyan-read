@@ -26,6 +26,7 @@ import '../../core/utils/book_import_fingerprint.dart';
 import '../../core/utils/book_source_platform.dart';
 import '../../core/utils/snackbar_utils.dart';
 import 'book_details_page.dart';
+import 'widgets/import_book_sheet.dart';
 import 'widgets/segmented_tab_control.dart';
 import 'bookshelf_view_model.dart';
 
@@ -68,8 +69,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
   }
 
   Future<void> _deleteSelectedBooks(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
-    final vm = context.read<BookshelfViewModel>();
+    final pageContext = this.context;
+    final loc = AppLocalizations.of(pageContext)!;
+    final vm = pageContext.read<BookshelfViewModel>();
 
     if (vm.selectedCount == 0) return;
 
@@ -123,37 +125,63 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       try {
         await vm.deleteSelectedBooks(deleteFile);
         if (mounted) {
-          SnackBarUtils.show(context, loc.deletedBooks(deletedCount));
+          SnackBarUtils.show(
+            pageContext,
+            loc.deletedBooks(deletedCount),
+            tone: NyanSnackTone.info,
+          );
         }
       } catch (e) {
         if (mounted) {
-          SnackBarUtils.show(context, 'Error deleting books: $e');
+          SnackBarUtils.show(
+            pageContext,
+            'Error deleting books: $e',
+            tone: NyanSnackTone.error,
+          );
         }
       }
     }
   }
 
   Future<void> _moveSelectedBooks(BuildContext context, bool toPrivate) async {
-    final vm = context.read<BookshelfViewModel>();
+    final pageContext = this.context;
+    final vm = pageContext.read<BookshelfViewModel>();
     if (vm.selectedCount == 0) return;
 
     try {
       await vm.moveSelectedBooks(toPrivate);
     } catch (e) {
       if (mounted) {
-        SnackBarUtils.show(context, 'Error moving books: $e');
+        SnackBarUtils.show(
+          pageContext,
+          'Error moving books: $e',
+          tone: NyanSnackTone.error,
+        );
       }
     }
   }
 
   Future<void> _importBook(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowMultiple: true,
       allowedExtensions: ['epub', 'txt', 'pdf'],
     );
 
-    if (result != null && result.files.isNotEmpty) {
+    if (result == null || result.files.isEmpty) {
+      return;
+    }
+
+    var progressVisible = false;
+    try {
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => const ImportProgressDialog(),
+      );
+      progressVisible = true;
+
       final db = getIt<DatabaseService>();
       final existingIndex = await BookImportFingerprint.buildExistingIndex(db);
 
@@ -219,24 +247,48 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
 
       await _cleanupPickerTempFiles();
 
+      if (context.mounted && progressVisible) {
+        Navigator.of(context, rootNavigator: true).pop();
+        progressVisible = false;
+      }
+
       if (mounted) {
-        final loc = AppLocalizations.of(context)!;
         final shelf = isPrivate ? loc.privateShelf : loc.publicShelf;
 
         if (successCount > 0 && skippedCount > 0) {
           SnackBarUtils.show(
             context,
             '${loc.importedBooks(successCount, shelf)}. ${loc.duplicatesSkipped(skippedCount)}',
+            tone: NyanSnackTone.success,
           );
         } else if (successCount > 0) {
-          SnackBarUtils.show(context, loc.importedBooks(successCount, shelf));
+          SnackBarUtils.show(
+            context,
+            loc.importedBooks(successCount, shelf),
+            tone: NyanSnackTone.success,
+          );
         } else if (skippedCount > 0) {
-          SnackBarUtils.show(context, loc.allBooksInLibrary(skippedCount));
+          SnackBarUtils.show(
+            context,
+            loc.allBooksInLibrary(skippedCount),
+            tone: NyanSnackTone.info,
+          );
         }
 
         if (successCount > 0) {
           context.read<BookshelfViewModel>().loadBooks();
         }
+      }
+    } catch (e) {
+      if (context.mounted && progressVisible) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+      if (mounted) {
+        SnackBarUtils.show(
+          context,
+          loc.importFailed(e.toString()),
+          tone: NyanSnackTone.error,
+        );
       }
     }
   }
@@ -290,32 +342,32 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
   }
 
   void _showImportMenu(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
     final parentContext = context;
+    final featureManager = context.read<FeatureManager>();
+    final vm = context.read<BookshelfViewModel>();
+    final showPrivacyTab =
+        featureManager.isPro && featureManager.isPrivateShelfUnlocked;
+    final isPrivateShelf = showPrivacyTab && _tabController.index == 1;
+    final activeBooks = isPrivateShelf ? vm.privateBooks : vm.publicBooks;
+    final loc = AppLocalizations.of(context)!;
+    final shelfLabel = isPrivateShelf ? loc.privateShelf : loc.publicShelf;
 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return NyanBottomSheet(
-          title: loc.importFiles,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              NyanListRow(
-                leading: const Icon(Icons.insert_drive_file),
-                title: loc.importFiles,
-                onTap: () {
-                  Navigator.pop(context);
-                  _importBook(parentContext);
-                },
-              ),
-            ],
-          ),
+        return ImportBookSheet(
+          isEmptyShelf: activeBooks.isEmpty,
+          shelfLabel: shelfLabel,
+          onImportFiles: () {
+            Navigator.pop(context);
+            _importBook(parentContext);
+          },
         );
       },
     );
   }
+
 
   void _showSortMenu(BuildContext context) {
     final loc = AppLocalizations.of(context)!;

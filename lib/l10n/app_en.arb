@@ -99,8 +99,6 @@
   "titleDesc": "Title Descending",
   "lockPrivacyShelf": "Lock Privacy Shelf",
   "unlockPrivacyShelf": "Unlock Privacy Shelf",
-  "publicShelf": "Public Shelf",
-  "privateShelf": "Private Shelf",
   "deleteBooksTitle": "⚠️ Delete {count} Books?",
   "@deleteBooksTitle": {
     "placeholders": {
@@ -133,6 +131,15 @@
   "emptyPrivateShelf": "This private space is empty.\nSelect books from the public shelf and tap the Lock icon to move them here.",
   "emptyShelfInstructions": "Your shelf is empty!\nTap the + button below to import some books.",
   "importFiles": "Import Files",
+  "importBooksTitle": "Import Books",
+  "importBooksSubtitle": "Choose files from your device and add them to your shelf.",
+  "importBooksEmptySubtitle": "Import your first book from this device and start reading.",
+  "importFilesSubtitle": "Pick one or more supported ebook files.",
+  "supportedFormats": "Supported Formats",
+  "supportedFormatsSubtitle": "TXT, EPUB, and PDF are ready to import.",
+  "supportedFormatsDescription": "Nyan Read currently supports importing TXT, EPUB, and PDF files from your device.",
+  "importingBooksTitle": "Importing Books",
+  "importingBooksSubtitle": "Adding your selected files to the shelf...",
   "importedBooks": "Imported {count} books into {shelf}!",
   "@importedBooks": {
     "placeholders": {
@@ -179,9 +186,7 @@
       }
     }
   },
-
   "noChaptersDetected": "No chapters detected",
-  "tableOfContents": "Table of Contents",
   "chapterCount": "{count} chapters",
   "@chapterCount": {
     "placeholders": {
@@ -198,7 +203,6 @@
       }
     }
   },
-
   "bookmarksTitle": "Bookmarks ({count})",
   "@bookmarksTitle": {
     "placeholders": {
@@ -224,7 +228,6 @@
       }
     }
   },
-
   "notesAndHighlightsTitle": "Notes & Highlights ({count})",
   "@notesAndHighlightsTitle": {
     "placeholders": {
@@ -251,7 +254,6 @@
       }
     }
   },
-
   "themeCreamLight": "Cream Light",
   "themeSumiDark": "Sumi Dark",
   "themeSepiaWarm": "Sepia Warm",
@@ -261,7 +263,6 @@
   "timeSevenDaysAgo": "7 days ago",
   "timeLongAgo": "Long ago",
   "neverRead": "Never read",
-  
   "errorFileNotFound": "This book seems to have lost its way.\nThe file cannot be found, it may have been moved or deleted.",
   "errorUnsupportedFormat": "Nyan cannot read this format.\nThis file type is not supported yet.",
   "errorParseFailed": "The pages are stuck together.\nFailed to parse file, it might be corrupted.",
@@ -293,4 +294,3 @@
     }
   }
 }
-
