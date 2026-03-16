@@ -558,19 +558,53 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
         builder: (context, selectedCount, _) {
           final vm = context.read<BookshelfViewModel>();
           final theme = Theme.of(context);
+          final textTheme = theme.textTheme;
+
+          Widget buildToolbarButton({
+            required IconData icon,
+            required String tooltip,
+            required VoidCallback onPressed,
+          }) {
+            return SizedBox(
+              width: NyanSpacing.minTapTarget,
+              height: NyanSpacing.minTapTarget,
+              child: IconButton(
+                icon: Icon(icon, size: NyanSpacing.space20),
+                tooltip: tooltip,
+                onPressed: onPressed,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: NyanSpacing.minTapTarget,
+                  minHeight: NyanSpacing.minTapTarget,
+                ),
+              ),
+            );
+          }
 
           return AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => vm.toggleSelectionMode(active: false),
+            leadingWidth: NyanSpacing.minTapTarget + NyanSpacing.space12,
+            leading: Padding(
+              padding: const EdgeInsets.only(left: NyanSpacing.space8),
+              child: buildToolbarButton(
+                icon: Icons.close_rounded,
+                tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                onPressed: () => vm.toggleSelectionMode(active: false),
+              ),
             ),
             title: Text(
               '$selectedCount ${AppLocalizations.of(context)!.selected}',
+              style: textTheme.bodyLarge?.copyWith(
+                fontSize: NyanTypography.body,
+                fontWeight: FontWeight.w600,
+                height: 1.1,
+              ),
             ),
+            centerTitle: false,
+            titleSpacing: NyanSpacing.space4,
             actions: [
               if (selectedCount == 1)
-                IconButton(
-                  icon: const Icon(Icons.info_outline),
+                buildToolbarButton(
+                  icon: Icons.info_outline_rounded,
                   tooltip: AppLocalizations.of(context)!.viewDetails,
                   onPressed: () async {
                     final bookId = vm.selectedBookIds.first;
@@ -591,15 +625,16 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
                   },
                 ),
               if (selectedCount > 0 && featureManager.isPro)
-                IconButton(
-                  icon: Icon(showPrivacyTab ? Icons.lock_open : Icons.lock),
+                buildToolbarButton(
+                  icon:
+                      showPrivacyTab ? Icons.lock_open_rounded : Icons.lock_rounded,
                   tooltip: showPrivacyTab
                       ? AppLocalizations.of(context)!.moveToPublic
                       : AppLocalizations.of(context)!.moveToPrivate,
                   onPressed: () => _moveSelectedBooks(context, !showPrivacyTab),
                 ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline),
+              buildToolbarButton(
+                icon: Icons.delete_outline_rounded,
                 tooltip: AppLocalizations.of(context)!.delete,
                 onPressed: () => _deleteSelectedBooks(context),
               ),
@@ -613,9 +648,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
                   final allSelected =
                       currentTotal > 0 && selectedCount >= currentTotal;
 
-                  return IconButton(
-                    icon:
-                        Icon(allSelected ? Icons.deselect : Icons.select_all),
+                  return buildToolbarButton(
+                    icon: allSelected ? Icons.deselect : Icons.select_all,
                     tooltip: allSelected ? loc.deselectAll : loc.selectAll,
                     onPressed: () => vm.selectAll(isPrivateTab),
                   );
@@ -623,7 +657,13 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
               ),
               const SizedBox(width: NyanSpacing.space8),
             ],
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            backgroundColor: theme.scaffoldBackgroundColor,
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            iconTheme: theme.iconTheme.copyWith(
+              size: NyanSpacing.space20,
+            ),
           );
         },
       ),
