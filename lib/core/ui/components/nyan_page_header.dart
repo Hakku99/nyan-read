@@ -9,6 +9,8 @@ class NyanPageHeader extends StatelessWidget {
   final Widget? leading;
   final List<Widget>? actions;
   final EdgeInsetsGeometry? padding;
+  final TextStyle? titleStyle;
+  final TextStyle? subtitleStyle;
 
   const NyanPageHeader({
     super.key,
@@ -17,6 +19,8 @@ class NyanPageHeader extends StatelessWidget {
     this.leading,
     this.actions,
     this.padding,
+    this.titleStyle,
+    this.subtitleStyle,
   });
 
   @override
@@ -44,18 +48,22 @@ class NyanPageHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontSize: NyanTypography.title,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: theme.textTheme.titleLarge
+                      ?.copyWith(
+                        fontSize: NyanTypography.title,
+                        fontWeight: FontWeight.w600,
+                      )
+                      .merge(titleStyle),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: NyanSpacing.space4),
                   Text(
                     subtitle!,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontSize: NyanTypography.meta,
-                    ),
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(
+                          fontSize: NyanTypography.meta,
+                        )
+                        .merge(subtitleStyle),
                   ),
                 ],
               ],

@@ -1,4 +1,5 @@
 export 'nyan_book_card.dart';
+export 'nyan_bookmark_card.dart';
 export 'nyan_book_grid_card.dart';
 export 'nyan_bottom_sheet.dart';
 export 'nyan_confirm_dialog.dart';
