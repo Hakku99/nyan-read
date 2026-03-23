@@ -75,9 +75,16 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
 
   String _emptyStateDescription() {
     if (_isZh) {
-      return '\u9605\u8bfb\u65f6\u6807\u8bb0\u4e0b\u6765\u7684\u7247\u6bb5\uff0c\u4f1a\u5b89\u9759\u5730\u7559\u5728\u8fd9\u91cc\u3002';
+      return '\u60f3\u91cd\u6e29\u7684\u6bb5\u843d\uff0c\u4f1a\u7559\u5728\u8fd9\u91cc\u3002';
     }
-    return 'Saved reading moments will gather here as you read.';
+    return 'Passages worth returning to will gather here.';
+  }
+
+  String _emptyStateHint() {
+    if (_isZh) {
+      return '\u9605\u8bfb\u65f6\u8f7b\u70b9\u4e66\u7b7e\u5373\u53ef\u4fdd\u5b58';
+    }
+    return 'Tap the bookmark while reading to save one.';
   }
 
   String _formatCreatedAt(dynamic createdAt) {
@@ -238,42 +245,70 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
     }
 
     if (_bookmarks.isEmpty) {
+      final isDark = theme.brightness == Brightness.dark;
+      final heroSize = NyanSpacing.space32 * 2 + NyanSpacing.space20;
+
       return NyanEmptyState(
-        alignment: Alignment.topCenter,
+        alignment: const Alignment(0, -0.24),
         padding: const EdgeInsets.fromLTRB(
           NyanSpacing.space24,
-          NyanSpacing.space24,
+          NyanSpacing.space16,
           NyanSpacing.space24,
           NyanSpacing.space24,
         ),
+        contentMaxWidth: NyanSpacing.space32 * 8,
         icon: Container(
-          width: NyanSpacing.space32 * 3,
-          height: NyanSpacing.space32 * 3,
+          width: heroSize,
+          height: heroSize,
           decoration: BoxDecoration(
             color: Color.alphaBlend(
               nyanTheme.primary.withValues(
-                alpha: theme.brightness == Brightness.dark ? 0.08 : 0.06,
+                alpha: isDark ? 0.09 : 0.05,
               ),
               nyanTheme.surface,
             ),
             shape: BoxShape.circle,
             border: Border.all(
               color: theme.dividerColor.withValues(
-                alpha: theme.brightness == Brightness.dark ? 0.1 : 0.14,
+                alpha: isDark ? 0.1 : 0.09,
               ),
+              width: 0.7,
             ),
           ),
           child: Center(
             child: Icon(
               Icons.bookmark_border_rounded,
-              size: NyanSpacing.space32,
-              color: nyanTheme.primary.withValues(alpha: 0.86),
+              size: NyanSpacing.space32 + NyanSpacing.space8,
+              color: nyanTheme.primary.withValues(alpha: isDark ? 0.82 : 0.78),
             ),
           ),
         ),
         title: _emptyStateTitle(loc),
+        titleStyle: theme.textTheme.titleMedium?.copyWith(
+          fontSize: NyanTypography.section,
+          fontWeight: FontWeight.w600,
+          color: nyanTheme.textPrimary.withValues(alpha: isDark ? 0.88 : 0.84),
+        ),
         description: _emptyStateDescription(),
+        descriptionStyle: theme.textTheme.bodyMedium?.copyWith(
+          height: 1.3,
+          color: nyanTheme.textSecondary.withValues(
+            alpha: isDark ? 0.8 : 0.74,
+          ),
+        ),
         iconSpacing: NyanSpacing.space16,
+        descriptionSpacing: NyanSpacing.space12,
+        actionSpacing: NyanSpacing.space12,
+        action: Text(
+          _emptyStateHint(),
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: nyanTheme.textSecondary.withValues(
+              alpha: isDark ? 0.68 : 0.62,
+            ),
+            height: 1.24,
+          ),
+        ),
       );
     }
 

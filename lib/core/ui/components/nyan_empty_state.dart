@@ -12,7 +12,11 @@ class NyanEmptyState extends StatelessWidget {
   final AlignmentGeometry alignment;
   final double iconSpacing;
   final double descriptionSpacing;
+  final double actionSpacing;
   final double? textMinHeight;
+  final double? contentMaxWidth;
+  final TextStyle? titleStyle;
+  final TextStyle? descriptionStyle;
 
   const NyanEmptyState({
     super.key,
@@ -24,7 +28,11 @@ class NyanEmptyState extends StatelessWidget {
     this.alignment = Alignment.center,
     this.iconSpacing = NyanSpacing.space16,
     this.descriptionSpacing = NyanSpacing.space8,
+    this.actionSpacing = NyanSpacing.space20,
     this.textMinHeight,
+    this.contentMaxWidth,
+    this.titleStyle,
+    this.descriptionStyle,
   });
 
   @override
@@ -43,6 +51,7 @@ class NyanEmptyState extends StatelessWidget {
             ConstrainedBox(
               constraints: BoxConstraints(
                 minHeight: textMinHeight ?? 0,
+                maxWidth: contentMaxWidth ?? double.infinity,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -50,26 +59,30 @@ class NyanEmptyState extends StatelessWidget {
                   Text(
                     title,
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontSize: NyanTypography.section,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style:
+                        titleStyle ??
+                        theme.textTheme.titleMedium?.copyWith(
+                          fontSize: NyanTypography.section,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                   if (description != null) ...[
                     SizedBox(height: descriptionSpacing),
                     Text(
                       description!,
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.textTheme.bodySmall?.color,
-                      ),
+                      style:
+                          descriptionStyle ??
+                          theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.textTheme.bodySmall?.color,
+                          ),
                     ),
                   ],
                 ],
               ),
             ),
             if (action != null) ...[
-              const SizedBox(height: NyanSpacing.space20),
+              SizedBox(height: actionSpacing),
               action!,
             ],
           ],
