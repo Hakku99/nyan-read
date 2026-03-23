@@ -456,9 +456,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themeSumiDark => '墨色黑';
 
   @override
-  String get themeSepiaWarm => '复古褐';
-
-  @override
   String get timeToday => '今天';
 
   @override

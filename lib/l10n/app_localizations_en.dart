@@ -464,9 +464,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeSumiDark => 'Sumi Dark';
 
   @override
-  String get themeSepiaWarm => 'Sepia Warm';
-
-  @override
   String get timeToday => 'Today';
 
   @override

@@ -423,8 +423,6 @@ class _SettingsPageState extends State<SettingsPage> {
         return loc.themeCreamLight;
       case ThemePreset.sumiDark:
         return loc.themeSumiDark;
-      case ThemePreset.sepiaWarm:
-        return loc.themeSepiaWarm;
     }
   }
 }

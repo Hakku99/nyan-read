@@ -8,7 +8,6 @@ import 'nyan_typography.dart';
 enum ThemePreset {
   creamLight,
   sumiDark,
-  sepiaWarm,
 }
 
 @immutable
@@ -114,9 +113,7 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(NyanRadius.card),
           side: BorderSide(
-            color: preset == ThemePreset.sepiaWarm
-                ? accent.withOpacity(0.15)
-                : inverseBorder,
+            color: inverseBorder,
             width: brightness == Brightness.dark ? 0.5 : 1,
           ),
         ),
@@ -193,37 +190,6 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
         labelStyle: TextStyle(color: textSecondary),
         hintStyle: TextStyle(color: textSecondary.withOpacity(0.7)),
       ),
-      switchTheme: preset == ThemePreset.sepiaWarm
-          ? SwitchThemeData(
-              thumbColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return NyanColors.sepiaBackground;
-                }
-                return const Color(0xFFD7CCC8);
-              }),
-              trackColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return primary;
-                }
-                return const Color(0xFFA1887F);
-              }),
-              trackOutlineColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return NyanColors.transparent;
-                }
-                return const Color(0xFFA1887F);
-              }),
-            )
-          : null,
-      sliderTheme: preset == ThemePreset.sepiaWarm
-          ? SliderThemeData(
-              activeTrackColor: primary,
-              inactiveTrackColor: const Color(0xFFA1887F).withOpacity(0.5),
-              thumbColor: primary,
-              overlayColor: primary.withOpacity(0.1),
-              trackHeight: 4,
-            )
-          : null,
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: surface,
         shape: RoundedRectangleBorder(
@@ -404,33 +370,6 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     errorAccentColor: Color(0xFFEF9A9A),
     fabBackground: NyanColors.inkNightPrimary,
     fabForeground: NyanColors.inkNightTextMain,
-  ),
-  ThemePreset.sepiaWarm: const NyanTheme(
-    preset: ThemePreset.sepiaWarm,
-    name: 'Sepia Warm',
-    primary: NyanColors.sepiaPrimary,
-    primaryDeep: Color(0xFF795548),
-    surface: NyanColors.sepiaSurface,
-    surfaceMuted: Color(0xFFFAF2E6),
-    background: NyanColors.sepiaBackground,
-    textPrimary: NyanColors.sepiaTextMain,
-    textSecondary: NyanColors.sepiaTextSecondary,
-    textMuted: Color(0xFFA1887F),
-    accent: Color(0xFF795548),
-    divider: NyanColors.sepiaDivider,
-    borderColor: NyanColors.sepiaDivider,
-    brightness: Brightness.light,
-    primaryButtonBackground: Color(0xFF795548),
-    primaryButtonForeground: NyanColors.sepiaSurface,
-    successColor: Color(0xFF558B2F),
-    warningColor: Color(0xFFEF6C00),
-    infoColor: Color(0xFF0277BD),
-    errorBackgroundColor: Color(0xFFFAF0E6),
-    errorPrimaryTextColor: Color(0xFF5D4037),
-    errorSecondaryTextColor: Color(0xFF8D6E63),
-    errorAccentColor: Color(0xFFD7CCC8),
-    fabBackground: NyanColors.sepiaPrimary,
-    fabForeground: NyanColors.sepiaSurface,
   ),
 };
 

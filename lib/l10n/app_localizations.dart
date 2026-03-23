@@ -926,12 +926,6 @@ abstract class AppLocalizations {
   /// **'Sumi Dark'**
   String get themeSumiDark;
 
-  /// No description provided for @themeSepiaWarm.
-  ///
-  /// In en, this message translates to:
-  /// **'Sepia Warm'**
-  String get themeSepiaWarm;
-
   /// No description provided for @timeToday.
   ///
   /// In en, this message translates to:
