@@ -269,13 +269,13 @@
   "emptyShelfTitle": "Bookshelf is waiting for stories",
   "emptyShelfSubtitle": "Import a book to start reading",
   "exportData": "Export Reading Assets",
-  "exportDataSubtitle": "Backup books, highlights & bookmarks as JSON",
+  "exportDataSubtitle": "Save reading data as JSON",
   "saveToDevice": "Save to Device",
   "saveToDeviceSubtitle": "Choose a folder on your device",
   "shareVia": "Share via…",
   "shareViaSubtitle": "Gmail, Drive, Quick Share, etc.",
   "importData": "Import Reading Assets",
-  "importDataSubtitle": "Restore from a previously exported JSON file",
+  "importDataSubtitle": "Restore reading data from JSON backup",
   "importSuccess": "Successfully restored {count} books!",
   "@importSuccess": {
     "placeholders": {

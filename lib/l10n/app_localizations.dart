@@ -1007,7 +1007,7 @@ abstract class AppLocalizations {
   /// No description provided for @exportDataSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Backup books, highlights & bookmarks as JSON'**
+  /// **'Save reading data as JSON'**
   String get exportDataSubtitle;
 
   /// No description provided for @saveToDevice.
@@ -1043,7 +1043,7 @@ abstract class AppLocalizations {
   /// No description provided for @importDataSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Restore from a previously exported JSON file'**
+  /// **'Restore reading data from JSON backup'**
   String get importDataSubtitle;
 
   /// No description provided for @importSuccess.

@@ -1,26 +1,35 @@
 import 'package:flutter/material.dart';
-
 import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
-
 class NyanBottomSheet extends StatelessWidget {
   final String? title;
   final String? description;
   final Widget child;
   final Widget? footer;
-
+  final EdgeInsetsGeometry? contentPadding;
+  final TextStyle? titleStyle;
+  final TextStyle? descriptionStyle;
+  final Color? handleColor;
+  final double titleTopSpacing;
+  final double descriptionSpacing;
+  final double titleChildSpacing;
   const NyanBottomSheet({
     super.key,
     this.title,
     this.description,
     required this.child,
     this.footer,
+    this.contentPadding,
+    this.titleStyle,
+    this.descriptionStyle,
+    this.handleColor,
+    this.titleTopSpacing = NyanSpacing.space16,
+    this.descriptionSpacing = NyanSpacing.space8,
+    this.titleChildSpacing = NyanSpacing.space16,
   });
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return SafeArea(
       top: false,
       child: Container(
@@ -31,12 +40,14 @@ class NyanBottomSheet extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: EdgeInsets.only(
-            left: NyanSpacing.space24,
-            right: NyanSpacing.space24,
-            top: NyanSpacing.space12,
-            bottom: NyanSpacing.space24 + MediaQuery.of(context).padding.bottom,
-          ),
+          padding: contentPadding ??
+              EdgeInsets.only(
+                left: NyanSpacing.space24,
+                right: NyanSpacing.space24,
+                top: NyanSpacing.space12,
+                bottom:
+                    NyanSpacing.space24 + MediaQuery.of(context).padding.bottom,
+              ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -46,28 +57,32 @@ class NyanBottomSheet extends StatelessWidget {
                   width: 40,
                   height: NyanSpacing.space4,
                   decoration: BoxDecoration(
-                    color: theme.dividerColor,
+                    color: handleColor ?? theme.dividerColor,
                     borderRadius: BorderRadius.circular(NyanRadius.small),
                   ),
                 ),
               ),
               if (title != null) ...[
-                const SizedBox(height: NyanSpacing.space16),
+                SizedBox(height: titleTopSpacing),
                 Text(
                   title!,
-                  style: theme.textTheme.titleLarge,
+                  style: titleStyle ?? theme.textTheme.titleLarge,
                 ),
               ],
               if (description != null) ...[
-                const SizedBox(height: NyanSpacing.space8),
+                SizedBox(height: descriptionSpacing),
                 Text(
                   description!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.72),
-                  ),
+                  style:
+                      descriptionStyle ??
+                      theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.textTheme.bodyMedium?.color?.withValues(
+                          alpha: 0.72,
+                        ),
+                      ),
                 ),
               ],
-              const SizedBox(height: NyanSpacing.space16),
+              SizedBox(height: titleChildSpacing),
               child,
               if (footer != null) ...[
                 const SizedBox(height: NyanSpacing.space20),

@@ -371,29 +371,59 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
 
   void _showSortMenu(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    final sortOptions = [
+      (SortBy.recency, false, loc.lastReadDesc),
+      (SortBy.recency, true, loc.lastReadAsc),
+      (SortBy.importDate, false, loc.addedDesc),
+      (SortBy.importDate, true, loc.addedAsc),
+      (SortBy.title, true, loc.titleAsc),
+      (SortBy.title, false, loc.titleDesc),
+    ];
 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return NyanBottomSheet(
-              title: loc.sortBy,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ...() {
-                    final sortOptions = [
-                      (SortBy.recency, false, loc.lastReadDesc),
-                      (SortBy.recency, true, loc.lastReadAsc),
-                      (SortBy.importDate, false, loc.addedDesc),
-                      (SortBy.importDate, true, loc.addedAsc),
-                      (SortBy.title, true, loc.titleAsc),
-                      (SortBy.title, false, loc.titleDesc),
-                    ];
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        final dividerColor = theme.dividerColor.withValues(
+          alpha: theme.brightness == Brightness.dark ? 0.28 : 0.45,
+        );
+        const sortSheetContentGap = 21.0;
 
-                    return sortOptions.map((option) {
+        return NyanBottomSheet(
+          title: loc.sortBy,
+          titleStyle: theme.textTheme.bodyLarge?.copyWith(
+            fontSize: NyanTypography.body + 2,
+            fontWeight: FontWeight.w600,
+            height: 1.15,
+          ),
+          contentPadding: EdgeInsets.only(
+            left: sortSheetContentGap,
+            right: sortSheetContentGap,
+            top: NyanSpacing.space12,
+            bottom:
+                sortSheetContentGap + MediaQuery.of(sheetContext).padding.bottom,
+          ),
+          titleTopSpacing: NyanSpacing.space8,
+          titleChildSpacing: sortSheetContentGap,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(NyanRadius.input),
+              border: Border.all(
+                color: dividerColor.withValues(
+                  alpha: theme.brightness == Brightness.dark ? 0.85 : 0.7,
+                ),
+                width: 0.5,
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var index = 0; index < sortOptions.length; index++) ...[
+                  Builder(
+                    builder: (_) {
+                      final option = sortOptions[index];
                       final sortBy = option.$1;
                       final isAscending = option.$2;
                       final label = option.$3;
@@ -402,29 +432,45 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
 
                       return NyanListRow(
                         title: label,
-                        subtitle: isSelected ? loc.sortBy : null,
+                        titleStyle: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme.textTheme.bodyLarge?.color,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: NyanSpacing.space16,
+                          vertical: NyanSpacing.space12,
+                        ),
                         trailing: isSelected
                             ? Icon(
-                                Icons.check,
-                                color: Theme.of(context).colorScheme.primary,
+                                Icons.check_rounded,
+                                color: theme.colorScheme.primary,
                                 size: NyanSpacing.space20,
                               )
                             : null,
                         onTap: () async {
                           await _prefs.setSort(sortBy, isAscending);
-                          if (context.mounted) {
-                            context.read<BookshelfViewModel>().loadBooks();
+                          if (sheetContext.mounted) {
+                            sheetContext.read<BookshelfViewModel>().loadBooks();
+                            Navigator.of(sheetContext).pop();
                           }
-                          setModalState(() {});
-                          Navigator.pop(context);
                         },
                       );
-                    }).toList();
-                  }(),
+                    },
+                  ),
+                  if (index != sortOptions.length - 1)
+                    Divider(
+                      height: 1,
+                      indent: NyanSpacing.space16,
+                      endIndent: NyanSpacing.space16,
+                      color: dividerColor,
+                    ),
                 ],
-              ),
-            );
-          },
+              ],
+            ),
+          ),
         );
       },
     );
@@ -1183,6 +1229,8 @@ class _ImportedBookSource {
     required this.signatureHint,
   });
 }
+
+
 
 
 

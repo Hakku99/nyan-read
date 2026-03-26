@@ -19,17 +19,24 @@ import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
 import '../../core/theme/theme_manager.dart';
 import '../../core/theme/theme_presets.dart';
+import '../../core/ui/components/components.dart';
 
 const double _kSettingsCardRadius = NyanRadius.input;
 const double _kSettingsHorizontalPadding = NyanSpacing.space16;
 const double _kSettingsSectionGap = NyanSpacing.space24;
 const double _kSettingsCardGap = NyanSpacing.space12;
 const double _kSettingsRowVerticalPadding = NyanSpacing.space12;
-const double _kSettingsSheetVerticalPadding = NyanSpacing.space12;
+const double _kSettingsSubRowIndent = NyanSpacing.space16;
 const double _kSettingsSheetContentGap = 21;
 const double _kSettingsSheetOuterPadding = _kSettingsSheetContentGap;
+const double _kSettingsSheetBottomPadding = NyanSpacing.space16;
+const double _kSettingsSheetHeaderGap = NyanSpacing.space12;
 
-void _showSettingsLoadingDialog(BuildContext context) {
+void _showSettingsLoadingDialog(
+  BuildContext context, {
+  required String title,
+  required String description,
+}) {
   showDialog<void>(
     context: context,
     barrierDismissible: false,
@@ -39,30 +46,53 @@ void _showSettingsLoadingDialog(BuildContext context) {
       return PopScope(
         canPop: false,
         child: Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: NyanSpacing.space24,
+          ),
           elevation: 0,
           backgroundColor: Colors.transparent,
-          child: Center(
-            child: Container(
-              width: 112,
-              height: 112,
-              decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: BorderRadius.circular(NyanRadius.panel),
-                border: Border.all(
-                  color: theme.dividerColor.withValues(
-                    alpha: theme.brightness == Brightness.dark ? 0.24 : 0.16,
+          child: NyanInfoCard(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(NyanRadius.panel),
+                  ),
+                  child: Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.6,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              alignment: Alignment.center,
-              child: SizedBox(
-                width: 28,
-                height: 28,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.6,
-                  color: theme.colorScheme.primary,
+                const SizedBox(height: NyanSpacing.space16),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
+                const SizedBox(height: NyanSpacing.space8),
+                Text(
+                  description,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    height: 1.3,
+                    color: theme.textTheme.bodyMedium?.color?.withValues(
+                      alpha: 0.72,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -90,18 +120,34 @@ Future<T?> _showSelectionSheet<T>({
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (sheetContext) {
-      return _SettingsSheetFrame(
+      final theme = Theme.of(sheetContext);
+
+      return NyanBottomSheet(
         title: title,
+        titleStyle: NyanSheetAppearance.compactTitleStyle(theme),
         description: description,
-        child: _SheetCard(
+        descriptionStyle: NyanSheetAppearance.compactDescriptionStyle(theme),
+        handleColor: NyanSheetAppearance.compactHandleColor(theme),
+        contentPadding: EdgeInsets.only(
+          left: _kSettingsSheetOuterPadding,
+          right: _kSettingsSheetOuterPadding,
+          top: NyanSpacing.space12,
+          bottom:
+              _kSettingsSheetBottomPadding +
+              MediaQuery.of(sheetContext).padding.bottom,
+        ),
+        titleTopSpacing: NyanSpacing.space8,
+        titleChildSpacing: _kSettingsSheetHeaderGap,
+        child: NyanSheetCard(
           children: [
             for (var index = 0; index < options.length; index++) ...[
-              _SelectionSheetRow<T>(
-                option: options[index],
+              NyanSelectionSheetRow<T>(
+                label: options[index].label,
+                description: options[index].description,
                 isSelected: options[index].value == currentValue,
                 onTap: () => Navigator.of(sheetContext).pop(options[index].value),
               ),
-              if (index != options.length - 1) const _SheetDivider(),
+              if (index != options.length - 1) const NyanSheetDivider(),
             ],
           ],
         ),
@@ -121,12 +167,27 @@ Future<void> _showExportActionsSheet(
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (sheetContext) {
-      return _SettingsSheetFrame(
+      final theme = Theme.of(sheetContext);
+
+      return NyanBottomSheet(
         title: loc.exportData,
+        titleStyle: NyanSheetAppearance.compactTitleStyle(theme),
         description: loc.exportDataSubtitle,
-        child: _SheetCard(
+        descriptionStyle: NyanSheetAppearance.compactDescriptionStyle(theme),
+        handleColor: NyanSheetAppearance.compactHandleColor(theme),
+        contentPadding: EdgeInsets.only(
+          left: _kSettingsSheetOuterPadding,
+          right: _kSettingsSheetOuterPadding,
+          top: NyanSpacing.space12,
+          bottom:
+              _kSettingsSheetBottomPadding +
+              MediaQuery.of(sheetContext).padding.bottom,
+        ),
+        titleTopSpacing: NyanSpacing.space8,
+        titleChildSpacing: _kSettingsSheetHeaderGap,
+        child: NyanSheetCard(
           children: [
-            _SheetActionRow(
+            NyanActionSheetRow(
               icon: Icons.download_rounded,
               title: loc.saveToDevice,
               subtitle: loc.saveToDeviceSubtitle,
@@ -144,8 +205,8 @@ Future<void> _showExportActionsSheet(
                 }
               },
             ),
-            const _SheetDivider(),
-            _SheetActionRow(
+            const NyanSheetDivider(),
+            NyanActionSheetRow(
               icon: Icons.share_rounded,
               title: loc.shareVia,
               subtitle: loc.shareViaSubtitle,
@@ -164,7 +225,12 @@ Future<void> _showExportActionsSheet(
 }
 
 Future<void> _handleExportData(BuildContext context) async {
-  _showSettingsLoadingDialog(context);
+  final loc = AppLocalizations.of(context)!;
+  _showSettingsLoadingDialog(
+    context,
+    title: loc.exportData,
+    description: loc.exportDataSubtitle,
+  );
 
   try {
     final backupService = getIt<BackupRecoveryService>();
@@ -188,7 +254,11 @@ Future<void> _handleExportData(BuildContext context) async {
 Future<void> _handleImportData(BuildContext context) async {
   final loc = AppLocalizations.of(context)!;
 
-  _showSettingsLoadingDialog(context);
+  _showSettingsLoadingDialog(
+    context,
+    title: loc.importData,
+    description: loc.importDataSubtitle,
+  );
 
   try {
     final backupService = getIt<BackupRecoveryService>();
@@ -426,12 +496,20 @@ class _SettingsPageState extends State<SettingsPage> {
           StatefulBuilder(
             builder: (context, setLocalState) {
               final bookshelfPrefs = getIt<BookshelfPreferencesService>();
+              final theme = Theme.of(context);
+              final isDark = theme.brightness == Brightness.dark;
+              final cautionSubtitleColor = theme.colorScheme.error.withValues(
+                alpha: isDark ? 0.72 : 0.66,
+              );
 
               return _SettingsCard(
                 children: [
                   _SwitchRow(
                     title: loc.deleteFilesOnRemove,
                     subtitle: loc.deleteFilesOnRemoveSubtitle,
+                    subtitleColor: cautionSubtitleColor.withValues(
+                      alpha: isDark ? 0.88 : 0.8,
+                    ),
                     value: bookshelfPrefs.deleteFilesOnRemove,
                     onChanged: (value) async {
                       await bookshelfPrefs.setDeleteFilesOnRemove(value);
@@ -466,10 +544,23 @@ class _SettingsPageState extends State<SettingsPage> {
           if (!featureManager.isPro) ...[
             const SizedBox(height: _kSettingsCardGap),
             _SettingsCard(
+              backgroundColor: Color.alphaBlend(
+                theme.colorScheme.primary.withValues(
+                  alpha: theme.brightness == Brightness.dark ? 0.11 : 0.045,
+                ),
+                theme.cardColor,
+              ),
+              borderColor: theme.colorScheme.primary.withValues(
+                alpha: theme.brightness == Brightness.dark ? 0.2 : 0.12,
+              ),
+              shadowAlpha: theme.brightness == Brightness.dark ? 0 : 0.024,
               children: [
                 _ActionRow(
                   icon: Icons.auto_awesome_rounded,
                   iconColor: Theme.of(context).colorScheme.primary,
+                  iconBackgroundAlpha: theme.brightness == Brightness.dark ? 0.2 : 0.14,
+                  titleColor: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.94),
+                  chevronColor: theme.colorScheme.primary.withValues(alpha: 0.58),
                   title: loc.upgradeToPro,
                   onTap: () {
                     // TODO: Implement upgrade flow
@@ -524,10 +615,10 @@ class _SectionHeader extends StatelessWidget {
         title,
         style: theme.textTheme.labelSmall?.copyWith(
           fontSize: NyanTypography.meta,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.16,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.22,
           color: theme.colorScheme.primary.withValues(
-            alpha: theme.brightness == Brightness.dark ? 0.78 : 0.82,
+            alpha: theme.brightness == Brightness.dark ? 0.9 : 0.9,
           ),
         ),
       ),
@@ -536,28 +627,39 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _SettingsCard extends StatelessWidget {
-  const _SettingsCard({required this.children});
+  const _SettingsCard({
+    required this.children,
+    this.backgroundColor,
+    this.borderColor,
+    this.shadowAlpha,
+  });
 
   final List<Widget> children;
+  final Color? backgroundColor;
+  final Color? borderColor;
+  final double? shadowAlpha;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final resolvedBorderColor =
+        borderColor ??
+        theme.dividerColor.withValues(alpha: isDark ? 0.2 : 0.16);
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.cardColor,
+        color: backgroundColor ?? theme.cardColor,
         borderRadius: BorderRadius.circular(_kSettingsCardRadius),
         border: Border.all(
-          color: theme.dividerColor.withValues(alpha: isDark ? 0.2 : 0.16),
+          color: resolvedBorderColor,
           width: 0.72,
         ),
         boxShadow: isDark
             ? const []
             : [
                 BoxShadow(
-                  color: theme.shadowColor.withValues(alpha: 0.014),
+                  color: theme.shadowColor.withValues(alpha: shadowAlpha ?? 0.014),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -605,12 +707,15 @@ class _SelectionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final titleColor = theme.textTheme.bodyLarge?.color;
+    final valueColorAlpha = inset ? 0.5 : 0.58;
+    final chevronColorAlpha = inset ? 0.3 : 0.38;
 
     return InkWell(
       onTap: onTap,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
-          _kSettingsHorizontalPadding,
+          _kSettingsHorizontalPadding + (inset ? _kSettingsSubRowIndent : 0),
           _kSettingsRowVerticalPadding,
           _kSettingsHorizontalPadding,
           _kSettingsRowVerticalPadding,
@@ -623,9 +728,12 @@ class _SelectionRow extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
+                    style: (inset
+                            ? theme.textTheme.bodyMedium
+                            : theme.textTheme.bodyLarge)
+                        ?.copyWith(
                       fontWeight: inset ? FontWeight.w500 : FontWeight.w600,
-                      color: theme.textTheme.bodyLarge?.color?.withValues(
+                      color: titleColor?.withValues(
                         alpha: inset ? 0.82 : 1,
                       ),
                     ),
@@ -655,19 +763,22 @@ class _SelectionRow extends StatelessWidget {
                 children: [
                   Text(
                     valueLabel,
-                    style: theme.textTheme.bodyLarge?.copyWith(
+                    style: (inset
+                            ? theme.textTheme.bodyMedium
+                            : theme.textTheme.bodyLarge)
+                        ?.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: theme.textTheme.bodyLarge?.color?.withValues(
-                        alpha: inset ? 0.58 : 0.66,
+                      color: titleColor?.withValues(
+                        alpha: valueColorAlpha,
                       ),
                     ),
                   ),
                   const SizedBox(width: NyanSpacing.space4),
                   Icon(
                     Icons.keyboard_arrow_down_rounded,
-                    size: 20,
+                    size: 18,
                     color: theme.textTheme.bodySmall?.color?.withValues(
-                      alpha: 0.46,
+                      alpha: chevronColorAlpha,
                     ),
                   ),
                 ],
@@ -686,12 +797,16 @@ class _SwitchRow extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.subtitle,
+    this.titleColor,
+    this.subtitleColor,
   });
 
   final String title;
   final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final Color? titleColor;
+  final Color? subtitleColor;
 
   @override
   Widget build(BuildContext context) {
@@ -715,6 +830,7 @@ class _SwitchRow extends StatelessWidget {
                   title,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w600,
+                    color: titleColor,
                   ),
                 ),
                 if (subtitle != null) ...[
@@ -723,9 +839,11 @@ class _SwitchRow extends StatelessWidget {
                     subtitle!,
                     style: theme.textTheme.bodySmall?.copyWith(
                       height: 1.3,
-                      color: theme.textTheme.bodySmall?.color?.withValues(
-                        alpha: 0.8,
-                      ),
+                      color:
+                          subtitleColor ??
+                          theme.textTheme.bodySmall?.color?.withValues(
+                            alpha: 0.8,
+                          ),
                     ),
                   ),
                 ],
@@ -745,8 +863,8 @@ class _SwitchRow extends StatelessWidget {
                         : theme.cardColor;
                   }
                   return isDark
-                      ? theme.colorScheme.onSurface.withValues(alpha: 0.54)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.78);
+                      ? theme.colorScheme.onSurface.withValues(alpha: 0.46)
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.6);
                 }),
                 trackColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
@@ -755,7 +873,7 @@ class _SwitchRow extends StatelessWidget {
                     );
                   }
                   return theme.colorScheme.surfaceContainerHighest.withValues(
-                    alpha: isDark ? 0.52 : 0.72,
+                    alpha: isDark ? 0.38 : 0.46,
                   );
                 }),
                 trackOutlineColor: WidgetStateProperty.resolveWith((states) {
@@ -763,7 +881,7 @@ class _SwitchRow extends StatelessWidget {
                     return Colors.transparent;
                   }
                   return theme.dividerColor.withValues(
-                    alpha: isDark ? 0.18 : 0.24,
+                    alpha: isDark ? 0.14 : 0.18,
                   );
                 }),
                 overlayColor: WidgetStateProperty.all(Colors.transparent),
@@ -787,6 +905,11 @@ class _ActionRow extends StatelessWidget {
     required this.onTap,
     this.subtitle,
     this.iconColor,
+    this.titleColor,
+    this.titleWeight = FontWeight.w600,
+    this.subtitleColor,
+    this.chevronColor,
+    this.iconBackgroundAlpha,
   });
 
   final IconData icon;
@@ -794,6 +917,11 @@ class _ActionRow extends StatelessWidget {
   final String? subtitle;
   final VoidCallback onTap;
   final Color? iconColor;
+  final Color? titleColor;
+  final FontWeight titleWeight;
+  final Color? subtitleColor;
+  final Color? chevronColor;
+  final double? iconBackgroundAlpha;
 
   @override
   Widget build(BuildContext context) {
@@ -816,7 +944,9 @@ class _ActionRow extends StatelessWidget {
               height: 36,
               decoration: BoxDecoration(
                 color: tone.withValues(
-                  alpha: theme.brightness == Brightness.dark ? 0.12 : 0.08,
+                  alpha:
+                      iconBackgroundAlpha ??
+                      (theme.brightness == Brightness.dark ? 0.12 : 0.08),
                 ),
                 borderRadius: BorderRadius.circular(NyanRadius.small),
               ),
@@ -830,7 +960,8 @@ class _ActionRow extends StatelessWidget {
                   Text(
                     title,
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
+                      fontWeight: titleWeight,
+                      color: titleColor,
                     ),
                   ),
                   if (subtitle != null) ...[
@@ -839,9 +970,11 @@ class _ActionRow extends StatelessWidget {
                       subtitle!,
                       style: theme.textTheme.bodySmall?.copyWith(
                         height: 1.3,
-                        color: theme.textTheme.bodySmall?.color?.withValues(
-                          alpha: 0.78,
-                        ),
+                        color:
+                            subtitleColor ??
+                            theme.textTheme.bodySmall?.color?.withValues(
+                              alpha: 0.78,
+                            ),
                       ),
                     ),
                   ],
@@ -852,273 +985,9 @@ class _ActionRow extends StatelessWidget {
             Icon(
               Icons.chevron_right_rounded,
               size: 20,
-              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.56),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SheetCard extends StatelessWidget {
-  const _SheetCard({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(_kSettingsCardRadius),
-        border: Border.all(
-          color: theme.dividerColor.withValues(alpha: 0.14),
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(_kSettingsCardRadius),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: children,
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsSheetFrame extends StatelessWidget {
-  const _SettingsSheetFrame({
-    required this.title,
-    required this.child,
-    this.description,
-  });
-
-  final String title;
-  final String? description;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final baseTheme = Theme.of(context);
-    final sheetTheme = baseTheme.copyWith(
-      textTheme: baseTheme.textTheme.copyWith(
-        titleLarge: baseTheme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          fontSize: 18,
-          color: baseTheme.textTheme.titleMedium?.color?.withValues(alpha: 0.92),
-          height: 1.1,
-        ),
-        bodyMedium: baseTheme.textTheme.bodySmall?.copyWith(
-          color: baseTheme.textTheme.bodySmall?.color?.withValues(alpha: 0.72),
-          height: 1.3,
-        ),
-      ),
-    );
-
-    return Theme(
-      data: sheetTheme,
-      child: SafeArea(
-        top: false,
-        child: Builder(
-          builder: (context) {
-            final theme = Theme.of(context);
-
-            return DecoratedBox(
-              decoration: BoxDecoration(
-                color: theme.bottomSheetTheme.backgroundColor ?? theme.cardColor,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(NyanRadius.panel),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  _kSettingsSheetOuterPadding,
-                  NyanSpacing.space12,
-                  _kSettingsSheetOuterPadding,
-                  _kSettingsSheetContentGap,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: NyanSpacing.space4,
-                        decoration: BoxDecoration(
-                          color: theme.dividerColor.withValues(alpha: 0.44),
-                          borderRadius: BorderRadius.circular(NyanRadius.small),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: NyanSpacing.space8),
-                    Text(title, style: theme.textTheme.titleLarge),
-                    if (description != null) ...[
-                      const SizedBox(height: NyanSpacing.space4),
-                      Text(
-                        description!,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ],
-                    const SizedBox(height: _kSettingsSheetContentGap),
-                    child,
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _SheetDivider extends StatelessWidget {
-  const _SheetDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      thickness: 0.55,
-      color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-    );
-  }
-}
-
-class _SelectionSheetRow<T> extends StatelessWidget {
-  const _SelectionSheetRow({
-    required this.option,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final _SelectionOption<T> option;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      color: isSelected
-          ? theme.colorScheme.primary.withValues(
-              alpha: theme.brightness == Brightness.dark ? 0.09 : 0.055,
-            )
-          : Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: _kSettingsHorizontalPadding,
-            vertical: _kSettingsSheetVerticalPadding,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      option.label,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected
-                            ? theme.colorScheme.primary.withValues(alpha: 0.88)
-                            : theme.textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                    if (option.description != null) ...[
-                      const SizedBox(height: NyanSpacing.space4),
-                      Text(
-                        option.description!,
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: NyanSpacing.space12),
-              AnimatedOpacity(
-                duration: const Duration(milliseconds: 160),
-                opacity: isSelected ? 1 : 0,
-                child: Icon(
-                  Icons.check_rounded,
-                  size: 20,
-                  color: theme.colorScheme.primary.withValues(alpha: 0.84),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SheetActionRow extends StatelessWidget {
-  const _SheetActionRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: _kSettingsHorizontalPadding,
-          vertical: _kSettingsSheetVerticalPadding,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.09),
-                borderRadius: BorderRadius.circular(NyanRadius.small),
-              ),
-              child: Icon(
-                icon,
-                color: theme.colorScheme.primary,
-                size: 17,
-              ),
-            ),
-            const SizedBox(width: NyanSpacing.space12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: NyanSpacing.space4),
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
-              ),
+              color:
+                  chevronColor ??
+                  theme.textTheme.bodySmall?.color?.withValues(alpha: 0.56),
             ),
           ],
         ),

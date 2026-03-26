@@ -507,8 +507,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportData => 'Export Reading Assets';
 
   @override
-  String get exportDataSubtitle =>
-      'Backup books, highlights & bookmarks as JSON';
+  String get exportDataSubtitle => 'Save reading data as JSON';
 
   @override
   String get saveToDevice => 'Save to Device';
@@ -526,8 +525,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importData => 'Import Reading Assets';
 
   @override
-  String get importDataSubtitle =>
-      'Restore from a previously exported JSON file';
+  String get importDataSubtitle => 'Restore reading data from JSON backup';
 
   @override
   String importSuccess(int count) {

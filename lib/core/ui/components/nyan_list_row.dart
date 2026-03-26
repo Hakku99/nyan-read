@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-
 import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
-
 class NyanListRow extends StatelessWidget {
   final Widget? leading;
   final String title;
@@ -10,7 +8,7 @@ class NyanListRow extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback? onTap;
   final EdgeInsetsGeometry? contentPadding;
-
+  final TextStyle? titleStyle;
   const NyanListRow({
     super.key,
     this.leading,
@@ -19,12 +17,11 @@ class NyanListRow extends StatelessWidget {
     this.trailing,
     this.onTap,
     this.contentPadding,
+    this.titleStyle,
   });
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(NyanRadius.card),
@@ -46,9 +43,10 @@ class NyanListRow extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: titleStyle ??
+                        theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: NyanSpacing.space4),
