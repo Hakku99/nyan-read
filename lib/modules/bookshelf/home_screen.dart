@@ -369,7 +369,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
   }
 
 
-  void _showSortMenu(BuildContext context) {
+  void _showSortMenu(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
     final sortOptions = [
       (SortBy.recency, false, loc.lastReadDesc),
@@ -380,100 +380,25 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       (SortBy.title, false, loc.titleDesc),
     ];
 
-    showModalBottomSheet(
+    final selected = await showNyanSelectionSheet<({SortBy sortBy, bool isAscending})>(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        final theme = Theme.of(sheetContext);
-        final dividerColor = theme.dividerColor.withValues(
-          alpha: theme.brightness == Brightness.dark ? 0.28 : 0.45,
-        );
-        const sortSheetContentGap = 21.0;
-
-        return NyanBottomSheet(
-          title: loc.sortBy,
-          titleStyle: theme.textTheme.bodyLarge?.copyWith(
-            fontSize: NyanTypography.body + 2,
-            fontWeight: FontWeight.w600,
-            height: 1.15,
+      title: loc.sortBy,
+      currentValue: (sortBy: _prefs.sortBy, isAscending: _prefs.isAscending),
+      options: [
+        for (final option in sortOptions)
+          NyanSelectionOption(
+            value: (sortBy: option.$1, isAscending: option.$2),
+            label: option.$3,
           ),
-          contentPadding: EdgeInsets.only(
-            left: sortSheetContentGap,
-            right: sortSheetContentGap,
-            top: NyanSpacing.space12,
-            bottom:
-                sortSheetContentGap + MediaQuery.of(sheetContext).padding.bottom,
-          ),
-          titleTopSpacing: NyanSpacing.space8,
-          titleChildSpacing: sortSheetContentGap,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(NyanRadius.input),
-              border: Border.all(
-                color: dividerColor.withValues(
-                  alpha: theme.brightness == Brightness.dark ? 0.85 : 0.7,
-                ),
-                width: 0.5,
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (var index = 0; index < sortOptions.length; index++) ...[
-                  Builder(
-                    builder: (_) {
-                      final option = sortOptions[index];
-                      final sortBy = option.$1;
-                      final isAscending = option.$2;
-                      final label = option.$3;
-                      final isSelected = _prefs.sortBy == sortBy &&
-                          _prefs.isAscending == isAscending;
-
-                      return NyanListRow(
-                        title: label,
-                        titleStyle: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.w500,
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : theme.textTheme.bodyLarge?.color,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: NyanSpacing.space16,
-                          vertical: NyanSpacing.space12,
-                        ),
-                        trailing: isSelected
-                            ? Icon(
-                                Icons.check_rounded,
-                                color: theme.colorScheme.primary,
-                                size: NyanSpacing.space20,
-                              )
-                            : null,
-                        onTap: () async {
-                          await _prefs.setSort(sortBy, isAscending);
-                          if (sheetContext.mounted) {
-                            sheetContext.read<BookshelfViewModel>().loadBooks();
-                            Navigator.of(sheetContext).pop();
-                          }
-                        },
-                      );
-                    },
-                  ),
-                  if (index != sortOptions.length - 1)
-                    Divider(
-                      height: 1,
-                      indent: NyanSpacing.space16,
-                      endIndent: NyanSpacing.space16,
-                      color: dividerColor,
-                    ),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
+      ],
     );
+
+    if (selected == null) return;
+
+    await _prefs.setSort(selected.sortBy, selected.isAscending);
+    if (!context.mounted) return;
+
+    context.read<BookshelfViewModel>().loadBooks();
   }
 
   Future<void> _handlePrivacyLock(BuildContext context) async {
@@ -1229,11 +1154,3 @@ class _ImportedBookSource {
     required this.signatureHint,
   });
 }
-
-
-
-
-
-
-
-

@@ -20,20 +20,27 @@ class NyanSelectionSheetRow<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final selectedBackground = theme.colorScheme.primary.withValues(
+      alpha: isDark ? 0.12 : 0.075,
+    );
+    final selectedLabelColor = theme.textTheme.bodyLarge?.color?.withValues(
+      alpha: isDark ? 0.98 : 0.96,
+    );
+    final selectedDescriptionColor = theme.textTheme.bodySmall?.color?.withValues(
+      alpha: isDark ? 0.82 : 0.74,
+    );
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      color: isSelected
-          ? theme.colorScheme.primary.withValues(
-              alpha: theme.brightness == Brightness.dark ? 0.1 : 0.055,
-            )
-          : Colors.transparent,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      color: isSelected ? selectedBackground : Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: NyanSheetAppearance.compactRowHorizontalPadding,
-            vertical: NyanSheetAppearance.compactRowVerticalPadding,
+            vertical: NyanSpacing.space12,
           ),
           child: Row(
             children: [
@@ -47,8 +54,10 @@ class NyanSelectionSheetRow<T> extends StatelessWidget {
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.w500,
                         color: isSelected
-                            ? theme.colorScheme.primary.withValues(alpha: 0.9)
-                            : theme.textTheme.bodyLarge?.color,
+                            ? selectedLabelColor
+                            : theme.textTheme.bodyLarge?.color?.withValues(
+                                alpha: 0.94,
+                              ),
                       ),
                     ),
                     if (description != null) ...[
@@ -57,6 +66,8 @@ class NyanSelectionSheetRow<T> extends StatelessWidget {
                         description!,
                         style: NyanSheetAppearance.compactDescriptionStyle(
                           theme,
+                        )?.copyWith(
+                          color: isSelected ? selectedDescriptionColor : null,
                         ),
                       ),
                     ],
@@ -64,13 +75,19 @@ class NyanSelectionSheetRow<T> extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: NyanSpacing.space12),
-              AnimatedOpacity(
-                duration: const Duration(milliseconds: 160),
-                opacity: isSelected ? 1 : 0,
-                child: Icon(
-                  Icons.check_rounded,
-                  size: 18,
-                  color: theme.colorScheme.primary.withValues(alpha: 0.88),
+              SizedBox(
+                width: 20,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  opacity: isSelected ? 1 : 0,
+                  child: Icon(
+                    Icons.check_rounded,
+                    size: 20,
+                    color: theme.colorScheme.primary.withValues(
+                      alpha: isDark ? 0.96 : 0.88,
+                    ),
+                  ),
                 ),
               ),
             ],

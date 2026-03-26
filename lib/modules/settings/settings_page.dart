@@ -108,54 +108,6 @@ void _closeSettingsDialog(BuildContext context) {
   }
 }
 
-Future<T?> _showSelectionSheet<T>({
-  required BuildContext context,
-  required String title,
-  String? description,
-  required T currentValue,
-  required List<_SelectionOption<T>> options,
-}) {
-  return showModalBottomSheet<T>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    builder: (sheetContext) {
-      final theme = Theme.of(sheetContext);
-
-      return NyanBottomSheet(
-        title: title,
-        titleStyle: NyanSheetAppearance.compactTitleStyle(theme),
-        description: description,
-        descriptionStyle: NyanSheetAppearance.compactDescriptionStyle(theme),
-        handleColor: NyanSheetAppearance.compactHandleColor(theme),
-        contentPadding: EdgeInsets.only(
-          left: _kSettingsSheetOuterPadding,
-          right: _kSettingsSheetOuterPadding,
-          top: NyanSpacing.space12,
-          bottom:
-              _kSettingsSheetBottomPadding +
-              MediaQuery.of(sheetContext).padding.bottom,
-        ),
-        titleTopSpacing: NyanSpacing.space8,
-        titleChildSpacing: _kSettingsSheetHeaderGap,
-        child: NyanSheetCard(
-          children: [
-            for (var index = 0; index < options.length; index++) ...[
-              NyanSelectionSheetRow<T>(
-                label: options[index].label,
-                description: options[index].description,
-                isSelected: options[index].value == currentValue,
-                onTap: () => Navigator.of(sheetContext).pop(options[index].value),
-              ),
-              if (index != options.length - 1) const NyanSheetDivider(),
-            ],
-          ],
-        ),
-      );
-    },
-  );
-}
-
 Future<void> _showExportActionsSheet(
   BuildContext context,
   String exportFilePath,
@@ -340,13 +292,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: loc.themePreset,
                 valueLabel: _getThemeName(themeManager.currentPreset, loc),
                 onTap: () async {
-                  final preset = await _showSelectionSheet<ThemePreset>(
+                  final preset = await showNyanSelectionSheet<ThemePreset>(
                     context: context,
                     title: loc.themePreset,
                     currentValue: themeManager.currentPreset,
                     options: themePresets.values
                         .map(
-                          (theme) => _SelectionOption(
+                          (theme) => NyanSelectionOption(
                             value: theme.preset,
                             label: _getThemeName(theme.preset, loc),
                           ),
@@ -362,16 +314,16 @@ class _SettingsPageState extends State<SettingsPage> {
               _SelectionRow(
                 title: loc.language,
                 valueLabel: languageManager.locale.languageCode == 'zh'
-                    ? '中文'
+                    ? '\u4E2D\u6587'
                     : 'English',
                 onTap: () async {
-                  final locale = await _showSelectionSheet<Locale>(
+                  final locale = await showNyanSelectionSheet<Locale>(
                     context: context,
                     title: loc.language,
                     currentValue: languageManager.locale,
                     options: const [
-                      _SelectionOption(value: Locale('zh'), label: '中文'),
-                      _SelectionOption(value: Locale('en'), label: 'English'),
+                      NyanSelectionOption(value: Locale('zh'), label: '\u4E2D\u6587'),
+                      NyanSelectionOption(value: Locale('en'), label: 'English'),
                     ],
                   );
                   if (locale != null) {
@@ -399,20 +351,20 @@ class _SettingsPageState extends State<SettingsPage> {
                       loc,
                     ),
                     onTap: () async {
-                      final animation = await _showSelectionSheet<PageAnimation>(
+                      final animation = await showNyanSelectionSheet<PageAnimation>(
                         context: context,
                         title: loc.pageAnimation,
                         currentValue: readerPrefs.pageAnimation,
                         options: [
-                          _SelectionOption(
+                          NyanSelectionOption(
                             value: PageAnimation.fade,
                             label: loc.pageAnimFade,
                           ),
-                          _SelectionOption(
+                          NyanSelectionOption(
                             value: PageAnimation.paper,
                             label: loc.pageAnimPaper,
                           ),
-                          _SelectionOption(
+                          NyanSelectionOption(
                             value: PageAnimation.none,
                             label: loc.pageAnimNone,
                           ),
@@ -442,20 +394,20 @@ class _SettingsPageState extends State<SettingsPage> {
                           loc.reminderMinutes(reminderService.intervalMinutes),
                       inset: true,
                       onTap: () async {
-                        final interval = await _showSelectionSheet<int>(
+                        final interval = await showNyanSelectionSheet<int>(
                           context: context,
                           title: loc.reminderInterval,
                           currentValue: reminderService.intervalMinutes,
                           options: [
-                            _SelectionOption(
+                            NyanSelectionOption(
                               value: 30,
                               label: loc.reminderMinutes(30),
                             ),
-                            _SelectionOption(
+                            NyanSelectionOption(
                               value: 60,
                               label: loc.reminderMinutes(60),
                             ),
-                            _SelectionOption(
+                            NyanSelectionOption(
                               value: 90,
                               label: loc.reminderMinutes(90),
                             ),
@@ -994,16 +946,4 @@ class _ActionRow extends StatelessWidget {
       ),
     );
   }
-}
-
-class _SelectionOption<T> {
-  const _SelectionOption({
-    required this.value,
-    required this.label,
-    this.description,
-  });
-
-  final T value;
-  final String label;
-  final String? description;
 }

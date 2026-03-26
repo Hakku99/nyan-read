@@ -13,6 +13,7 @@ export 'nyan_list_row.dart';
 export 'nyan_page_header.dart';
 export 'nyan_primary_button.dart';
 
+export 'nyan_selection_sheet.dart';
 export 'nyan_selection_sheet_row.dart';
 export 'nyan_sheet_appearance.dart';
 export 'nyan_sheet_card.dart';
