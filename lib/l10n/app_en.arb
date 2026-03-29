@@ -31,7 +31,7 @@
   },
   "dataManagement": "Data Management",
   "deleteFilesOnRemove": "Delete Files on Remove",
-  "deleteFilesOnRemoveSubtitle": "Also delete local files when deleting books",
+  "deleteFilesOnRemoveSubtitle": "This will also delete the original files from your device.",
   "lockPrivateShelf": "Lock Private Shelf",
   "tts": "TTS (Text-to-Speech)",
   "ads": "Ads",
@@ -75,6 +75,7 @@
   "editNote": "Edit Note",
   "addNoteHint": "Add your note here...",
   "delete": "Delete",
+  "remove": "Remove",
   "cancel": "Cancel",
   "save": "Save",
   "selected": "Selected",
@@ -99,7 +100,7 @@
   "titleDesc": "Title Descending",
   "lockPrivacyShelf": "Lock Privacy Shelf",
   "unlockPrivacyShelf": "Unlock Privacy Shelf",
-  "deleteBooksTitle": "⚠️ Delete {count} Books?",
+  "deleteBooksTitle": "{count, plural, one{Remove {count} book?} other{Remove {count} books?}}",
   "@deleteBooksTitle": {
     "placeholders": {
       "count": {
@@ -107,9 +108,9 @@
       }
     }
   },
-  "actionCannotBeUndone": "This action cannot be undone.",
+  "actionCannotBeUndone": "They will be removed from the current shelf.",
   "alsoDeleteLocalFiles": "Also delete local files",
-  "deletedBooks": "Deleted {count} books",
+  "deletedBooks": "{count, plural, one{Removed {count} book} other{Removed {count} books}}",
   "@deletedBooks": {
     "placeholders": {
       "count": {
@@ -138,9 +139,9 @@
   "supportedFormats": "Supported Formats",
   "supportedFormatsSubtitle": "TXT, EPUB, and PDF are ready to import.",
   "supportedFormatsDescription": "Nyan Read currently supports importing TXT, EPUB, and PDF files from your device.",
-  "importingBooksTitle": "Importing Books",
-  "importingBooksSubtitle": "Adding your selected files to the shelf...",
-  "importedBooks": "Imported {count} books into {shelf}!",
+  "importingBooksTitle": "Importing",
+  "importingBooksSubtitle": "Placing books onto your shelf...",
+  "importedBooks": "{count, plural, one{Imported {count} book} other{Imported {count} books}}",
   "@importedBooks": {
     "placeholders": {
       "count": {
@@ -178,7 +179,7 @@
       }
     }
   },
-  "duplicatesSkipped": "{count} duplicates skipped.",
+  "duplicatesSkipped": "{count, plural, one{Skipped {count} duplicate item.} other{Skipped {count} duplicate items.}}",
   "@duplicatesSkipped": {
     "placeholders": {
       "count": {
@@ -272,7 +273,7 @@
   "exportDataSubtitle": "Save reading data as JSON",
   "saveToDevice": "Save to Device",
   "saveToDeviceSubtitle": "Choose a folder on your device",
-  "shareVia": "Share via…",
+  "shareVia": "Share via...",
   "shareViaSubtitle": "Gmail, Drive, Quick Share, etc.",
   "importData": "Import Reading Assets",
   "importDataSubtitle": "Restore reading data from JSON backup",

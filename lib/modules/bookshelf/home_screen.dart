@@ -78,46 +78,29 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     final prefs = getIt<BookshelfPreferencesService>();
     bool deleteFile = prefs.deleteFilesOnRemove;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text(loc.deleteBooksTitle(vm.selectedCount)),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(loc.actionCannotBeUndone),
-                  const SizedBox(height: NyanSpacing.space16),
-                  CheckboxListTile(
-                    title: Text(loc.alsoDeleteLocalFiles),
-                    value: deleteFile,
-                    onChanged: (value) {
-                      setState(() {
-                        deleteFile = value ?? false;
-                      });
-                    },
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text(loc.cancel),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error),
-                  child: Text(loc.delete),
-                ),
-              ],
-            );
-          },
-        );
-      },
+    final confirmed = await showNyanConfirmDialog(
+      context,
+      title: loc.deleteBooksTitle(vm.selectedCount),
+      description: loc.actionCannotBeUndone,
+      confirmLabel: loc.remove,
+      cancelLabel: loc.cancel,
+      tone: NyanConfirmTone.danger,
+      icon: Icons.delete_outline_rounded,
+      extraContent: StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          return NyanDialogOptionRow(
+            title: loc.alsoDeleteLocalFiles,
+            subtitle: loc.deleteFilesOnRemoveSubtitle,
+            value: deleteFile,
+            isDanger: true,
+            onChanged: (value) {
+              setDialogState(() {
+                deleteFile = value;
+              });
+            },
+          );
+        },
+      ),
     );
 
     if (confirmed == true && mounted) {
@@ -128,7 +111,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
           SnackBarUtils.show(
             pageContext,
             loc.deletedBooks(deletedCount),
-            tone: NyanSnackTone.info,
+              tone: NyanSnackTone.success,
           );
         }
       } catch (e) {
@@ -178,6 +161,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       showDialog<void>(
         context: context,
         barrierDismissible: false,
+        barrierColor: NyanOverlayStyle.modalBarrierColor(context),
         builder: (dialogContext) => const ImportProgressDialog(),
       );
       progressVisible = true;
@@ -253,24 +237,18 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       }
 
       if (mounted) {
-        final shelf = isPrivate ? loc.privateShelf : loc.publicShelf;
+        final shelfLabel = isPrivate ? loc.privateShelf : loc.publicShelf;
 
-        if (successCount > 0 && skippedCount > 0) {
+        if (successCount > 0) {
           SnackBarUtils.show(
             context,
-            '${loc.importedBooks(successCount, shelf)}. ${loc.duplicatesSkipped(skippedCount)}',
-            tone: NyanSnackTone.success,
-          );
-        } else if (successCount > 0) {
-          SnackBarUtils.show(
-            context,
-            loc.importedBooks(successCount, shelf),
+            loc.importedBooks(successCount, shelfLabel),
             tone: NyanSnackTone.success,
           );
         } else if (skippedCount > 0) {
           SnackBarUtils.show(
             context,
-            loc.allBooksInLibrary(skippedCount),
+            loc.duplicatesSkipped(skippedCount),
             tone: NyanSnackTone.info,
           );
         }
@@ -340,6 +318,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       debugPrint('Failed to clear file picker temporary files: ' + e.toString());
     }
   }
+
 
   void _showImportMenu(BuildContext context) {
     final parentContext = context;
@@ -425,84 +404,71 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     }
   }
 
-  // ... (Dialog methods remain largely the same, skipped for brevity in this tool call, see instruction)
-  void _showSetPasswordDialog(BuildContext context) {
+  void _showSetPasswordDialog(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
     final passController = TextEditingController();
     final confirmController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(loc.setPrivacyPassword),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-                controller: passController,
-                decoration: InputDecoration(labelText: loc.password),
-                obscureText: true),
-            TextField(
-                controller: confirmController,
-                decoration: InputDecoration(labelText: loc.confirmPassword),
-                obscureText: true),
-          ],
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: Text(loc.cancel)),
-          TextButton(
-              onPressed: () async {
-                if (passController.text.isNotEmpty &&
-                    passController.text == confirmController.text) {
-                  await PrivacyLockService().setPassword(passController.text);
-                  if (mounted) {
-                    Navigator.pop(ctx);
-                    _showEnterPasswordDialog(context);
-                  }
-                } else {
-                  SnackBarUtils.show(context, loc.passwordsDoNotMatch);
-                }
-              },
-              child: Text(loc.save)),
-        ],
-      ),
-    );
-  }
-
-  void _showEnterPasswordDialog(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    final passController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(loc.unlockPrivacyShelfTitle),
-        content: TextField(
+    final created = await showNyanSecureEntryDialog(
+      context,
+      title: loc.setPrivacyPassword,
+      fields: [
+        NyanSecureFieldConfig(
+          label: loc.password,
           controller: passController,
-          decoration: InputDecoration(labelText: loc.password),
-          obscureText: true,
           autofocus: true,
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: Text(loc.cancel)),
-          TextButton(
-              onPressed: () async {
-                final isValid = await PrivacyLockService()
-                    .verifyPassword(passController.text);
-                if (mounted) {
-                  Navigator.pop(ctx);
-                  if (isValid) {
-                    context.read<FeatureManager>().unlockPrivateShelf();
-                  } else {
-                    SnackBarUtils.show(context, loc.invalidPassword);
-                  }
-                }
-              },
-              child: Text(loc.unlock)),
-        ],
-      ),
+        NyanSecureFieldConfig(
+          label: loc.confirmPassword,
+          controller: confirmController,
+        ),
+      ],
+      confirmLabel: loc.save,
+      cancelLabel: loc.cancel,
+      onConfirm: (values) async {
+        if (values[0].isEmpty || values[0] != values[1]) {
+          return loc.passwordsDoNotMatch;
+        }
+        await PrivacyLockService().setPassword(values[0]);
+        return null;
+      },
     );
+
+    passController.dispose();
+    confirmController.dispose();
+
+    if (created == true && mounted) {
+      _showEnterPasswordDialog(context);
+    }
+  }
+
+  void _showEnterPasswordDialog(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
+    final passController = TextEditingController();
+
+    final unlocked = await showNyanSecureEntryDialog(
+      context,
+      title: loc.unlockPrivacyShelfTitle,
+      fields: [
+        NyanSecureFieldConfig(
+          label: loc.password,
+          controller: passController,
+          autofocus: true,
+        ),
+      ],
+      confirmLabel: loc.unlock,
+      cancelLabel: loc.cancel,
+      onConfirm: (values) async {
+        final isValid = await PrivacyLockService().verifyPassword(values[0]);
+        return isValid ? null : loc.invalidPassword;
+      },
+    );
+
+    passController.dispose();
+
+    if (unlocked == true && mounted) {
+      context.read<FeatureManager>().unlockPrivateShelf();
+    }
   }
 
   Book? _resolveContinueReadingBook(List<Book> books) {
@@ -1154,3 +1120,9 @@ class _ImportedBookSource {
     required this.signatureHint,
   });
 }
+
+
+
+
+
+

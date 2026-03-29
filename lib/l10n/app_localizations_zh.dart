@@ -83,7 +83,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deleteFilesOnRemove => '删除时移除文件';
 
   @override
-  String get deleteFilesOnRemoveSubtitle => '删除书籍时同时删除本地文件';
+  String get deleteFilesOnRemoveSubtitle => '也会一起删除设备里的原始文件';
 
   @override
   String get lockPrivateShelf => '锁定私密书架';
@@ -196,6 +196,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get delete => '删除';
 
   @override
+  String get remove => '移出';
+
+  @override
   String get cancel => '取消';
 
   @override
@@ -269,18 +272,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String deleteBooksTitle(int count) {
-    return '⚠️ 删除 $count 本书？';
+    return '移出 $count 本书？';
   }
 
   @override
-  String get actionCannotBeUndone => '此操作无法撤销。';
+  String get actionCannotBeUndone => '它们会从当前书架中移出。';
 
   @override
   String get alsoDeleteLocalFiles => '同时删除本地文件';
 
   @override
   String deletedBooks(int count) {
-    return '已删除 $count 本书';
+    return '已移出 $count 本书';
   }
 
   @override
@@ -323,11 +326,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importingBooksTitle => '导入中';
 
   @override
-  String get importingBooksSubtitle => '正在将你选择的文件加入书架...';
+  String get importingBooksSubtitle => '正在把书放进书架…';
 
   @override
   String importedBooks(int count, String shelf) {
-    return '已将 $count 本书导入$shelf书架！';
+    return '已导入 $count 本书';
   }
 
   @override

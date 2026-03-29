@@ -245,7 +245,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteFilesOnRemoveSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Also delete local files when deleting books'**
+  /// **'This will also delete the original files from your device.'**
   String get deleteFilesOnRemoveSubtitle;
 
   /// No description provided for @lockPrivateShelf.
@@ -464,6 +464,12 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get delete;
 
+  /// No description provided for @remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get remove;
+
   /// No description provided for @cancel.
   ///
   /// In en, this message translates to:
@@ -611,13 +617,13 @@ abstract class AppLocalizations {
   /// No description provided for @deleteBooksTitle.
   ///
   /// In en, this message translates to:
-  /// **'⚠️ Delete {count} Books?'**
+  /// **'{count, plural, one{Remove {count} book?} other{Remove {count} books?}}'**
   String deleteBooksTitle(int count);
 
   /// No description provided for @actionCannotBeUndone.
   ///
   /// In en, this message translates to:
-  /// **'This action cannot be undone.'**
+  /// **'They will be removed from the current shelf.'**
   String get actionCannotBeUndone;
 
   /// No description provided for @alsoDeleteLocalFiles.
@@ -629,7 +635,7 @@ abstract class AppLocalizations {
   /// No description provided for @deletedBooks.
   ///
   /// In en, this message translates to:
-  /// **'Deleted {count} books'**
+  /// **'{count, plural, one{Removed {count} book} other{Removed {count} books}}'**
   String deletedBooks(int count);
 
   /// No description provided for @movedBooks.
@@ -701,19 +707,19 @@ abstract class AppLocalizations {
   /// No description provided for @importingBooksTitle.
   ///
   /// In en, this message translates to:
-  /// **'Importing Books'**
+  /// **'Importing'**
   String get importingBooksTitle;
 
   /// No description provided for @importingBooksSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Adding your selected files to the shelf...'**
+  /// **'Placing books onto your shelf...'**
   String get importingBooksSubtitle;
 
   /// No description provided for @importedBooks.
   ///
   /// In en, this message translates to:
-  /// **'Imported {count} books into {shelf}!'**
+  /// **'{count, plural, one{Imported {count} book} other{Imported {count} books}}'**
   String importedBooks(int count, String shelf);
 
   /// No description provided for @emptyShelfMessage.
@@ -839,7 +845,7 @@ abstract class AppLocalizations {
   /// No description provided for @duplicatesSkipped.
   ///
   /// In en, this message translates to:
-  /// **'{count} duplicates skipped.'**
+  /// **'{count, plural, one{Skipped {count} duplicate item.} other{Skipped {count} duplicate items.}}'**
   String duplicatesSkipped(int count);
 
   /// No description provided for @noChaptersDetected.
@@ -1025,7 +1031,7 @@ abstract class AppLocalizations {
   /// No description provided for @shareVia.
   ///
   /// In en, this message translates to:
-  /// **'Share via…'**
+  /// **'Share via...'**
   String get shareVia;
 
   /// No description provided for @shareViaSubtitle.

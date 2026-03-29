@@ -1,261 +1,487 @@
-# AGENTS.md
+# Overview
 
-This document defines the working principles and engineering rules that AI coding agents must follow when interacting with this repository.
+This document defines **mandatory rules and enforcement protocols** for AI agents.
 
-These rules apply when performing tasks such as:
+Agents must behave as:
 
-- implementing new features
-- modifying existing code
-- debugging
-- refactoring
-- reviewing code
-- analyzing architecture
-
-The goal is to maintain **code quality, architectural consistency, system stability, and long-term maintainability**.
-
-Agents should prioritize **correctness and system understanding over speed**.
+> **Conservative maintainers, not proactive optimizers**
 
 ---
 
 # Core Principles
 
-## Understand Before Changing
-
-Before modifying code:
-
-- read the surrounding implementation
-- understand how the module works
-- identify dependencies and side effects
-
-Never make blind modifications.
-
-If the system behavior is unclear, analyze the relevant code paths first.
+* Correctness > Speed
+* Stability > Optimization
+* Determinism > Convenience
+* Understanding > Modification
 
 ---
 
-## Prefer Minimal, Safe Changes
+# 1. Understand Before Changing
 
-When fixing bugs or implementing improvements:
+Before any change, agents MUST:
 
-- prefer the smallest safe change
-- avoid unnecessary refactors
-- avoid touching unrelated modules
-
-Large refactors must be explicitly requested.
-
----
-
-## Preserve Existing Behavior
-
-Unless explicitly instructed otherwise:
-
-- do not change existing public behavior
-- do not break existing flows
-- do not change storage formats
-- do not alter reading progress logic
-
-Refactoring must preserve behavior.
+* read surrounding code
+* trace execution paths
+* identify dependencies
+* understand state ownership
 
 ---
 
-# Architecture Rules
+## Forbidden
 
-Follow the existing architecture of the project.
-
-Do not introduce new architectural patterns without explicit instruction.
-
-Respect module boundaries.
-
-UI layers must not directly access:
-
-- databases
-- storage
-- file IO
-- parsing logic
-
-Use services or repositories for these operations.
-
-Avoid introducing cross-feature dependencies.
+* blind fixes
+* speculative changes
+* patch stacking
 
 ---
 
-# Reader Engine Safety Rules
+# 2. Strict Mode (Change Boundaries)
 
-The reader engine is a critical subsystem.
+## 🔒 Hard Restrictions
 
-Changes affecting the reader must be handled with extra care.
+Agents must NOT modify:
 
-Avoid breaking:
+* reader pagination algorithm
+* reading progress persistence logic
+* storage schema
+* public APIs
+* shared data models
 
-- pagination correctness
-- reading progress restoration
-- chapter navigation logic
-
-Pagination must remain deterministic.
-
-Reader settings such as:
-
-- font size
-- line spacing
-- theme
-- margins
-
-must correctly trigger pagination updates.
-
-Never silently change pagination behavior.
+Unless explicitly instructed.
 
 ---
 
-# Performance Rules
+## Allowed Scope
 
-Avoid introducing performance regressions.
+Agents may ONLY modify:
 
-Do not perform heavy work inside:
-
-- widget build methods
-- UI event handlers
-- synchronous UI isolate code paths
-
-Large operations such as:
-
-- parsing book files
-- chapter processing
-- pagination computation
-
-should be asynchronous or cached when possible.
-
-Avoid unnecessary widget rebuilds.
+* directly related module
+* minimal required logic
 
 ---
 
-# State Management Rules
+## Escalation Rule
 
-State must have clear ownership.
+If change requires touching:
+
+* reader engine
+* pagination
+* storage
+* shared interfaces
+
+Agent MUST:
+
+1. STOP
+2. EXPLAIN WHY
+3. REQUEST CONFIRMATION
+
+---
+
+# 3. Change Scope Classification
+
+### Small
+
+* local fix
+* no API impact
+
+### Medium
+
+* multi-module (same feature)
+
+### Large
+
+* architectural or cross-feature
+
+---
+
+## Rule
+
+Default to **Small**.
+Medium/Large require explicit approval.
+
+---
+
+# 4. Behavior Preservation
+
+Agents must NOT:
+
+* change user-visible behavior
+* break existing flows
+* alter reading progress
+* modify storage format
+
+---
+
+# 5. API & Contract Stability
+
+Agents must NOT:
+
+* change function signatures
+* modify return types
+* rename persisted fields
+* change serialization
+
+---
+
+# 6. Architecture Rules
+
+UI must NOT access:
+
+* database
+* storage
+* file IO
+* parsing logic
+
+Use services/repositories.
+
+---
+
+# 7. Feature Isolation
+
+No cross-feature coupling.
+
+Reader must remain independent from:
+
+* library
+* UI theme
+* integrations
+
+---
+
+# 8. Reader Engine Safety (CRITICAL)
+
+---
+
+## Must NOT Break
+
+* pagination correctness
+* reading position restoration
+* chapter navigation
+* layout consistency
+
+---
+
+## Determinism Requirement
+
+Same:
+
+* content
+* settings
+
+→ must produce identical pagination
+
+---
+
+## Forbidden
+
+* hidden state
+* randomness
+* time-based logic
+
+---
+
+# 9. Pagination Validation (MANDATORY)
+
+Any reader-related change MUST pass:
+
+---
+
+## 1. Determinism
+
+* identical input → identical page count
+
+---
+
+## 2. Page Stability
+
+* no off-by-one
+* stable boundaries
+
+---
+
+## 3. Reading Position
+
+* exact restoration
+* no paragraph shift
+
+---
+
+## 4. Settings Trigger
+
+Changes in:
+
+* font size
+* spacing
+* margins
+
+must trigger correct pagination
+
+---
+
+## 5. Chapter Navigation
+
+* no page drift
+* accurate jumps
+
+---
+
+## 6. Restart Consistency
+
+* restart must not change pagination
+
+---
+
+# 10. Reader Engine Contract (MANDATORY BEFORE CHANGE)
+
+Before modifying ANY reader-related logic, agent MUST produce:
+
+---
+
+## 📄 Impact Analysis
+
+* what is being changed
+* why change is needed
+* affected modules
+
+---
+
+## ⚠️ Risk Assessment
+
+Must evaluate risk to:
+
+* pagination
+* reading progress
+* chapter navigation
+* storage
+
+---
+
+## 🧪 Validation Plan
+
+Must explain how correctness will be verified:
+
+* which scenarios tested
+* what outputs compared
+
+---
+
+## 📊 Expected Outcome
+
+Define:
+
+* what must remain unchanged
+* what is expected to change
+
+---
+
+## 🚫 If unable to prove safety
+
+Agent MUST:
+
+→ STOP
+→ DO NOT MODIFY
+
+---
+
+# 11. State Management Rules
+
+Single source of truth for:
+
+* reading position
+* pagination result
+* chapter
+
+---
+
+## Forbidden
+
+* duplicated state
+* bidirectional dependencies
+
+---
+
+## UI
+
+UI must consume state only.
+
+---
+
+# 12. Concurrency Rules
+
+Prevent:
+
+* race conditions
+* stale overwrites
+* concurrent pagination
+
+---
+
+## Use
+
+* cancellation
+* version checks
+* guards
+
+---
+
+# 13. Performance Rules
+
+---
+
+## Forbidden
+
+Heavy work in:
+
+* build()
+* UI handlers
+* sync UI thread
+
+---
+
+## Required
+
+Heavy tasks must be:
+
+* async
+* cached
+
+---
+
+# 14. Data Integrity
+
+Ensure:
+
+* safe writes
+* no corruption
+* backward compatibility
+
+---
+
+## If schema changes
+
+Must include migration plan.
+
+---
+
+# 15. Error Handling
+
+All IO must:
+
+* fail gracefully
+* not crash
+* not corrupt data
+
+---
+
+# 16. Logging
+
+Log:
+
+* pagination recalculation
+* state transitions
+* failures
+
+---
+
+## Avoid
+
+* spam
+* sensitive data
+
+---
+
+# 17. Debugging Rules
+
+Steps:
+
+1. find root cause
+2. explain clearly
+3. apply minimal fix
+
+---
+
+# 18. Refactoring Rules
+
+Must:
+
+* preserve behavior
+* improve clarity
+
+---
+
+## Avoid
+
+* large restructuring
+* speculative abstraction
+
+---
+
+# 19. Code Quality
 
 Avoid:
 
-- duplicated derived state
-- multiple sources of truth
-- bidirectional dependencies
-
-Reader state should be centralized and predictable.
-
-UI components should consume state rather than own domain logic.
+* large classes
+* duplicated logic
+* unclear naming
 
 ---
 
-# Error Handling Rules
+# 20. Testing Expectations
 
-All IO operations must handle errors.
+Must verify:
 
-This includes:
-
-- file access
-- parsing
-- storage
-- network operations
-
-Failures should:
-
-- fail gracefully
-- not crash the application
-- not corrupt reading progress
-
-Errors should be logged when appropriate.
+* pagination consistency
+* reading position
+* navigation
 
 ---
 
-# Debugging Rules
+## Forbidden
 
-When debugging issues:
-
-1. Identify the root cause.
-2. Explain the cause clearly.
-3. Propose the minimal fix.
-
-Avoid speculative fixes.
-
-Avoid stacking patches without understanding the underlying issue.
+* modifying tests to hide bugs
 
 ---
 
-# Refactoring Rules
+# 21. Regression Awareness
 
-Refactoring must improve clarity without altering behavior.
+Before change:
 
-Avoid:
-
-- large-scale structural changes
-- unnecessary abstraction
-- speculative generalization
-
-Prefer simple, clear implementations.
+* identify affected flows
+* verify dependencies
 
 ---
 
-# Code Quality Rules
+# 22. Documentation
 
-Maintain readability and maintainability.
+Explain:
 
-Avoid:
-
-- overly large classes
-- overly large widgets
-- duplicated logic
-- unclear naming
-
-Extract reusable logic into helpers, services, or controllers when appropriate.
-
-Keep UI code focused on presentation.
+* WHY logic exists
+* assumptions
 
 ---
 
-# Testing Awareness
+# 23. When in Doubt
 
-When modifying critical logic such as:
+If affecting:
 
-- pagination
-- chapter parsing
-- reading progress
-
-ensure the change would remain testable.
-
-Do not modify tests to hide bugs.
+* pagination
+* reader
+* storage
 
 ---
 
-# Documentation Rules
+## MUST
 
-Complex logic should include brief comments explaining:
-
-- why the logic exists
-- what assumptions it relies on
-
-Avoid redundant comments that simply repeat code.
+→ STOP
+→ ANALYZE
+→ APPLY MINIMAL SAFE CHANGE
 
 ---
 
-# Use Analysis Tools When Needed
+# ✅ Final Enforcement Rule
 
-Before large modifications, agents should consider running analysis tools such as:
-
-- architecture-audit
-- reader-engine-analysis
-- flutter-performance-audit
-
-These tools help understand the system before making changes.
+> If correctness cannot be proven,
+> the change must NOT be made.
 
 ---
-
-# When in Doubt
-
-If a change might affect:
-
-- reader correctness
-- reading progress
-- pagination logic
-- storage format
-
-stop and analyze the code paths before making modifications.
-
-Prefer safety and correctness over speed.

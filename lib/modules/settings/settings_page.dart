@@ -20,6 +20,7 @@ import '../../core/theme/nyan_typography.dart';
 import '../../core/theme/theme_manager.dart';
 import '../../core/theme/theme_presets.dart';
 import '../../core/ui/components/components.dart';
+import '../../core/utils/snackbar_utils.dart';
 
 const double _kSettingsCardRadius = NyanRadius.input;
 const double _kSettingsHorizontalPadding = NyanSpacing.space16;
@@ -40,64 +41,11 @@ void _showSettingsLoadingDialog(
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (dialogContext) {
-      final theme = Theme.of(dialogContext);
-
-      return PopScope(
-        canPop: false,
-        child: Dialog(
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: NyanSpacing.space24,
-          ),
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          child: NyanInfoCard(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(NyanRadius.panel),
-                  ),
-                  child: Center(
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.6,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: NyanSpacing.space16),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: NyanSpacing.space8),
-                Text(
-                  description,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    height: 1.3,
-                    color: theme.textTheme.bodyMedium?.color?.withValues(
-                      alpha: 0.72,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
+    barrierColor: NyanOverlayStyle.modalBarrierColor(context),
+    builder: (dialogContext) => NyanProgressDialog(
+      title: title,
+      description: description,
+    ),
   );
 }
 
@@ -151,9 +99,7 @@ Future<void> _showExportActionsSheet(
                   bytes: await File(exportFilePath).readAsBytes(),
                 );
                 if (savedPath != null && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Saved to: $savedPath')),
-                  );
+                  SnackBarUtils.show(context, 'Saved to: $savedPath');
                 }
               },
             ),
@@ -196,8 +142,10 @@ Future<void> _handleExportData(BuildContext context) async {
   } catch (e) {
     if (context.mounted) {
       _closeSettingsDialog(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Export failed: $e')),
+      SnackBarUtils.show(
+        context,
+        'Export failed: $e',
+        tone: NyanSnackTone.error,
       );
     }
   }
@@ -222,20 +170,18 @@ Future<void> _handleImportData(BuildContext context) async {
     if (!context.mounted) return;
 
     if (restoredCount == -1) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(loc.importSuccess(restoredCount)),
-        backgroundColor: Colors.green,
-      ),
+    SnackBarUtils.show(
+      context,
+      loc.importSuccess(restoredCount),
+      tone: NyanSnackTone.success,
     );
   } catch (e) {
     if (context.mounted) {
       _closeSettingsDialog(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(loc.importFailed(e.toString())),
-          backgroundColor: Colors.red,
-        ),
+      SnackBarUtils.show(
+        context,
+        loc.importFailed(e.toString()),
+        tone: NyanSnackTone.error,
       );
     }
   }

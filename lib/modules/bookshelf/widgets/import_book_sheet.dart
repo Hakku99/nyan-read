@@ -221,56 +221,10 @@ class ImportProgressDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
-    return PopScope(
-      canPop: false,
-      child: Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: NyanSpacing.space24),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: NyanInfoCard(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(NyanRadius.panel),
-                ),
-                child: Center(
-                  child: SizedBox(
-                    width: NyanSpacing.space24,
-                    height: NyanSpacing.space24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.6,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: NyanSpacing.space16),
-              Text(
-                loc.importingBooksTitle,
-                style: theme.textTheme.titleMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: NyanSpacing.space8),
-              Text(
-                loc.importingBooksSubtitle,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.72),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
+    return NyanProgressDialog(
+      title: loc.importingBooksTitle,
+      description: loc.importingBooksSubtitle,
     );
   }
 }

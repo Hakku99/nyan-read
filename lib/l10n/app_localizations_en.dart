@@ -84,7 +84,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteFilesOnRemoveSubtitle =>
-      'Also delete local files when deleting books';
+      'This will also delete the original files from your device.';
 
   @override
   String get lockPrivateShelf => 'Lock Private Shelf';
@@ -197,6 +197,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delete => 'Delete';
 
   @override
+  String get remove => 'Remove';
+
+  @override
   String get cancel => 'Cancel';
 
   @override
@@ -270,18 +273,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deleteBooksTitle(int count) {
-    return '⚠️ Delete $count Books?';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Remove $count books?',
+      one: 'Remove $count book?',
+    );
+    return '$_temp0';
   }
 
   @override
-  String get actionCannotBeUndone => 'This action cannot be undone.';
+  String get actionCannotBeUndone =>
+      'They will be removed from the current shelf.';
 
   @override
   String get alsoDeleteLocalFiles => 'Also delete local files';
 
   @override
   String deletedBooks(int count) {
-    return 'Deleted $count books';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Removed $count books',
+      one: 'Removed $count book',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -326,15 +342,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Nyan Read currently supports importing TXT, EPUB, and PDF files from your device.';
 
   @override
-  String get importingBooksTitle => 'Importing Books';
+  String get importingBooksTitle => 'Importing';
 
   @override
-  String get importingBooksSubtitle =>
-      'Adding your selected files to the shelf...';
+  String get importingBooksSubtitle => 'Placing books onto your shelf...';
 
   @override
   String importedBooks(int count, String shelf) {
-    return 'Imported $count books into $shelf!';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Imported $count books',
+      one: 'Imported $count book',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -401,7 +422,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String duplicatesSkipped(int count) {
-    return '$count duplicates skipped.';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Skipped $count duplicate items.',
+      one: 'Skipped $count duplicate item.',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -516,7 +543,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveToDeviceSubtitle => 'Choose a folder on your device';
 
   @override
-  String get shareVia => 'Share via…';
+  String get shareVia => 'Share via...';
 
   @override
   String get shareViaSubtitle => 'Gmail, Drive, Quick Share, etc.';
