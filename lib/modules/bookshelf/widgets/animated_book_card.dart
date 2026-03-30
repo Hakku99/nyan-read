@@ -4,6 +4,7 @@ import '../../../core/models/book.dart';
 import '../../../core/theme/nyan_radius.dart';
 import '../../../core/theme/nyan_shadows.dart';
 import '../../../core/theme/nyan_spacing.dart';
+import '../../../core/ui/nyan_theme_context.dart';
 import '../../../core/utils/datetime_utils.dart';
 
 /// Animated book card for list view mode
@@ -99,7 +100,7 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
             width: widget.isSelected ? 2 : 1,
           ),
           color: widget.isSelected
-              ? theme.colorScheme.primaryContainer.withOpacity(0.2)
+              ? context.selectionSurface
               : theme.colorScheme.surfaceVariant.withOpacity(0.3),
           boxShadow: NyanShadows.subtle(theme.shadowColor),
         ),
@@ -303,7 +304,7 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                   width: widget.isSelected ? 3 : 1,
                 ),
                 color: widget.isSelected
-                    ? theme.colorScheme.primaryContainer.withOpacity(0.2)
+                    ? context.selectionSurface
                     : theme.colorScheme.surfaceVariant.withOpacity(0.3),
                 boxShadow: NyanShadows.subtle(theme.shadowColor),
               ),

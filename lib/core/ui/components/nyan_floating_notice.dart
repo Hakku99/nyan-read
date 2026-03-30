@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../theme/nyan_spacing.dart';
+import '../nyan_theme_context.dart';
 import 'nyan_overlay_style.dart';
 
 enum NyanFloatingNoticeTone { info, success, error }
@@ -42,40 +42,41 @@ class NyanFloatingNotice extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
+        constraints: BoxConstraints(
+          maxWidth: maxWidth,
+          minHeight: NyanOverlayStyle.noticeMinHeight,
+        ),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: NyanOverlayStyle.creamSurface(context),
             borderRadius: BorderRadius.circular(NyanOverlayStyle.toastRadius),
             border: Border.all(
-              color: tone == NyanFloatingNoticeTone.error
-                  ? NyanOverlayStyle.destructiveSubtleBorder(context)
-                  : NyanOverlayStyle.divider(context, alpha: 0.22),
-              width: 0.7,
+              color: NyanOverlayStyle.divider(context, alpha: 0.18),
+              width: 1,
             ),
             boxShadow: NyanOverlayStyle.noticeShadow(context),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: 17,
-              vertical: 10,
+              horizontal: NyanOverlayStyle.noticeHorizontalPadding,
+              vertical: NyanOverlayStyle.noticeVerticalPadding,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _NoticeBadge(icon: icon, tone: tone, palette: palette),
-                const SizedBox(width: 10),
+                const SizedBox(width: NyanOverlayStyle.noticeIconGap),
                 Flexible(
                   child: Text(
                     message,
                     maxLines: maxLines,
                     overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      height: 1.16,
-                      color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.91),
+                      height: 1.18,
+                      color: context.nyanTheme.textPrimary.withValues(alpha: 0.92),
                     ),
                   ),
                 ),
@@ -120,22 +121,6 @@ class _NyanFloatingNoticeOverlayState extends State<NyanFloatingNoticeOverlay>
     duration: NyanOverlayStyle.noticeEnterDuration,
     reverseDuration: NyanOverlayStyle.noticeExitDuration,
   );
-  late final CurvedAnimation _opacity = CurvedAnimation(
-    parent: _controller,
-    curve: NyanOverlayStyle.overlayFadeCurve,
-    reverseCurve: Curves.easeIn,
-  );
-  late final Animation<Offset> _offset = Tween<Offset>(
-    begin: const Offset(0, 0.18),
-    end: Offset.zero,
-  ).animate(
-    CurvedAnimation(
-      parent: _controller,
-      curve: NyanOverlayStyle.overlayCurve,
-      reverseCurve: Curves.easeInCubic,
-    ),
-  );
-
   Timer? _timer;
   bool _isClosing = false;
 
@@ -148,7 +133,9 @@ class _NyanFloatingNoticeOverlayState extends State<NyanFloatingNoticeOverlay>
 
   Future<void> dismiss() async {
     if (_isClosing) return;
-    _isClosing = true;
+    setState(() {
+      _isClosing = true;
+    });
     _timer?.cancel();
     await _controller.reverse();
     if (mounted) {
@@ -171,22 +158,36 @@ class _NyanFloatingNoticeOverlayState extends State<NyanFloatingNoticeOverlay>
         child: SafeArea(
           child: Padding(
             padding: EdgeInsets.only(
-              left: NyanSpacing.space16,
-              right: NyanSpacing.space16,
+              left: 16,
+              right: 16,
               bottom: widget.bottomOffset,
             ),
             child: Align(
               alignment: Alignment.bottomCenter,
-              child: FadeTransition(
-                opacity: _opacity,
-                child: SlideTransition(
-                  position: _offset,
-                  child: NyanFloatingNotice(
-                    message: widget.message,
-                    icon: widget.icon,
-                    tone: widget.tone,
-                    maxLines: widget.maxLines,
-                  ),
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  final curve = _isClosing
+                      ? Curves.easeInCubic.transform(_controller.value)
+                      : Curves.easeOutCubic.transform(_controller.value);
+                  final opacity = curve;
+                  final translateY = _isClosing
+                      ? (1 - curve) * 6
+                      : (1 - curve) * 16;
+
+                  return Opacity(
+                    opacity: opacity,
+                    child: Transform.translate(
+                      offset: Offset(0, translateY),
+                      child: child,
+                    ),
+                  );
+                },
+                child: NyanFloatingNotice(
+                  message: widget.message,
+                  icon: widget.icon,
+                  tone: widget.tone,
+                  maxLines: widget.maxLines,
                 ),
               ),
             ),
@@ -210,35 +211,36 @@ class _NoticeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final olive = NyanOverlayStyle.brandOlive(context);
     final iconColor = switch (tone) {
-      NyanFloatingNoticeTone.success => NyanOverlayStyle.successNoticeIcon(context),
+      NyanFloatingNoticeTone.success => NyanOverlayStyle.brandOliveDeep(context),
       NyanFloatingNoticeTone.error => NyanOverlayStyle.destructiveText(context),
-      NyanFloatingNoticeTone.info => NyanOverlayStyle.brandOlive(context),
+      NyanFloatingNoticeTone.info => NyanOverlayStyle.brandOliveDeep(context),
     };
-    final backgroundColor = tone == NyanFloatingNoticeTone.error
-        ? NyanOverlayStyle.destructiveSubtleBackground(context)
-        : NyanOverlayStyle.recessedSurface(
-            context,
-            seed: NyanOverlayStyle.brandOlive(context),
-            strength: 0.04,
-          );
-    final borderColor = tone == NyanFloatingNoticeTone.error
-        ? NyanOverlayStyle.destructiveSubtleBorder(context)
-        : palette.border.withValues(alpha: 0.24);
+    final backgroundColor = switch (tone) {
+      NyanFloatingNoticeTone.success => Color.alphaBlend(
+          olive.withValues(alpha: 0.12),
+          NyanOverlayStyle.creamSurface(context),
+        ),
+      NyanFloatingNoticeTone.error => NyanOverlayStyle.destructiveSubtleBackground(context),
+      NyanFloatingNoticeTone.info => Color.alphaBlend(
+          palette.tint.withValues(alpha: 0.08),
+          NyanOverlayStyle.creamSurface(context),
+        ),
+    };
 
     return DecoratedBox(
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: borderColor, width: 0.65),
+        shape: BoxShape.circle,
       ),
       child: SizedBox(
-        width: 22,
-        height: 22,
+        width: NyanOverlayStyle.noticeIconBadgeSize,
+        height: NyanOverlayStyle.noticeIconBadgeSize,
         child: Icon(
           icon,
-          size: 15,
-          color: iconColor.withValues(alpha: 0.94),
+          size: NyanOverlayStyle.noticeIconSize,
+          color: iconColor,
         ),
       ),
     );

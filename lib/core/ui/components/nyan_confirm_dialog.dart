@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/nyan_spacing.dart';
+import '../nyan_theme_context.dart';
 import 'nyan_overlay_style.dart';
 
 enum NyanConfirmTone { neutral, warning, danger }
@@ -20,14 +21,31 @@ Future<bool?> showNyanConfirmDialog(
     context: context,
     barrierDismissible: barrierDismissible,
     barrierColor: NyanOverlayStyle.modalBarrierColor(context),
-    builder: (dialogContext) => NyanConfirmDialog(
-      title: title,
-      description: description,
-      confirmLabel: confirmLabel,
-      cancelLabel: cancelLabel,
-      extraContent: extraContent,
-      tone: tone,
-      icon: icon,
+    builder: (dialogContext) => TweenAnimationBuilder<double>(
+      duration: NyanOverlayStyle.overlayTransitionDuration,
+      curve: NyanOverlayStyle.overlayCurve,
+      tween: Tween(begin: 0, end: 1),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, (1 - value) * 8),
+            child: Transform.scale(
+              scale: 0.98 + (0.02 * value),
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: NyanConfirmDialog(
+        title: title,
+        description: description,
+        confirmLabel: confirmLabel,
+        cancelLabel: cancelLabel,
+        extraContent: extraContent,
+        tone: tone,
+        icon: icon,
+      ),
     ),
   );
 }
@@ -55,14 +73,9 @@ class NyanConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final palette = NyanOverlayStyle.tonePalette(
-      context,
-      switch (tone) {
-        NyanConfirmTone.neutral => NyanOverlayTone.info,
-        NyanConfirmTone.warning => NyanOverlayTone.info,
-        NyanConfirmTone.danger => NyanOverlayTone.danger,
-      },
-    );
+    final brandOlive = NyanOverlayStyle.brandOlive(context);
+    final primaryText = context.nyanTheme.textPrimary.withValues(alpha: 0.94);
+    final secondaryText = context.nyanTheme.textSecondary.withValues(alpha: 0.82);
     final resolvedIcon =
         icon ??
         switch (tone) {
@@ -71,106 +84,89 @@ class NyanConfirmDialog extends StatelessWidget {
           NyanConfirmTone.danger => Icons.delete_outline_rounded,
         };
     final normalizedTitle = _normalizedTitle(title, tone);
-    final cancelForeground =
-        theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.8) ??
-        theme.colorScheme.onSurface.withValues(alpha: 0.8);
+    final cancelSurface = Color.alphaBlend(
+      context.nyanTheme.textSecondary.withValues(alpha: 0.02),
+      NyanOverlayStyle.creamSurface(context),
+    );
+    final removeFill = const Color(0xFFA3AB8B);
 
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: NyanSpacing.space24),
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: NyanOverlayStyle.dialogHorizontalInset,
+      ),
       backgroundColor: Colors.transparent,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 388),
+        constraints: const BoxConstraints(maxWidth: NyanOverlayStyle.dialogMaxWidth),
         child: NyanOverlayPanel(
           radius: NyanOverlayStyle.dialogRadius,
-          padding: const EdgeInsets.fromLTRB(26, 26, 26, 24),
-          borderColor: NyanOverlayStyle.divider(context, alpha: 0.28),
+          padding: const EdgeInsets.all(NyanOverlayStyle.dialogPadding),
+          borderColor: NyanOverlayStyle.divider(context, alpha: 0.16),
           shadows: NyanOverlayStyle.dialogShadow(context),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _DialogBadge(icon: resolvedIcon, palette: palette),
-              const SizedBox(height: NyanSpacing.space12),
-              Text(
-                normalizedTitle,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  height: 1.08,
-                  color: theme.textTheme.titleLarge?.color?.withValues(alpha: 0.92),
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _DialogBadge(
+                    icon: resolvedIcon,
+                    iconColor: const Color(0xFF9A8578),
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2),
+                    borderColor: const Color(0x6BDCE4D3),
+                  ),
+                  const SizedBox(width: NyanSpacing.space12),
+                  Expanded(
+                    child: Text(
+                      normalizedTitle,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontSize: 18.5,
+                        fontWeight: FontWeight.w700,
+                        height: 1.18,
+                        color: primaryText,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               if (description != null) ...[
-                const SizedBox(height: NyanSpacing.space8),
+                const SizedBox(height: 18),
                 Text(
                   description!,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    height: 1.34,
-                    color: palette.secondary.withValues(alpha: 0.88),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    height: 1.4,
+                    color: secondaryText,
                   ),
                 ),
               ],
               if (extraContent != null) ...[
-                const SizedBox(height: NyanSpacing.space24),
+                const SizedBox(height: 18),
                 extraContent!,
               ],
-              const SizedBox(height: NyanSpacing.space20),
+              const SizedBox(height: NyanOverlayStyle.dialogActionGap),
               Row(
                 children: [
                   Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(54),
-                        foregroundColor: cancelForeground,
-                        backgroundColor: NyanOverlayStyle.recessedSurface(context),
-                        side: BorderSide(
-                          color: NyanOverlayStyle.divider(context, alpha: 0.36),
-                          width: 0.75,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: NyanSpacing.space12,
-                          vertical: NyanSpacing.space8,
-                        ),
-                        textStyle: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            NyanOverlayStyle.buttonRadius,
-                          ),
-                        ),
-                      ),
-                      child: Text(cancelLabel),
+                    child: _DialogActionButton(
+                      label: cancelLabel,
+                      onTap: () => Navigator.of(context).pop(false),
+                      backgroundColor: cancelSurface,
+                      borderColor: const Color(0xFFEAE5DD),
+                      foregroundColor: primaryText,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: NyanSpacing.space12),
                   Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      style: TextButton.styleFrom(
-                        minimumSize: const Size.fromHeight(54),
-                        foregroundColor: NyanOverlayStyle.destructiveText(context),
-                        backgroundColor: NyanOverlayStyle.destructiveSubtleBackground(
-                          context,
-                        ),
-                        side: BorderSide(
-                          color: NyanOverlayStyle.destructiveSubtleBorder(context),
-                          width: 0.75,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: NyanSpacing.space12,
-                          vertical: NyanSpacing.space8,
-                        ),
-                        textStyle: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            NyanOverlayStyle.buttonRadius,
-                          ),
-                        ),
-                      ),
-                      child: Text(confirmLabel),
+                    child: _DialogActionButton(
+                      label: confirmLabel,
+                      onTap: () => Navigator.of(context).pop(true),
+                      backgroundColor: removeFill,
+                      borderColor: removeFill,
+                      foregroundColor: Colors.white.withValues(alpha: 0.96),
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
@@ -201,29 +197,85 @@ class NyanConfirmDialog extends StatelessWidget {
 }
 
 class _DialogBadge extends StatelessWidget {
-  const _DialogBadge({required this.icon, required this.palette});
+  const _DialogBadge({
+    required this.icon,
+    required this.iconColor,
+    required this.backgroundColor,
+    required this.borderColor,
+  });
 
   final IconData icon;
-  final NyanOverlayTonePalette palette;
+  final Color iconColor;
+  final Color backgroundColor;
+  final Color borderColor;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: palette.iconSurface,
-        borderRadius: BorderRadius.circular(15),
+        color: backgroundColor,
+        shape: BoxShape.circle,
         border: Border.all(
-          color: palette.border.withValues(alpha: 0.3),
-          width: 0.65,
+          color: borderColor,
+          width: 1,
         ),
       ),
       child: SizedBox(
-        width: 30,
-        height: 30,
+        width: NyanOverlayStyle.dialogBadgeSize,
+        height: NyanOverlayStyle.dialogBadgeSize,
         child: Icon(
           icon,
-          size: 13,
-          color: palette.foreground,
+          size: 14,
+          color: iconColor,
+        ),
+      ),
+    );
+  }
+}
+
+class _DialogActionButton extends StatelessWidget {
+  const _DialogActionButton({
+    required this.label,
+    required this.onTap,
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.foregroundColor,
+    required this.fontWeight,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final Color backgroundColor;
+  final Color borderColor;
+  final Color foregroundColor;
+  final FontWeight fontWeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(NyanOverlayStyle.buttonRadius),
+        child: Ink(
+          height: NyanOverlayStyle.buttonHeight,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(NyanOverlayStyle.buttonRadius),
+            border: Border.all(color: borderColor, width: 1),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontSize: 16,
+                fontWeight: fontWeight,
+                color: foregroundColor,
+              ),
+            ),
+          ),
         ),
       ),
     );

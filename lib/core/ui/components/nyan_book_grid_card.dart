@@ -4,6 +4,7 @@ import '../../models/book.dart';
 import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_shadows.dart';
 import '../../theme/nyan_spacing.dart';
+import '../nyan_theme_context.dart';
 
 class NyanBookGridCard extends StatelessWidget {
   final Book book;
@@ -43,7 +44,7 @@ class NyanBookGridCard extends StatelessWidget {
                 width: isSelected ? 2 : 1,
               ),
               color: isSelected
-                  ? theme.colorScheme.primaryContainer.withValues(alpha: 0.2)
+                  ? context.selectionSurface
                   : theme.colorScheme.surfaceContainerHighest.withValues(
                       alpha: theme.brightness == Brightness.dark ? 0.28 : 0.45,
                     ),

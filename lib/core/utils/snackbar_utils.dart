@@ -13,7 +13,7 @@ class SnackBarUtils {
     String message, {
     VoidCallback? onAction,
     NyanSnackTone tone = NyanSnackTone.info,
-    double bottomOffset = 28,
+    double bottomOffset = 40,
     int maxLines = 2,
   }) {
     final overlay = Overlay.maybeOf(context, rootOverlay: true);
@@ -28,12 +28,12 @@ class SnackBarUtils {
 
     switch (tone) {
       case NyanSnackTone.success:
-        icon = Icons.check_rounded;
+        icon = Icons.done_rounded;
         noticeTone = NyanFloatingNoticeTone.success;
         duration = const Duration(milliseconds: 1900);
         break;
       case NyanSnackTone.error:
-        icon = Icons.error_outline_rounded;
+        icon = Icons.error_rounded;
         noticeTone = NyanFloatingNoticeTone.error;
         duration = const Duration(milliseconds: 2600);
         break;

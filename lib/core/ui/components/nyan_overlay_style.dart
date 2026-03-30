@@ -36,17 +36,60 @@ class NyanOverlayStyle {
   static const Duration loaderCycleDuration = Duration(milliseconds: 840);
   static const Curve overlayCurve = Curves.easeOutCubic;
   static const Curve overlayFadeCurve = Curves.easeOut;
-  static const double dialogRadius = 30;
-  static const double toastRadius = 999;
-  static const double buttonRadius = 19;
-  static const double optionRowRadius = 18;
-  static const double checkboxRadius = 8;
-  static const double noticeMaxWidthFactor = 0.74;
-  static const double noticeMaxWidthCap = 296;
 
-  static Color creamSurface(BuildContext context) => panelSurface(context);
+  static const double dialogRadius = 32;
+  static const double dialogHorizontalInset = 24;
+  static const double dialogMaxWidth = 700;
+  static const double dialogPadding = 24;
+  static const double dialogBadgeSize = 32;
+  static const double dialogBadgeIconSize = 16;
+  static const double dialogTitleGap = 14;
+  static const double dialogSubtitleGap = 8;
+  static const double dialogOptionGap = 22;
+  static const double dialogActionGap = 18;
+
+  static const double toastRadius = 999;
+  static const double noticeMaxWidthFactor = 0.76;
+  static const double noticeMaxWidthCap = 360;
+  static const double noticeMinHeight = 56;
+  static const double noticeHorizontalPadding = 18;
+  static const double noticeVerticalPadding = 12;
+  static const double noticeIconBadgeSize = 24;
+  static const double noticeIconSize = 18;
+  static const double noticeIconGap = 10;
+
+  static const double optionRowRadius = 24;
+  static const double optionTileMinHeight = 88;
+  static const double optionTileHorizontalPadding = 18;
+  static const double optionTileVerticalPadding = 16;
+
+  static const double buttonRadius = 18;
+  static const double buttonHeight = 56;
+  static const double checkboxRadius = 8;
+  static const double checkboxSize = 24;
+
+  static Color creamSurface(BuildContext context) {
+    final theme = Theme.of(context);
+    if (theme.brightness == Brightness.dark) {
+      return panelSurface(context);
+    }
+    return const Color(0xFFFCFBF7);
+  }
+
+  static Color panelSurface(BuildContext context) {
+    final theme = Theme.of(context);
+    if (theme.brightness == Brightness.dark) {
+      return Color.alphaBlend(
+        theme.colorScheme.surface.withValues(alpha: 0.92),
+        theme.scaffoldBackgroundColor,
+      );
+    }
+    return const Color(0xFFFCFBF7);
+  }
 
   static Color brandOlive(BuildContext context) => context.nyanTheme.primary;
+
+  static Color brandOliveDeep(BuildContext context) => context.nyanTheme.primaryDeep;
 
   static Color mutedBrandOlive(BuildContext context) {
     final nyanTheme = context.nyanTheme;
@@ -58,9 +101,9 @@ class NyanOverlayStyle {
   static Color destructiveAccent(BuildContext context) {
     final theme = Theme.of(context);
     if (theme.brightness == Brightness.dark) {
-      return const Color(0xFFD1A79A);
+      return const Color(0xFFB69A8D);
     }
-    return const Color(0xFF9A7567);
+    return const Color(0xFFA4877C);
   }
 
   static Color destructiveText(BuildContext context) {
@@ -68,34 +111,19 @@ class NyanOverlayStyle {
     return Color.lerp(
       destructiveAccent(context),
       theme.colorScheme.onSurface,
-      theme.brightness == Brightness.dark ? 0.12 : 0.18,
+      theme.brightness == Brightness.dark ? 0.16 : 0.2,
     )!;
   }
 
   static Color destructiveSubtleBackground(BuildContext context) {
-    final theme = Theme.of(context);
     return Color.alphaBlend(
-      destructiveAccent(context).withValues(
-        alpha: theme.brightness == Brightness.dark ? 0.12 : 0.055,
-      ),
+      destructiveAccent(context).withValues(alpha: 0.08),
       creamSurface(context),
     );
   }
 
   static Color destructiveSubtleBorder(BuildContext context) {
-    final theme = Theme.of(context);
-    return destructiveAccent(context).withValues(
-      alpha: theme.brightness == Brightness.dark ? 0.24 : 0.15,
-    );
-  }
-
-  static Color panelSurface(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return Color.alphaBlend(
-      theme.colorScheme.surface.withValues(alpha: isDark ? 0.92 : 0.988),
-      theme.scaffoldBackgroundColor,
-    );
+    return destructiveAccent(context).withValues(alpha: 0.14);
   }
 
   static Color recessedSurface(
@@ -104,16 +132,19 @@ class NyanOverlayStyle {
     double strength = 0.04,
   }) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final base = Color.alphaBlend(
-      theme.colorScheme.surface.withValues(alpha: isDark ? 0.12 : 0.68),
-      panelSurface(context),
-    );
+    final base = theme.brightness == Brightness.dark
+        ? Color.alphaBlend(
+            theme.colorScheme.surface.withValues(alpha: 0.18),
+            panelSurface(context),
+          )
+        : const Color(0xFFF8F6F0);
     if (seed == null) {
       return base;
     }
 
-    final resolvedStrength = isDark ? strength * 1.55 : strength;
+    final resolvedStrength = theme.brightness == Brightness.dark
+        ? strength * 1.4
+        : strength;
     return Color.alphaBlend(
       seed.withValues(alpha: resolvedStrength),
       base,
@@ -122,20 +153,16 @@ class NyanOverlayStyle {
 
   static Color divider(BuildContext context, {double? alpha}) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return theme.dividerColor.withValues(alpha: alpha ?? (isDark ? 0.2 : 0.42));
+    final nyanTheme = context.nyanTheme;
+    final base = Color.lerp(nyanTheme.divider, nyanTheme.textSecondary, 0.24)!;
+    return base.withValues(alpha: alpha ?? (theme.brightness == Brightness.dark ? 0.3 : 0.34));
   }
 
   static Color modalBarrierColor(BuildContext context) {
     final theme = Theme.of(context);
     final nyanTheme = context.nyanTheme;
-    final isDark = theme.brightness == Brightness.dark;
-    final tint = Color.lerp(
-      theme.shadowColor,
-      nyanTheme.textSecondary,
-      isDark ? 0.12 : 0.08,
-    )!;
-    return tint.withValues(alpha: isDark ? 0.56 : 0.2);
+    final tint = Color.lerp(theme.shadowColor, nyanTheme.textSecondary, 0.08)!;
+    return tint.withValues(alpha: theme.brightness == Brightness.dark ? 0.56 : 0.2);
   }
 
   static List<BoxShadow> dialogShadow(BuildContext context) {
@@ -144,17 +171,18 @@ class NyanOverlayStyle {
       return const [];
     }
 
-    final shadow = theme.shadowColor;
-    return [
+    return const [
       BoxShadow(
-        color: shadow.withValues(alpha: 0.032),
-        blurRadius: 34,
-        offset: const Offset(0, 16),
+        color: Color(0x14000000),
+        blurRadius: 28,
+        spreadRadius: 0,
+        offset: Offset(0, 10),
       ),
       BoxShadow(
-        color: shadow.withValues(alpha: 0.014),
-        blurRadius: 12,
-        offset: const Offset(0, 4),
+        color: Color(0x08000000),
+        blurRadius: 8,
+        spreadRadius: 0,
+        offset: Offset(0, 2),
       ),
     ];
   }
@@ -165,17 +193,18 @@ class NyanOverlayStyle {
       return const [];
     }
 
-    final shadow = theme.shadowColor;
-    return [
+    return const [
       BoxShadow(
-        color: shadow.withValues(alpha: 0.024),
-        blurRadius: 24,
-        offset: const Offset(0, 10),
+        color: Color(0x10000000),
+        blurRadius: 22,
+        spreadRadius: 0,
+        offset: Offset(0, 8),
       ),
       BoxShadow(
-        color: shadow.withValues(alpha: 0.012),
-        blurRadius: 10,
-        offset: const Offset(0, 3),
+        color: Color(0x06000000),
+        blurRadius: 8,
+        spreadRadius: 0,
+        offset: Offset(0, 2),
       ),
     ];
   }
@@ -186,17 +215,12 @@ class NyanOverlayStyle {
       return const [];
     }
 
-    final shadow = theme.shadowColor;
-    return [
+    return const [
       BoxShadow(
-        color: shadow.withValues(alpha: 0.011),
-        blurRadius: 10,
-        offset: const Offset(0, 4),
-      ),
-      BoxShadow(
-        color: shadow.withValues(alpha: 0.006),
-        blurRadius: 3,
-        offset: const Offset(0, 1),
+        color: Color(0x0D000000),
+        blurRadius: 18,
+        spreadRadius: 0,
+        offset: Offset(0, 6),
       ),
     ];
   }
@@ -218,31 +242,28 @@ class NyanOverlayStyle {
         nyanTheme.primaryDeep,
         isDark ? 0.24 : 0.12,
       )!,
-      NyanOverlayTone.danger => destructiveText(context),
+      NyanOverlayTone.danger => destructiveAccent(context),
     };
 
-    final toneSeed = tone == NyanOverlayTone.danger
-        ? destructiveAccent(context)
-        : base;
-
     final fill = Color.alphaBlend(
-      toneSeed.withValues(
+      base.withValues(
         alpha: switch (tone) {
-          NyanOverlayTone.neutral => isDark ? 0.08 : 0.024,
-          NyanOverlayTone.success => isDark ? 0.095 : 0.04,
-          NyanOverlayTone.info => isDark ? 0.08 : 0.032,
-          NyanOverlayTone.danger => isDark ? 0.085 : 0.03,
+          NyanOverlayTone.neutral => isDark ? 0.08 : 0.028,
+          NyanOverlayTone.success => isDark ? 0.095 : 0.052,
+          NyanOverlayTone.info => isDark ? 0.08 : 0.038,
+          NyanOverlayTone.danger => isDark ? 0.085 : 0.05,
         },
       ),
       surface,
     );
+
     final softFill = Color.alphaBlend(
-      toneSeed.withValues(
+      base.withValues(
         alpha: switch (tone) {
-          NyanOverlayTone.neutral => isDark ? 0.12 : 0.036,
-          NyanOverlayTone.success => isDark ? 0.15 : 0.056,
-          NyanOverlayTone.info => isDark ? 0.12 : 0.046,
-          NyanOverlayTone.danger => isDark ? 0.12 : 0.045,
+          NyanOverlayTone.neutral => isDark ? 0.12 : 0.04,
+          NyanOverlayTone.success => isDark ? 0.16 : 0.1,
+          NyanOverlayTone.info => isDark ? 0.12 : 0.06,
+          NyanOverlayTone.danger => isDark ? 0.12 : 0.08,
         },
       ),
       recessedSurface(context),
@@ -250,29 +271,26 @@ class NyanOverlayStyle {
 
     return NyanOverlayTonePalette(
       tint: base,
-      foreground: base.withValues(
-        alpha: switch (tone) {
-          NyanOverlayTone.neutral => isDark ? 0.78 : 0.66,
-          NyanOverlayTone.success => isDark ? 0.84 : 0.72,
-          NyanOverlayTone.info => isDark ? 0.8 : 0.68,
-          NyanOverlayTone.danger => isDark ? 0.84 : 0.76,
-        },
-      ),
-      secondary: nyanTheme.textSecondary.withValues(alpha: isDark ? 0.78 : 0.68),
+      foreground: switch (tone) {
+        NyanOverlayTone.neutral => nyanTheme.textSecondary.withValues(alpha: isDark ? 0.8 : 0.72),
+        NyanOverlayTone.success => brandOliveDeep(context),
+        NyanOverlayTone.info => brandOliveDeep(context).withValues(alpha: isDark ? 0.84 : 0.78),
+        NyanOverlayTone.danger => destructiveText(context),
+      },
+      secondary: nyanTheme.textSecondary.withValues(alpha: isDark ? 0.78 : 0.7),
       fill: fill,
       softFill: softFill,
-      border: tone == NyanOverlayTone.danger
-          ? destructiveSubtleBorder(context)
-          : base.withValues(alpha: isDark ? 0.2 : 0.11),
+      border: switch (tone) {
+        NyanOverlayTone.danger => destructiveSubtleBorder(context),
+        _ => divider(context, alpha: isDark ? 0.3 : 0.22),
+      },
       iconSurface: Color.alphaBlend(
-        toneSeed.withValues(
-          alpha: switch (tone) {
-            NyanOverlayTone.neutral => isDark ? 0.08 : 0.028,
-            NyanOverlayTone.success => isDark ? 0.09 : 0.04,
-            NyanOverlayTone.info => isDark ? 0.085 : 0.034,
-            NyanOverlayTone.danger => isDark ? 0.08 : 0.028,
-          },
-        ),
+        base.withValues(alpha: switch (tone) {
+          NyanOverlayTone.neutral => isDark ? 0.08 : 0.03,
+          NyanOverlayTone.success => isDark ? 0.1 : 0.1,
+          NyanOverlayTone.info => isDark ? 0.085 : 0.06,
+          NyanOverlayTone.danger => isDark ? 0.08 : 0.08,
+        }),
         surface,
       ),
     );
@@ -287,7 +305,7 @@ class NyanOverlayPanel extends StatelessWidget {
     this.radius = NyanOverlayStyle.dialogRadius,
     this.shadows,
     this.borderColor,
-    this.borderWidth = 0.7,
+    this.borderWidth = 1,
   });
 
   final Widget child;
@@ -304,7 +322,7 @@ class NyanOverlayPanel extends StatelessWidget {
         color: NyanOverlayStyle.panelSurface(context),
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(
-          color: borderColor ?? NyanOverlayStyle.divider(context, alpha: 0.34),
+          color: borderColor ?? NyanOverlayStyle.divider(context, alpha: 0.18),
           width: borderWidth,
         ),
         boxShadow: shadows ?? NyanOverlayStyle.dialogShadow(context),
