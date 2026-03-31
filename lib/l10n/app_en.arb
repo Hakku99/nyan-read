@@ -72,8 +72,9 @@
     }
   },
   "addNote": "Add Note",
-  "editNote": "Edit Note",
-  "addNoteHint": "Add your note here...",
+  "editNote": "Edit note",
+  "addNoteHint": "Add a note...",
+  "deleteNote": "Delete note",
   "delete": "Delete",
   "remove": "Remove",
   "cancel": "Cancel",

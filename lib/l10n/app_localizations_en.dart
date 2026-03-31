@@ -188,10 +188,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addNote => 'Add Note';
 
   @override
-  String get editNote => 'Edit Note';
+  String get editNote => 'Edit note';
 
   @override
-  String get addNoteHint => 'Add your note here...';
+  String get addNoteHint => 'Add a note...';
+
+  @override
+  String get deleteNote => 'Delete note';
 
   @override
   String get delete => 'Delete';

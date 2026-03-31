@@ -449,14 +449,20 @@ abstract class AppLocalizations {
   /// No description provided for @editNote.
   ///
   /// In en, this message translates to:
-  /// **'Edit Note'**
+  /// **'Edit note'**
   String get editNote;
 
   /// No description provided for @addNoteHint.
   ///
   /// In en, this message translates to:
-  /// **'Add your note here...'**
+  /// **'Add a note...'**
   String get addNoteHint;
+
+  /// No description provided for @deleteNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete note'**
+  String get deleteNote;
 
   /// No description provided for @delete.
   ///

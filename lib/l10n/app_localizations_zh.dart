@@ -190,7 +190,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get editNote => '编辑笔记';
 
   @override
-  String get addNoteHint => '在此添加您的笔记...';
+  String get addNoteHint => '写点什么…';
+
+  @override
+  String get deleteNote => '删除笔记';
 
   @override
   String get delete => '删除';
