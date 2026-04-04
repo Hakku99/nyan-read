@@ -32,6 +32,7 @@ Future<bool?> showNyanSecureEntryDialog(
 }) {
   return showDialog<bool>(
     context: context,
+    useRootNavigator: true,
     barrierDismissible: barrierDismissible,
     builder: (dialogContext) => NyanSecureEntryDialog(
       title: title,
@@ -70,26 +71,44 @@ class NyanSecureEntryDialog extends StatefulWidget {
 }
 
 class _NyanSecureEntryDialogState extends State<NyanSecureEntryDialog> {
+  late final List<TextEditingController> _controllers;
   bool _isSubmitting = false;
   bool _obscureText = true;
   String? _errorText;
 
+  @override
+  void initState() {
+    super.initState();
+    _controllers = [
+      for (final field in widget.fields)
+        TextEditingController(text: field.controller.text),
+    ];
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _controllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
   Future<void> _handleConfirm() async {
     if (_isSubmitting) return;
 
+    FocusScope.of(context).unfocus();
     setState(() {
       _isSubmitting = true;
       _errorText = null;
     });
 
-    final result = await widget.onConfirm([
-      for (final field in widget.fields) field.controller.text.trim(),
-    ]);
+    final values = [for (final controller in _controllers) controller.text.trim()];
+    final result = await widget.onConfirm(values);
 
     if (!mounted) return;
 
     if (result == null) {
-      Navigator.of(context).pop(true);
+      Navigator.of(context, rootNavigator: true).pop(true);
       return;
     }
 
@@ -97,6 +116,11 @@ class _NyanSecureEntryDialogState extends State<NyanSecureEntryDialog> {
       _isSubmitting = false;
       _errorText = result;
     });
+  }
+
+  void _handleCancel() {
+    FocusScope.of(context).unfocus();
+    Navigator.of(context, rootNavigator: true).pop(false);
   }
 
   @override
@@ -107,134 +131,137 @@ class _NyanSecureEntryDialogState extends State<NyanSecureEntryDialog> {
       insetPadding: const EdgeInsets.symmetric(horizontal: NyanSpacing.space24),
       backgroundColor: Colors.transparent,
       elevation: 0,
-      child: NyanInfoCard(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: SingleChildScrollView(
+          child: NyanInfoCard(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(NyanRadius.input),
-                  ),
-                  child: Icon(
-                    widget.icon,
-                    size: 22,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(width: NyanSpacing.space12),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: NyanSpacing.space4),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.title,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            height: 1.08,
-                          ),
-                        ),
-                        if (widget.description != null) ...[
-                          const SizedBox(height: NyanSpacing.space8),
-                          Text(
-                            widget.description!,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              height: 1.35,
-                              color: theme.textTheme.bodyMedium?.color?.withValues(
-                                alpha: 0.78,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: NyanSpacing.space16),
-            for (var index = 0; index < widget.fields.length; index++) ...[
-              _SecureTextField(
-                label: widget.fields[index].label,
-                controller: widget.fields[index].controller,
-                autofocus: widget.fields[index].autofocus,
-                obscureText: _obscureText,
-                textInputAction: widget.fields[index].textInputAction ??
-                    (index == widget.fields.length - 1
-                        ? TextInputAction.done
-                        : TextInputAction.next),
-                onSubmitted: index == widget.fields.length - 1
-                    ? (_) => _handleConfirm()
-                    : null,
-                onToggleVisibility: () {
-                  setState(() {
-                    _obscureText = !_obscureText;
-                  });
-                },
-              ),
-              if (index != widget.fields.length - 1)
-                const SizedBox(height: NyanSpacing.space12),
-            ],
-            if (_errorText != null) ...[
-              const SizedBox(height: NyanSpacing.space12),
-              Text(
-                _errorText!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.error.withValues(alpha: 0.88),
-                  height: 1.3,
-                ),
-              ),
-            ],
-            const SizedBox(height: NyanSpacing.space20),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: _isSubmitting
-                        ? null
-                        : () => Navigator.of(context).pop(false),
-                    style: TextButton.styleFrom(
-                      minimumSize: const Size.fromHeight(NyanSpacing.minTapTarget),
-                      shape: RoundedRectangleBorder(
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(NyanRadius.input),
                       ),
+                      child: Icon(
+                        widget.icon,
+                        size: 22,
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
-                    child: Text(widget.cancelLabel),
-                  ),
-                ),
-                const SizedBox(width: NyanSpacing.space12),
-                Expanded(
-                  child: NyanPrimaryButton(
-                    label: widget.confirmLabel,
-                    expanded: true,
-                    onPressed: _isSubmitting ? null : _handleConfirm,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: NyanSpacing.space16,
-                      vertical: NyanSpacing.space12,
-                    ),
-                    icon: _isSubmitting
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: theme.colorScheme.onPrimary,
+                    const SizedBox(width: NyanSpacing.space12),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: NyanSpacing.space4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.title,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                height: 1.08,
+                              ),
                             ),
-                          )
+                            if (widget.description != null) ...[
+                              const SizedBox(height: NyanSpacing.space8),
+                              Text(
+                                widget.description!,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  height: 1.35,
+                                  color: theme.textTheme.bodyMedium?.color?.withValues(
+                                    alpha: 0.78,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: NyanSpacing.space16),
+                for (var index = 0; index < widget.fields.length; index++) ...[
+                  _SecureTextField(
+                    label: widget.fields[index].label,
+                    controller: _controllers[index],
+                    autofocus: widget.fields[index].autofocus,
+                    obscureText: _obscureText,
+                    textInputAction: widget.fields[index].textInputAction ??
+                        (index == widget.fields.length - 1
+                            ? TextInputAction.done
+                            : TextInputAction.next),
+                    onSubmitted: index == widget.fields.length - 1
+                        ? (_) => _handleConfirm()
                         : null,
+                    onToggleVisibility: () {
+                      setState(() {
+                        _obscureText = !_obscureText;
+                      });
+                    },
                   ),
+                  if (index != widget.fields.length - 1)
+                    const SizedBox(height: NyanSpacing.space12),
+                ],
+                if (_errorText != null) ...[
+                  const SizedBox(height: NyanSpacing.space12),
+                  Text(
+                    _errorText!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error.withValues(alpha: 0.88),
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: NyanSpacing.space20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: _isSubmitting ? null : _handleCancel,
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size.fromHeight(NyanSpacing.minTapTarget),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(NyanRadius.input),
+                          ),
+                        ),
+                        child: Text(widget.cancelLabel),
+                      ),
+                    ),
+                    const SizedBox(width: NyanSpacing.space12),
+                    Expanded(
+                      child: NyanPrimaryButton(
+                        label: widget.confirmLabel,
+                        expanded: true,
+                        onPressed: _isSubmitting ? null : _handleConfirm,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: NyanSpacing.space16,
+                          vertical: NyanSpacing.space12,
+                        ),
+                        icon: _isSubmitting
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: theme.colorScheme.onPrimary,
+                                ),
+                              )
+                            : null,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

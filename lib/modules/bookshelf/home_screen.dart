@@ -59,7 +59,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 1, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -397,30 +397,34 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       if (!mounted) return;
 
       if (!hasPass) {
-        _showSetPasswordDialog(context);
+        await _showSetPasswordDialog(this.context);
       } else {
-        _showEnterPasswordDialog(context);
+        await _showEnterPasswordDialog(this.context);
       }
     }
   }
 
-  void _showSetPasswordDialog(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
-    final passController = TextEditingController();
-    final confirmController = TextEditingController();
+  void _unlockPrivateShelfAfterRouteSettles() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      this.context.read<FeatureManager>().unlockPrivateShelf();
+    });
+  }
 
+  Future<void> _showSetPasswordDialog(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
     final created = await showNyanSecureEntryDialog(
       context,
       title: loc.setPrivacyPassword,
       fields: [
         NyanSecureFieldConfig(
           label: loc.password,
-          controller: passController,
+          controller: TextEditingController(),
           autofocus: true,
         ),
         NyanSecureFieldConfig(
           label: loc.confirmPassword,
-          controller: confirmController,
+          controller: TextEditingController(),
         ),
       ],
       confirmLabel: loc.save,
@@ -434,25 +438,20 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       },
     );
 
-    passController.dispose();
-    confirmController.dispose();
-
     if (created == true && mounted) {
-      _showEnterPasswordDialog(context);
+      _unlockPrivateShelfAfterRouteSettles();
     }
   }
 
-  void _showEnterPasswordDialog(BuildContext context) async {
+  Future<void> _showEnterPasswordDialog(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
-    final passController = TextEditingController();
-
     final unlocked = await showNyanSecureEntryDialog(
       context,
       title: loc.unlockPrivacyShelfTitle,
       fields: [
         NyanSecureFieldConfig(
           label: loc.password,
-          controller: passController,
+          controller: TextEditingController(),
           autofocus: true,
         ),
       ],
@@ -464,10 +463,8 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       },
     );
 
-    passController.dispose();
-
     if (unlocked == true && mounted) {
-      context.read<FeatureManager>().unlockPrivateShelf();
+      _unlockPrivateShelfAfterRouteSettles();
     }
   }
 
@@ -693,6 +690,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     final loc = AppLocalizations.of(context)!;
     final continueReadingBook = _resolveContinueReadingBook(activeBooks);
     final theme = Theme.of(context);
+    final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
     const useCompactContinueReading = false;
 
     return Column(
@@ -752,7 +750,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
                       icon: Icons.lock,
                     ),
                 ],
-                selectedIndex: _tabController.index,
+                selectedIndex: selectedTabIndex,
                 onTabChanged: (index) {
                   _tabController.animateTo(index);
                   setState(() {});
@@ -829,17 +827,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     // Logic: Only show Privacy Tab if Pro AND Unlocked
     final showPrivacyTab =
         featureManager.isPro && featureManager.isPrivateShelfUnlocked;
-    final targetTabLength = showPrivacyTab ? 2 : 1;
-
-    // Dispose and recreate if length changes
-    if (_tabController.length != targetTabLength) {
-      _tabController.dispose();
-      _tabController = TabController(length: targetTabLength, vsync: this);
-      // If we reduced tabs, we are likely already at 0, but good to ensure
-      if (_tabController.index >= targetTabLength) {
-        _tabController.index = 0;
-      }
-    }
+    final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
 
     return Scaffold(
       appBar: isSelectionMode
@@ -867,7 +855,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
               }
 
               final activeBooks =
-                  showPrivacyTab && _tabController.index == 1
+                  showPrivacyTab && selectedTabIndex == 1
                       ? state.priv
                       : state.pub;
 

@@ -414,16 +414,6 @@ class _SettingsPageState extends State<SettingsPage> {
                       setLocalState(() {});
                     },
                   ),
-                  if (featureManager.isPro) ...[
-                    const _SettingsDivider(),
-                    _SwitchRow(
-                      title: loc.lockPrivateShelf,
-                      value: true,
-                      onChanged: (value) {
-                        // TODO: Implement lock private shelf
-                      },
-                    ),
-                  ],
                 ],
               );
             },

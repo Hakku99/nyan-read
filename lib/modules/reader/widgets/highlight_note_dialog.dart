@@ -139,13 +139,13 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
                   ],
                 ),
                 if (excerpt != null && excerpt.isNotEmpty) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   _HighlightPreviewCard(
                     text: excerpt,
                     highlightColor: highlightColor,
                   ),
                 ],
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 _ColorPickerRow(
                   colors: HighlightColors.all,
                   selectedColorCode: _selectedColorCode ?? HighlightColors.yellow,
@@ -155,13 +155,13 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
                     });
                   },
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
                 _NoteInputCard(
                   controller: _controller,
                   focusNode: _focusNode,
                   hintText: loc.addNoteHint,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 _DialogActionRow(
                   cancelLabel: loc.cancel,
                   saveLabel: loc.save,
@@ -184,26 +184,26 @@ class _HighlightNoteDialogTokens {
 
   static const double outerInset = 20;
   static const double maxWidth = 560;
-  static const double surfaceRadius = 32;
-  static const double padding = 20;
-  static const double pickerHeight = 44;
+  static const double surfaceRadius = 30;
+  static const double padding = 18;
+  static const double pickerHeight = 42;
   static const double pickerRadius = 20;
-  static const double pickerSwatchSize = 40;
+  static const double pickerSwatchSize = 38;
   static const double pickerInnerSwatchSize = 14;
-  static const double previewRadius = 18;
-  static const double previewMinHeight = 44;
-  static const double inputMinHeight = 88;
+  static const double previewRadius = 20;
+  static const double previewMinHeight = 52;
+  static const double inputMinHeight = 82;
   static const double inputRadius = 22;
-  static const double inputPadding = 16;
-  static const double iconButtonTapSize = 40;
-  static const double iconButtonVisualSize = 28;
-  static const double buttonHeight = 52;
+  static const double inputPadding = 15;
+  static const double iconButtonTapSize = 36;
+  static const double iconButtonVisualSize = 26;
+  static const double buttonHeight = 50;
   static const double buttonRadius = 17;
   static const double dialogBorderAlpha = 0.085;
-  static const double pickerBorderAlpha = 0.028;
-  static const double previewBorderAlpha = 0.05;
-  static const double inputBorderAlpha = 0.09;
-  static const double deleteBorderAlpha = 0.05;
+  static const double pickerBorderAlpha = 0.022;
+  static const double previewBorderAlpha = 0.06;
+  static const double inputBorderAlpha = 0.105;
+  static const double deleteBorderAlpha = 0.04;
   static const double cancelBorderAlpha = 0.11;
 }
 
@@ -245,22 +245,22 @@ class _HighlightDialogPalette {
 
   static Color pickerSurface(BuildContext context) {
     return Color.alphaBlend(
-      context.nyanTheme.textSecondary.withValues(alpha: 0.008),
-      const Color(0xFFF3EFE6),
+      context.nyanTheme.textSecondary.withValues(alpha: 0.006),
+      const Color(0xFFF4F0E8),
     );
   }
 
   static Color previewSurface(BuildContext context) {
     return Color.alphaBlend(
       context.nyanTheme.textSecondary.withValues(alpha: 0.012),
-      const Color(0xFFF4EFE5),
+      const Color(0xFFF3EEE3),
     );
   }
 
   static Color inputSurface(BuildContext context) {
     return Color.alphaBlend(
-      context.nyanTheme.textSecondary.withValues(alpha: 0.012),
-      const Color(0xFFF7F2E8),
+      context.nyanTheme.textSecondary.withValues(alpha: 0.015),
+      const Color(0xFFF6F0E5),
     );
   }
 
@@ -268,7 +268,7 @@ class _HighlightDialogPalette {
     return Color.lerp(
       dialogSurface(context),
       displayHighlight(highlightColor),
-      isYellowHighlight(highlightColor) ? 0.12 : 0.085,
+      isYellowHighlight(highlightColor) ? 0.1 : 0.075,
     )!;
   }
 
@@ -298,47 +298,47 @@ class _HighlightDialogPalette {
 
   static Color displayHighlight(Color color) {
     if (isYellowHighlight(color)) {
-      return const Color(0xFFD9C069);
+      return const Color(0xFFD8C06B);
     }
     if (color.blue > color.red && color.blue > color.green) {
-      return const Color(0xFFB8C3C7);
+      return const Color(0xFFB9C1C2);
     }
     if (color.red > 220 && color.blue > 150) {
-      return const Color(0xFFD0A0A9);
+      return const Color(0xFFCDA2A8);
     }
     if (color.red > 220 && color.green > 150 && color.blue < 150) {
-      return const Color(0xFFDCB489);
+      return const Color(0xFFDBB686);
     }
     if (color.green > color.red && color.green > color.blue) {
-      return const Color(0xFFA7C290);
+      return const Color(0xFFA9C08E);
     }
     return Color.alphaBlend(const Color(0x55FFF8EF), color);
   }
 
   static Color previewSurfaceFor(BuildContext context, Color highlightColor) {
     final base = previewSurface(context);
-    final blend = isYellowHighlight(highlightColor) ? 0.018 : 0.006;
+    final blend = isYellowHighlight(highlightColor) ? 0.02 : 0.008;
     return Color.lerp(base, displayHighlight(highlightColor), blend)!;
   }
 
   static Color previewBarColor(Color highlightColor) {
     if (isYellowHighlight(highlightColor)) {
-      return const Color(0xFFD6BB4E);
+      return const Color(0xFFD4BA53);
     }
-    return displayHighlight(highlightColor).withValues(alpha: 0.58);
+    return displayHighlight(highlightColor).withValues(alpha: 0.54);
   }
 
   static Color pickerRingColor(Color highlightColor) {
     final fill = displayHighlight(highlightColor);
     return fill.withValues(
-      alpha: isYellowHighlight(highlightColor) ? 0.22 : 0.18,
+      alpha: isYellowHighlight(highlightColor) ? 0.2 : 0.17,
     );
   }
 
   static Color pickerOuterSurface(BuildContext context, Color highlightColor) {
     final base = pickerSurface(context);
     final fill = displayHighlight(highlightColor);
-    final blend = isYellowHighlight(highlightColor) ? 0.14 : 0.1;
+    final blend = isYellowHighlight(highlightColor) ? 0.13 : 0.095;
     return Color.lerp(base, fill, blend)!;
   }
 
@@ -353,7 +353,7 @@ class _HighlightDialogPalette {
   static Color pickerShadowColor(Color highlightColor) {
     final fill = displayHighlight(highlightColor);
     return fill.withValues(
-      alpha: isYellowHighlight(highlightColor) ? 0.05 : 0.035,
+      alpha: isYellowHighlight(highlightColor) ? 0.045 : 0.03,
     );
   }
 
@@ -374,7 +374,7 @@ class _SelectedColorBadge extends StatelessWidget {
     final iconColor = Color.lerp(
       context.nyanTheme.textPrimary.withValues(alpha: 0.7),
       _HighlightDialogPalette.displayHighlight(color),
-      0.18,
+      0.16,
     )!;
 
     return DecoratedBox(
@@ -387,11 +387,11 @@ class _SelectedColorBadge extends StatelessWidget {
         ),
       ),
       child: SizedBox(
-        width: 26,
-        height: 26,
+        width: 24,
+        height: 24,
         child: Icon(
           Icons.edit_note_rounded,
-          size: 11,
+          size: 12,
           color: iconColor,
         ),
       ),
@@ -421,13 +421,13 @@ class _ColorPickerRow extends StatelessWidget {
 
     return Container(
       height: _HighlightNoteDialogTokens.pickerHeight,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color.lerp(surface, Colors.white, 0.12)!,
+            Color.lerp(surface, Colors.white, 0.1)!,
             surface,
           ],
         ),
@@ -453,7 +453,7 @@ class _ColorPickerRow extends StatelessWidget {
                 onTap: () => onSelected(colors[index]),
               ),
               if (index != colors.length - 1)
-                const SizedBox(width: NyanSpacing.space8),
+                const SizedBox(width: 10),
             ],
           ],
         ),
@@ -491,9 +491,9 @@ class _HighlightColorSwatch extends StatelessWidget {
         ? [
             BoxShadow(
               color: _HighlightDialogPalette.pickerShadowColor(color),
-              blurRadius: 5,
+              blurRadius: 4,
               spreadRadius: 0,
-              offset: const Offset(0, 1),
+              offset: const Offset(0, 0.8),
             ),
           ]
         : const <BoxShadow>[];
@@ -516,14 +516,14 @@ class _HighlightColorSwatch extends StatelessWidget {
           ),
           child: Center(
             child: Container(
-              width: isSelected ? 28 : 22,
-              height: isSelected ? 28 : 22,
+              width: isSelected ? 26 : 20,
+              height: isSelected ? 26 : 20,
               decoration: BoxDecoration(
                 color: isSelected ? liftSurface : Colors.transparent,
                 shape: BoxShape.circle,
                 border: isSelected
                     ? Border.all(
-                        color: creamSurface.withValues(alpha: 0.9),
+                        color: creamSurface.withValues(alpha: 0.92),
                         width: 0.9,
                       )
                     : null,
@@ -541,7 +541,7 @@ class _HighlightColorSwatch extends StatelessWidget {
                   child: isSelected
                       ? Icon(
                           Icons.check_rounded,
-                          size: 11,
+                          size: 10,
                           color: creamSurface.withValues(alpha: 0.98),
                         )
                       : null,
@@ -579,16 +579,16 @@ class _HighlightPreviewCard extends StatelessWidget {
       constraints: const BoxConstraints(
         minHeight: _HighlightNoteDialogTokens.previewMinHeight,
       ),
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
             Color.lerp(
               _HighlightDialogPalette.previewSurfaceFor(context, highlightColor),
               Colors.white,
-              0.1,
+              0.12,
             )!,
             _HighlightDialogPalette.previewSurface(context),
           ],
@@ -604,34 +604,29 @@ class _HighlightPreviewCard extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 20,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 2),
-              child: Icon(
-                Icons.format_quote_rounded,
-                size: 15,
-                color: quoteColor.withValues(alpha: 0.88),
-              ),
+          Padding(
+            padding: const EdgeInsets.only(left: 2),
+            child: Icon(
+              Icons.format_quote_rounded,
+              size: 16,
+              color: quoteColor.withValues(alpha: 0.9),
             ),
           ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 2),
-              child: Text(
-                text,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  height: 1.32,
-                  color: primaryText.withValues(alpha: 0.88),
-                ),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(left: 2, right: 2),
+            child: Text(
+              text,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                height: 1.34,
+                color: primaryText.withValues(alpha: 0.9),
               ),
             ),
           ),
@@ -680,16 +675,16 @@ class _NoteInputCard extends StatelessWidget {
           ),
           padding: const EdgeInsets.fromLTRB(
             _HighlightNoteDialogTokens.inputPadding,
-            13,
+            12,
             _HighlightNoteDialogTokens.inputPadding,
-            13,
+            12,
           ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
               colors: [
-                Color.lerp(inputSurface, Colors.white, 0.12)!,
+                Color.lerp(inputSurface, Colors.white, 0.08)!,
                 inputSurface,
               ],
             ),
@@ -699,23 +694,23 @@ class _NoteInputCard extends StatelessWidget {
             border: Border.all(color: borderColor, width: 1),
           ),
           child: SizedBox(
-            height: _HighlightNoteDialogTokens.inputMinHeight - 26,
+            height: _HighlightNoteDialogTokens.inputMinHeight - 24,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (!hasText && !isFocused)
                   IgnorePointer(
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 2, bottom: 2),
+                      padding: const EdgeInsets.only(top: 1, bottom: 2),
                       child: Text(
                         hintText,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
-                          height: 1.48,
+                          height: 1.44,
                           letterSpacing: 0.05,
                           color: context.nyanTheme.textSecondary.withValues(
-                            alpha: 0.7,
+                            alpha: 0.74,
                           ),
                         ),
                       ),
@@ -734,9 +729,9 @@ class _NoteInputCard extends StatelessWidget {
                     minLines: null,
                     scrollPadding: const EdgeInsets.only(bottom: 120),
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      fontSize: 15.5,
+                      fontSize: 15,
                       fontWeight: FontWeight.w400,
-                      height: 1.44,
+                      height: 1.42,
                       color: primaryText,
                     ),
                     decoration: const InputDecoration(
@@ -795,7 +790,7 @@ class _DeleteIconButton extends StatelessWidget {
                 height: _HighlightNoteDialogTokens.iconButtonVisualSize,
                 decoration: BoxDecoration(
                   color: backgroundColor,
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: _HighlightDialogPalette.surfaceBorder(
                       context,
@@ -807,7 +802,7 @@ class _DeleteIconButton extends StatelessWidget {
                 child: Center(
                   child: Icon(
                     Icons.delete_outline_rounded,
-                    size: 14,
+                    size: 13,
                     color: color.withValues(alpha: 0.86),
                   ),
                 ),
@@ -843,9 +838,9 @@ class _DialogActionRow extends StatelessWidget {
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 320;
         final isTight = constraints.maxWidth < 360;
-        final gap = isTight ? NyanSpacing.space8 : NyanSpacing.space12;
-        final cancelPadding = isTight ? 18.0 : 22.0;
-        final savePadding = isTight ? 22.0 : 26.0;
+        final gap = isTight ? NyanSpacing.space8 : 10.0;
+        final cancelPadding = isTight ? 18.0 : 20.0;
+        final savePadding = isTight ? 22.0 : 24.0;
         final buttonGroup = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -853,7 +848,7 @@ class _DialogActionRow extends StatelessWidget {
               label: cancelLabel,
               onTap: onCancel,
               backgroundColor: Color.alphaBlend(
-                context.nyanTheme.textSecondary.withValues(alpha: 0.022),
+                context.nyanTheme.textSecondary.withValues(alpha: 0.026),
                 surfaceColor,
               ),
               borderColor: _HighlightDialogPalette.surfaceBorder(
