@@ -148,7 +148,8 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
                 const SizedBox(height: 12),
                 _ColorPickerRow(
                   colors: HighlightColors.all,
-                  selectedColorCode: _selectedColorCode ?? HighlightColors.yellow,
+                  selectedColorCode:
+                      _selectedColorCode ?? HighlightColors.yellow,
                   onSelected: (color) {
                     setState(() {
                       _selectedColorCode = color;
@@ -191,7 +192,7 @@ class _HighlightNoteDialogTokens {
   static const double pickerSwatchSize = 38;
   static const double pickerInnerSwatchSize = 14;
   static const double previewRadius = 20;
-  static const double previewMinHeight = 52;
+  static const double previewMinHeight = 48;
   static const double inputMinHeight = 82;
   static const double inputRadius = 22;
   static const double inputPadding = 15;
@@ -452,8 +453,7 @@ class _ColorPickerRow extends StatelessWidget {
                 isSelected: colors[index] == selectedColorCode,
                 onTap: () => onSelected(colors[index]),
               ),
-              if (index != colors.length - 1)
-                const SizedBox(width: 10),
+              if (index != colors.length - 1) const SizedBox(width: 10),
             ],
           ],
         ),
@@ -579,14 +579,15 @@ class _HighlightPreviewCard extends StatelessWidget {
       constraints: const BoxConstraints(
         minHeight: _HighlightNoteDialogTokens.previewMinHeight,
       ),
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 9, 16, 9),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
             Color.lerp(
-              _HighlightDialogPalette.previewSurfaceFor(context, highlightColor),
+              _HighlightDialogPalette.previewSurfaceFor(
+                  context, highlightColor),
               Colors.white,
               0.12,
             )!,
@@ -604,28 +605,30 @@ class _HighlightPreviewCard extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 2),
-            child: Icon(
-              Icons.format_quote_rounded,
-              size: 16,
-              color: quoteColor.withValues(alpha: 0.9),
+          SizedBox(
+            width: 18,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(
+                Icons.format_quote_rounded,
+                size: 15,
+                color: quoteColor.withValues(alpha: 0.88),
+              ),
             ),
           ),
-          const SizedBox(height: 4),
-          Padding(
-            padding: const EdgeInsets.only(left: 2, right: 2),
+          const SizedBox(width: 6),
+          Expanded(
             child: Text(
               text,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodyMedium?.copyWith(
-                fontSize: 14,
+                fontSize: 13.8,
                 fontWeight: FontWeight.w500,
-                height: 1.34,
+                height: 1.36,
                 color: primaryText.withValues(alpha: 0.9),
               ),
             ),
