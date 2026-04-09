@@ -1,4 +1,0 @@
-interface:
-  display_name: "Nyan Read UI Guardian"
-  short_description: "Enforce calm, token-driven Flutter UI patterns for Nyan Read."
-  default_prompt: "Use $nyan-read-ui-guardian to implement or review a Nyan Read Flutter UI surface."

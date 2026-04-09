@@ -1,4 +1,0 @@
-interface:
-  display_name: "Nyan Read Reader Engine Analysis"
-  short_description: "Flutter reader-engine analysis for file-to-page pipelines."
-  default_prompt: "Use $nyan-read-reader-engine-analysis to analyze the reader pipeline in this Flutter ebook repository."

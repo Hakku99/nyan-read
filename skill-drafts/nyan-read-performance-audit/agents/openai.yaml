@@ -1,4 +1,0 @@
-interface:
-  display_name: "Nyan Read Performance Audit"
-  short_description: "Flutter performance audit for reader-heavy runtime paths."
-  default_prompt: "Use $nyan-read-performance-audit to audit this Flutter app for reader-related performance risks."
