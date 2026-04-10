@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:nyan_read/modules/reader/widgets/reader_menu.dart';
+import 'package:nyan_read/core/ui/components/nyan_confirm_dialog.dart';
+import 'package:nyan_read/core/ui/components/nyan_overlay_style.dart';
 import 'package:nyan_read/core/theme/theme_manager.dart';
 import 'package:nyan_read/modules/reader/reader_page.dart';
 import 'package:nyan_read/core/theme/theme_presets.dart';
@@ -259,6 +261,18 @@ class MockReaderController extends ChangeNotifier
   List<Highlight> get highlights => [];
 
   @override
+  Future<void> resetReaderAppearanceDefaults() async {}
+
+  @override
+  Future<void> resetReaderDisplayDefaults() async {}
+
+  @override
+  void resetReaderTextDefaults() {}
+
+  @override
+  void resetReaderThemeDefaults() {}
+
+  @override
   Future<bool> didPopRoute() => Future.value(false);
   @override
   Future<bool> didPushRoute(String route) => Future.value(false);
@@ -333,6 +347,7 @@ void main() {
         systemAdapter: FakeSystemBrightnessAdapter(),
       ),
     );
+    await brightnessController.initialize();
 
     final mockController = MockReaderController();
     final mockThemeManager = MockThemeManager();
@@ -346,6 +361,7 @@ void main() {
           ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
         ],
         child: MaterialApp(
+          theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
@@ -361,12 +377,23 @@ void main() {
 
     await tester.pumpAndSettle();
 
+    final loc = AppLocalizations.of(tester.element(find.byType(ReaderMenu)))!;
+
+    expect(find.text(loc.readingSettings), findsWidgets);
+    expect(find.text('Reset Display'), findsOneWidget);
+    expect(find.text(loc.readerResetAll), findsOneWidget);
+    expect(find.byIcon(Icons.restart_alt_rounded), findsOneWidget);
+    expect(find.text(loc.readerResetCurrentTabHint), findsNothing);
     expect(find.byIcon(Icons.wb_sunny_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.brightness_auto), findsOneWidget);
+    expect(find.byIcon(Icons.brightness_auto_rounded), findsOneWidget);
+    expect(find.byKey(const Key('reader-menu-display-panel')), findsOneWidget);
+    expect(find.byKey(const Key('reader-menu-tool-dock')), findsNothing);
+    expect(find.text(loc.fontSize), findsNothing);
+    expect(find.text(loc.themeCream), findsNothing);
     expect(find.byType(Slider), findsWidgets);
   });
 
-  testWidgets('ReaderMenu shows closeable bookmark feedback',
+  testWidgets('ReaderMenu switches between compact setting panels',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1200, 1800);
     tester.view.devicePixelRatio = 1.0;
@@ -384,6 +411,7 @@ void main() {
         systemAdapter: FakeSystemBrightnessAdapter(),
       ),
     );
+    await brightnessController.initialize();
 
     final mockController = MockReaderController();
     final mockThemeManager = MockThemeManager();
@@ -396,6 +424,7 @@ void main() {
           ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
         ],
         child: MaterialApp(
+          theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
@@ -411,24 +440,28 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    final bookmarkButton = find.byIcon(Icons.bookmark_border_rounded);
-    await tester.ensureVisible(bookmarkButton);
+    final loc = AppLocalizations.of(tester.element(find.byType(ReaderMenu)))!;
+
+    expect(find.byKey(const Key('reader-menu-display-panel')), findsOneWidget);
+    expect(find.text(loc.fontSize), findsNothing);
+    expect(find.text(loc.themeCream), findsNothing);
+
     await tester.pumpAndSettle();
 
-    await tester.tap(bookmarkButton);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-
-    expect(find.text('Bookmark Added!'), findsOneWidget);
-    final closeButton = find.byIcon(Icons.close);
-    expect(closeButton, findsOneWidget);
-
-    await tester.ensureVisible(closeButton);
-    await tester.pumpAndSettle();
-    await tester.tap(closeButton);
+    await tester.tap(find.text('Text'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Bookmark Added!'), findsNothing);
+    expect(find.text(loc.fontSize), findsOneWidget);
+    expect(find.text(loc.lineHeight), findsOneWidget);
+    expect(find.byKey(const Key('reader-menu-typography-wide')), findsOneWidget);
+    expect(find.text('Reset Text'), findsOneWidget);
+
+    await tester.tap(find.text('Theme'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(loc.themeCream), findsOneWidget);
+    expect(find.byKey(const Key('reader-menu-theme-grid')), findsOneWidget);
+    expect(find.text('Reset Theme'), findsOneWidget);
   });
 
   testWidgets(
@@ -443,6 +476,7 @@ void main() {
         systemAdapter: FakeSystemBrightnessAdapter(),
       ),
     );
+    await brightnessController.initialize();
 
     final mockController = MockReaderController(
       engine: FakeReaderEngine(
@@ -466,6 +500,7 @@ void main() {
           ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
         ],
         child: MaterialApp(
+          theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
@@ -483,17 +518,17 @@ void main() {
 
     final loc = AppLocalizations.of(tester.element(find.byType(ReaderMenu)))!;
 
+    expect(find.text('Text'), findsNothing);
+    expect(find.text('Theme'), findsNothing);
     expect(find.text(loc.fontSize), findsNothing);
     expect(find.text(loc.lineHeight), findsNothing);
     expect(find.text(loc.themeCream), findsNothing);
-    expect(find.byIcon(Icons.edit_note_rounded), findsNothing);
-    expect(find.byIcon(Icons.toc_rounded), findsNothing);
     expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
     expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
   });
 
-
-  testWidgets('ReaderMenu shows synthetic chapter navigation controls',
+  testWidgets(
+      'ReaderMenu omits chapter chevrons (progress lives on reader overlay)',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = ReaderPreferencesService();
@@ -504,6 +539,7 @@ void main() {
         systemAdapter: FakeSystemBrightnessAdapter(),
       ),
     );
+    await brightnessController.initialize();
 
     final mockController = MockReaderController(
       engine: FakeReaderEngine(
@@ -527,6 +563,7 @@ void main() {
           ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
         ],
         child: MaterialApp(
+          theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
@@ -544,13 +581,13 @@ void main() {
 
     final loc = AppLocalizations.of(tester.element(find.byType(ReaderMenu)))!;
 
+    expect(find.text('Text'), findsNothing);
+    expect(find.text('Theme'), findsNothing);
     expect(find.text(loc.fontSize), findsNothing);
     expect(find.text(loc.lineHeight), findsNothing);
     expect(find.text(loc.themeCream), findsNothing);
-    expect(find.byIcon(Icons.edit_note_rounded), findsNothing);
-    expect(find.byIcon(Icons.toc_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
   });
 
   testWidgets('ReaderMenu shows capability-gated controls for TXT-like engines',
@@ -564,6 +601,7 @@ void main() {
         systemAdapter: FakeSystemBrightnessAdapter(),
       ),
     );
+    await brightnessController.initialize();
 
     final mockController = MockReaderController();
     final mockThemeManager = MockThemeManager();
@@ -576,6 +614,7 @@ void main() {
           ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
         ],
         child: MaterialApp(
+          theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
@@ -593,12 +632,291 @@ void main() {
 
     final loc = AppLocalizations.of(tester.element(find.byType(ReaderMenu)))!;
 
+    expect(find.byKey(const Key('reader-menu-display-panel')), findsOneWidget);
+    expect(find.text(loc.fontSize), findsNothing);
+    expect(find.text(loc.lineHeight), findsNothing);
+    expect(find.text(loc.themeCream), findsNothing);
+    expect(find.byKey(const Key('reader-menu-theme-grid')), findsNothing);
+    expect(find.byKey(const Key('reader-menu-tool-dock')), findsNothing);
+    expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
+
+    await tester.tap(find.text('Text'));
+    await tester.pumpAndSettle();
+
     expect(find.text(loc.fontSize), findsOneWidget);
     expect(find.text(loc.lineHeight), findsOneWidget);
+
+    await tester.tap(find.text('Theme'));
+    await tester.pumpAndSettle();
+
     expect(find.text(loc.themeCream), findsOneWidget);
-    expect(find.byIcon(Icons.edit_note_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.toc_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+    expect(find.byKey(const Key('reader-menu-theme-grid')), findsOneWidget);
+  });
+
+  testWidgets('ReaderMenu stacks typography cards on narrow phones',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(320, 740);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: FakeSystemBrightnessAdapter(),
+      ),
+    );
+    await brightnessController.initialize();
+
+    final mockController = MockReaderController();
+    final mockThemeManager = MockThemeManager();
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<ReaderController>.value(value: mockController),
+          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
+        ],
+        child: MaterialApp(
+          theme: mockThemeManager.currentThemeData,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            key: scaffoldKey,
+            body: ReaderMenu(
+              scaffoldKey: scaffoldKey,
+              brightnessController: brightnessController,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Text'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('reader-menu-typography-compact')), findsOneWidget);
+    expect(find.byKey(const Key('reader-menu-typography-wide')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ReaderMenu follow-system chip toggles visual state',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: FakeSystemBrightnessAdapter(),
+      ),
+    );
+    await brightnessController.initialize();
+
+    final mockController = MockReaderController();
+    final mockThemeManager = MockThemeManager();
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<ReaderController>.value(value: mockController),
+          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
+        ],
+        child: MaterialApp(
+          theme: mockThemeManager.currentThemeData,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            key: scaffoldKey,
+            body: ReaderMenu(
+              scaffoldKey: scaffoldKey,
+              brightnessController: brightnessController,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.brightness_auto_rounded), findsOneWidget);
+    await tester.tap(find.text('Auto'));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.brightness_auto_outlined), findsOneWidget);
+  });
+
+  testWidgets('ReaderMenu keeps reset visible on common phone heights',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: FakeSystemBrightnessAdapter(),
+      ),
+    );
+    await brightnessController.initialize();
+
+    final mockController = MockReaderController();
+    final mockThemeManager = MockThemeManager();
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<ReaderController>.value(value: mockController),
+          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
+        ],
+        child: MaterialApp(
+          theme: mockThemeManager.currentThemeData,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            key: scaffoldKey,
+            body: ReaderMenu(
+              scaffoldKey: scaffoldKey,
+              brightnessController: brightnessController,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reset Display'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Reader settings sheet dismisses on barrier tap',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: FakeSystemBrightnessAdapter(),
+      ),
+    );
+    await brightnessController.initialize();
+
+    final mockController = MockReaderController();
+    final mockThemeManager = MockThemeManager();
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<ReaderController>.value(value: mockController),
+          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
+        ],
+        child: MaterialApp(
+          theme: mockThemeManager.currentThemeData,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return ElevatedButton(
+                  onPressed: () {
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      isDismissible: true,
+                      enableDrag: true,
+                      backgroundColor: Colors.transparent,
+                      barrierColor: NyanOverlayStyle.modalBarrierColor(context),
+                      builder: (_) => FractionallySizedBox(
+                        heightFactor: 0.68,
+                        alignment: Alignment.bottomCenter,
+                        child: ReaderMenu(
+                          scaffoldKey: scaffoldKey,
+                          brightnessController: brightnessController,
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Open settings'),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open settings'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ReaderMenu), findsOneWidget);
+
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ReaderMenu), findsNothing);
+  });
+
+  testWidgets('ReaderMenu uses custom reset all dialog',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: FakeSystemBrightnessAdapter(),
+      ),
+    );
+    await brightnessController.initialize();
+
+    final mockController = MockReaderController();
+    final mockThemeManager = MockThemeManager();
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<ReaderController>.value(value: mockController),
+          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
+        ],
+        child: MaterialApp(
+          theme: mockThemeManager.currentThemeData,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            key: scaffoldKey,
+            body: ReaderMenu(
+              scaffoldKey: scaffoldKey,
+              brightnessController: brightnessController,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reset all'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NyanConfirmDialog), findsOneWidget);
+    expect(find.byType(AlertDialog), findsNothing);
   });
 }

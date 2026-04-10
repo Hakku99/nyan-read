@@ -12,6 +12,9 @@ class SegmentedTabControl extends StatefulWidget {
   final Color? selectedColor;
   final Color? unselectedColor;
 
+  /// When set, applied to tab label [TextStyle.height] (e.g. reader settings).
+  final double? labelLineHeight;
+
   const SegmentedTabControl({
     super.key,
     required this.tabs,
@@ -20,6 +23,7 @@ class SegmentedTabControl extends StatefulWidget {
     this.backgroundColor,
     this.selectedColor,
     this.unselectedColor,
+    this.labelLineHeight,
   });
 
   @override
@@ -123,6 +127,7 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
+                                  height: widget.labelLineHeight,
                                   color: isSelected
                                       ? selectedTextColor
                                       : unselectedColor,

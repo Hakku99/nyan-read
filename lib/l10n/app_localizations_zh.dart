@@ -382,6 +382,98 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themeCharcoal => '炭黑';
 
   @override
+  String get readerMenuDisplay => '显示';
+
+  @override
+  String get readerMenuText => '文本';
+
+  @override
+  String get readerMenuTheme => '主题';
+
+  @override
+  String readerSheetProgressSubtitle(String percent) {
+    return '阅读进度 $percent';
+  }
+
+  @override
+  String get readerBrightness => '亮度';
+
+  @override
+  String get readerBrightnessHint => '调整阅读光线';
+
+  @override
+  String get readerWarmth => '暖色温';
+
+  @override
+  String get readerWarmthHint => '降低夜间刺眼感';
+
+  @override
+  String get readerFollowSystemBrightness => '跟随系统亮度';
+
+  @override
+  String get readerAutoBrightness => '自动';
+
+  @override
+  String get readerBrightnessFollowingSystem => '跟随系统亮度';
+
+  @override
+  String get readerTypographyFineTune => '精细调整';
+
+  @override
+  String get readerTypographyFineTuneSubtitle => '字体大小与行高';
+
+  @override
+  String get readerFontSizeHint => '调大或调小';
+
+  @override
+  String get readerLineHeightHint => '调整阅读节奏';
+
+  @override
+  String get readerWarmthLow => '低';
+
+  @override
+  String get readerWarmthMedium => '中';
+
+  @override
+  String get readerWarmthHigh => '高';
+
+  @override
+  String get readerTypographyCompact => '紧凑';
+
+  @override
+  String get readerTypographyStandard => '标准';
+
+  @override
+  String get readerTypographyComfortable => '舒展';
+
+  @override
+  String get readerTypographyPreviewSample => '春日和风，纸页轻响，阅读让时间慢下来。';
+
+  @override
+  String get readerResetAppearance => '恢复默认';
+
+  @override
+  String get readerResetAppearanceHint => '字体、行距、主题、暖色温与亮度模式';
+
+  @override
+  String get readerResetCurrentTab => '重置本页';
+
+  @override
+  String get readerResetCurrentTabHint => '仅恢复当前分区';
+
+  @override
+  String get readerResetAll => '全部重置';
+
+  @override
+  String get readerResetAllConfirmTitle => '要重置全部阅读外观吗？';
+
+  @override
+  String get readerResetAllConfirmMessage => '将恢复字体、行距、主题、暖色温与亮度的默认设置。';
+
+  @override
+  String get readerResetAllConfirmAction => '全部重置';
+
+  @override
   String get tableOfContents => '目录';
 
   @override

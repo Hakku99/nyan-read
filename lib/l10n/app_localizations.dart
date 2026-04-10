@@ -818,6 +818,186 @@ abstract class AppLocalizations {
   /// **'Charcoal'**
   String get themeCharcoal;
 
+  /// No description provided for @readerMenuDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get readerMenuDisplay;
+
+  /// No description provided for @readerMenuText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get readerMenuText;
+
+  /// No description provided for @readerMenuTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get readerMenuTheme;
+
+  /// No description provided for @readerSheetProgressSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading progress {percent}'**
+  String readerSheetProgressSubtitle(String percent);
+
+  /// No description provided for @readerBrightness.
+  ///
+  /// In en, this message translates to:
+  /// **'Brightness'**
+  String get readerBrightness;
+
+  /// No description provided for @readerBrightnessHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust the reading light'**
+  String get readerBrightnessHint;
+
+  /// No description provided for @readerWarmth.
+  ///
+  /// In en, this message translates to:
+  /// **'Warmth'**
+  String get readerWarmth;
+
+  /// No description provided for @readerWarmthHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce glare at night'**
+  String get readerWarmthHint;
+
+  /// No description provided for @readerFollowSystemBrightness.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow system brightness'**
+  String get readerFollowSystemBrightness;
+
+  /// No description provided for @readerAutoBrightness.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get readerAutoBrightness;
+
+  /// No description provided for @readerBrightnessFollowingSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Following system brightness'**
+  String get readerBrightnessFollowingSystem;
+
+  /// No description provided for @readerTypographyFineTune.
+  ///
+  /// In en, this message translates to:
+  /// **'Fine-tune'**
+  String get readerTypographyFineTune;
+
+  /// No description provided for @readerTypographyFineTuneSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Font size and line height'**
+  String get readerTypographyFineTuneSubtitle;
+
+  /// No description provided for @readerFontSizeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Larger or smaller'**
+  String get readerFontSizeHint;
+
+  /// No description provided for @readerLineHeightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Line spacing rhythm'**
+  String get readerLineHeightHint;
+
+  /// No description provided for @readerWarmthLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get readerWarmthLow;
+
+  /// No description provided for @readerWarmthMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get readerWarmthMedium;
+
+  /// No description provided for @readerWarmthHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get readerWarmthHigh;
+
+  /// No description provided for @readerTypographyCompact.
+  ///
+  /// In en, this message translates to:
+  /// **'Compact'**
+  String get readerTypographyCompact;
+
+  /// No description provided for @readerTypographyStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get readerTypographyStandard;
+
+  /// No description provided for @readerTypographyComfortable.
+  ///
+  /// In en, this message translates to:
+  /// **'Comfortable'**
+  String get readerTypographyComfortable;
+
+  /// No description provided for @readerTypographyPreviewSample.
+  ///
+  /// In en, this message translates to:
+  /// **'The quick brown fox jumps over the lazy dog.'**
+  String get readerTypographyPreviewSample;
+
+  /// No description provided for @readerResetAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to defaults'**
+  String get readerResetAppearance;
+
+  /// No description provided for @readerResetAppearanceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Font, spacing, theme, warmth, and brightness mode'**
+  String get readerResetAppearanceHint;
+
+  /// No description provided for @readerResetCurrentTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset this tab'**
+  String get readerResetCurrentTab;
+
+  /// No description provided for @readerResetCurrentTabHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the current section'**
+  String get readerResetCurrentTabHint;
+
+  /// No description provided for @readerResetAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset all'**
+  String get readerResetAll;
+
+  /// No description provided for @readerResetAllConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset all reading appearance?'**
+  String get readerResetAllConfirmTitle;
+
+  /// No description provided for @readerResetAllConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This restores defaults for font, spacing, theme, warmth, and brightness.'**
+  String get readerResetAllConfirmMessage;
+
+  /// No description provided for @readerResetAllConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset all'**
+  String get readerResetAllConfirmAction;
+
   /// No description provided for @tableOfContents.
   ///
   /// In en, this message translates to:

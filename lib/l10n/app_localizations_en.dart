@@ -407,6 +407,101 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeCharcoal => 'Charcoal';
 
   @override
+  String get readerMenuDisplay => 'Display';
+
+  @override
+  String get readerMenuText => 'Text';
+
+  @override
+  String get readerMenuTheme => 'Theme';
+
+  @override
+  String readerSheetProgressSubtitle(String percent) {
+    return 'Reading progress $percent';
+  }
+
+  @override
+  String get readerBrightness => 'Brightness';
+
+  @override
+  String get readerBrightnessHint => 'Adjust the reading light';
+
+  @override
+  String get readerWarmth => 'Warmth';
+
+  @override
+  String get readerWarmthHint => 'Reduce glare at night';
+
+  @override
+  String get readerFollowSystemBrightness => 'Follow system brightness';
+
+  @override
+  String get readerAutoBrightness => 'Auto';
+
+  @override
+  String get readerBrightnessFollowingSystem => 'Following system brightness';
+
+  @override
+  String get readerTypographyFineTune => 'Fine-tune';
+
+  @override
+  String get readerTypographyFineTuneSubtitle => 'Font size and line height';
+
+  @override
+  String get readerFontSizeHint => 'Larger or smaller';
+
+  @override
+  String get readerLineHeightHint => 'Line spacing rhythm';
+
+  @override
+  String get readerWarmthLow => 'Low';
+
+  @override
+  String get readerWarmthMedium => 'Medium';
+
+  @override
+  String get readerWarmthHigh => 'High';
+
+  @override
+  String get readerTypographyCompact => 'Compact';
+
+  @override
+  String get readerTypographyStandard => 'Standard';
+
+  @override
+  String get readerTypographyComfortable => 'Comfortable';
+
+  @override
+  String get readerTypographyPreviewSample =>
+      'The quick brown fox jumps over the lazy dog.';
+
+  @override
+  String get readerResetAppearance => 'Reset to defaults';
+
+  @override
+  String get readerResetAppearanceHint =>
+      'Font, spacing, theme, warmth, and brightness mode';
+
+  @override
+  String get readerResetCurrentTab => 'Reset this tab';
+
+  @override
+  String get readerResetCurrentTabHint => 'Only the current section';
+
+  @override
+  String get readerResetAll => 'Reset all';
+
+  @override
+  String get readerResetAllConfirmTitle => 'Reset all reading appearance?';
+
+  @override
+  String get readerResetAllConfirmMessage =>
+      'This restores defaults for font, spacing, theme, warmth, and brightness.';
+
+  @override
+  String get readerResetAllConfirmAction => 'Reset all';
+
+  @override
   String get tableOfContents => 'Table of Contents';
 
   @override

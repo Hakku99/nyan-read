@@ -1,0 +1,276 @@
+import 'package:flutter/material.dart';
+
+import 'package:nyan_read/l10n/app_localizations.dart';
+
+import '../../../../core/theme/nyan_radius.dart';
+import '../../../../core/theme/nyan_spacing.dart';
+import '../../../../core/ui/components/nyan_sheet_card.dart';
+import 'reader_settings_common.dart';
+
+/// Typography controls with presets and collapsible fine-tune (Text tab).
+class ReaderSettingsTextPanel extends StatelessWidget {
+  const ReaderSettingsTextPanel({
+    super.key,
+    required this.fontSize,
+    required this.lineHeight,
+    required this.textColor,
+    required this.backgroundColor,
+    required this.onSetFontSize,
+    required this.onSetLineHeight,
+    required this.loc,
+    this.denseLayout = false,
+  });
+
+  final double fontSize;
+  final double lineHeight;
+  final Color textColor;
+  final Color backgroundColor;
+  final ValueChanged<double> onSetFontSize;
+  final ValueChanged<double> onSetLineHeight;
+  final AppLocalizations loc;
+  final bool denseLayout;
+
+  void _applyPreset(_TypographyPreset preset) {
+    onSetFontSize(
+      preset.fontSize.clamp(kReaderFontSizeMin, kReaderFontSizeMax),
+    );
+    onSetLineHeight(
+      preset.lineHeight.clamp(kReaderLineHeightMin, kReaderLineHeightMax),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isCompactWidth = MediaQuery.of(context).size.width < 360;
+    final theme = Theme.of(context);
+    final s = MediaQuery.sizeOf(context);
+    // Default expanded on roomy layouts; collapsed on small phones (narrow width).
+    final fineTuneExpandedDefault = s.height >= 600 && s.width >= 380;
+
+    final fs = fontSize.clamp(kReaderFontSizeMin, kReaderFontSizeMax);
+    final lh = lineHeight.clamp(kReaderLineHeightMin, kReaderLineHeightMax);
+
+    final presetRows = <(String, _TypographyPreset)>[
+      (loc.readerTypographyCompact, _TypographyPreset.compact),
+      (loc.readerTypographyStandard, _TypographyPreset.standard),
+      (loc.readerTypographyComfortable, _TypographyPreset.comfortable),
+    ];
+
+    final cells = [
+      ReaderSettingsValueCell(
+        label: loc.fontSize,
+        subtitle: loc.readerFontSizeHint,
+        value: fs.toStringAsFixed(0),
+        compact: true,
+        onRemove: () => onSetFontSize((fs - 1).clamp(
+              kReaderFontSizeMin,
+              kReaderFontSizeMax,
+            )),
+        onAdd: () => onSetFontSize((fs + 1).clamp(
+              kReaderFontSizeMin,
+              kReaderFontSizeMax,
+            )),
+      ),
+      ReaderSettingsValueCell(
+        label: loc.lineHeight,
+        subtitle: loc.readerLineHeightHint,
+        value: lh.toStringAsFixed(1),
+        compact: true,
+        onRemove: () => onSetLineHeight((lh - 0.1).clamp(
+              kReaderLineHeightMin,
+              kReaderLineHeightMax,
+            )),
+        onAdd: () => onSetLineHeight((lh + 0.1).clamp(
+              kReaderLineHeightMin,
+              kReaderLineHeightMax,
+            )),
+      ),
+    ];
+
+    return NyanSheetCard(
+      key: Key(
+        isCompactWidth
+            ? 'reader-menu-typography-compact'
+            : 'reader-menu-typography-wide',
+      ),
+      radius: NyanRadius.card,
+      children: [
+        Padding(
+          padding: EdgeInsets.all(
+            denseLayout ? NyanSpacing.space12 : NyanSpacing.space16,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  for (var i = 0; i < presetRows.length; i++) ...[
+                    if (i > 0) const SizedBox(width: NyanSpacing.space8),
+                    Expanded(
+                      child: SizedBox(
+                        height: kReaderDensePresetMinHeight,
+                        child: _TypographyPresetChip(
+                          label: presetRows[i].$1,
+                          selected: _TypographyPreset.matches(
+                            fs,
+                            lh,
+                            presetRows[i].$2,
+                          ),
+                          onTap: () => _applyPreset(presetRows[i].$2),
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              SizedBox(
+                height: denseLayout ? NyanSpacing.space8 : NyanSpacing.space12,
+              ),
+              Theme(
+                data: theme.copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  key: const PageStorageKey<String>('reader-text-finetune'),
+                  maintainState: true,
+                  tilePadding: EdgeInsets.zero,
+                  childrenPadding: EdgeInsets.only(
+                    top: denseLayout ? NyanSpacing.space8 : NyanSpacing.space12,
+                  ),
+                  initiallyExpanded: fineTuneExpandedDefault,
+                  collapsedShape: const RoundedRectangleBorder(
+                    side: BorderSide(color: Colors.transparent),
+                  ),
+                  shape: const RoundedRectangleBorder(
+                    side: BorderSide(color: Colors.transparent),
+                  ),
+                  title: Text(
+                    loc.readerTypographyFineTune,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                    ),
+                  ),
+                  subtitle: Text(
+                    loc.readerTypographyFineTuneSubtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: 12,
+                      height: 1.12,
+                      color: theme.textTheme.bodySmall?.color
+                          ?.withValues(alpha: 0.68),
+                    ),
+                  ),
+                  iconColor: theme.colorScheme.primary,
+                  collapsedIconColor: theme.colorScheme.primary,
+                  children: [
+                    if (isCompactWidth)
+                      Column(
+                        children: [
+                          cells[0],
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: NyanSpacing.space12,
+                            ),
+                            child: Divider(
+                              height: 1,
+                              thickness: 0.72,
+                              color: theme.dividerColor.withValues(alpha: 0.12),
+                            ),
+                          ),
+                          cells[1],
+                        ],
+                      )
+                    else
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: cells[0]),
+                          const SizedBox(width: NyanSpacing.space16),
+                          Expanded(child: cells[1]),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TypographyPreset {
+  const _TypographyPreset(this.fontSize, this.lineHeight);
+
+  final double fontSize;
+  final double lineHeight;
+
+  static const compact = _TypographyPreset(15, 1.35);
+  static const standard = _TypographyPreset(18, 1.5);
+  static const comfortable = _TypographyPreset(22, 1.75);
+
+  static bool matches(double fs, double lh, _TypographyPreset p) {
+    return (fs - p.fontSize).abs() < 0.55 && (lh - p.lineHeight).abs() < 0.06;
+  }
+}
+
+class _TypographyPresetChip extends StatelessWidget {
+  const _TypographyPresetChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    required this.color,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: kReaderPillBorderRadius,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: double.infinity,
+          height: double.infinity,
+          padding: kReaderDensePresetPadding,
+          decoration: BoxDecoration(
+            color: selected
+                ? color.withValues(alpha: 0.12)
+                : theme.colorScheme.surfaceContainerHighest
+                    .withValues(alpha: 0.35),
+            borderRadius: kReaderPillBorderRadius,
+            border: Border.all(
+              color: selected
+                  ? color.withValues(alpha: 0.42)
+                  : theme.dividerColor.withValues(alpha: 0.14),
+              width: selected ? 1.0 : 0.72,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+              height: 1.15,
+              color: selected
+                  ? color
+                  : theme.textTheme.bodySmall?.color?.withValues(alpha: 0.88),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

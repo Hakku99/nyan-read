@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/models/book.dart';
@@ -8,7 +10,12 @@ import '../../core/models/highlight.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/service_locator.dart';
+import '../../core/theme/nyan_radius.dart';
+import '../../core/theme/nyan_spacing.dart';
 import '../../core/utils/layout_debouncer.dart';
+import '../../core/utils/snackbar_utils.dart';
+import '../bookmark/bookmark_list_page.dart';
+import '../notes/notes_list_page.dart';
 import 'reader_engine/reader_engine.dart';
 import 'reader_engine/reader_factory.dart';
 import 'reader_error.dart';
@@ -18,6 +25,10 @@ import 'widgets/reader_menu.dart';
 import 'dart:async';
 import '../../core/utils/lifecycle_registry.dart';
 import '../../core/utils/book_source_access.dart';
+import '../../core/ui/components/nyan_overlay_style.dart';
+import '../../l10n/app_localizations.dart';
+import 'widgets/reader_chapter_summary.dart';
+import 'widgets/reader_settings/reader_settings_progress_card.dart';
 import 'controllers/reading_progress_manager.dart';
 import 'brightness/brightness_orchestrator.dart';
 import 'brightness/brightness_repository.dart';
@@ -26,6 +37,8 @@ import 'controllers/brightness_controller.dart';
 import 'brightness/overlay_widget.dart';
 import 'widgets/brightness_hud_widget.dart';
 import 'widgets/chapter_list_widget.dart';
+import 'widgets/reader_overlay_tool_button.dart';
+import 'widgets/reader_settings/reader_settings_common.dart';
 import 'controllers/reader_settings_manager.dart';
 import 'controllers/content_meta_manager.dart';
 
@@ -254,6 +267,34 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  /// Resets typography, page background, and warmth to app defaults (reading UI only).
+  /// Does not change pagination, chapter position, or brightness follow-system mode.
+  Future<void> resetReaderAppearanceDefaults() async {
+    settingsManager.setFontSize(18);
+    settingsManager.setLineHeight(1.5);
+    settingsManager.setBackground(const Color(0xFFFDFCF8));
+    await setWarmth(0);
+    notifyListeners();
+  }
+
+  /// Display tab: low warmth and follow-system brightness. Does not change read position.
+  Future<void> resetReaderDisplayDefaults() async {
+    await setWarmth(0);
+    await _brightnessControllerRef?.resetToSystem();
+    notifyListeners();
+  }
+
+  /// Text tab: default font size and line height only.
+  void resetReaderTextDefaults() {
+    settingsManager.setFontSize(18);
+    settingsManager.setLineHeight(1.5);
+  }
+
+  /// Theme tab: default paper background.
+  void resetReaderThemeDefaults() {
+    setBackground(const Color(0xFFFDFCF8));
+  }
+
   Future<void> jumpToPreviousChapter() async {
     await metaManager.jumpToPreviousChapter(
       () async => await progressManager.saveCurrentPosition(),
@@ -313,8 +354,110 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   }
 }
 
+class _ReaderOverlayToolBar extends StatelessWidget {
+  const _ReaderOverlayToolBar({
+    required this.showChapterNavigation,
+    required this.showNotes,
+    required this.onOpenChapters,
+    required this.onAddBookmark,
+    required this.onOpenBookmarks,
+    required this.onOpenNotes,
+    required this.onOpenSettings,
+    required this.chromeWidth,
+  });
+
+  final bool showChapterNavigation;
+  final bool showNotes;
+  final VoidCallback onOpenChapters;
+  final VoidCallback onAddBookmark;
+  final VoidCallback onOpenBookmarks;
+  final VoidCallback onOpenNotes;
+  final VoidCallback onOpenSettings;
+  final double chromeWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = <Widget>[
+      if (showChapterNavigation)
+        ReaderOverlayToolButton(
+          icon: Icons.toc_rounded,
+          onTap: onOpenChapters,
+        ),
+      ReaderOverlayToolButton(
+        icon: Icons.bookmark_add_outlined,
+        onTap: onAddBookmark,
+      ),
+      ReaderOverlayToolButton(
+        icon: Icons.bookmarks_rounded,
+        onTap: onOpenBookmarks,
+      ),
+      if (showNotes)
+        ReaderOverlayToolButton(
+          icon: Icons.edit_note_rounded,
+          onTap: onOpenNotes,
+        ),
+      ReaderOverlayToolButton(
+        icon: Icons.tune_rounded,
+        onTap: onOpenSettings,
+        isAccent: true,
+      ),
+    ];
+
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Container(
+        key: const Key('reader-overlay-toolbar'),
+        width: chromeWidth,
+        padding: kReaderOverlayChromePadding,
+        decoration: BoxDecoration(
+          color: Color.alphaBlend(
+            theme.colorScheme.surface.withValues(alpha: 0.92),
+            theme.scaffoldBackgroundColor,
+          ),
+          borderRadius: BorderRadius.circular(NyanRadius.panel),
+          border: Border.all(
+            color: theme.dividerColor.withValues(alpha: 0.18),
+            width: 0.72,
+          ),
+          boxShadow: NyanOverlayStyle.noticeShadow(context),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (int index = 0; index < actions.length; index++) ...[
+                if (index > 0) const SizedBox(width: NyanSpacing.space8),
+                actions[index],
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 const double kSectionSpacing = 16.0;
 const double kRowHeight = 56.0;
+
+double _overlayChromeWidth({
+  required bool showChapterNavigation,
+  required bool showNotes,
+  required double availableWidth,
+  double horizontalSafeGutter = 4,
+}) {
+  final actionCount =
+      2 + (showChapterNavigation ? 1 : 0) + (showNotes ? 1 : 0) + 1;
+  final buttonWidth = NyanSpacing.minTapTarget;
+  final innerSpacing = NyanSpacing.space8 * (actionCount - 1);
+  final sidePadding = kReaderOverlayChromePadding.horizontal;
+  final targetWidth = (actionCount * buttonWidth) + innerSpacing + sidePadding;
+  final maxAllowed = math.max(0.0, availableWidth - horizontalSafeGutter);
+  return math.min(targetWidth, maxAllowed);
+}
 
 // ... (existing imports)
 
@@ -600,6 +743,8 @@ class _ReaderPageState extends State<ReaderPage> {
                                     child: Consumer<ReaderController>(
                                   builder: (context, controller, child) {
                                     final theme = Theme.of(context);
+                                    final bottomPadding =
+                                        MediaQuery.of(context).padding.bottom;
                                     final topPadding =
                                         MediaQuery.of(context).padding.top;
 
@@ -618,6 +763,131 @@ class _ReaderPageState extends State<ReaderPage> {
                                             child: Container(
                                                 color: theme.colorScheme.surface
                                                     .withOpacity(0.95)),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          left: 0,
+                                          right: 0,
+                                          bottom: bottomPadding > 0
+                                              ? bottomPadding + 12
+                                              : 18,
+                                          child: IgnorePointer(
+                                            ignoring: !_showControls,
+                                            child: AnimatedOpacity(
+                                              duration: const Duration(
+                                                  milliseconds: 180),
+                                              opacity:
+                                                  _showControls ? 1.0 : 0.0,
+                                              child: Center(
+                                                child: ConstrainedBox(
+                                                  constraints:
+                                                      const BoxConstraints(
+                                                    maxWidth: 680,
+                                                  ),
+                                                  child: LayoutBuilder(
+                                                    builder:
+                                                        (context, constraints) {
+                                                      final availableWidth =
+                                                          constraints.maxWidth;
+                                                      final overlayChromeWidth =
+                                                          _overlayChromeWidth(
+                                                        showChapterNavigation:
+                                                            controller
+                                                                .capabilities
+                                                                .supportsChapterNavigation,
+                                                        showNotes: controller
+                                                                .capabilities
+                                                                .supportsHighlights ||
+                                                            controller
+                                                                .capabilities
+                                                                .supportsAnnotations,
+                                                        availableWidth:
+                                                            availableWidth,
+                                                      );
+                                                      return Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      ReaderSettingsProgressCard(
+                                                        key: const Key(
+                                                            'reader-overlay-progress'),
+                                                        forOverlay: true,
+                                                        overlayWidth:
+                                                            overlayChromeWidth,
+                                                        chapterLabel:
+                                                            readerChapterSummaryLabel(
+                                                          chapters: controller
+                                                              .chapters,
+                                                          currentChapterIndex:
+                                                              controller
+                                                                  .currentChapterIndex,
+                                                          loc: AppLocalizations
+                                                              .of(context)!,
+                                                        ),
+                                                        progress: controller
+                                                            .currentProgress,
+                                                        showChapterNavigation:
+                                                            controller
+                                                                .capabilities
+                                                                .supportsChapterNavigation,
+                                                        onSeek: controller
+                                                            .seekTo,
+                                                        onPreviousChapter:
+                                                            controller
+                                                                .jumpToPreviousChapter,
+                                                        onNextChapter:
+                                                            controller
+                                                                .jumpToNextChapter,
+                                                      ),
+                                                      const SizedBox(
+                                                          height: 10),
+                                                      _ReaderOverlayToolBar(
+                                                          showChapterNavigation:
+                                                              controller
+                                                                  .capabilities
+                                                                  .supportsChapterNavigation,
+                                                          chromeWidth:
+                                                              overlayChromeWidth,
+                                                          showNotes: controller
+                                                                  .capabilities
+                                                                  .supportsHighlights ||
+                                                              controller
+                                                                  .capabilities
+                                                                  .supportsAnnotations,
+                                                          onOpenChapters: () =>
+                                                              _openChapterList(
+                                                                  context),
+                                                          onAddBookmark: () =>
+                                                              _addBookmarkFromOverlay(
+                                                            context,
+                                                            controller,
+                                                          ),
+                                                          onOpenBookmarks: () =>
+                                                              _openBookmarksPage(
+                                                            context,
+                                                            controller,
+                                                          ),
+                                                          onOpenNotes: () =>
+                                                              _openNotesPage(
+                                                            context,
+                                                            controller,
+                                                          ),
+                                                          onOpenSettings: () =>
+                                                              _showSettingsBottomSheet(
+                                                            context,
+                                                            controller,
+                                                          ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -735,40 +1005,40 @@ class _ReaderPageState extends State<ReaderPage> {
     } else if (tapY > screenHeight * 0.60) {
       c.nextPage();
     } else {
-      // Only middle 20% triggers menu
-      _showSettingsBottomSheet(context, c);
+      _showReaderControls(c);
     }
+  }
+
+  void _showReaderControls(ReaderController controller) {
+    _setControlsVisible(true);
+    unawaited(controller.refreshCurrentChapterIndex());
   }
 
   void _showSettingsBottomSheet(
       BuildContext context, ReaderController controller) {
-    // Notify the page shell to toggle the status bar controls helper if needed.
-    // In many reader apps tapping center shows status bar too.
-    _setControlsVisible(true);
-    unawaited(controller.refreshCurrentChapterIndex());
+    _showReaderControls(controller);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
       backgroundColor: Colors.transparent,
+      barrierColor: NyanOverlayStyle.modalBarrierColor(context),
       builder: (BuildContext sheetContext) {
-        // Retrieve current controller without listening to changes for background
-        final surfaceColor = Theme.of(context).colorScheme.surface;
-
-        return Container(
-          decoration: BoxDecoration(
-            color: surfaceColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          // ReaderMenu will inject its own UI into this container as the settings.
-          // Padding removed here to allow ReaderMenu to manage its own padding.
-          child: ChangeNotifierProvider<ReaderController>.value(
-            value: controller,
-            child: ReaderMenu(
-              scaffoldKey: readerPageScaffoldKey,
-              // Pass the BrightnessController directly so the menu binds to
-              // the shared reader brightness state.
-              brightnessController: _brightnessController,
+        return Align(
+          alignment: Alignment.bottomCenter,
+          heightFactor: 1.0,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.75,
+            ),
+            child: ChangeNotifierProvider<ReaderController>.value(
+              value: controller,
+              child: ReaderMenu(
+                scaffoldKey: readerPageScaffoldKey,
+                brightnessController: _brightnessController,
+              ),
             ),
           ),
         );
@@ -779,6 +1049,78 @@ class _ReaderPageState extends State<ReaderPage> {
         _setControlsVisible(false);
       }
     });
+  }
+
+  void _openChapterList(BuildContext context) {
+    _setControlsVisible(false);
+    readerPageScaffoldKey.currentState?.openDrawer();
+  }
+
+  Future<void> _addBookmarkFromOverlay(
+    BuildContext context,
+    ReaderController controller,
+  ) async {
+    final added = await controller.addBookmark();
+    if (!added) {
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    _setControlsVisible(false);
+    SnackBarUtils.show(context, 'Bookmark Added!');
+  }
+
+  Future<void> _openBookmarksPage(
+    BuildContext context,
+    ReaderController controller,
+  ) async {
+    _setControlsVisible(false);
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BookmarkListPage(
+          bookId: controller.book.id,
+          bookTitle: controller.book.title,
+        ),
+      ),
+    );
+    if (result != null && result is Map<String, dynamic>) {
+      await controller.handleBookmarkSelection(result);
+    }
+  }
+
+  Future<void> _openNotesPage(
+    BuildContext context,
+    ReaderController controller,
+  ) async {
+    _setControlsVisible(false);
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NotesListPage(
+          bookId: controller.book.id,
+          bookTitle: controller.book.title,
+          onJumpToHighlight: (_) {},
+        ),
+      ),
+    );
+
+    await controller.loadHighlights();
+
+    if (result != null && result is Highlight) {
+      final selectedHighlight =
+          await controller.handleHighlightSelection(result);
+      if (context.mounted && selectedHighlight != null) {
+        _showHighlightNoteDialog(
+          context,
+          controller,
+          selectedHighlight,
+        );
+      }
+    }
   }
 
   void _setControlsVisible(bool visible) {
