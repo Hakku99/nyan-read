@@ -1,56 +1,75 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/ui/components/nyan_overlay_style.dart';
+import '../../../l10n/app_localizations.dart';
 import '../controllers/brightness_controller.dart';
 
-/// 左侧锚定竖向亮度轨道 HUD
+/// Center floating brightness HUD.
 ///
-/// Moon+ Reader 设计哲学：手指在哪儿，反馈就在哪儿。
-/// HUD 锚定于手势操作区同侧（屏幕左侧），
-/// 使用竖向自绘轨道 + 动态图标 + 触觉刻度反馈。
+/// Gesture entry stays on left edge, but feedback appears in middle for
+/// better readability and calmer visual balance.
 class BrightnessHudWidget extends StatefulWidget {
   final BrightnessController controller;
 
   const BrightnessHudWidget({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   State<BrightnessHudWidget> createState() => _BrightnessHudWidgetState();
 }
 
 class _BrightnessHudWidgetState extends State<BrightnessHudWidget> {
-  /// 上次触发触觉反馈时的 10% 刻度整数，避免连续无效触发
   int _lastHapticStep = -1;
+  int _lastAnimatedPercent = -1;
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      left: 8,
-      top: 0,
-      bottom: 0,
+    return Positioned.fill(
       child: IgnorePointer(
         child: ValueListenableBuilder<bool>(
           valueListenable: widget.controller.isAdjusting,
           builder: (context, isAdjusting, _) {
-            return AnimatedOpacity(
-              opacity: isAdjusting ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeInOut,
-              child: Align(
-                alignment: Alignment.centerLeft,
+            return Center(
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0, end: isAdjusting ? 1 : 0),
+                duration: Duration(
+                  milliseconds: isAdjusting
+                      ? NyanOverlayStyle.overlayTransitionDuration.inMilliseconds
+                      : 130,
+                ),
+                curve: NyanOverlayStyle.overlayCurve,
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, (1 - value) * 8),
+                      child: Transform.scale(
+                        scale: 0.98 + (0.02 * value),
+                        child: child,
+                      ),
+                    ),
+                  );
+                },
                 child: ValueListenableBuilder<double>(
                   valueListenable: widget.controller.uiBrightnessValue,
                   builder: (context, brightness, _) {
-                    // 触觉刻度：每跨越 10% 整数刻度触发一次 selectionClick
+                    final percent = (brightness * 100).toInt();
                     final currentStep = (brightness * 10).floor();
                     if (isAdjusting && currentStep != _lastHapticStep) {
                       _lastHapticStep = currentStep;
                       HapticFeedback.selectionClick();
                     }
-
-                    return _BrightnessTrackPanel(brightness: brightness);
+                    if ((percent - _lastAnimatedPercent).abs() >= 2 ||
+                        _lastAnimatedPercent < 0) {
+                      _lastAnimatedPercent = percent;
+                    }
+                    return _BrightnessCenterPanel(
+                      brightness: brightness,
+                      animatedPercent: _lastAnimatedPercent,
+                    );
                   },
                 ),
               ),
@@ -62,95 +81,148 @@ class _BrightnessHudWidgetState extends State<BrightnessHudWidget> {
   }
 }
 
-/// 竖向亮度轨道面板，包含图标 + 轨道条 + 百分比数字
-class _BrightnessTrackPanel extends StatelessWidget {
+class _BrightnessCenterPanel extends StatelessWidget {
+  const _BrightnessCenterPanel({
+    required this.brightness,
+    required this.animatedPercent,
+  });
+
   final double brightness;
+  final int animatedPercent;
 
-  static const double _trackHeight = 180.0;
-  static const double _trackWidth = 6.0;
-  static const double _hardwareFloor = 0.10; // 子零区着色切入点（视觉参考）
-
-  const _BrightnessTrackPanel({required this.brightness});
-
-  IconData _resolveIcon() {
-    if (brightness < 0.30) return Icons.brightness_low_rounded;
-    if (brightness < 0.70) return Icons.brightness_medium_rounded;
-    return Icons.brightness_high_rounded;
-  }
+  static const double _hardwareFloor = 0.10;
+  static const double _panelWidth = 236.0;
+  static const double _panelRadius = 24.0;
 
   @override
   Widget build(BuildContext context) {
     final isSubZero = brightness < _hardwareFloor;
-    final trackColor = isSubZero
-        ? const Color(0xFF3D5AFE) // 靛蓝 = 软件暗化模式
-        : Theme.of(context).colorScheme.onSurface.withOpacity(0.85);
+    final cs = Theme.of(context).colorScheme;
+    final loc = AppLocalizations.of(context)!;
+    final primaryHsl = HSLColor.fromColor(cs.primary);
+    final primary = primaryHsl
+        .withLightness((primaryHsl.lightness - 0.04).clamp(0.0, 1.0))
+        .toColor();
+    final subZeroHsl = HSLColor.fromColor(primary);
+    final subZeroAccent = subZeroHsl
+        .withLightness((subZeroHsl.lightness + 0.06).clamp(0.0, 1.0))
+        .withSaturation((subZeroHsl.saturation * 0.72).clamp(0.0, 1.0))
+        .toColor();
+    final accent = isSubZero ? subZeroAccent : primary;
+    final percent = (brightness * 100).toInt();
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          width: 52,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 0),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface.withOpacity(0.55),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: Theme.of(context).dividerColor.withOpacity(0.15),
-              width: 1,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(_panelRadius),
+        boxShadow: NyanOverlayStyle.noticeShadow(context),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(_panelRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Color.alphaBlend(
+                cs.surface.withValues(alpha: 0.92),
+                Theme.of(context).scaffoldBackgroundColor,
+              ),
+              borderRadius: BorderRadius.circular(_panelRadius),
+              border: Border.all(
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.18),
+                width: 0.72,
+              ),
             ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 动态图标：三档灵活切换
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                transitionBuilder: (child, animation) =>
-                    ScaleTransition(scale: animation, child: child),
-                child: Icon(
-                  _resolveIcon(),
-                  key: ValueKey(_resolveIcon()),
-                  color: trackColor,
-                  size: 22,
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // 竖向轨道
-              SizedBox(
-                height: _trackHeight,
-                width: _trackWidth + 16, // 含左右 padding
-                child: Center(
-                  child: CustomPaint(
-                    size: const Size(_trackWidth, _trackHeight),
-                    painter: _VerticalTrackPainter(
-                      fillRatio: brightness.clamp(0.0, 1.0),
-                      trackColor: trackColor,
-                      backgroundColor: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.12),
+            child: SizedBox(
+              width: _panelWidth,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      loc.readerBrightness,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: cs.onSurface.withValues(alpha: 0.58),
+                          ),
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                    _BrightnessTrack(
+                      brightness: brightness,
+                      accent: accent,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        SizedBox(
+                          width: 58,
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween<double>(
+                              begin: animatedPercent.toDouble(),
+                              end: percent.toDouble(),
+                            ),
+                            duration: const Duration(milliseconds: 120),
+                            builder: (context, value, _) {
+                              return Text(
+                                '${value.round()}%',
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      fontSize: 21,
+                                      height: 1.0,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: -0.2,
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                      color: accent,
+                                    ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: SizedBox(
+                              height: 32,
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 160),
+                                layoutBuilder: (currentChild, previousChildren) {
+                                  return Stack(
+                                    alignment: Alignment.centerRight,
+                                    children: [
+                                      ...previousChildren,
+                                      if (currentChild != null) currentChild,
+                                    ],
+                                  );
+                                },
+                                child: isSubZero
+                                    ? Text(
+                                        loc.readerSoftwareDimModeActive,
+                                        key: const ValueKey('subZeroHint'),
+                                        textAlign: TextAlign.right,
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w400,
+                                              height: 1.18,
+                                              color: cs.onSurfaceVariant.withValues(alpha: 0.72),
+                                            ),
+                                      )
+                                    : const SizedBox(key: ValueKey('normalModeHint')),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-
-              const SizedBox(height: 12),
-
-              // 百分比数字
-              Text(
-                '${(brightness * 100).toInt()}%',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: trackColor,
-                  decoration: TextDecoration.none,
-                  letterSpacing: -0.3,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -158,49 +230,97 @@ class _BrightnessTrackPanel extends StatelessWidget {
   }
 }
 
-/// 圆角竖向进度轨道绘制器
-class _VerticalTrackPainter extends CustomPainter {
-  final double fillRatio;
-  final Color trackColor;
-  final Color backgroundColor;
-
-  const _VerticalTrackPainter({
-    required this.fillRatio,
-    required this.trackColor,
-    required this.backgroundColor,
+class _BrightnessTrack extends StatelessWidget {
+  const _BrightnessTrack({
+    required this.brightness,
+    required this.accent,
   });
 
+  final double brightness;
+  final Color accent;
+
   @override
-  void paint(Canvas canvas, Size size) {
-    const radius = Radius.circular(3);
-    final bgRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      radius,
+  Widget build(BuildContext context) {
+    final clamped = brightness.clamp(0.0, 1.0);
+    final cs = Theme.of(context).colorScheme;
+    final thumbBorder = cs.surface.withValues(alpha: 0.72);
+
+    return Row(
+      children: [
+        Icon(
+          Icons.dark_mode_outlined,
+          size: 16,
+          color: cs.onSurface.withValues(alpha: 0.58),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              height: 12,
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.17),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  FractionallySizedBox(
+                    widthFactor: clamped,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: accent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      const thumbSize = 14.0;
+                      final maxLeft = (constraints.maxWidth - thumbSize).clamp(0.0, double.infinity);
+                      final left = (clamped * maxLeft).clamp(0.0, maxLeft);
+                      return Stack(
+                        children: [
+                          Positioned(
+                            left: left,
+                            top: -1,
+                            child: Container(
+                              width: thumbSize,
+                              height: thumbSize,
+                              decoration: BoxDecoration(
+                                color: accent,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: thumbBorder.withValues(alpha: 0.78),
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.06),
+                                    blurRadius: 2,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Icon(
+          Icons.light_mode_rounded,
+          size: 16,
+          color: cs.onSurface.withValues(alpha: 0.58),
+        ),
+      ],
     );
-
-    // 背景轨道
-    canvas.drawRRect(bgRect, Paint()..color = backgroundColor);
-
-    // 填充部分（从底部往上）
-    final fillHeight = size.height * fillRatio;
-    final fillTop = size.height - fillHeight;
-    if (fillHeight > 0) {
-      final fillRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, fillTop, size.width, fillHeight),
-        radius,
-      );
-      canvas.drawRRect(
-        fillRect,
-        Paint()
-          ..color = trackColor
-          ..style = PaintingStyle.fill,
-      );
-    }
   }
-
-  @override
-  bool shouldRepaint(_VerticalTrackPainter old) =>
-      old.fillRatio != fillRatio ||
-      old.trackColor != trackColor ||
-      old.backgroundColor != backgroundColor;
 }

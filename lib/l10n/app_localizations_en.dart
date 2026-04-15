@@ -424,6 +424,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerBrightness => 'Brightness';
 
   @override
+  String get readerSoftwareDimModeActive => 'Screen dim active';
+
+  @override
   String get readerBrightnessHint => 'Adjust the reading light';
 
   @override

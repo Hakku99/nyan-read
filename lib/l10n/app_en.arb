@@ -180,6 +180,7 @@
     }
   },
   "readerBrightness": "Brightness",
+  "readerSoftwareDimModeActive": "Screen dim active",
   "readerBrightnessHint": "Adjust the reading light",
   "readerWarmth": "Warmth",
   "readerWarmthHint": "Reduce glare at night",

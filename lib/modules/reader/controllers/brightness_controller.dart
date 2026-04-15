@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
 import '../brightness/brightness_orchestrator.dart';
 import '../brightness/brightness_state.dart';

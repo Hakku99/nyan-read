@@ -848,6 +848,12 @@ abstract class AppLocalizations {
   /// **'Brightness'**
   String get readerBrightness;
 
+  /// No description provided for @readerSoftwareDimModeActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen dim active'**
+  String get readerSoftwareDimModeActive;
+
   /// No description provided for @readerBrightnessHint.
   ///
   /// In en, this message translates to:

@@ -180,6 +180,7 @@
     }
   },
   "readerBrightness": "亮度",
+  "readerSoftwareDimModeActive": "已进入屏幕调暗模式",
   "readerBrightnessHint": "调整阅读光线",
   "readerWarmth": "暖色温",
   "readerWarmthHint": "降低夜间刺眼感",

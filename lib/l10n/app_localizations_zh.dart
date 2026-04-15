@@ -399,6 +399,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerBrightness => '亮度';
 
   @override
+  String get readerSoftwareDimModeActive => '已进入屏幕调暗模式';
+
+  @override
   String get readerBrightnessHint => '调整阅读光线';
 
   @override
