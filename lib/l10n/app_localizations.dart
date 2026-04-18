@@ -1010,6 +1010,18 @@ abstract class AppLocalizations {
   /// **'Table of Contents'**
   String get tableOfContents;
 
+  /// No description provided for @jumpToCurrentChapter.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to current chapter'**
+  String get jumpToCurrentChapter;
+
+  /// No description provided for @chapterListProgressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} / {total} chapters'**
+  String chapterListProgressLabel(int current, int total);
+
   /// No description provided for @addBookmark.
   ///
   /// In en, this message translates to:

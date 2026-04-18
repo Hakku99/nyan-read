@@ -508,6 +508,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tableOfContents => 'Table of Contents';
 
   @override
+  String get jumpToCurrentChapter => 'Jump to current chapter';
+
+  @override
+  String chapterListProgressLabel(int current, int total) {
+    return '$current / $total chapters';
+  }
+
+  @override
   String get addBookmark => 'Add Bookmark';
 
   @override

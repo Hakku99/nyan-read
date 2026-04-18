@@ -207,6 +207,18 @@
   "readerResetAllConfirmMessage": "This restores defaults for font, spacing, theme, warmth, and brightness.",
   "readerResetAllConfirmAction": "Reset all",
   "tableOfContents": "Table of Contents",
+  "jumpToCurrentChapter": "Jump to current chapter",
+  "chapterListProgressLabel": "{current} / {total} chapters",
+  "@chapterListProgressLabel": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "addBookmark": "Add Bookmark",
   "bookmarks": "Bookmarks",
   "highlightsAndNotes": "Highlights & Notes",

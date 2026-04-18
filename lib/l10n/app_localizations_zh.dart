@@ -480,6 +480,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tableOfContents => '目录';
 
   @override
+  String get jumpToCurrentChapter => '定位当前章节';
+
+  @override
+  String chapterListProgressLabel(int current, int total) {
+    return '已读 $current / $total 章';
+  }
+
+  @override
   String get addBookmark => '添加书签';
 
   @override

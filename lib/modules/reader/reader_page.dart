@@ -558,11 +558,6 @@ class _ReaderPageState extends State<ReaderPage> {
               return Selector<ReaderController, Color>(
                 selector: (_, c) => c.backgroundColor,
                 builder: (context, bgColor, _) {
-                  final supportsChapterNavigation =
-                      context.select<ReaderController, bool>(
-                    (c) => c.capabilities.supportsChapterNavigation,
-                  );
-
                   return PopScope(
                     canPop: false,
                     onPopInvokedWithResult: (didPop, result) async {
@@ -579,31 +574,6 @@ class _ReaderPageState extends State<ReaderPage> {
                       key: readerPageScaffoldKey,
                       backgroundColor: bgColor,
                       resizeToAvoidBottomInset: false,
-                      drawerEnableOpenDragGesture: supportsChapterNavigation,
-                      drawer: supportsChapterNavigation
-                          ? Drawer(
-                              backgroundColor: bgColor,
-                              width: MediaQuery.of(context).size.width * 0.9,
-                              shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.zero),
-                              child: SafeArea(
-                                child: Consumer<ReaderController>(
-                                    builder: (context, controller, child) {
-                                  return ChapterListWidget(
-                                    chapters: controller.chapters,
-                                    currentChapterIndex:
-                                        controller.currentChapterIndex,
-                                    currentProgress: controller.currentProgress,
-                                    onChapterTap: (index, locator) {
-                                      Navigator.pop(context);
-                                      controller.jumpToChapter(
-                                          index, locator);
-                                    },
-                                  );
-                                }),
-                              ),
-                            )
-                          : null,
                       body: Consumer<ReaderController>(
                         builder: (context, controller, child) {
                           return BrightnessOverlayWidget(
@@ -857,9 +827,10 @@ class _ReaderPageState extends State<ReaderPage> {
                                                               controller
                                                                   .capabilities
                                                                   .supportsAnnotations,
-                                                          onOpenChapters: () =>
-                                                              _openChapterList(
-                                                                  context),
+                                                          onOpenChapters: () => _openChapterList(
+                                                            context,
+                                                            controller,
+                                                          ),
                                                           onAddBookmark: () =>
                                                               _addBookmarkFromOverlay(
                                                             context,
@@ -1051,9 +1022,50 @@ class _ReaderPageState extends State<ReaderPage> {
     });
   }
 
-  void _openChapterList(BuildContext context) {
+  void _openChapterList(
+    BuildContext context,
+    ReaderController controller,
+  ) {
     _setControlsVisible(false);
-    readerPageScaffoldKey.currentState?.openDrawer();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: NyanOverlayStyle.modalBarrierColor(context),
+      builder: (sheetContext) {
+        final maxSheetHeight = MediaQuery.sizeOf(sheetContext).height * 0.92;
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(NyanRadius.sheet),
+            ),
+            child: Material(
+              color: Theme.of(sheetContext).colorScheme.surface,
+              elevation: 6,
+              shadowColor: Theme.of(sheetContext)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.14),
+              child: ChapterListWidget(
+                bookTitle: controller.book.title,
+                bookAuthor: controller.book.author,
+                chapters: controller.chapters,
+                currentChapterIndex: controller.currentChapterIndex,
+                currentProgress: controller.currentProgress,
+                maxSheetHeight: maxSheetHeight,
+                onChapterTap: (index, locator) {
+                  Navigator.of(sheetContext).pop();
+                  controller.jumpToChapter(index, locator);
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _addBookmarkFromOverlay(
