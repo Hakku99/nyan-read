@@ -51,6 +51,7 @@
   "lastRead": "Last Read",
   "fileLocation": "File Location",
   "startReading": "Start Reading",
+  "continueReading": "Continue Reading",
   "copyPath": "Copy path",
   "filePathCopied": "File path copied to clipboard",
   "fileExists": "File exists",

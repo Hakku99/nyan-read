@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../../core/models/book.dart';
 import '../../../core/theme/nyan_radius.dart';
+import '../../../core/theme/nyan_shelf_ui.dart';
 import '../../../core/theme/nyan_shadows.dart';
 import '../../../core/theme/nyan_spacing.dart';
 import '../../../core/ui/nyan_theme_context.dart';
@@ -72,36 +73,39 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
     final theme = Theme.of(context);
 
     // Calculate progress percentage
-    final progress =
-        (widget.bookData['current_progress'] as num?)?.toDouble() ?? 0.0;
-    final progressPercent = (progress * 100).toInt();
+    final progress = widget.book.currentProgress.clamp(0.0, 1.0);
+    final progressPercent = (progress * 100).toStringAsFixed(0);
 
     // Format last read time with relative labels
-    String lastReadText = AppLocalizations.of(context)!.neverRead;
+    final loc = AppLocalizations.of(context)!;
+    String lastReadText = loc.neverRead;
     if (widget.bookData['last_read_at'] != null) {
       final now = DateTime.now();
       lastReadText = DateTimeUtils.formatRelativeTimeFromMillis(
         widget.bookData['last_read_at'] as int,
         now,
-        AppLocalizations.of(context)!,
+        loc,
       );
+    } else if (progress > 0) {
+      // Progress is already shown on the row below; avoid "Never read" + percent mismatch.
+      lastReadText = '';
     }
 
     return ScaleTransition(
       scale: _scaleAnimation,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: NyanSpacing.space4),
+        margin: const EdgeInsets.only(bottom: NyanShelfUi.listTileSpacing),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(NyanRadius.input),
+          borderRadius: BorderRadius.circular(NyanRadius.card),
           border: Border.all(
             color: widget.isSelected
                 ? theme.colorScheme.primary
-                : theme.colorScheme.outline.withOpacity(0.1),
+                : theme.colorScheme.outline.withValues(alpha: 0.12),
             width: widget.isSelected ? 2 : 1,
           ),
           color: widget.isSelected
               ? context.selectionSurface
-              : theme.colorScheme.surfaceVariant.withOpacity(0.3),
+              : theme.cardColor,
           boxShadow: NyanShadows.subtle(theme.shadowColor),
         ),
         child: GestureDetector(
@@ -128,7 +132,8 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                 Container(
                   padding: const EdgeInsets.all(NyanSpacing.space8),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    color:
+                        theme.colorScheme.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(NyanRadius.small),
                   ),
                   child: Icon(
@@ -139,29 +144,53 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                 ),
                 const SizedBox(width: NyanSpacing.space16),
 
-                // Book info
+                // Book info: title row + status, then progress + percent
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.book.title,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.2,
-                          color: theme.textTheme.bodyLarge?.color,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.book.title,
+                              style: TextStyle(
+                                fontSize: 14,
+                                height: 1.28,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.15,
+                                color: theme.textTheme.bodyLarge?.color,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (!widget.isSelectionMode &&
+                              lastReadText.isNotEmpty) ...[
+                            const SizedBox(width: NyanSpacing.space8),
+                            Text(
+                              lastReadText,
+                              textAlign: TextAlign.end,
+                              style: TextStyle(
+                                fontSize: 12,
+                                height: 1.2,
+                                fontWeight: FontWeight.w500,
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: NyanSpacing.space8),
-                      // Rounded progress bar
                       Row(
                         children: [
                           Expanded(
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(2),
+                              borderRadius: BorderRadius.circular(
+                                NyanShelfUi.progressBarHeight / 2,
+                              ),
                               child: TweenAnimationBuilder<double>(
                                 duration: const Duration(milliseconds: 300),
                                 curve: Curves.easeOutCubic,
@@ -169,12 +198,11 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                                 builder: (context, value, _) {
                                   return LinearProgressIndicator(
                                     value: value,
-                                    minHeight: 4,
+                                    minHeight: NyanShelfUi.progressBarHeight,
                                     backgroundColor: theme.colorScheme.primary
-                                        .withOpacity(0.15),
+                                        .withValues(alpha: 0.18),
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                      theme.colorScheme.primary
-                                          .withOpacity(0.6),
+                                      theme.colorScheme.primary,
                                     ),
                                   );
                                 },
@@ -184,10 +212,12 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                           const SizedBox(width: NyanSpacing.space8),
                           Text(
                             '$progressPercent%',
+                            textAlign: TextAlign.right,
                             style: TextStyle(
                               fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: theme.textTheme.bodySmall?.color,
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.58),
                             ),
                           ),
                         ],
@@ -195,24 +225,6 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                     ],
                   ),
                 ),
-
-                const SizedBox(width: NyanSpacing.space12),
-
-                // Last read time
-                if (!widget.isSelectionMode)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        lastReadText,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: theme.textTheme.bodySmall?.color
-                              ?.withOpacity(0.7),
-                        ),
-                      ),
-                    ],
-                  ),
               ],
             ),
           ),

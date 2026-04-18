@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/nyan_radius.dart';
 import '../../../core/theme/nyan_spacing.dart';
 
+/// Visual weight: [emphasis] matches primary-filled pills (reader settings);
+/// [subtle] uses a light primary tint so the control does not compete with the hero CTA.
+enum SegmentedTabStyle {
+  emphasis,
+  subtle,
+}
+
 /// A segmented control widget with pill-style design and sliding indicator animation.
 /// Used for the Public/Private shelf tabs in HomeScreen.
 class SegmentedTabControl extends StatefulWidget {
@@ -15,6 +22,9 @@ class SegmentedTabControl extends StatefulWidget {
   /// When set, applied to tab label [TextStyle.height] (e.g. reader settings).
   final double? labelLineHeight;
 
+  /// [subtle] = tinted selection + primary text (bookshelf). Default = strong fill (reader menu, etc.).
+  final SegmentedTabStyle style;
+
   const SegmentedTabControl({
     super.key,
     required this.tabs,
@@ -24,6 +34,7 @@ class SegmentedTabControl extends StatefulWidget {
     this.selectedColor,
     this.unselectedColor,
     this.labelLineHeight,
+    this.style = SegmentedTabStyle.emphasis,
   });
 
   @override
@@ -38,19 +49,26 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
 
     final backgroundColor = widget.backgroundColor ?? theme.colorScheme.surface;
 
-    // Ghost style for dark mode, solid for light mode
-    final selectedColor = widget.selectedColor ??
-        (isDark
-            ? theme.colorScheme.primary.withOpacity(0.15)
-            : theme.colorScheme.primary);
+    final bool subtle = widget.style == SegmentedTabStyle.subtle;
+
+    // Ghost style for dark mode, solid for light mode; subtle = tinted pill, not full primary block.
+    final Color resolvedSelectedFill = widget.selectedColor ??
+        (subtle
+            ? theme.colorScheme.primary.withValues(alpha: isDark ? 0.22 : 0.18)
+            : (isDark
+                ? theme.colorScheme.primary.withValues(alpha: 0.15)
+                : theme.colorScheme.primary));
 
     final unselectedColor = widget.unselectedColor ??
         theme.textTheme.bodySmall?.color ??
         Colors.grey;
 
-    // Text color for selected tab
-    final selectedTextColor =
-        isDark ? theme.colorScheme.primary : theme.colorScheme.onPrimary;
+    // Text color for selected tab (tinted pill uses primary ink; solid fill uses onPrimary in light).
+    final Color selectedTextColor = widget.selectedColor != null
+        ? (isDark ? theme.colorScheme.primary : theme.colorScheme.onPrimary)
+        : subtle
+            ? theme.colorScheme.primary
+            : (isDark ? theme.colorScheme.primary : theme.colorScheme.onPrimary);
 
     return Container(
       height: 40,
@@ -58,7 +76,7 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
         color: backgroundColor,
         borderRadius: BorderRadius.circular(NyanRadius.card),
         border: Border.all(
-          color: theme.colorScheme.onSurface.withOpacity(0.12),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
           width: 1,
         ),
       ),
@@ -81,13 +99,21 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                 width: tabWidth,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: selectedColor,
+                    color: resolvedSelectedFill,
                     borderRadius: BorderRadius.circular(NyanRadius.input),
-                    border: isDark
+                    border: isDark && !subtle
                         ? Border.all(
-                            color: theme.colorScheme.primary.withOpacity(0.5),
-                            width: 1)
-                        : null,
+                            color:
+                                theme.colorScheme.primary.withValues(alpha: 0.5),
+                            width: 1,
+                          )
+                        : subtle && isDark
+                            ? Border.all(
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.35),
+                                width: 1,
+                              )
+                            : null,
                   ),
                 ),
               ),
@@ -132,6 +158,14 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                                       ? selectedTextColor
                                       : unselectedColor,
                                 ),
+                                strutStyle: widget.labelLineHeight != null
+                                    ? StrutStyle(
+                                        fontSize: 14,
+                                        height: widget.labelLineHeight,
+                                        forceStrutHeight: true,
+                                        leading: 0,
+                                      )
+                                    : null,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),

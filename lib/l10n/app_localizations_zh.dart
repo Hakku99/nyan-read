@@ -143,6 +143,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get startReading => '开始阅读';
 
   @override
+  String get continueReading => '继续阅读';
+
+  @override
   String get copyPath => '复制路径';
 
   @override

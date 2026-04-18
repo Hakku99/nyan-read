@@ -2,6 +2,7 @@
 
 import '../../models/book.dart';
 import '../../theme/nyan_radius.dart';
+import '../../theme/nyan_shelf_ui.dart';
 import '../../theme/nyan_shadows.dart';
 import '../../theme/nyan_spacing.dart';
 import '../nyan_theme_context.dart';
@@ -36,7 +37,7 @@ class NyanBookGridCard extends StatelessWidget {
         children: [
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(NyanRadius.input),
+              borderRadius: BorderRadius.circular(NyanRadius.card),
               border: Border.all(
                 color: isSelected
                     ? theme.colorScheme.primary
@@ -45,55 +46,63 @@ class NyanBookGridCard extends StatelessWidget {
               ),
               color: isSelected
                   ? context.selectionSurface
-                  : theme.colorScheme.surfaceContainerHighest.withValues(
-                      alpha: theme.brightness == Brightness.dark ? 0.28 : 0.45,
-                    ),
+                  : theme.cardColor,
               boxShadow: NyanShadows.subtle(theme.shadowColor),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(NyanSpacing.space12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: Center(
+            child: Align(
+              alignment: Alignment.center,
+              child: Padding(
+                padding: const EdgeInsets.all(NyanSpacing.space8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
                       child: Container(
-                        padding: const EdgeInsets.all(NyanSpacing.space12),
+                        padding: const EdgeInsets.all(NyanSpacing.space4),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius:
                               BorderRadius.circular(NyanRadius.small),
                         ),
                         child: Icon(
                           Icons.menu_book_rounded,
-                          size: NyanSpacing.space32,
+                          size: 26,
                           color: theme.colorScheme.primary,
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: NyanSpacing.space8),
-                  Text(
-                    book.title,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: theme.textTheme.bodyLarge?.color,
+                    SizedBox(height: NyanShelfUi.gridCardBlockGap),
+                    Text(
+                      book.title,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        height: 1.28,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: NyanSpacing.space8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(NyanRadius.small),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: NyanSpacing.space4,
-                      backgroundColor:
-                          theme.colorScheme.primary.withValues(alpha: 0.12),
+                    SizedBox(height: NyanShelfUi.gridCardBlockGap),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(
+                        NyanShelfUi.progressBarHeight / 2,
+                      ),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: NyanShelfUi.progressBarHeight,
+                        backgroundColor:
+                            theme.colorScheme.primary.withValues(alpha: 0.18),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          theme.colorScheme.primary,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

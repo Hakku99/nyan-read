@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/nyan_spacing.dart';
 import '../../theme/nyan_typography.dart';
+import '../nyan_theme_context.dart';
 
 class NyanPageHeader extends StatelessWidget {
   final String title;
@@ -26,6 +27,7 @@ class NyanPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final nyanTheme = context.nyanTheme;
 
     return Padding(
       padding: padding ??
@@ -52,6 +54,7 @@ class NyanPageHeader extends StatelessWidget {
                       ?.copyWith(
                         fontSize: NyanTypography.title,
                         fontWeight: FontWeight.w600,
+                        letterSpacing: -0.15,
                       )
                       .merge(titleStyle),
                 ),
@@ -62,6 +65,8 @@ class NyanPageHeader extends StatelessWidget {
                     style: theme.textTheme.bodySmall
                         ?.copyWith(
                           fontSize: NyanTypography.meta,
+                          color: nyanTheme.textMuted,
+                          height: 1.35,
                         )
                         .merge(subtitleStyle),
                   ),

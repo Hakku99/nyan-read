@@ -5,6 +5,7 @@ import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
 import '../../theme/nyan_typography.dart';
 import 'nyan_info_card.dart';
+import 'nyan_overlay_style.dart';
 
 enum NyanInlineAdDensity { regular, compact }
 
@@ -34,18 +35,20 @@ class NyanInlineAdCard extends StatelessWidget {
     final cardPadding = isCompact ? NyanSpacing.space8 : NyanSpacing.space12;
     final iconPadding = isCompact ? NyanSpacing.space8 : NyanSpacing.space12;
     final horizontalGap = isCompact ? NyanSpacing.space8 : NyanSpacing.space12;
-    final labelGap = isCompact ? NyanSpacing.space4 : NyanSpacing.space8;
 
     return NyanInfoCard(
       onTap: onTap,
-      padding: EdgeInsets.all(cardPadding),
+      padding: EdgeInsets.symmetric(
+        horizontal: cardPadding,
+        vertical: NyanSpacing.space8,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: EdgeInsets.all(iconPadding),
             decoration: BoxDecoration(
-              color: nyanTheme.surfaceMuted,
+              color: NyanOverlayStyle.recessedSurface(context),
               borderRadius: BorderRadius.circular(NyanRadius.small),
             ),
             child: leading ??
@@ -72,7 +75,7 @@ class NyanInlineAdCard extends StatelessWidget {
                     color: nyanTheme.textSecondary,
                   ),
                 ),
-                SizedBox(height: labelGap),
+                const SizedBox(height: NyanSpacing.space4),
                 Text(
                   title,
                   maxLines: isCompact ? 1 : 2,
@@ -85,10 +88,10 @@ class NyanInlineAdCard extends StatelessWidget {
                 const SizedBox(height: NyanSpacing.space4),
                 Text(
                   description,
-                  maxLines: 1,
+                  maxLines: isCompact ? 1 : 2,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    height: 1.25,
+                    height: 1.3,
                     color: nyanTheme.textSecondary,
                   ),
                 ),

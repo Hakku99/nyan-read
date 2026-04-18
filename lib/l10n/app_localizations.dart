@@ -362,6 +362,12 @@ abstract class AppLocalizations {
   /// **'Start Reading'**
   String get startReading;
 
+  /// No description provided for @continueReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Reading'**
+  String get continueReading;
+
   /// No description provided for @copyPath.
   ///
   /// In en, this message translates to:

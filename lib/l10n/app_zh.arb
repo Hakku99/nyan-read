@@ -51,6 +51,7 @@
   "lastRead": "最后阅读",
   "fileLocation": "文件位置",
   "startReading": "开始阅读",
+  "continueReading": "继续阅读",
   "copyPath": "复制路径",
   "filePathCopied": "文件路径已复制到剪贴板",
   "fileExists": "文件存在",

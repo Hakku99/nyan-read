@@ -144,6 +144,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startReading => 'Start Reading';
 
   @override
+  String get continueReading => 'Continue Reading';
+
+  @override
   String get copyPath => 'Copy path';
 
   @override

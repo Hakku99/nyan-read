@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/book.dart';
-import '../../theme/nyan_radius.dart';
+import '../../theme/nyan_shelf_ui.dart';
 import '../../theme/nyan_spacing.dart';
 import 'nyan_info_card.dart';
 import 'nyan_primary_button.dart';
@@ -35,29 +35,40 @@ class NyanContinueReadingCard extends StatelessWidget {
     final hasAuthor =
         book.author.trim().isNotEmpty &&
         book.author.trim().toLowerCase() != 'unknown';
-    final horizontalPadding = compact
-        ? NyanSpacing.space8
-        : NyanSpacing.space12;
-    final verticalPadding = collapsed
-        ? NyanSpacing.space8
-        : (compact ? NyanSpacing.space8 : NyanSpacing.space12);
-    final titleSpacing = compact ? NyanSpacing.space8 : NyanSpacing.space12;
+    final EdgeInsetsGeometry cardPadding;
+    if (collapsed) {
+      cardPadding = EdgeInsets.symmetric(
+        horizontal: compact ? NyanSpacing.space8 : NyanSpacing.space12,
+        vertical: NyanSpacing.space8,
+      );
+    } else if (compact) {
+      cardPadding = const EdgeInsets.all(NyanSpacing.space8);
+    } else {
+      cardPadding = const EdgeInsets.symmetric(
+        horizontal: NyanSpacing.space16,
+        vertical: NyanSpacing.space12,
+      );
+    }
+
+    /// Between title block and progress / CTA row.
+    final titleSpacing = compact
+        ? NyanSpacing.space4
+        : (hasAuthor ? NyanSpacing.space8 : NyanSpacing.space4);
 
     return AnimatedSize(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeInOut,
       alignment: Alignment.topCenter,
       child: NyanInfoCard(
-        padding: EdgeInsets.symmetric(
-          horizontal: horizontalPadding,
-          vertical: verticalPadding,
-        ),
+        padding: cardPadding,
         child: collapsed
             ? _buildCollapsedLayout(
+                context,
                 theme,
                 resolvedProgressLabel,
               )
             : _buildExpandedLayout(
+                context,
                 theme,
                 hasAuthor,
                 resolvedProgressLabel,
@@ -69,6 +80,7 @@ class NyanContinueReadingCard extends StatelessWidget {
   }
 
   Widget _buildExpandedLayout(
+    BuildContext context,
     ThemeData theme,
     bool hasAuthor,
     String resolvedProgressLabel,
@@ -76,21 +88,28 @@ class NyanContinueReadingCard extends StatelessWidget {
     double titleSpacing,
   ) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Stack(
+          clipBehavior: Clip.none,
           children: [
-            Expanded(
+            Padding(
+              padding: EdgeInsets.only(
+                right: onToggleCollapse != null ? 36 : 0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     book.title,
                     maxLines: compact ? 1 : 2,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleMedium?.copyWith(
+                      fontSize: compact ? 15 : 16,
+                      height: 1.25,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: -0.2,
                     ),
                   ),
                   if (hasAuthor) ...[
@@ -99,63 +118,94 @@ class NyanContinueReadingCard extends StatelessWidget {
                       book.author,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        height: 1.2,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.62,
+                        ),
+                      ),
                     ),
                   ],
                 ],
               ),
             ),
-            if (onToggleCollapse != null) ...[
-              const SizedBox(width: NyanSpacing.space8),
-              _buildCollapseButton(expanded: true),
-            ],
+            if (onToggleCollapse != null)
+              Positioned.fill(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _buildCollapseButton(
+                    context,
+                    expanded: true,
+                    compact: true,
+                    dense: true,
+                  ),
+                ),
+              ),
           ],
         ),
         SizedBox(height: titleSpacing),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    resolvedProgressLabel,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        resolvedProgressLabel,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontSize: 12,
+                          height: 1.2,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: 0.1,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.62,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: NyanSpacing.space8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          NyanShelfUi.progressBarHeight / 2,
+                        ),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: NyanShelfUi.progressBarHeight,
+                          backgroundColor:
+                              theme.colorScheme.primary.withValues(alpha: 0.2),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: NyanSpacing.space8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(NyanRadius.small),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: NyanSpacing.space4,
-                      backgroundColor:
-                          theme.colorScheme.primary.withValues(alpha: 0.15),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-            const SizedBox(width: NyanSpacing.space12),
-            NyanPrimaryButton(
-              label: buttonLabel,
-              onPressed: onContinue,
-              padding: EdgeInsets.symmetric(
-                horizontal: compact
-                    ? NyanSpacing.space12
-                    : NyanSpacing.space16,
-                vertical: NyanSpacing.space8,
+              const SizedBox(width: NyanSpacing.space12),
+              NyanPrimaryButton(
+                label: buttonLabel,
+                onPressed: onContinue,
+                padding: EdgeInsets.symmetric(
+                  horizontal: compact
+                      ? NyanSpacing.space12
+                      : NyanSpacing.space20,
+                  vertical: NyanSpacing.space8,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
   }
 
   Widget _buildCollapsedLayout(
+    BuildContext context,
     ThemeData theme,
     String resolvedProgressLabel,
   ) {
@@ -180,11 +230,13 @@ class NyanContinueReadingCard extends StatelessWidget {
                 resolvedProgressLabel,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.textTheme.bodySmall?.color?.withValues(
-                    alpha: 0.78,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontSize: 11,
+                  height: 1.2,
+                  color: theme.colorScheme.onSurface.withValues(
+                    alpha: 0.62,
                   ),
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
             ],
@@ -202,6 +254,7 @@ class NyanContinueReadingCard extends StatelessWidget {
         if (onToggleCollapse != null) ...[
           const SizedBox(width: NyanSpacing.space4),
           _buildCollapseButton(
+            context,
             expanded: false,
             compact: true,
           ),
@@ -210,25 +263,37 @@ class NyanContinueReadingCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCollapseButton({
+  Widget _buildCollapseButton(
+    BuildContext context, {
     required bool expanded,
     bool compact = false,
+    bool dense = false,
   }) {
+    final theme = Theme.of(context);
+    final m = MaterialLocalizations.of(context);
     return IconButton(
       onPressed: onToggleCollapse,
+      tooltip: expanded ? m.expandedIconTapHint : m.collapsedIconTapHint,
       icon: Icon(
         expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
         size: NyanSpacing.space20,
       ),
-      constraints: const BoxConstraints(
-        minWidth: NyanSpacing.minTapTarget,
-        minHeight: NyanSpacing.minTapTarget,
+      constraints: BoxConstraints(
+        minWidth: dense ? 36 : NyanSpacing.minTapTarget,
+        minHeight: dense ? 36 : NyanSpacing.minTapTarget,
       ),
       padding: EdgeInsets.all(
-        compact ? NyanSpacing.space4 : NyanSpacing.space8,
+        dense
+            ? NyanSpacing.space4
+            : (compact ? NyanSpacing.space4 : NyanSpacing.space8),
       ),
-      visualDensity: VisualDensity.compact,
-      splashRadius: compact ? NyanSpacing.space16 : NyanSpacing.space20,
+      style: IconButton.styleFrom(
+        foregroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
+      ),
     );
   }
 }

@@ -15,9 +15,11 @@ import '../../core/services/service_locator.dart';
 import '../../core/models/book.dart';
 import '../../core/services/mascot_manager.dart';
 import '../../core/theme/nyan_radius.dart';
+import '../../core/theme/nyan_shelf_ui.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
 import '../../core/ui/components/components.dart';
+import '../../core/ui/nyan_theme_context.dart';
 import '../../modules/privacy/privacy_lock_service.dart';
 import 'package:go_router/go_router.dart';
 import '../settings/settings_page.dart';
@@ -27,6 +29,7 @@ import '../../core/utils/book_source_platform.dart';
 import '../../core/utils/snackbar_utils.dart';
 import 'book_details_page.dart';
 import 'widgets/import_book_sheet.dart';
+import 'widgets/bookshelf_shelf_toolbar.dart';
 import 'widgets/segmented_tab_control.dart';
 import 'bookshelf_view_model.dart';
 
@@ -66,6 +69,21 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  double _shelfScrollBottomPadding(BuildContext context) {
+    return MediaQuery.paddingOf(context).bottom +
+        NyanShelfUi.scrollBottomFabClearance;
+  }
+
+  /// Single 3-column layout for the whole shelf so ad segments don’t resize tiles.
+  SliverGridDelegateWithFixedCrossAxisCount _bookshelfGridDelegate() {
+    return SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 3,
+      childAspectRatio: NyanShelfUi.gridChildAspectRatio,
+      crossAxisSpacing: NyanShelfUi.gridCrossAxisSpacing,
+      mainAxisSpacing: NyanShelfUi.gridMainAxisSpacing,
+    );
   }
 
   Future<void> _deleteSelectedBooks(BuildContext context) async {
@@ -604,51 +622,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     );
   }
 
-  Widget _buildHeaderActionButton({
-    required String tooltip,
-    required IconData icon,
-    required VoidCallback onPressed,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: IconButton(
-        onPressed: onPressed,
-        icon: Icon(icon, size: NyanSpacing.space20),
-        constraints: const BoxConstraints(
-          minWidth: NyanSpacing.minTapTarget,
-          minHeight: NyanSpacing.minTapTarget,
-        ),
-        padding: const EdgeInsets.all(NyanSpacing.space12),
-      ),
-    );
-  }
-
-  Widget _buildLibraryActionButton({
-    required BuildContext context,
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onPressed,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(NyanRadius.input),
-        child: Container(
-          constraints: const BoxConstraints(
-            minWidth: NyanSpacing.minTapTarget,
-            minHeight: NyanSpacing.minTapTarget,
-          ),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(NyanRadius.input),
-          ),
-          child: Icon(icon, size: NyanSpacing.space20),
-        ),
-      ),
-    );
-  }
-
   Widget _buildContinueReadingSection(
     BuildContext context,
     Book continueReadingBook,
@@ -658,6 +631,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     final progressPercent =
         (continueReadingBook.currentProgress.clamp(0.0, 1.0) * 100)
             .toStringAsFixed(0);
+    final progress = continueReadingBook.currentProgress.clamp(0.0, 1.0);
 
     return NyanContinueReadingCard(
       book: continueReadingBook,
@@ -669,7 +643,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
         });
       },
       progressLabel: '${loc.readingProgress}  $progressPercent%',
-      buttonLabel: loc.startReading,
+      buttonLabel: progress <= 0 ? loc.startReading : loc.continueReading,
       onContinue: () {
         context.push('/reader/${continueReadingBook.id}').then((_) {
           if (mounted) {
@@ -693,126 +667,111 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
     const useCompactContinueReading = false;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+    return CustomScrollView(
+      slivers: [
         if (showHeaderSections)
-          Theme(
-            data: theme.copyWith(
-              textTheme: theme.textTheme.copyWith(
-                bodySmall: theme.textTheme.bodySmall?.copyWith(
-                  fontSize: NyanTypography.meta,
-                  height: 1.35,
-                  letterSpacing: 0.15,
+          SliverToBoxAdapter(
+            child: Theme(
+              data: theme.copyWith(
+                textTheme: theme.textTheme.copyWith(
+                  bodySmall: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: NyanTypography.meta,
+                    height: 1.35,
+                    letterSpacing: 0.15,
+                  ),
                 ),
               ),
-            ),
-            child: NyanPageHeader(
-              title: loc.appTitle,
-              subtitle: loc.enjoyReading,
-              actions: [
-                _buildHeaderActionButton(
-                  tooltip: loc.settingsTitle,
-                  icon: Icons.settings_outlined,
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SettingsPage()),
-                  ).then((_) => setState(() {})),
-                ),
-              ],
-              padding: const EdgeInsets.fromLTRB(
-                NyanSpacing.space4,
-                0,
-                NyanSpacing.space4,
-                NyanSpacing.space12,
-              ),
-            ),
-          ),
-        if (showHeaderSections && continueReadingBook != null) ...[
-          _buildContinueReadingSection(
-            context,
-            continueReadingBook,
-            useCompactContinueReading,
-          ),
-          const SizedBox(height: NyanSpacing.space12),
-        ],
-        NyanInfoCard(
-          padding: const EdgeInsets.all(NyanSpacing.space8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SegmentedTabControl(
-                tabs: [
-                  SegmentedTab(label: loc.publicShelf),
-                  if (showPrivacyTab)
-                    SegmentedTab(
-                      label: loc.privateShelf,
-                      icon: Icons.lock,
-                    ),
+              child: NyanPageHeader(
+                title: loc.appTitle,
+                subtitle: loc.enjoyReading,
+                actions: [
+                  NyanRecessedIconButton(
+                    tooltip: loc.settingsTitle,
+                    icon: Icons.settings_outlined,
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SettingsPage()),
+                    ).then((_) => setState(() {})),
+                  ),
                 ],
-                selectedIndex: selectedTabIndex,
-                onTabChanged: (index) {
-                  _tabController.animateTo(index);
-                  setState(() {});
-                },
+                padding: const EdgeInsets.fromLTRB(
+                  NyanSpacing.space4,
+                  0,
+                  NyanSpacing.space4,
+                  NyanSpacing.space12,
+                ),
               ),
-              const SizedBox(height: NyanSpacing.space4),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Wrap(
-                  alignment: WrapAlignment.end,
-                  spacing: NyanSpacing.space8,
-                  runSpacing: NyanSpacing.space8,
-                  children: [
-                    _buildLibraryActionButton(
-                      context: context,
-                      icon: _prefs.viewMode == ViewMode.grid
-                          ? Icons.view_list
-                          : Icons.grid_view,
-                      tooltip: _prefs.viewMode == ViewMode.grid
-                          ? loc.listView
-                          : loc.gridView,
+            ),
+          ),
+        if (showHeaderSections && continueReadingBook != null)
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildContinueReadingSection(
+                  context,
+                  continueReadingBook,
+                  useCompactContinueReading,
+                ),
+                const SizedBox(height: NyanShelfUi.sectionGapAfterShelfChrome),
+              ],
+            ),
+          ),
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: BookshelfShelfPinnedHeaderDelegate(
+            extent: kBookshelfShelfToolbarPinnedExtent,
+            child: BookshelfShelfToolbar(
+              tabs: [
+                SegmentedTab(label: loc.publicShelf),
+                if (showPrivacyTab) SegmentedTab(label: loc.privateShelf),
+              ],
+              selectedIndex: selectedTabIndex,
+              onTabChanged: (index) {
+                _tabController.animateTo(index);
+                setState(() {});
+              },
+              toolbarActions: [
+                Builder(
+                  builder: (context) {
+                    final isGridView = _prefs.viewMode == ViewMode.grid;
+                    return NyanRecessedIconButton(
+                      icon: isGridView ? Icons.view_list : Icons.grid_view,
+                      tooltip: isGridView ? loc.listView : loc.gridView,
                       onPressed: () async {
                         await _prefs.setViewMode(
-                          _prefs.viewMode == ViewMode.grid
-                              ? ViewMode.list
-                              : ViewMode.grid,
+                          isGridView ? ViewMode.list : ViewMode.grid,
                         );
                         setState(() {});
                       },
-                    ),
-                    _buildLibraryActionButton(
-                      context: context,
-                      icon: Icons.sort,
-                      tooltip: loc.sortBy,
-                      onPressed: () => _showSortMenu(context),
-                    ),
-                    if (featureManager.isPro)
-                      _buildLibraryActionButton(
-                        context: context,
-                        icon: featureManager.isPrivateShelfUnlocked
-                            ? Icons.lock_open
-                            : Icons.lock,
-                        tooltip: featureManager.isPrivateShelfUnlocked
-                            ? loc.lockPrivacyShelf
-                            : loc.unlockPrivacyShelf,
-                        onPressed: () => _handlePrivacyLock(context),
-                      ),
-                  ],
+                    );
+                  },
                 ),
-              ),
-            ],
+                NyanRecessedIconButton(
+                  icon: Icons.sort,
+                  tooltip: loc.sortBy,
+                  onPressed: () => _showSortMenu(context),
+                ),
+                if (featureManager.isPro)
+                  NyanRecessedIconButton(
+                    icon: featureManager.isPrivateShelfUnlocked
+                        ? Icons.lock_open
+                        : Icons.lock,
+                    tooltip: featureManager.isPrivateShelfUnlocked
+                        ? loc.lockPrivacyShelf
+                        : loc.unlockPrivacyShelf,
+                    onPressed: () => _handlePrivacyLock(context),
+                  ),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: NyanSpacing.space12),
-        Expanded(
-          child: _buildShelfContent(
-            context,
-            activeBooks,
-            showPrivacyTab && _tabController.index == 1,
-            adsEnabled: featureManager.adsEnabled,
-            isSelectionMode: isSelectionMode,
-          ),
+        ..._buildShelfSlivers(
+          context,
+          activeBooks,
+          showPrivacyTab && _tabController.index == 1,
+          adsEnabled: featureManager.adsEnabled,
+          isSelectionMode: isSelectionMode,
         ),
       ],
     );
@@ -836,9 +795,9 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-            NyanSpacing.space16,
+            NyanShelfUi.bookshelfPageHorizontalPadding,
             NyanSpacing.space12,
-            NyanSpacing.space16,
+            NyanShelfUi.bookshelfPageHorizontalPadding,
             0,
           ),
           child: Selector<
@@ -873,14 +832,35 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       ),
       floatingActionButton: isSelectionMode
           ? null
-          : FloatingActionButton(
-              onPressed: () => _showImportMenu(context),
-              child: const Icon(Icons.add),
+          : Builder(
+              builder: (context) {
+                final nyan = context.nyanTheme;
+                return Padding(
+                  padding: const EdgeInsets.only(
+                    right: NyanSpacing.space4,
+                    bottom: NyanSpacing.space8,
+                  ),
+                  child: FloatingActionButton(
+                    onPressed: () => _showImportMenu(context),
+                    backgroundColor: nyan.fabBackground,
+                    foregroundColor: nyan.fabForeground,
+                    elevation: 2,
+                    highlightElevation: 4,
+                    hoverElevation: 3,
+                    focusElevation: 3,
+                    disabledElevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(NyanRadius.card),
+                    ),
+                    child: const Icon(Icons.add),
+                  ),
+                );
+              },
             ),
     );
   }
 
-  Widget _buildShelfContent(
+  List<Widget> _buildShelfSlivers(
     BuildContext context,
     List<Book> books,
     bool isPrivate, {
@@ -891,33 +871,43 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       AdsUI.hide();
       final loc = AppLocalizations.of(context)!;
 
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final compactLayout = constraints.maxHeight < 520;
+      final viewHeight = MediaQuery.sizeOf(context).height;
+      final minEmptyBody = (viewHeight * 0.42).clamp(280.0, 560.0);
 
-          return Column(
-            children: [
-              Spacer(flex: compactLayout ? 1 : 2),
-              NyanEmptyState(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: NyanSpacing.space24,
-                ),
-                iconSpacing: NyanSpacing.space12,
-                descriptionSpacing: NyanSpacing.space4,
-                textMinHeight: compactLayout ? 112 : 132,
-                icon: MascotManager().render(
-                  MascotScene.emptyShelf,
-                  size: compactLayout ? 112 : 128,
-                ),
-                title: isPrivate ? loc.emptyShelfMessage : loc.emptyShelfTitle,
-                description:
-                    isPrivate ? loc.emptyPrivateShelf : loc.emptyShelfSubtitle,
+      return [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.only(bottom: _shelfScrollBottomPadding(context)),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: minEmptyBody),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                final compactLayout = constraints.maxHeight < 520;
+
+                return Center(
+                  child: NyanEmptyState(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: NyanSpacing.space24,
+                    ),
+                    iconSpacing: NyanSpacing.space12,
+                    descriptionSpacing: NyanSpacing.space4,
+                    textMinHeight: compactLayout ? 112 : 132,
+                    icon: MascotManager().render(
+                      MascotScene.emptyShelf,
+                      size: compactLayout ? 112 : 128,
+                    ),
+                    title: isPrivate ? loc.emptyShelfMessage : loc.emptyShelfTitle,
+                    description: isPrivate
+                        ? loc.emptyPrivateShelf
+                        : loc.emptyShelfSubtitle,
+                  ),
+                );
+                },
               ),
-              Spacer(flex: compactLayout ? 2 : 3),
-            ],
-          );
-        },
-      );
+            ),
+          ),
+        ),
+      ];
     }
 
     final showInlineAd = AdsUI.shouldShowBookshelfInlineAd(
@@ -928,77 +918,80 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     );
 
     return _prefs.viewMode == ViewMode.grid
-        ? _buildGridView(context, books, showInlineAd: showInlineAd)
-        : _buildListView(context, books, showInlineAd: showInlineAd);
+        ? _buildGridSlivers(context, books, showInlineAd: showInlineAd)
+        : _buildListSlivers(context, books, showInlineAd: showInlineAd);
   }
 
-  Widget _buildGridView(
+  List<Widget> _buildGridSlivers(
     BuildContext context,
     List<Book> books, {
     required bool showInlineAd,
   }) {
-    const gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 3,
-      childAspectRatio: 0.75,
-      crossAxisSpacing: NyanSpacing.space16,
-      mainAxisSpacing: NyanSpacing.space16,
-    );
+    final topPad = NyanShelfUi.sectionGapAfterShelfChrome;
+    final bottomPad = _shelfScrollBottomPadding(context);
 
     if (!showInlineAd) {
-      return GridView.builder(
-        padding: const EdgeInsets.fromLTRB(
-          0,
-          NyanSpacing.space8,
-          0,
-          NyanSpacing.space16,
+      return [
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            0,
+            topPad,
+            0,
+            bottomPad,
+          ),
+          sliver: SliverGrid(
+            gridDelegate: _bookshelfGridDelegate(),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _buildGridBookTile(context, books[index]),
+              childCount: books.length,
+            ),
+          ),
         ),
-        gridDelegate: gridDelegate,
-        itemCount: books.length,
-        itemBuilder: (context, index) => _buildGridBookTile(context, books[index]),
-      );
+      ];
     }
 
     final leadingBooks = books.take(AdsUI.bookshelfGridInsertionCount).toList();
     final trailingBooks = books.skip(AdsUI.bookshelfGridInsertionCount).toList();
 
-    return CustomScrollView(
-      slivers: [
+    return [
+      SliverPadding(
+        padding: EdgeInsets.only(top: topPad),
+        sliver: SliverGrid(
+          gridDelegate: _bookshelfGridDelegate(),
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => _buildGridBookTile(context, leadingBooks[index]),
+            childCount: leadingBooks.length,
+          ),
+        ),
+      ),
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: NyanShelfUi.gridMainAxisSpacing,
+          ),
+          child: AdsUI.buildBookshelfInlineAd(
+            context,
+            density: NyanInlineAdDensity.compact,
+          ),
+        ),
+      ),
+      if (trailingBooks.isNotEmpty)
         SliverPadding(
-          padding: const EdgeInsets.only(top: NyanSpacing.space8),
+          padding: EdgeInsets.only(bottom: bottomPad),
           sliver: SliverGrid(
-            gridDelegate: gridDelegate,
+            gridDelegate: _bookshelfGridDelegate(),
             delegate: SliverChildBuilderDelegate(
-              (context, index) => _buildGridBookTile(context, leadingBooks[index]),
-              childCount: leadingBooks.length,
+              (context, index) =>
+                  _buildGridBookTile(context, trailingBooks[index]),
+              childCount: trailingBooks.length,
             ),
           ),
-        ),
+        )
+      else
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: NyanSpacing.space16),
-            child: AdsUI.buildBookshelfInlineAd(
-              context,
-              density: NyanInlineAdDensity.compact,
-            ),
-          ),
+          child: SizedBox(height: bottomPad),
         ),
-        if (trailingBooks.isNotEmpty)
-          SliverPadding(
-            padding: const EdgeInsets.only(bottom: NyanSpacing.space16),
-            sliver: SliverGrid(
-              gridDelegate: gridDelegate,
-              delegate: SliverChildBuilderDelegate(
-                (context, index) => _buildGridBookTile(context, trailingBooks[index]),
-                childCount: trailingBooks.length,
-              ),
-            ),
-          )
-        else
-          const SliverToBoxAdapter(
-            child: SizedBox(height: NyanSpacing.space16),
-          ),
-      ],
-    );
+    ];
   }
 
   Widget _buildGridBookTile(BuildContext context, Book book) {
@@ -1032,33 +1025,65 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
     );
   }
 
-  Widget _buildListView(
+  List<Widget> _buildListSlivers(
     BuildContext context,
     List<Book> books, {
     required bool showInlineAd,
   }) {
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(
-        0,
-        NyanSpacing.space4,
-        0,
-        NyanSpacing.space16,
-      ),
-      itemCount: books.length + (showInlineAd ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (showInlineAd && index == AdsUI.bookshelfListInsertionIndex) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: NyanSpacing.space4),
-            child: AdsUI.buildBookshelfInlineAd(context),
-          );
-        }
+    final topPad = NyanShelfUi.sectionGapAfterShelfChrome;
+    final bottomPad = _shelfScrollBottomPadding(context);
 
-        final bookIndex = showInlineAd && index > AdsUI.bookshelfListInsertionIndex
-            ? index - 1
-            : index;
-        return _buildListBookTile(context, books[bookIndex]);
-      },
-    );
+    if (!showInlineAd) {
+      return [
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            0,
+            topPad,
+            0,
+            bottomPad,
+          ),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _buildListBookTile(context, books[index]),
+              childCount: books.length,
+            ),
+          ),
+        ),
+      ];
+    }
+
+    final itemCount = books.length + 1;
+
+    return [
+      SliverPadding(
+        padding: EdgeInsets.fromLTRB(
+          0,
+          topPad,
+          0,
+          bottomPad,
+        ),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              if (index == AdsUI.bookshelfListInsertionIndex) {
+                // Only bottom inset: previous tile already has [listTileSpacing] margin.
+                return Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: NyanShelfUi.listTileSpacing,
+                  ),
+                  child: AdsUI.buildBookshelfInlineAd(context),
+                );
+              }
+
+              final bookIndex =
+                  index > AdsUI.bookshelfListInsertionIndex ? index - 1 : index;
+              return _buildListBookTile(context, books[bookIndex]);
+            },
+            childCount: itemCount,
+          ),
+        ),
+      ),
+    ];
   }
 
   Widget _buildListBookTile(BuildContext context, Book book) {

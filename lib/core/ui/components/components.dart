@@ -16,6 +16,7 @@ export 'nyan_overlay_style.dart';
 export 'nyan_page_header.dart';
 export 'nyan_primary_button.dart';
 export 'nyan_progress_dialog.dart';
+export 'nyan_recessed_icon_button.dart';
 export 'nyan_secure_entry_dialog.dart';
 export 'nyan_selection_sheet.dart';
 export 'nyan_selection_sheet_row.dart';
