@@ -1006,9 +1006,21 @@ class _ReaderPageState extends State<ReaderPage> {
             ),
             child: ChangeNotifierProvider<ReaderController>.value(
               value: controller,
-              child: ReaderMenu(
-                scaffoldKey: readerPageScaffoldKey,
-                brightnessController: _brightnessController,
+              // Modal routes sit above the reader body; replicate software dim here
+              // so the sheet matches the dimmed reading surface.
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(NyanRadius.sheet),
+                ),
+                child: BrightnessOverlayWidget(
+                  stackFit: StackFit.passthrough,
+                  stateListenable: _brightnessController.stateListenable,
+                  warmthListenable: _brightnessController.warmthListenable,
+                  child: ReaderMenu(
+                    scaffoldKey: readerPageScaffoldKey,
+                    brightnessController: _brightnessController,
+                  ),
+                ),
               ),
             ),
           ),
@@ -1036,33 +1048,50 @@ class _ReaderPageState extends State<ReaderPage> {
       barrierColor: NyanOverlayStyle.modalBarrierColor(context),
       builder: (sheetContext) {
         final maxSheetHeight = MediaQuery.sizeOf(sheetContext).height * 0.92;
-        return Align(
-          alignment: Alignment.bottomCenter,
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(NyanRadius.sheet),
-            ),
-            child: Material(
-              color: Theme.of(sheetContext).colorScheme.surface,
-              elevation: 6,
-              shadowColor: Theme.of(sheetContext)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.14),
-              child: ChapterListWidget(
-                bookTitle: controller.book.title,
-                bookAuthor: controller.book.author,
-                chapters: controller.chapters,
-                currentChapterIndex: controller.currentChapterIndex,
-                currentProgress: controller.currentProgress,
-                maxSheetHeight: maxSheetHeight,
-                onChapterTap: (index, locator) {
-                  Navigator.of(sheetContext).pop();
-                  controller.jumpToChapter(index, locator);
-                },
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.of(sheetContext).pop(),
               ),
             ),
-          ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              // Clip the whole sheet (including software dim layers) so rounded
+              // corners match Reading Settings and no square dimming leaks.
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(NyanRadius.sheet),
+                ),
+                child: BrightnessOverlayWidget(
+                  stackFit: StackFit.passthrough,
+                  stateListenable: _brightnessController.stateListenable,
+                  warmthListenable: _brightnessController.warmthListenable,
+                  child: Material(
+                    color: Theme.of(sheetContext).colorScheme.surface,
+                    elevation: 6,
+                    shadowColor: Theme.of(sheetContext)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.14),
+                    child: ChapterListWidget(
+                      bookTitle: controller.book.title,
+                      bookAuthor: controller.book.author,
+                      chapters: controller.chapters,
+                      currentChapterIndex: controller.currentChapterIndex,
+                      currentProgress: controller.currentProgress,
+                      maxSheetHeight: maxSheetHeight,
+                      onChapterTap: (index, locator) {
+                        Navigator.of(sheetContext).pop();
+                        controller.jumpToChapter(index, locator);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );

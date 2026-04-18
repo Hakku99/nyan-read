@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/services/reader_preferences_service.dart';
 import 'package:nyan_read/modules/reader/brightness/brightness_orchestrator.dart';
 import 'package:nyan_read/modules/reader/brightness/brightness_repository.dart';
+import 'package:nyan_read/modules/reader/brightness/overlay_brightness_policy.dart';
 import 'package:nyan_read/modules/reader/brightness/system_brightness_adapter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -64,7 +65,10 @@ void main() {
 
     expect(orchestrator.state.uiBrightness, 0.02);
     expect(orchestrator.state.targetSystemBrightness, 0.05);
-    expect(orchestrator.state.overlayOpacity, closeTo(0.6, 0.001));
+    expect(
+      orchestrator.state.overlayOpacity,
+      closeTo(0.6 * OverlayBrightnessPolicy.maxOverlayOpacity, 0.001),
+    );
     expect(adapter.setCalls.last, 0.05);
 
     await orchestrator.shutdown();
@@ -115,5 +119,13 @@ void main() {
 
     expect(adapter.setCalls.last, 0.4);
     await adapter.close();
+  });
+
+  test('software dim overlay never reaches full opacity', () {
+    const policy = OverlayBrightnessPolicy();
+    expect(
+      policy.calculate(uiBrightness: 0.0, hardwareFloor: 0.05),
+      closeTo(OverlayBrightnessPolicy.maxOverlayOpacity, 0.001),
+    );
   });
 }
