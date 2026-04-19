@@ -193,6 +193,8 @@ class MockReaderController extends ChangeNotifier
   @override
   Future<void> refreshCurrentChapterIndex() async {}
   @override
+  Future<void> syncChapterAfterScroll() async {}
+  @override
   Future<void> init() async {}
   @override
   Future<void> nextPage() async {}

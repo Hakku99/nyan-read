@@ -167,7 +167,16 @@ class EpubReaderEngine implements ReaderEngine {
     final cfi = _epubController.generateEpubCfi() ?? _lastKnownCfi;
     if (cfi != null && cfi.isNotEmpty) {
       _lastKnownCfi = cfi;
-      return EpubReadingPosition(cfi: cfi);
+      int? paragraphIndex;
+      final value = _epubController.currentValueListenable.value ??
+          _epubController.currentValue;
+      if (value != null && _paragraphCount > 0) {
+        paragraphIndex = _absoluteParagraphIndexFrom(value.position);
+      }
+      return EpubReadingPosition(
+        cfi: cfi,
+        paragraphIndex: paragraphIndex,
+      );
     }
     return null;
   }

@@ -64,7 +64,9 @@ typedef ReaderTextHighlightCallback = void Function(
 );
 
 typedef ReaderHighlightTapCallback = void Function(Highlight highlight);
-typedef ReaderContentTapCallback = void Function(Offset position);
+
+/// Global position in logical pixels (same as [PointerEvent.globalPosition]).
+typedef ReaderContentTapCallback = void Function(Offset globalPosition);
 
 class ChapterLocator {
   final int? chapterIndex;

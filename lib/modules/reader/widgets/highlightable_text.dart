@@ -43,6 +43,7 @@ class _HighlightableTextState extends State<HighlightableText> {
   TextSelection? _currentSelection;
   final List<TapGestureRecognizer> _recognizers = [];
   Timer? _tapTimer;
+  final GlobalKey _listenerKey = GlobalKey(debugLabel: 'highlightable_listener');
 
   // Swipe detection
   Offset? _pointerDownPosition;
@@ -64,6 +65,7 @@ class _HighlightableTextState extends State<HighlightableText> {
       color: widget.backgroundColor,
       padding: widget.padding,
       child: Listener(
+        key: _listenerKey,
         onPointerDown: (event) {
           _pointerDownPosition = event.position;
           _isScrolling = false;
@@ -91,11 +93,16 @@ class _HighlightableTextState extends State<HighlightableText> {
             return;
           }
 
-          // Forward the tap position to parent for page turning
-          // Debounce the tap to allow highlight taps to cancel it
+          // Short delay so [TapGestureRecognizer] on highlights can run first and
+          // cancel this timer; global offset matches outer tap zone math.
           _tapTimer?.cancel();
-          _tapTimer = Timer(const Duration(milliseconds: 150), () {
-            widget.onTap?.call(event.position);
+          final listenerBox =
+              _listenerKey.currentContext?.findRenderObject() as RenderBox?;
+          final global = listenerBox != null
+              ? listenerBox.localToGlobal(event.localPosition)
+              : event.localPosition;
+          _tapTimer = Timer(const Duration(milliseconds: 50), () {
+            widget.onTap?.call(global);
           });
 
           _pointerDownPosition = null;

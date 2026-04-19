@@ -6,6 +6,7 @@ import 'package:nyan_read/core/theme/nyan_radius.dart';
 import 'package:nyan_read/core/theme/nyan_spacing.dart';
 import 'package:nyan_read/core/theme/theme_presets.dart';
 import 'package:nyan_read/core/ui/components/nyan_overlay_style.dart';
+import 'package:nyan_read/core/utils/chapter_heading_display.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -63,11 +64,13 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
     for (int i = 0; i < widget.chapters.length; i++) {
       final chapter = widget.chapters[i];
       final chapterIndex = chapter.index ?? i;
+      final rawTitle =
+          chapter.title.isNotEmpty ? chapter.title : loc.chapterName(i + 1);
       final candidate = _ChapterEntry(
         sourceIndex: i,
         chapterIndex: chapterIndex,
         chapter: chapter,
-        title: chapter.title.isNotEmpty ? chapter.title : loc.chapterName(i + 1),
+        title: normalizeChapterHeadingForDisplay(rawTitle),
         isCurrent: widget.currentChapterIndex == chapterIndex,
       );
 
@@ -86,80 +89,21 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
   }
 
   bool _isLikelyDuplicateChapter(String a, String b) {
-    final aNo = _extractChapterNo(a);
-    final bNo = _extractChapterNo(b);
+    final aNo = extractChapterOrdinalFromHeading(a);
+    final bNo = extractChapterOrdinalFromHeading(b);
     if (aNo == null || bNo == null || aNo != bNo) {
       return false;
     }
-    return _isGenericChapterTitle(a) || _isGenericChapterTitle(b);
+    return isGenericNumericChapterTitle(a) || isGenericNumericChapterTitle(b);
   }
 
   _ChapterEntry _pickRicherTitle(_ChapterEntry a, _ChapterEntry b) {
-    final aGeneric = _isGenericChapterTitle(a.title);
-    final bGeneric = _isGenericChapterTitle(b.title);
+    final aGeneric = isGenericNumericChapterTitle(a.title);
+    final bGeneric = isGenericNumericChapterTitle(b.title);
     if (aGeneric != bGeneric) {
       return aGeneric ? b : a;
     }
     return a.title.length >= b.title.length ? a : b;
-  }
-
-  int? _extractChapterNo(String title) {
-    final normalized = title.trim();
-    final digitMatch = RegExp(r'第\s*(\d{1,4})\s*章').firstMatch(normalized);
-    if (digitMatch != null) {
-      return int.tryParse(digitMatch.group(1)!);
-    }
-    final zhMatch = RegExp(r'第\s*([零〇一二三四五六七八九十百千两]{1,8})\s*章')
-        .firstMatch(normalized);
-    if (zhMatch == null) return null;
-    return _parseChineseNumber(zhMatch.group(1)!);
-  }
-
-  int? _parseChineseNumber(String input) {
-    final digits = <String, int>{
-      '零': 0,
-      '〇': 0,
-      '一': 1,
-      '二': 2,
-      '两': 2,
-      '三': 3,
-      '四': 4,
-      '五': 5,
-      '六': 6,
-      '七': 7,
-      '八': 8,
-      '九': 9,
-    };
-    int total = 0;
-    int current = 0;
-    for (final ch in input.split('')) {
-      if (digits.containsKey(ch)) {
-        current = digits[ch]!;
-        continue;
-      }
-      if (ch == '十') {
-        total += (current == 0 ? 1 : current) * 10;
-        current = 0;
-        continue;
-      }
-      if (ch == '百') {
-        total += (current == 0 ? 1 : current) * 100;
-        current = 0;
-        continue;
-      }
-      if (ch == '千') {
-        total += (current == 0 ? 1 : current) * 1000;
-        current = 0;
-        continue;
-      }
-      return null;
-    }
-    return total + current;
-  }
-
-  bool _isGenericChapterTitle(String title) {
-    final t = title.trim();
-    return RegExp(r'^第\s*[\d零〇一二三四五六七八九十百千两]{1,8}\s*章$').hasMatch(t);
   }
 
   @override

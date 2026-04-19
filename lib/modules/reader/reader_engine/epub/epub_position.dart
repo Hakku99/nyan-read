@@ -1,10 +1,14 @@
 import '../reader_engine.dart';
 
 class EpubReadingPosition extends ReadingPosition {
-  EpubReadingPosition({required String cfi, int? chapterIndex})
-      : super(
+  EpubReadingPosition({
+    required String cfi,
+    int? chapterIndex,
+    int? paragraphIndex,
+  }) : super(
           cfi: cfi,
           chapterIndex: chapterIndex,
+          paragraphIndex: paragraphIndex,
         );
 
   String get cfi => super.cfi ?? '';
@@ -14,6 +18,7 @@ class EpubReadingPosition extends ReadingPosition {
     return EpubReadingPosition(
       cfi: position.cfi ?? '',
       chapterIndex: position.chapterIndex,
+      paragraphIndex: position.paragraphIndex,
     );
   }
 }

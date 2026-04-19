@@ -312,6 +312,14 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> refreshCurrentChapterIndex() async =>
       await metaManager.updateCurrentChapterIndex();
 
+  /// Refreshes engine-derived position then syncs TOC chapter from scroll/idle.
+  Future<void> syncChapterAfterScroll() async {
+    progressManager.refreshFromEngine();
+    await metaManager.syncCurrentChapterFromPosition(
+      progressManager.currentPosition,
+    );
+  }
+
   Future<void> loadHighlights() => metaManager.loadHighlights();
   Future<void> addHighlight(int paragraphIndex, int start, int end, String text,
           String colorCode, String paragraphText) =>
@@ -475,11 +483,15 @@ class _ReaderPageState extends State<ReaderPage> {
   late final BrightnessController _brightnessController;
   final GlobalKey<ScaffoldState> readerPageScaffoldKey =
       GlobalKey<ScaffoldState>();
+  final GlobalKey _readerBodyKey = GlobalKey();
   bool _showControls = false;
   Offset? _tapDownPosition;
   Offset? _panStartPosition;
   bool _isPanning = false;
   static const double _swipeThreshold = 10.0;
+  static const Duration _tapLogicDedupWindow = Duration(milliseconds: 350);
+  DateTime? _lastTapLogicAt;
+  Timer? _chapterSyncDebounce;
 
   @override
   void initState() {
@@ -497,6 +509,7 @@ class _ReaderPageState extends State<ReaderPage> {
 
   @override
   void dispose() {
+    _chapterSyncDebounce?.cancel();
     unawaited(_brightnessController.shutdown());
     _brightnessController.dispose();
     super.dispose();
@@ -544,9 +557,9 @@ class _ReaderPageState extends State<ReaderPage> {
                 if (!mounted) return;
                 _showHighlightNoteDialog(context, controller, highlight);
               },
-              onContentTap: (pos) {
+              onContentTap: (globalPosition) {
                 if (!mounted) return;
-                _handleContentTap(context, pos, controller);
+                _handleContentTap(context, globalPosition, controller);
               },
             );
             controller.init();
@@ -637,12 +650,25 @@ class _ReaderPageState extends State<ReaderPage> {
                                               return Stack(
                                                 children: [
                                                   Padding(
+                                                    key: _readerBodyKey,
                                                     padding: EdgeInsets.only(
                                                       top: padding.top,
                                                       bottom: padding.bottom,
                                                     ),
-                                                    child: controller.engine
-                                                        .buildReader(context),
+                                                    child:
+                                                        NotificationListener<
+                                                            ScrollNotification>(
+                                                      onNotification:
+                                                          (ScrollNotification
+                                                              _) {
+                                                        _scheduleDebouncedChapterSync(
+                                                          controller,
+                                                        );
+                                                        return false;
+                                                      },
+                                                      child: controller.engine
+                                                          .buildReader(context),
+                                                    ),
                                                   ),
                                                   // Reading Progress Indicator (Bottom Left)
                                                   // Hide if controls are shown OR if engine has its own bottom bar
@@ -827,9 +853,12 @@ class _ReaderPageState extends State<ReaderPage> {
                                                               controller
                                                                   .capabilities
                                                                   .supportsAnnotations,
-                                                          onOpenChapters: () => _openChapterList(
-                                                            context,
-                                                            controller,
+                                                          onOpenChapters: () =>
+                                                              unawaited(
+                                                            _openChapterList(
+                                                              context,
+                                                              controller,
+                                                            ),
                                                           ),
                                                           onAddBookmark: () =>
                                                               _addBookmarkFromOverlay(
@@ -921,7 +950,7 @@ class _ReaderPageState extends State<ReaderPage> {
   void _handleTapUp(BuildContext context, TapUpDetails details) {
     // Only process tap if we weren't panning
     if (!_isPanning && _tapDownPosition != null) {
-      _handleTapLogic(context, _tapDownPosition!.dy);
+      _handleTapLogic(context, details.globalPosition);
     }
     _resetPanState();
   }
@@ -946,35 +975,65 @@ class _ReaderPageState extends State<ReaderPage> {
   }
 
   void _handleContentTap(
-      BuildContext context, Offset position, ReaderController controller) {
-    // For content taps (like internal links or custom engine gestures),
-    // only process if not panning
+    BuildContext context,
+    Offset globalPosition,
+    ReaderController controller,
+  ) {
     if (!_isPanning) {
-      _handleTapLogic(context, position.dy, controller: controller);
+      _handleTapLogic(context, globalPosition, controller: controller);
     }
   }
 
-  void _handleTapLogic(BuildContext context, double tapY,
-      {ReaderController? controller}) {
+  void _scheduleDebouncedChapterSync(ReaderController controller) {
+    _chapterSyncDebounce?.cancel();
+    _chapterSyncDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      unawaited(controller.syncChapterAfterScroll());
+    });
+  }
+
+  void _handleTapLogic(
+    BuildContext context,
+    Offset globalPosition, {
+    ReaderController? controller,
+  }) {
     final c = controller ?? context.read<ReaderController>();
 
-    // If user was swiping, don't process as tap
     if (_isPanning) return;
+
+    final now = DateTime.now();
+    if (_lastTapLogicAt != null &&
+        now.difference(_lastTapLogicAt!) < _tapLogicDedupWindow) {
+      return;
+    }
+    _lastTapLogicAt = now;
 
     if (_showControls) {
       _setControlsVisible(false);
       return;
     }
 
-    final screenHeight = MediaQuery.of(context).size.height;
+    final box =
+        _readerBodyKey.currentContext?.findRenderObject() as RenderBox?;
+    final double height;
+    double localY;
 
-    // Middle 20% of screen triggers menu (40%-60% range)
-    // Top 40% triggers previous page
-    // Bottom 40% triggers next page
-    if (tapY < screenHeight * 0.40) {
-      c.previousPage();
-    } else if (tapY > screenHeight * 0.60) {
-      c.nextPage();
+    if (box != null && box.hasSize) {
+      height = box.size.height;
+      localY = box.globalToLocal(globalPosition).dy;
+    } else {
+      height = MediaQuery.sizeOf(context).height;
+      localY = globalPosition.dy;
+    }
+
+    if (height <= 0) return;
+
+    // Middle 20% of the reading pane opens chrome; top/bottom 40% turn pages.
+    final ratio = localY / height;
+    if (ratio < 0.40) {
+      unawaited(c.previousPage());
+    } else if (ratio > 0.60) {
+      unawaited(c.nextPage());
     } else {
       _showReaderControls(c);
     }
@@ -982,7 +1041,7 @@ class _ReaderPageState extends State<ReaderPage> {
 
   void _showReaderControls(ReaderController controller) {
     _setControlsVisible(true);
-    unawaited(controller.refreshCurrentChapterIndex());
+    unawaited(controller.syncChapterAfterScroll());
   }
 
   void _showSettingsBottomSheet(
@@ -1034,12 +1093,14 @@ class _ReaderPageState extends State<ReaderPage> {
     });
   }
 
-  void _openChapterList(
+  Future<void> _openChapterList(
     BuildContext context,
     ReaderController controller,
-  ) {
+  ) async {
     _setControlsVisible(false);
-    showModalBottomSheet<void>(
+    await controller.syncChapterAfterScroll();
+    if (!context.mounted) return;
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       isDismissible: true,

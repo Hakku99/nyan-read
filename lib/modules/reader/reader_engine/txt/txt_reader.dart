@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../../../core/models/book.dart';
+import '../../../../core/utils/chapter_heading_display.dart';
 import '../../../../core/models/highlight.dart';
 import '../../../../core/utils/book_source_access.dart';
 import '../../widgets/highlightable_text.dart';
@@ -150,6 +151,41 @@ class TxtReaderEngine
     }
   }
 
+  /// Paragraph index used for chapter title, page estimate, progress, and
+  /// [getCurrentPosition] — must match the bottom bar (`_getCurrentChapterTitle`).
+  ///
+  /// Uses the **topmost** visible row: minimum [ItemPosition.itemLeadingEdge]
+  /// among items that intersect the viewport. Sorting by paragraph index and
+  /// taking the first match wrongly preferred a line from the **previous**
+  /// chapter still visible near the bottom while the user was already reading
+  /// headings at the top (off-by-one chapter in bar / TOC).
+  int _viewportAnchorParagraphIndex() {
+    if (_lines.isEmpty) return 0;
+
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) {
+      return _initialIndex.clamp(0, _lines.length - 1);
+    }
+
+    final visible = positions
+        .where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1.0)
+        .toList();
+    final pool = visible.isNotEmpty
+        ? visible
+        : positions.where((p) => p.itemLeadingEdge > -0.5).toList();
+    if (pool.isEmpty) {
+      return _initialIndex.clamp(0, _lines.length - 1);
+    }
+
+    var topmost = pool.first;
+    for (final p in pool) {
+      if (p.itemLeadingEdge < topmost.itemLeadingEdge) {
+        topmost = p;
+      }
+    }
+    return topmost.index.clamp(0, _lines.length - 1);
+  }
+
   @override
   Future<void> initialize() async {
     try {
@@ -286,9 +322,13 @@ class TxtReaderEngine
                           final progressPercent = (getProgress() ?? 0.0) * 100;
                           final page = getCurrentPageIndex() + 1;
                           final total = getPageCount();
-                          String chapterTitle = _getCurrentChapterTitle();
+                          String chapterTitle = normalizeChapterHeadingForDisplay(
+                            _getCurrentChapterTitle(),
+                          );
                           if (chapterTitle.isEmpty && _chapters.isNotEmpty) {
-                            chapterTitle = _chapters.first.title;
+                            chapterTitle = normalizeChapterHeadingForDisplay(
+                              _chapters.first.title,
+                            );
                           }
 
                           return Container(
@@ -466,26 +506,7 @@ class TxtReaderEngine
 
   @override
   ReadingPosition? getCurrentPosition() {
-    if (!_itemPositionsListener.itemPositions.value.isNotEmpty) {
-      return TxtReadingPosition(paragraphIndex: _initialIndex);
-    }
-
-    final positions = _itemPositionsListener.itemPositions.value.toList()
-      ..sort((a, b) => a.index.compareTo(b.index));
-
-    if (positions.isEmpty) {
-      return TxtReadingPosition(paragraphIndex: _initialIndex);
-    }
-
-    ItemPosition? candidate = positions.first;
-    for (final pos in positions) {
-      if (pos.itemLeadingEdge >= -0.05) {
-        candidate = pos;
-        break;
-      }
-    }
-
-    return TxtReadingPosition(paragraphIndex: candidate!.index);
+    return TxtReadingPosition(paragraphIndex: _viewportAnchorParagraphIndex());
   }
 
   @override
@@ -628,18 +649,7 @@ class TxtReaderEngine
   String _getCurrentChapterTitle() {
     if (_chapters.isEmpty) return '';
 
-    int paraIndex = _initialIndex;
-    final positions = _itemPositionsListener.itemPositions.value;
-    if (positions.isNotEmpty) {
-      final sorted = positions.toList()
-        ..sort((a, b) => a.index.compareTo(b.index));
-      for (var p in sorted) {
-        if (p.itemLeadingEdge > -0.5) {
-          paraIndex = p.index;
-          break;
-        }
-      }
-    }
+    final paraIndex = _viewportAnchorParagraphIndex();
 
     for (int i = _chapters.length - 1; i >= 0; i--) {
       final chParaIndex = _chapters[i].locator.chapterIndex;
@@ -820,18 +830,7 @@ class TxtReaderEngine
   int getCurrentPageIndex() {
     if (_paragraphOffsets.isEmpty) return 0;
 
-    int paraIndex = _initialIndex;
-    final positions = _itemPositionsListener.itemPositions.value;
-    if (positions.isNotEmpty) {
-      final sorted = positions.toList()
-        ..sort((a, b) => a.index.compareTo(b.index));
-      for (var p in sorted) {
-        if (p.itemLeadingEdge > -0.5) {
-          paraIndex = p.index;
-          break;
-        }
-      }
-    }
+    final paraIndex = _viewportAnchorParagraphIndex();
 
     if (paraIndex >= _paragraphOffsets.length) return 0;
 

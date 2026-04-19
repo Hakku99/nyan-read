@@ -158,14 +158,34 @@ class ContentMetaManager {
   }) async {
     if (_chapters.isEmpty || position == null) return;
 
-    int newIndex = preferredIndex ?? 0;
+    final preferredValid = preferredIndex != null &&
+        preferredIndex >= 0 &&
+        preferredIndex < _chapters.length;
+
+    // After [jumpToChapter], the viewport anchor can still sit on text that
+    // resolves to the *previous* TOC entry; paragraph-based sync would then
+    // overwrite [preferredIndex] and break prev/next chapter navigation.
+    if (preferredValid) {
+      final newIndex = preferredIndex;
+      if (_currentChapterIndex != newIndex) {
+        _currentChapterIndex = newIndex;
+        onMetaChanged();
+      }
+      return;
+    }
+
+    int newIndex = 0;
 
     if (position.paragraphIndex != null) {
       final currentPara = position.paragraphIndex!;
       int maxStartPara = -1;
 
       for (int i = 0; i < _chapters.length; i++) {
-        final chapterPara = _chapters[i].locator.chapterIndex ?? -1;
+        // TXT uses [ChapterLocator.chapterIndex] (paragraph line); EPUB uses
+        // [ChapterLocator.contentIndex] (flat paragraph index in the spine).
+        final loc = _chapters[i].locator;
+        final chapterPara =
+            loc.contentIndex ?? loc.chapterIndex ?? -1;
         if (chapterPara != -1 && chapterPara <= currentPara) {
           if (chapterPara > maxStartPara) {
             maxStartPara = chapterPara;
@@ -189,7 +209,7 @@ class ContentMetaManager {
         }
       }
     } else if (_currentChapterIndex != null) {
-      newIndex = preferredIndex ?? _currentChapterIndex!;
+      newIndex = _currentChapterIndex!;
     }
 
     if (_currentChapterIndex != newIndex) {
@@ -218,6 +238,7 @@ class ContentMetaManager {
 
   Future<void> jumpToPreviousChapter(
       Future<void> Function() saveProgressFn) async {
+    await syncCurrentChapterFromPosition(engine.getCurrentPosition());
     if (_currentChapterIndex == null || _currentChapterIndex! <= 0) return;
     await jumpToChapter(
       _currentChapterIndex! - 1,
@@ -227,6 +248,7 @@ class ContentMetaManager {
   }
 
   Future<void> jumpToNextChapter(Future<void> Function() saveProgressFn) async {
+    await syncCurrentChapterFromPosition(engine.getCurrentPosition());
     if (_currentChapterIndex == null ||
         _currentChapterIndex! >= _chapters.length - 1) return;
     await jumpToChapter(

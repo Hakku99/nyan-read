@@ -1,3 +1,4 @@
+import 'package:nyan_read/core/utils/chapter_heading_display.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../reader_engine/reader_engine.dart';
@@ -11,7 +12,9 @@ String readerChapterSummaryLabel({
   if (currentChapterIndex != null &&
       currentChapterIndex >= 0 &&
       currentChapterIndex < chapters.length) {
-    final chapter = chapters[currentChapterIndex].title.trim();
+    final chapter = normalizeChapterHeadingForDisplay(
+      chapters[currentChapterIndex].title,
+    ).trim();
     if (chapter.isNotEmpty) {
       return chapter;
     }
