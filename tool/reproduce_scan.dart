@@ -1,3 +1,6 @@
+// Local repro for folder-import scanning (not part of `flutter test`).
+// Run: dart run tool/reproduce_scan.dart
+
 import 'dart:io';
 import 'package:path/path.dart' as path;
 
