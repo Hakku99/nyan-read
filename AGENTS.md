@@ -70,7 +70,20 @@
 
 #### 2.2.3 魔术值与硬编码
 - **MUST NOT**：在 Widget 里写字面色值 `Color(0xFF...)`、字面尺寸 `16.0`、字面字号 `18.0`。
-- **MUST**：色值走 `core/theme/nyan_colors.dart`，间距走 `nyan_spacing.dart`，圆角走 `nyan_radius.dart`，阴影走 `nyan_shadows.dart`，字体走 `nyan_typography.dart`。新增 token 必须在对应文件里新增常量，再引用。
+- **MUST**：所有设计 token 通过以下 **5 个文件**访问，不得绕过：
+  - `lib/core/theme/nyan_colors.dart` — 原子色值常量（`NyanColors.creamPrimary` 等）
+  - `lib/core/theme/nyan_spacing.dart` — 间距（`NyanSpacing.space16` 等）
+  - `lib/core/theme/nyan_radius.dart` — 圆角（`NyanRadius.card` 等）
+  - `lib/core/theme/nyan_shadows.dart` — 阴影工具方法（`NyanShadows.lightCard` / `subtle`）
+  - `lib/core/theme/nyan_typography.dart` — 字体族与字号（`NyanTypography.uiFontFamily` 等）
+- **MUST**：**主题敏感**的颜色（随 creamLight / sumiDark 切换）必须通过 `NyanTheme` 扩展读取：
+  ```dart
+  final nyan = Theme.of(context).extension<NyanTheme>()!;
+  // 或容错版本：
+  final nyan = resolveNyanTheme(Theme.of(context));
+  ```
+  **MUST NOT** 在 Widget 里直接引用 `NyanColors.creamXxx` / `inkNightXxx` —— 那是 `NyanTheme` 的内部实现，直接使用会在深色主题下显示错误。
+- **MUST**：新增 token 必须先在对应 `nyan_*.dart` 中新增常量并命名，再在业务代码中引用。
 - **MUST**：用户可见文案走 `l10n/app_localizations*.dart`，**不要硬编码中文字符串**到 Widget 里。
 
 #### 2.2.4 日志
@@ -204,56 +217,116 @@
 
 **"无印良品 × 纸本阅读 × 克制的抹茶"**。三条宪法：
 
-1. **禁止纯白（`#FFFFFF`）与纯黑（`#000000`）**。所有"白"是奶白（paper），"黑"是深墨（ink）。
-2. **强色只用抹茶绿**（accent/matcha）。温度与亮度语义才允许使用陶土橘（accent/warm）。
-3. **层次靠"圆角 + 背景色阶"，不靠阴影、不靠描边线**。
+1. **禁止纯白（`#FFFFFF`）与纯黑（`#000000`）**。所有"白"是奶白（`creamSurface` / `creamBackground`），所有"黑"是深墨（`inkNightBackground` 或深棕 `creamTextMain`）。
+2. **强色只用抹茶绿**（`creamPrimary` / `creamPrimaryDeep`）。温度与亮度语义才允许使用陶土橘（`highlightOrange`）。
+3. **层次首选"圆角 + 背景色阶 + 暖色调分隔线"**；阴影只允许走 `NyanShadows.subtle` 或 `NyanShadows.lightCard`（均 ≤12px blur，≤5% alpha）。**严禁**自己构造 `BoxShadow`。
 
-### 4.2 设计 Token（MUST 复用，不得新造色值）
+### 4.2 设计 Token 真相表（MUST 引用这些常量，不得新造色值）
 
-| Token | 估测值 | 真相源 |
+#### 4.2.1 颜色 — `lib/core/theme/nyan_colors.dart`
+
+**主题敏感色（MUST 通过 `NyanTheme` 扩展访问）：**
+
+| 语义 | creamLight 值 | sumiDark 值 | `NyanTheme` 字段 |
+|---|---|---|---|
+| 页面主背景（纸色） | `#F6F3EA` | `#1D211E` | `background` |
+| 卡片/面板表面 | `#FFFDF8` | `#262B27` | `surface` |
+| 嵌入式凹陷表面（Tab 槽、Slider 轨道） | `#F1ECDD` | `#202520` | `surfaceMuted` |
+| 正文文字 | `#3F3A34` | `#E8E1D5` | `textPrimary` |
+| 次级文字（说明 / 副标题） | `#8A8377` | `#AAA396` | `textSecondary` |
+| 三级文字（占位 / 单位） | `#B0ACA5` | `#8F8A84` | `textMuted` |
+| 主强色（抹茶绿按钮底） | `#98A27C` | `#93A07C` | `primary` |
+| 深强色（选中描边 / accent） | `#7E8B61` | `#9AAD86` | `primaryDeep` / `accent` |
+| 分隔线（暖调描边） | `#E5DED2` | `#3A3F3A` | `divider` / `borderColor` |
+
+**原子常量（只在 `nyan_colors.dart` 与 `theme_presets.dart` 内部使用，业务代码 MUST NOT 直接引用）：**
+
+- cream 系列：`creamBackground / creamSurface / creamSurfaceMuted / creamPrimary / creamPrimaryDeep / creamTextMain / creamTextSecondary / creamDivider`
+- sepia 系列：`sepiaBackground / sepiaSurface / sepiaPrimary / sepiaTextMain / sepiaTextSecondary / sepiaDivider` *（色板已备，主题预设尚未接入）*
+- ink 系列：`inkNightBackground / inkNightSurface / inkNightPrimary / inkNightTextMain / inkNightTextSecondary / inkNightDivider`
+- amoled 系列：`amoledBackground / amoledSurface / amoledPrimary / amoledTextMain` *（色板已备，主题预设尚未接入）*
+
+**语义色（固定值，不随主题切换，可直接引用）：**
+
+| 用途 | 常量 | 值 |
 |---|---|---|
-| `surface/paper` | `#FDFCF8` | `nyan_colors.dart` |
-| `surface/paper-sunk` | `#F4F1E8` | `nyan_colors.dart` |
-| `accent/matcha` | `#7A8C5E ~ #889B66` | `nyan_colors.dart` |
-| `accent/warm` | `#D78A4E ~ #E89B5C` | `nyan_colors.dart` |
-| `border/hairline` | `rgba(0,0,0,0.08)` 0.5–0.72pt | `nyan_colors.dart` |
-| `text/primary / secondary / tertiary` | 见 `nyan_colors.dart` | 同 |
-| `radius/sheet` `28` / `radius/card` `20` / `radius/pill` `Stadium` / `radius/chip` `14` | — | `nyan_radius.dart` |
-| `spacing/4 / 8 / 12 / 16 / 24` | — | `nyan_spacing.dart` |
+| 高亮笔 · 黄 | `NyanColors.highlightYellow` | `#F2E58A` |
+| 高亮笔 · 绿 | `NyanColors.highlightGreen` | `#A8D18D` |
+| 高亮笔 · 蓝 | `NyanColors.highlightBlue` | `#9EC5E8` |
+| 高亮笔 · 粉 | `NyanColors.highlightPink` | `#E8A0BF` |
+| 高亮笔 · 橙 / 暖色温语义 / 警告 | `NyanColors.highlightOrange` | `#F2BE7E` |
 
-**MUST NOT**：新增色值。发现设计需要新 token 时，先到 `nyan_*.dart` 中增加常量并命名。
+**特殊状态色**（只在 `NyanTheme` 内定义）：`successColor` / `warningColor` / `infoColor` / 4 个 `errorXxx` / 2 个 `fabXxx`，业务代码通过 `Theme.of(context).extension<NyanTheme>()!.successColor` 等访问。
+
+#### 4.2.2 圆角 — `lib/core/theme/nyan_radius.dart`
+
+| 常量 | 值 | 用途 |
+|---|---|---|
+| `NyanRadius.small` | `14` | Tab 胶囊容器、小型 chip |
+| `NyanRadius.input` | `16` | 输入框、FAB、按钮 |
+| `NyanRadius.card` | `20` | 卡片、书架 item、阅读设置面板内卡 |
+| `NyanRadius.panel` | `24` | 对话框、次级 Sheet |
+| `NyanRadius.sheet` | `28` | 顶层 Bottom Sheet |
+
+Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用 `StadiumBorder()`，不使用上述数值。
+
+#### 4.2.3 间距 — `lib/core/theme/nyan_spacing.dart`
+
+`NyanSpacing.space4 / 8 / 12 / 16 / 20 / 24 / 32`（全部 double 常量），以及 `NyanSpacing.minTapTarget = 44`（所有可点击元素最小命中区域）。
+
+**MUST NOT**：使用 `10`、`14`、`18`、`22` 等非 8 的倍数（`4 / 12 / 20` 是唯一例外，已在常量表中）。
+
+#### 4.2.4 阴影 — `lib/core/theme/nyan_shadows.dart`
+
+- `NyanShadows.lightCard(shadowColor)` — 12px blur + 6px blur 双层，4%/2% alpha。用于**悬浮卡片**（如 Bookshelf 书卡 hover）。
+- `NyanShadows.subtle(shadowColor)` — 8px blur 单层，5% alpha。用于**次级浮层**（Toast、Overlay ToolBar）。
+
+调用时 `shadowColor` **MUST** 传 `nyan.textPrimary`（随主题变暗/变亮，保证暗色主题下阴影依然柔和）。
+
+#### 4.2.5 字体与字号 — `lib/core/theme/nyan_typography.dart`
+
+- UI 字体族：`NyanTypography.uiFontFamily` = **`Noto Sans SC`**
+- 阅读正文可选 serif：`NyanTypography.readingSerifFontFamily` = `Source Han Serif SC`
+- 字号阶梯（**仅允许**以下 5 档）：`display 32` / `title 24` / `section 20` / `body 16` / `meta 13`
+- **字重仅允许**：`FontWeight.w400`（Regular，正文）/ `FontWeight.w500`（Medium，按钮/标签）/ `FontWeight.w600`（SemiBold，标题/数值）。**MUST NOT** 使用 `w100–w300` 或 `w700–w900`。
+
+> ⚠️ **已知 tech-debt（见 §6 Phase 0）**：当前 `pubspec.yaml` 未注册 `Noto Sans SC` / `Source Han Serif SC` 为本地资源，`google_fonts` 包虽已引入但全仓无 import。`NyanTypography` 里的 `fontFamily: 'Noto Sans SC'` 实际在运行时**回落到平台 CJK 默认字体**（Android Noto Sans CJK / iOS 苹方）。serif 阅读模式在当前版本**不生效**。AI 在生成涉及 serif 阅读的改动前，MUST 先提醒用户这个限制。修复方案：在 Phase 0 中通过 `google_fonts.GoogleFonts.notoSansSc()` 动态加载，或把字体文件放到 `assets/fonts/` 并在 `pubspec.yaml` 的 `flutter.fonts` 段注册。
 
 ### 4.3 组件样式底线（MUST）
 
-- **Bottom Sheet**：顶部圆角 28pt，顶部 12pt 内含 40×4pt 抓手，**无阴影**。
-- **Tab / Segmented Control**：胶囊形，选中态=抹茶绿实心；**禁止**下划线、滑动指示器位移动画超过 150ms。
-- **Pill 按钮（分段按钮，如 低/中/高）**：未选 = paper 底 + 描边；选中 = **仅换描边色为抹茶绿 + 文字换抹茶绿**，**不填充**（这是本项目独有的克制风格）。
-- **Slider**：轨道 3–4pt，thumb 10–12pt 实心，**无光晕、无阴影、无放大**。
-- **Card**：圆角 20pt，paper 底，`border/hairline` 描边，**无阴影**。
+- **Bottom Sheet**：顶部圆角 `NyanRadius.sheet`（28pt），顶部 12pt 留白内含 40×4pt 抓手（`textMuted` 色），**无外阴影**（靠 `BrightnessOverlayWidget` 的软暗化自然区分层级）。
+- **Tab / Segmented Control**：外层容器 `surfaceMuted` 填充 + `NyanRadius.small`（14pt）圆角，选中胶囊 = `primaryDeep` 实心 + 白米色文字；**禁止**下划线、滑动指示器位移动画超过 150ms。
+- **Pill 按钮（分段按钮，如 低/中/高、紧凑/标准/舒展）**：`StadiumBorder`；未选 = `surface` 底 + `divider` 描边 + `textPrimary` 文字；选中 = **仅换描边色为 `primaryDeep` + 文字换 `primaryDeep`**，**不填充**（这是本项目独有的克制风格，和 Material 的"填充 chip"截然不同）。
+- **Slider**：轨道高 3–4pt 用 `surfaceMuted`，已填充段用 `primaryDeep`（亮度）或 `highlightOrange`（暖色温），thumb 10–12pt 实心同色，**无光晕、无阴影、无放大**。
+- **Card**：圆角 `NyanRadius.card`（20pt），`surface` 底，`divider` 描边；**默认无阴影**；仅在书架 hover / 次级浮层必要时使用 `NyanShadows.subtle`。
 - **Icon**：线性 1.5pt 感，主题卡的"选中对勾"是**全项目唯一允许的硬实心圆徽标**。
 - **Haptics**：滑块拖动最多一次 `HapticFeedback.lightImpact`；翻页 **MUST NOT** 触发触感反馈。
+- **Tap target**：所有可点击元素最小 44×44pt（`NyanSpacing.minTapTarget`）。
 
 ### 4.4 设计反模式（MUST NOT）
 
-- ❌ Material3 `FilledButton` / `ElevatedButton` 默认阴影；
-- ❌ `CircularProgressIndicator` 的默认蓝色；
-- ❌ `BoxShadow.blurRadius > 12`；
+- ❌ Material3 `FilledButton` / `ElevatedButton` 默认阴影（项目已在 `NyanTheme.themeData` 里把 `elevation: 0`，不要去改回来）；
+- ❌ `CircularProgressIndicator` 的默认蓝色（必须显式指定 `valueColor: AlwaysStoppedAnimation(nyan.primary)`）；
+- ❌ 自造 `BoxShadow` 或 `blurRadius > 12` 的阴影；
 - ❌ 高饱和色（iOS 蓝、Material 紫、霓虹任何色）；
 - ❌ 大面积线性/径向渐变；
 - ❌ `Icons.xxx_filled` 填充图标（对勾徽标除外）；
-- ❌ 卡片之间加 `Divider`；
-- ❌ 字重越界（仅允许 Regular / Medium / Bold）。
+- ❌ 卡片之间加 `Divider`（层次用 `surfaceMuted` 背景色差代替）；
+- ❌ 字重越界（仅允许 `w400 / w500 / w600`，`w700+` 一律 reject）；
+- ❌ 自制字体族，任何 `TextStyle(fontFamily: '...')` 的 `fontFamily` 必须来自 `NyanTypography`；
+- ❌ 直接引用 `NyanColors.creamXxx / inkNightXxx / sepiaXxx / amoledXxx` 原子常量到业务 Widget 里（必须走 `NyanTheme` 扩展）。
 
 ### 4.5 AI 写 UI 的自检清单
 
 生成 UI 代码前，自问并在对话中默认回答：
 
-1. **Token**：我用到的颜色 / 间距 / 圆角 / 字号是否都来自 `nyan_*.dart`？
+1. **Token**：颜色是否走 `Theme.of(context).extension<NyanTheme>()`？间距/圆角/字体/阴影是否都来自 `nyan_*.dart`？
 2. **订阅粒度**：这颗子树真正会变的字段是哪一个？我是不是用了最小的 `Selector` / `ValueListenableBuilder`？
 3. **const**：能加 `const` 的地方都加了吗？
 4. **RepaintBoundary**：这是不是一条高频重绘的长列表 / 叠加层？
 5. **build 纯度**：`build()` 里有没有 `.sort()` / `.toList()` / `RegExp` / I/O？
 6. **Opacity**：我有没有误用 `Opacity` 做动画？
+7. **字重/字体族**：`FontWeight` 是否只在 `w400 / w500 / w600` 三档？`fontFamily` 是否来自 `NyanTypography`？
 
 **回答全部满足才提交代码。**
 
@@ -315,6 +388,18 @@
 ## 6. 架构进展路线图（Roadmap）
 
 本路线图基于 2026-04 全局审查报告。**MUST** 按阶段推进，不得越阶跳跃。
+
+### Phase 0 — 设计系统真相归一化（0.5 sprint · 前置条件）
+
+**目标：消除"设计 token 在文档里正确，在代码里是僵尸"的风险。**
+
+- [ ] **P1-0a**：**字体注册**。两选一——(A) 通过 `google_fonts` 动态加载：在 `NyanTypography` 里把 `TextStyle(fontFamily: 'Noto Sans SC')` 改为 `GoogleFonts.notoSansSc(...)`；或 (B) 把 `NotoSansSC-*.ttf` / `SourceHanSerifSC-*.otf` 加入 `assets/fonts/` 并在 `pubspec.yaml` 的 `flutter.fonts` 段注册。推荐 (A)，体积更小。
+- [ ] **P1-0b**：如果最终选择 (B)，则从 `pubspec.yaml` 移除未使用的 `google_fonts` 依赖，避免误导。
+- [ ] **P1-0c**：grep 全仓 `Color(0xFF` 字面色值；凡在 `lib/modules/**` 中出现的，替换为 `NyanColors.*` 或 `NyanTheme` 扩展读取。允许保留的地方：`lib/core/theme/**` 内部、`reader_config.dart` 里的用户可配置默认色。
+- [ ] **P1-0d**：grep `.withOpacity(`；Flutter 3.27+ 已 deprecated，统一替换为 `.withValues(alpha: x)`（如项目 SDK 尚未到 3.27，写一条 TODO 并在 §6 Phase 4 清理）。
+- [ ] **P1-0e**：确认 `theme_presets.dart` 中的 `themePresets` 是否需要补齐 `sepiaBackground` / `amoled*` 的 `NyanTheme` 预设（UI 上有 4 张主题卡，代码只实现 2 种）——若暂不补，则在主题选择 UI 上把未实现的卡片隐藏或置灰，**MUST NOT** 让用户点到死链。
+
+**验收：** 仓库内 `grep -r "Color(0xFF" lib/modules/` 结果为空；首屏 `Text` 的 `runtimeType` 渲染结果用 Flutter Inspector 检查确认使用了注册字体（或明确使用 google_fonts）；`flutter analyze` 零 deprecated 警告。
 
 ### Phase 1 — 扑灭渲染热点（1 个 sprint · 最高优先）
 
