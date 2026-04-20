@@ -24,7 +24,7 @@ class DatabaseService {
 
     final db = await openDatabase(
       path,
-      version: 8,
+      version: 9,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -33,9 +33,22 @@ class DatabaseService {
     );
     await _ensureHighlightColumns(db);
     await _ensureBookColumns(db);
+    await _ensureHotIndexes(db);
     final appDocsDir = await getApplicationDocumentsDirectory();
     await _backfillBookStorageTypes(db, appDocsDir.path);
     return db;
+  }
+
+  // Hot-path indexes defended outside of version migration as well, so older
+  // corrupted installs that somehow landed at v>=9 without the indexes still
+  // get them. Creating an existing index with IF NOT EXISTS is a cheap no-op.
+  Future<void> _ensureHotIndexes(Database db) async {
+    await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_highlights_book ON highlights(book_id, paragraph_index, start_offset)');
+    await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_bookmarks_book ON bookmarks(book_id, page_index)');
+    await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_books_privacy_last_read ON books(is_private, last_read_at)');
   }
 
   Future<void> _ensureHighlightColumns(Database db) async {
@@ -241,6 +254,17 @@ class DatabaseService {
       await db.execute(
           "ALTER TABLE books ADD COLUMN source_type TEXT DEFAULT 'file_path'");
     }
+    if (oldVersion < 9) {
+      // Hot-path indexes: highlights/bookmarks were doing full table scans on
+      // every chapter switch on large libraries, and the bookshelf query
+      // filters by (is_private, last_read_at).
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_highlights_book ON highlights(book_id, paragraph_index, start_offset)');
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_bookmarks_book ON bookmarks(book_id, page_index)');
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_books_privacy_last_read ON books(is_private, last_read_at)');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -318,8 +342,13 @@ class DatabaseService {
 
   Future<void> insertBook(Map<String, dynamic> bookData) async {
     final db = await database;
+    // Deliberately NOT using ConflictAlgorithm.replace: REPLACE on a books
+    // row fires the FK ON DELETE CASCADE path and silently deletes every
+    // highlight and bookmark the user ever made for that book.  The import
+    // pipeline already de-duplicates via BookImportFingerprint, so a real
+    // duplicate here is a bug and we want it to be loud, not destructive.
     await db.insert('books', bookData,
-        conflictAlgorithm: ConflictAlgorithm.replace);
+        conflictAlgorithm: ConflictAlgorithm.abort);
   }
 
   Future<List<Map<String, dynamic>>> getBooks({

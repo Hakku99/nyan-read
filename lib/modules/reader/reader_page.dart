@@ -58,32 +58,39 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       Debouncer(delay: const Duration(milliseconds: 300));
   Size? _lastLayoutSize;
   BrightnessController? _brightnessControllerRef;
-  VoidCallback? _brightnessControllerListener;
+  bool _isDisposed = false;
 
   ReaderController(this.book) {
     engine = ReaderEngineFactory.create(book);
 
     WidgetsBinding.instance.addObserver(this);
 
-    // Initialize Managers
+    // All manager-side "something changed" notifications funnel through
+    // [_safeNotifyListeners] so a late async callback that fires after the
+    // widget has been popped never hits a disposed ChangeNotifier.
     settingsManager = ReaderSettingsManager(
       engine: engine,
       lifecycle: _lifecycle,
-      onSettingsChanged: notifyListeners,
+      onSettingsChanged: _safeNotifyListeners,
     );
 
     metaManager = ContentMetaManager(
       engine: engine,
       book: book,
-      onMetaChanged: notifyListeners,
+      onMetaChanged: _safeNotifyListeners,
     );
 
     progressManager = ReadingProgressManager(
       engine: engine,
       book: book,
       lifecycle: _lifecycle,
-      onProgressUpdated: notifyListeners,
+      onProgressUpdated: _safeNotifyListeners,
     );
+  }
+
+  void _safeNotifyListeners() {
+    if (_isDisposed) return;
+    notifyListeners();
   }
 
   double get fontSize => settingsManager.fontSize;
@@ -98,15 +105,15 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   ReaderCapabilities get capabilities => engine.capabilities;
 
   void attachBrightnessController(BrightnessController bc) {
-    if (_brightnessControllerRef != null &&
-        _brightnessControllerListener != null) {
-      _brightnessControllerRef!.removeListener(_brightnessControllerListener!);
-    }
-
+    // Deliberately do NOT bridge BrightnessController.addListener into
+    // this.notifyListeners.  BrightnessController fires on every vertical
+    // drag delta (60+Hz during a slide gesture) and bridging that into the
+    // reader-wide ChangeNotifier used to trigger a full Consumer rebuild
+    // storm across the reader surface.  All UI that actually cares about
+    // brightness/warmth (overlay tint, HUD, settings display panel) already
+    // subscribes to BrightnessController's own ValueListenables directly.
     _brightnessControllerRef = bc;
-    _brightnessControllerListener = notifyListeners;
-    bc.addListener(_brightnessControllerListener!);
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   ReaderErrorState? get errorState => _errorState;
@@ -246,12 +253,10 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   void setBackground(Color color) => settingsManager.setBackground(color);
   Future<void> setWarmth(double value) async {
     await _brightnessControllerRef?.setWarmth(value);
-    notifyListeners();
   }
 
   Future<void> setBrightness(double b) async {
     await _brightnessControllerRef?.setBrightness(b);
-    notifyListeners();
   }
 
   Future<void> toggleFollowSystem() async {
@@ -263,8 +268,6 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     } else {
       await controller.resetToSystem();
     }
-
-    notifyListeners();
   }
 
   /// Resets typography, page background, and warmth to app defaults (reading UI only).
@@ -274,14 +277,12 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     settingsManager.setLineHeight(1.5);
     settingsManager.setBackground(const Color(0xFFFDFCF8));
     await setWarmth(0);
-    notifyListeners();
   }
 
   /// Display tab: low warmth and follow-system brightness. Does not change read position.
   Future<void> resetReaderDisplayDefaults() async {
     await setWarmth(0);
     await _brightnessControllerRef?.resetToSystem();
-    notifyListeners();
   }
 
   /// Text tab: default font size and line height only.
@@ -347,12 +348,15 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    progressManager.scheduleDisposeFallbackSave(); // Transitional fallback.
-    // Ensure the brightness listener bridge is always detached during dispose.
-    if (_brightnessControllerRef != null &&
-        _brightnessControllerListener != null) {
-      _brightnessControllerRef!.removeListener(_brightnessControllerListener!);
-    }
+    // Order matters here.  (1) Flip the disposed flag first so any
+    // straggling async manager callback (e.g. DB read continuation) turns
+    // into a no-op instead of notifyListeners-on-disposed.  (2) Take an
+    // engine-state snapshot for the fallback save WHILE the engine is
+    // still alive; the save itself is fire-and-forget against the DB.
+    // (3) Only then tear down lifecycle/timers and the engine itself.
+    _isDisposed = true;
+    progressManager.scheduleDisposeFallbackSave();
+    _brightnessControllerRef = null;
     settingsManager.dispose();
     _lifecycle.disposeAll();
     _layoutDebouncer.dispose();
@@ -587,165 +591,199 @@ class _ReaderPageState extends State<ReaderPage> {
                       key: readerPageScaffoldKey,
                       backgroundColor: bgColor,
                       resizeToAvoidBottomInset: false,
-                      body: Consumer<ReaderController>(
-                        builder: (context, controller, child) {
-                          return BrightnessOverlayWidget(
-                            stateListenable:
-                                _brightnessController.stateListenable,
-                            warmthListenable:
-                                _brightnessController.warmthListenable,
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                // 1. Reader Content - Rebuilds when controller notifies
-
-                                Positioned.fill(
-                                  child: GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTapDown: (details) =>
-                                        _handleTapDown(context, details),
-                                    onTapUp: (details) =>
-                                        _handleTapUp(context, details),
-                                    onPanStart: (details) =>
-                                        _handlePanStart(context, details),
-                                    onPanUpdate: (details) =>
-                                        _handlePanUpdate(context, details),
-                                    onPanEnd: (details) =>
-                                        _handlePanEnd(context, details),
-                                    child: Consumer<ReaderController>(
-                                      builder: (context, controller, _) {
-                                        // Determine status bar style based on background luminance
-                                        // Dark background -> Light icons (light)
-                                        // Light background -> Dark icons (dark)
-                                        final isDark = controller
-                                                .backgroundColor
-                                                .computeLuminance() <
-                                            0.5;
-                                        final systemOverlayStyle = isDark
-                                            ? SystemUiOverlayStyle.light
-                                                .copyWith(
-                                                statusBarColor:
-                                                    Colors.transparent,
-                                                systemNavigationBarColor:
-                                                    Colors.transparent,
-                                              )
-                                            : SystemUiOverlayStyle.dark
-                                                .copyWith(
-                                                statusBarColor:
-                                                    Colors.transparent,
-                                                systemNavigationBarColor:
-                                                    Colors.transparent,
-                                              );
-
-                                        return AnnotatedRegion<
-                                            SystemUiOverlayStyle>(
-                                          value: systemOverlayStyle,
-                                          child: LayoutBuilder(
-                                            builder: (context, constraints) {
-                                              // debugPrint(
-                                              //     "DEBUG READER_PAGE: LayoutBuilder constraints: maxWidth=${constraints.maxWidth}, maxHeight=${constraints.maxHeight}");
-                                              final padding =
-                                                  MediaQuery.of(context)
-                                                      .padding;
-                                              return Stack(
-                                                children: [
-                                                  Padding(
-                                                    key: _readerBodyKey,
-                                                    padding: EdgeInsets.only(
-                                                      top: padding.top,
-                                                      bottom: padding.bottom,
-                                                    ),
-                                                    child:
-                                                        NotificationListener<
-                                                            ScrollNotification>(
-                                                      onNotification:
-                                                          (ScrollNotification
-                                                              _) {
-                                                        _scheduleDebouncedChapterSync(
-                                                          controller,
-                                                        );
-                                                        return false;
-                                                      },
-                                                      child: controller.engine
-                                                          .buildReader(context),
-                                                    ),
-                                                  ),
-                                                  // Reading Progress Indicator (Bottom Left)
-                                                  // Hide if controls are shown OR if engine has its own bottom bar
-                                                  Positioned(
-                                                    left: 16,
-                                                    bottom: padding.bottom > 0
-                                                        ? padding.bottom + 4
-                                                        : 16,
-                                                    child: Opacity(
-                                                      opacity: (_showControls ||
-                                                              controller.engine
-                                                                  .hasBottomBar)
-                                                          ? 0
-                                                          : 1,
-                                                      child: Text(
-                                                        "${(controller.currentProgress * 100).toInt()}%",
-                                                        style: TextStyle(
-                                                          fontSize: 10,
-                                                          color: isDark
-                                                              ? Colors.black
-                                                                  .withOpacity(
-                                                                      0.5)
-                                                              : Colors.white
-                                                                  .withOpacity(
-                                                                      0.5),
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              );
-                                            },
-                                          ),
-                                        );
-                                      },
-                                    ),
+                      // The outer `Consumer<ReaderController>` that used to
+                      // wrap BrightnessOverlayWidget here was pure
+                      // rebuild-on-every-notify overhead: nothing at this
+                      // depth actually reads the controller.  Inner Selectors
+                      // below subscribe to exactly the slices they need.
+                      body: BrightnessOverlayWidget(
+                        stateListenable:
+                            _brightnessController.stateListenable,
+                        warmthListenable:
+                            _brightnessController.warmthListenable,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            // 1. Reader body + inline progress % label.
+                            //    Selector on a record so it only rebuilds when
+                            //    (backgroundColor, progress, hasBottomBar)
+                            //    actually change - not on every paragraph
+                            //    sync or manager notify.
+                            Positioned.fill(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTapDown: (details) =>
+                                    _handleTapDown(context, details),
+                                onTapUp: (details) =>
+                                    _handleTapUp(context, details),
+                                onPanStart: (details) =>
+                                    _handlePanStart(context, details),
+                                onPanUpdate: (details) =>
+                                    _handlePanUpdate(context, details),
+                                onPanEnd: (details) =>
+                                    _handlePanEnd(context, details),
+                                child: Selector<
+                                    ReaderController,
+                                    ({
+                                      Color backgroundColor,
+                                      double progress,
+                                      bool hasBottomBar
+                                    })>(
+                                  selector: (_, c) => (
+                                    backgroundColor: c.backgroundColor,
+                                    progress: c.currentProgress,
+                                    hasBottomBar: c.engine.hasBottomBar,
                                   ),
-                                ),
+                                  builder: (context, vm, _) {
+                                    // Controller engine reference itself is
+                                    // stable; we only need it for
+                                    // buildReader() + the scroll callback.
+                                    // Read (not watch) to avoid adding
+                                    // another subscription.
+                                    final controller =
+                                        context.read<ReaderController>();
+                                    final isDark = vm.backgroundColor
+                                            .computeLuminance() <
+                                        0.5;
+                                    final systemOverlayStyle = isDark
+                                        ? SystemUiOverlayStyle.light.copyWith(
+                                            statusBarColor: Colors.transparent,
+                                            systemNavigationBarColor:
+                                                Colors.transparent,
+                                          )
+                                        : SystemUiOverlayStyle.dark.copyWith(
+                                            statusBarColor: Colors.transparent,
+                                            systemNavigationBarColor:
+                                                Colors.transparent,
+                                          );
 
-                                // 2. Error View
-                                Selector<ReaderController, ReaderErrorState?>(
-                                  selector: (_, c) => c.errorState,
-                                  builder: (context, errorState, _) {
-                                    if (errorState == null)
-                                      return const SizedBox.shrink();
-                                    // Wrap in Positioned.fill to ensure it has size in the Stack
-                                    return Positioned.fill(
-                                      child: Container(
-                                        color: Theme.of(context)
-                                            .scaffoldBackgroundColor,
-                                        child: ReaderErrorView(
-                                          errorState: errorState,
-                                          onBack: () => Navigator.pop(context),
-                                          onRetry: () => context
-                                              .read<ReaderController>()
-                                              .retry(),
-                                        ),
+                                    return AnnotatedRegion<
+                                        SystemUiOverlayStyle>(
+                                      value: systemOverlayStyle,
+                                      child: LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          final padding =
+                                              MediaQuery.of(context).padding;
+                                          return Stack(
+                                            children: [
+                                              Padding(
+                                                key: _readerBodyKey,
+                                                padding: EdgeInsets.only(
+                                                  top: padding.top,
+                                                  bottom: padding.bottom,
+                                                ),
+                                                child: NotificationListener<
+                                                    ScrollNotification>(
+                                                  onNotification:
+                                                      (ScrollNotification _) {
+                                                    _scheduleDebouncedChapterSync(
+                                                      controller,
+                                                    );
+                                                    return false;
+                                                  },
+                                                  // RepaintBoundary isolates
+                                                  // the scrolling engine body
+                                                  // from the overlay layers
+                                                  // above it so a scroll
+                                                  // repaint does not dirty
+                                                  // the Scaffold.
+                                                  child: RepaintBoundary(
+                                                    child: controller.engine
+                                                        .buildReader(context),
+                                                  ),
+                                                ),
+                                              ),
+                                              Positioned(
+                                                left: 16,
+                                                bottom: padding.bottom > 0
+                                                    ? padding.bottom + 4
+                                                    : 16,
+                                                child: Opacity(
+                                                  opacity: (_showControls ||
+                                                          vm.hasBottomBar)
+                                                      ? 0
+                                                      : 1,
+                                                  child: Text(
+                                                    "${(vm.progress * 100).toInt()}%",
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      color: isDark
+                                                          ? Colors.black
+                                                              .withOpacity(0.5)
+                                                          : Colors.white
+                                                              .withOpacity(0.5),
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
                                       ),
                                     );
                                   },
                                 ),
+                              ),
+                            ),
 
-                                // 3. UI Overlays (Status Bar Helper)
-                                // Rebuilds on showControls notify, keeping status bar logic
-                                Positioned.fill(
-                                    child: Consumer<ReaderController>(
-                                  builder: (context, controller, child) {
-                                    final theme = Theme.of(context);
-                                    final bottomPadding =
-                                        MediaQuery.of(context).padding.bottom;
-                                    final topPadding =
-                                        MediaQuery.of(context).padding.top;
+                            // 2. Error View
+                            Selector<ReaderController, ReaderErrorState?>(
+                              selector: (_, c) => c.errorState,
+                              builder: (context, errorState, _) {
+                                if (errorState == null)
+                                  return const SizedBox.shrink();
+                                // Wrap in Positioned.fill to ensure it has size in the Stack
+                                return Positioned.fill(
+                                  child: Container(
+                                    color: Theme.of(context)
+                                        .scaffoldBackgroundColor,
+                                    child: ReaderErrorView(
+                                      errorState: errorState,
+                                      onBack: () => Navigator.pop(context),
+                                      onRetry: () => context
+                                          .read<ReaderController>()
+                                          .retry(),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
 
-                                    return Stack(
-                                      children: [
+                            // 3. UI Overlays - only ever visible when
+                            //    _showControls is true, but the subtree used
+                            //    to rebuild on every controller notify even
+                            //    while hidden.  Selector on the actual inputs
+                            //    (chapters list length, current chapter
+                            //    index, progress, capabilities) keeps this
+                            //    inert during reading.
+                            Positioned.fill(
+                                child: Selector<
+                                    ReaderController,
+                                    ({
+                                      int chaptersCount,
+                                      int? currentChapterIndex,
+                                      double currentProgress,
+                                      ReaderCapabilities capabilities
+                                    })>(
+                              selector: (_, c) => (
+                                chaptersCount: c.chapters.length,
+                                currentChapterIndex: c.currentChapterIndex,
+                                currentProgress: c.currentProgress,
+                                capabilities: c.capabilities,
+                              ),
+                              builder: (context, vm, child) {
+                                final controller =
+                                    context.read<ReaderController>();
+                                final theme = Theme.of(context);
+                                final bottomPadding =
+                                    MediaQuery.of(context).padding.bottom;
+                                final topPadding =
+                                    MediaQuery.of(context).padding.top;
+
+                                return Stack(
+                                  children: [
                                         // Status Bar Helper
                                         Positioned(
                                           top: 0,
@@ -921,14 +959,12 @@ class _ReaderPageState extends State<ReaderPage> {
                                   ),
                                 ),
 
-                                // 5. Brightness HUD Overlay
-                                // Injected just below overlays and gesture catchers
-                                BrightnessHudWidget(
-                                    controller: _brightnessController),
-                              ],
-                            ),
-                          );
-                        },
+                            // 5. Brightness HUD Overlay
+                            // Injected just below overlays and gesture catchers
+                            BrightnessHudWidget(
+                                controller: _brightnessController),
+                          ],
+                        ),
                       ),
                     ), // end Scaffold
                   ); // end PopScope

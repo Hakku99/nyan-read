@@ -139,6 +139,98 @@ void main() {
     controller.dispose();
   });
 
+  // -------------------------------------------------------------------------
+  // _isDisposed guard tests (Phase-1 fix)
+  // -------------------------------------------------------------------------
+
+  test('dispose() then setBrightness() does not throw FlutterError', () async {
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    GetIt.instance.registerSingleton<ReaderPreferencesService>(prefs);
+
+    final adapter = FakeSystemBrightnessAdapter(currentValue: 0.5);
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: adapter,
+      ),
+    );
+    await brightnessController.initialize();
+
+    final controller = ReaderController(
+      Book(
+        id: 'disposed-book',
+        title: 'Disposed Test',
+        author: 'Unknown',
+        filePath: '/test/path',
+        format: 'txt',
+      ),
+    );
+    controller.attachBrightnessController(brightnessController);
+
+    // Dispose first, then call a setter that previously triggered
+    // notifyListeners → FlutterError "notifyListeners called after dispose".
+    controller.dispose();
+
+    // Must complete without throwing.
+    await expectLater(controller.setBrightness(0.7), completes);
+    await expectLater(controller.setWarmth(0.3), completes);
+
+    await brightnessController.shutdown();
+    brightnessController.dispose();
+    await adapter.close();
+  });
+
+  test('late async manager callback after dispose() is silently dropped',
+      () async {
+    // Verifies _safeNotifyListeners acts as a dead-drop for callbacks that
+    // fire after the controller is disposed (e.g. a DB read completing after
+    // the reader page has been popped).
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    GetIt.instance.registerSingleton<ReaderPreferencesService>(prefs);
+
+    final adapter = FakeSystemBrightnessAdapter(currentValue: 0.5);
+    final brightnessController = BrightnessController(
+      BrightnessOrchestrator(
+        repository: BrightnessRepository(prefs),
+        systemAdapter: adapter,
+      ),
+    );
+    await brightnessController.initialize();
+
+    final controller = ReaderController(
+      Book(
+        id: 'safe-notify-book',
+        title: 'SafeNotify Test',
+        author: 'Unknown',
+        filePath: '/test/path',
+        format: 'txt',
+      ),
+    );
+    controller.attachBrightnessController(brightnessController);
+
+    var listenerFireCount = 0;
+    controller.addListener(() => listenerFireCount++);
+
+    // Dispose before any simulated late callback.
+    controller.dispose();
+
+    // Simulate a late async callback reaching _safeNotifyListeners directly.
+    // After dispose the guard must suppress notifyListeners without throwing.
+    // We can't call _safeNotifyListeners directly (private), so we rely on
+    // the fact that calling setBrightness after dispose must not increment
+    // listenerFireCount (no live listeners on a disposed ChangeNotifier).
+    await controller.setBrightness(0.9);
+
+    // listenerFireCount stays at 0 because no notification went through.
+    expect(listenerFireCount, 0);
+
+    await brightnessController.shutdown();
+    brightnessController.dispose();
+    await adapter.close();
+  });
+
   test('Follow System mode stops writing brightness and tracks external changes', () async {
     final prefs = ReaderPreferencesService();
     await prefs.initialize();

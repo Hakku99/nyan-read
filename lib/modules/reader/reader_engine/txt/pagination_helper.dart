@@ -4,14 +4,21 @@ import 'package:flutter/material.dart';
 class PaginationHelper {
   /// Calculates estimated total pages based on a sample layout.
   /// Returns a tuple of (totalPages, averageCharactersPerPage).
+  ///
+  /// [text] may be either the full book text or just a small sample (first
+  /// few kB).  When the caller already knows the true total length of the
+  /// book (e.g. because the full content was parsed off-thread and thrown
+  /// away), it should pass [totalTextLength] so that we do not estimate
+  /// page count off only the sample.
   static Future<List<int>> calculatePageEstimate({
     required String text,
     required TextStyle style,
     required double maxWidth,
     required double maxHeight,
     required EdgeInsets padding,
+    int? totalTextLength,
   }) async {
-    final int textLength = text.length;
+    final int textLength = totalTextLength ?? text.length;
     if (textLength == 0) return [1, 1];
 
     final double availableWidth = maxWidth - padding.horizontal;

@@ -119,6 +119,7 @@ void main() {
           required double maxWidth,
           required double maxHeight,
           required EdgeInsets padding,
+          int? totalTextLength,
         }) {
           calculationCount++;
           final completer = Completer<List<int>>();

@@ -21,7 +21,173 @@ typedef PaginationEstimateCalculator = Future<List<int>> Function({
   required double maxWidth,
   required double maxHeight,
   required EdgeInsets padding,
+  int? totalTextLength,
 });
+
+/// Size of the contiguous head-of-book sample kept on the main isolate for
+/// TextPainter-driven page-count estimation.  A few kB is enough to fill a
+/// screen or two, which is all that is ever inspected for pagination.
+const int _kPaginationSampleSize = 4000;
+
+/// Parses raw TXT bytes completely off the UI thread: byte decoding, line
+/// splitting, paragraph offset table AND chapter heading detection all
+/// happen inside this single [compute] call, because each of these steps
+/// scales linearly with book size and used to freeze the UI during book
+/// open on multi-MB novels.
+///
+/// Returns only sendable primitives so it is safe across isolate
+/// boundaries.  The caller reconstructs [ReaderChapter] objects on the
+/// main isolate.
+class _TxtParseResult {
+  _TxtParseResult({
+    required this.lines,
+    required this.paragraphOffsets,
+    required this.totalTextLength,
+    required this.paginationSample,
+    required this.chapterTitles,
+    required this.chapterParagraphIndexes,
+  });
+
+  final List<String> lines;
+  final List<int> paragraphOffsets;
+  final int totalTextLength;
+  final String paginationSample;
+  final List<String> chapterTitles;
+  final List<int> chapterParagraphIndexes;
+}
+
+_TxtParseResult _parseTxtInIsolate(Uint8List bytes) {
+  final content = _decodeBytesForParse(bytes);
+  final lines = content.split('\n');
+  final totalLength = content.length;
+  final paginationSample = totalLength > _kPaginationSampleSize
+      ? content.substring(0, _kPaginationSampleSize)
+      : content;
+
+  final offsets = List<int>.filled(lines.length, 0);
+  int cursor = 0;
+  for (int i = 0; i < lines.length; i++) {
+    offsets[i] = cursor;
+    cursor += lines[i].length + 1;
+  }
+
+  final titles = <String>[];
+  final indexes = <int>[];
+  for (int i = 0; i < lines.length; i++) {
+    final line = lines[i].trim();
+    if (line.isEmpty) continue;
+
+    var isChapter = _looksLikeChapterHeadingStatic(line);
+    if (!isChapter && _isStandaloneNumericHeadingStatic(line)) {
+      final nextLine = _nextNonEmptyLineStatic(lines, i + 1);
+      isChapter = nextLine == null ||
+          (_looksLikeChapterSubtitleStatic(nextLine) &&
+              !_looksLikeChapterHeadingStatic(nextLine));
+    }
+
+    if (isChapter) {
+      titles.add(line);
+      indexes.add(i);
+    }
+  }
+
+  return _TxtParseResult(
+    lines: lines,
+    paragraphOffsets: offsets,
+    totalTextLength: totalLength,
+    paginationSample: paginationSample,
+    chapterTitles: titles,
+    chapterParagraphIndexes: indexes,
+  );
+}
+
+String _decodeBytesForParse(Uint8List bytes) {
+  try {
+    return utf8.decode(bytes);
+  } catch (_) {
+    try {
+      return gbk.decode(bytes);
+    } catch (_) {
+      return latin1.decode(bytes);
+    }
+  }
+}
+
+// The following helpers are intentionally top-level statics so they can
+// execute inside a [compute] isolate.  They MUST NOT touch any instance
+// state.
+bool _looksLikeNarrativeLineStatic(String line) {
+  if (line.length > 72 &&
+      RegExp(r'[\u3002\uff01\uff1f!?\uff1b;]').hasMatch(line)) {
+    return true;
+  }
+  return false;
+}
+
+Iterable<String> _chapterHeadingCandidatesStatic(String line) sync* {
+  final normalized = line.trim().replaceAll('\u3000', ' ');
+  if (normalized.isEmpty) return;
+
+  final collapsedWhitespace = normalized.replaceAll(RegExp(r'\s+'), ' ');
+  yield collapsedWhitespace;
+
+  final strippedLeadingTag = collapsedWhitespace
+      .replaceFirst(
+        RegExp(
+            r'^[\[\(\uff08\u3010\u300a\u300c\u300e\u3014\u3008].{1,20}[\]\)\uff09\u3011\u300b\u300d\u300f\u3015\u3009]\s*'),
+        '',
+      )
+      .trim();
+  if (strippedLeadingTag.isNotEmpty &&
+      strippedLeadingTag != collapsedWhitespace) {
+    yield strippedLeadingTag;
+  }
+
+  final unwrapped = collapsedWhitespace
+      .replaceFirst(
+          RegExp(r'^[\[\(\uff08\u3010\u300a\u300c\u300e\u3014\u3008]'), '')
+      .replaceFirst(
+          RegExp(r'[\]\)\uff09\u3011\u300b\u300d\u300f\u3015\u3009]$'), '')
+      .trim();
+  if (unwrapped.isNotEmpty && unwrapped != collapsedWhitespace) {
+    yield unwrapped;
+  }
+}
+
+bool _looksLikeChapterHeadingStatic(String line) {
+  for (final candidate in _chapterHeadingCandidatesStatic(line)) {
+    if (candidate.isEmpty || candidate.length > 80) continue;
+    if (_looksLikeNarrativeLineStatic(candidate)) continue;
+
+    for (final pattern in TxtReaderEngine._chapterHeadingPatterns) {
+      if (pattern.hasMatch(candidate)) return true;
+    }
+    for (final pattern in TxtReaderEngine._specialHeadingPatterns) {
+      if (pattern.hasMatch(candidate)) return true;
+    }
+  }
+  return false;
+}
+
+bool _isStandaloneNumericHeadingStatic(String line) {
+  return RegExp(
+    r'^\s*(?:\d{1,4}|[IVXLCDMivxlcdm]{1,8}|[\u96f6\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\u4e24]{1,8})\s*$',
+  ).hasMatch(line);
+}
+
+String? _nextNonEmptyLineStatic(List<String> lines, int startIndex) {
+  for (int i = startIndex; i < lines.length; i++) {
+    final candidate = lines[i].trim();
+    if (candidate.isNotEmpty) return candidate;
+  }
+  return null;
+}
+
+bool _looksLikeChapterSubtitleStatic(String line) {
+  final normalized = line.trim();
+  if (normalized.isEmpty || normalized.length > 40) return false;
+  return !_looksLikeNarrativeLineStatic(normalized);
+}
 
 class TxtReaderEngine
     implements
@@ -61,7 +227,12 @@ class TxtReaderEngine
   Function(Highlight highlight)? onHighlightTapped;
   Function(Offset position)? onContentTap;
 
-  String _fullContent = '';
+  // Only the head-of-book slice needed by TextPainter for page-count
+  // estimation is retained after parse; the full content string used to
+  // pile up on top of [_lines] and was measured at ~2x the raw file size
+  // on Dart's UTF-16 strings.
+  String _paginationSample = '';
+  int _totalTextLength = 0;
   List<int> _paragraphOffsets = [];
   int _totalPages = 1;
   int _charsPerPage = 1;
@@ -83,6 +254,8 @@ class TxtReaderEngine
   final ValueNotifier<int> _highlightRenderVersion = ValueNotifier(0);
   static const EdgeInsets _paginationPadding =
       EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0);
+  // Exposed to isolate-side helpers in this library file (see the
+  // `_looksLikeChapterHeadingStatic` helper at the bottom of the file).
   static final List<RegExp> _chapterHeadingPatterns = [
     RegExp(
       r'^\s*.{1,40}?[\uff1a:]\s*\u7b2c\s*[\u96f6\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\u4e24\dIVXLCDMivxlcdm]+\s*[\u5377\u518c\u90e8\u7bc7\u96c6\u7ae0\u56de\u8282\u8bdd\u5e55](?:\s*(?:[\uff1a:._\-\uff0c\u3001 ]\s*)?.*)?$',
@@ -190,18 +363,25 @@ class TxtReaderEngine
   Future<void> initialize() async {
     try {
       final bytes = await BookSourceAccess.readBytes(book);
-      final content = await compute(_decodeBytes, bytes);
-      _fullContent = content;
-      _lines = content.split('\n');
-
-      _paragraphOffsets = List<int>.filled(_lines.length, 0);
-      int currentOffset = 0;
-      for (int i = 0; i < _lines.length; i++) {
-        _paragraphOffsets[i] = currentOffset;
-        currentOffset += _lines[i].length + 1;
-      }
-
-      _chapters = await getChapters();
+      // Single compute hop does decode + line split + paragraph offsets +
+      // chapter detection.  Previously only the byte decode was off-thread
+      // and everything else ran on the UI isolate, which could lock the
+      // main thread for seconds on 20MB+ novels.
+      final parsed = await compute(_parseTxtInIsolate, bytes);
+      _lines = parsed.lines;
+      _paragraphOffsets = parsed.paragraphOffsets;
+      _totalTextLength = parsed.totalTextLength;
+      _paginationSample = parsed.paginationSample;
+      _chapters = List<ReaderChapter>.generate(
+        parsed.chapterTitles.length,
+        (i) => ReaderChapter(
+          title: parsed.chapterTitles[i],
+          index: i,
+          // TXT chapter navigation jumps to the chapter's starting paragraph.
+          locator: ChapterLocator(chapterIndex: parsed.chapterParagraphIndexes[i]),
+        ),
+        growable: false,
+      );
       _isLoading = false;
     } catch (e) {
       throw FormatException('Failed to parse TXT file: $e');
@@ -236,20 +416,6 @@ class TxtReaderEngine
     return 0.0;
   }
 
-  static String _decodeBytes(Uint8List bytes) {
-    try {
-      return utf8.decode(bytes);
-    } catch (_) {
-      debugPrint('TXT Reader: UTF-8 decoding failed, trying GBK...');
-      try {
-        return gbk.decode(bytes);
-      } catch (_) {
-        debugPrint('TXT Reader: GBK decoding failed, trying Latin1...');
-        return latin1.decode(bytes);
-      }
-    }
-  }
-
   @override
   void configureInteractions({
     ReaderTextHighlightCallback? onTextHighlighted,
@@ -263,23 +429,13 @@ class TxtReaderEngine
 
   @override
   Widget buildReader(BuildContext context) {
-    debugPrint(
-      'DEBUG: TxtReader.buildReader called - isLoading=$_isLoading, lines=${_lines.length}',
-    );
-
     if (_isLoading) {
-      debugPrint('DEBUG: Returning loading indicator');
       return const Center(child: CircularProgressIndicator());
     }
 
     if (_lines.isEmpty) {
-      debugPrint('DEBUG: Lines is empty! Returning error message');
       return const Center(child: Text('No content loaded'));
     }
-
-    debugPrint(
-      'DEBUG: Building ValueListenableBuilder with ${_lines.length} lines',
-    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -294,9 +450,6 @@ class TxtReaderEngine
                   return ValueListenableBuilder<int>(
                     valueListenable: _highlightRenderVersion,
                     builder: (context, _, __) {
-                      debugPrint(
-                        'DEBUG: ValueListenableBuilder building with config: fontSize=${config.fontSize}, bg=${config.backgroundColor}, highlights=${_renderHighlights.length}',
-                      );
                       return _buildList(context, config);
                     },
                   );
@@ -387,28 +540,14 @@ class TxtReaderEngine
   }
 
   Widget _buildList(BuildContext context, ReaderConfig config) {
-    debugPrint(
-      'DEBUG: _buildList called - initialIndex=$_initialIndex, hasRestored=$_hasRestoredPosition',
-    );
-
     if (_initialIndex > 0 && !_hasRestoredPosition) {
       _hasRestoredPosition = true;
-      debugPrint(
-          'DEBUG: Scheduling position restoration to index $_initialIndex');
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        debugPrint(
-          'DEBUG: PostFrameCallback executing - isAttached=${_itemScrollController.isAttached}',
-        );
         if (_itemScrollController.isAttached) {
           _itemScrollController.jumpTo(index: _initialIndex);
-          debugPrint('DEBUG: Jumped to index $_initialIndex');
         }
       });
     }
-
-    debugPrint(
-      'DEBUG: Creating ScrollablePositionedList with ${_lines.length} items',
-    );
 
     return ScrollablePositionedList.builder(
       itemCount: _lines.length,
@@ -416,18 +555,11 @@ class TxtReaderEngine
       itemPositionsListener: _itemPositionsListener,
       initialScrollIndex: _initialIndex,
       itemBuilder: (context, index) {
-        if (index < 5) {
-          debugPrint('DEBUG: itemBuilder called for index $index');
-        }
-
         final line = _lines[index].trim();
         EdgeInsets itemPadding = const EdgeInsets.symmetric(horizontal: 24.0);
 
         if (index == 0) {
           itemPadding = itemPadding.copyWith(top: 16.0);
-          debugPrint(
-            "DEBUG: First item - line='${line.length > 20 ? line.substring(0, 20) : line}...', textColor=${config.textColor}, bgColor=${config.backgroundColor}",
-          );
         }
 
         if (index == _lines.length - 1) {
@@ -439,7 +571,6 @@ class TxtReaderEngine
             itemPadding.copyWith(bottom: itemPadding.bottom + bottomMargin);
 
         if (line.isEmpty) {
-          if (index < 5) debugPrint('DEBUG: Item $index is empty line');
           return SizedBox(height: bottomMargin);
         }
 
@@ -528,122 +659,12 @@ class TxtReaderEngine
     return null;
   }
 
-  bool _looksLikeNarrativeLine(String line) {
-    if (line.length > 72 && RegExp(r'[\u3002\uff01\uff1f!?\uff1b;]').hasMatch(line)) {
-      return true;
-    }
-    return false;
-  }
-
-  Iterable<String> _chapterHeadingCandidates(String line) sync* {
-    final normalized = line.trim().replaceAll('\u3000', ' ');
-    if (normalized.isEmpty) {
-      return;
-    }
-
-    final collapsedWhitespace = normalized.replaceAll(RegExp(r'\s+'), ' ');
-    yield collapsedWhitespace;
-
-    final strippedLeadingTag = collapsedWhitespace
-        .replaceFirst(
-          RegExp(r'^[\[\(\uff08\u3010\u300a\u300c\u300e\u3014\u3008].{1,20}[\]\)\uff09\u3011\u300b\u300d\u300f\u3015\u3009]\s*'),
-          '',
-        )
-        .trim();
-    if (strippedLeadingTag.isNotEmpty &&
-        strippedLeadingTag != collapsedWhitespace) {
-      yield strippedLeadingTag;
-    }
-
-    final unwrapped = collapsedWhitespace
-        .replaceFirst(RegExp(r'^[\[\(\uff08\u3010\u300a\u300c\u300e\u3014\u3008]'), '')
-        .replaceFirst(RegExp(r'[\]\)\uff09\u3011\u300b\u300d\u300f\u3015\u3009]$'), '')
-        .trim();
-    if (unwrapped.isNotEmpty && unwrapped != collapsedWhitespace) {
-      yield unwrapped;
-    }
-  }
-
-  bool _looksLikeChapterHeading(String line) {
-    for (final candidate in _chapterHeadingCandidates(line)) {
-      if (candidate.isEmpty || candidate.length > 80) {
-        continue;
-      }
-      if (_looksLikeNarrativeLine(candidate)) {
-        continue;
-      }
-
-      for (final pattern in _chapterHeadingPatterns) {
-        if (pattern.hasMatch(candidate)) {
-          return true;
-        }
-      }
-
-      for (final pattern in _specialHeadingPatterns) {
-        if (pattern.hasMatch(candidate)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  bool _isStandaloneNumericHeading(String line) {
-    return RegExp(
-      r'^\s*(?:\d{1,4}|[IVXLCDMivxlcdm]{1,8}|[\u96f6\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u5343\u4e07\u4e24]{1,8})\s*$',
-    ).hasMatch(line);
-  }
-
-  String? _nextNonEmptyLine(int startIndex) {
-    for (int i = startIndex; i < _lines.length; i++) {
-      final candidate = _lines[i].trim();
-      if (candidate.isNotEmpty) {
-        return candidate;
-      }
-    }
-    return null;
-  }
-
-  bool _looksLikeChapterSubtitle(String line) {
-    final normalized = line.trim();
-    if (normalized.isEmpty || normalized.length > 40) {
-      return false;
-    }
-    return !_looksLikeNarrativeLine(normalized);
-  }
-
   @override
   Future<List<ReaderChapter>> getChapters() async {
-    if (_lines.isEmpty) return [];
-
-    final chapters = <ReaderChapter>[];
-    int chapterIndex = 0;
-    for (int i = 0; i < _lines.length; i++) {
-      final line = _lines[i].trim();
-      if (line.isEmpty) continue;
-
-      var isChapter = _looksLikeChapterHeading(line);
-      if (!isChapter && _isStandaloneNumericHeading(line)) {
-        final nextLine = _nextNonEmptyLine(i + 1);
-        isChapter = nextLine == null ||
-            (_looksLikeChapterSubtitle(nextLine) &&
-                !_looksLikeChapterHeading(nextLine));
-      }
-
-      if (isChapter) {
-        chapters.add(
-          ReaderChapter(
-            title: line,
-            index: chapterIndex,
-            // TXT chapter navigation jumps to the chapter's starting paragraph.
-            locator: ChapterLocator(chapterIndex: i),
-          ),
-        );
-        chapterIndex++;
-      }
-    }
-
-    return chapters;
+    // Chapters are computed once in [_parseTxtInIsolate] during initialize()
+    // and cached in [_chapters].  Returning them directly keeps the
+    // TocManager from re-running the regex scan over every line.
+    return _chapters;
   }
 
   String _getCurrentChapterTitle() {
@@ -760,7 +781,7 @@ class TxtReaderEngine
   }
 
   Future<void> _recalculatePagination(Size size) async {
-    if (_fullContent.isEmpty) return;
+    if (_paginationSample.isEmpty || _totalTextLength == 0) return;
 
     final paginationKey = _PaginationLayoutKey(
       viewportSize: size,
@@ -772,18 +793,11 @@ class TxtReaderEngine
           : Orientation.portrait,
     );
     if (_lastPaginationKey == paginationKey && _isPaginationCalculated) return;
-    if (_inFlightPaginationKeys.contains(paginationKey)) {
-      debugPrint(
-        'Skipping duplicate pagination request for in-flight key: '
-        '$paginationKey',
-      );
-      return;
-    }
+    if (_inFlightPaginationKeys.contains(paginationKey)) return;
 
     _lastPaginationKey = paginationKey;
     _inFlightPaginationKeys.add(paginationKey);
     _isPaginationCalculated = false;
-    debugPrint('Recalculating pagination for key: $paginationKey');
 
     final style = TextStyle(
       fontSize: _config.fontSize,
@@ -792,19 +806,22 @@ class TxtReaderEngine
     );
 
     try {
+      // The pagination estimator only needs: (a) a small sample of text
+      // to run a single TextPainter layout on, and (b) the total length
+      // of the book to extrapolate.  Previously the full content string
+      // was handed in as `text` solely so that `text.length` matched the
+      // book size - that pinned a second copy of the decoded file in
+      // memory for the life of the reader session.
       final result = await _paginationCalculator(
-        text: _fullContent,
+        text: _paginationSample,
         style: style,
         maxWidth: size.width,
         maxHeight: size.height,
         padding: _paginationPadding,
+        totalTextLength: _totalTextLength,
       );
 
       if (_lastPaginationKey != paginationKey) {
-        debugPrint(
-          'Pagination calculation discarded: layout changed from '
-          '$paginationKey to $_lastPaginationKey',
-        );
         _inFlightPaginationKeys.remove(paginationKey);
         return;
       }
@@ -814,9 +831,6 @@ class TxtReaderEngine
       _isPaginationCalculated = true;
       _inFlightPaginationKeys.remove(paginationKey);
       _pageInfoNotifier.value++;
-      debugPrint(
-        'Pagination calculated: $_totalPages pages, $_charsPerPage chars/page',
-      );
     } catch (e) {
       _inFlightPaginationKeys.remove(paginationKey);
       debugPrint('Pagination error: $e');

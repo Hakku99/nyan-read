@@ -146,9 +146,47 @@ class ReadingProgressManager {
     return saveCurrentPosition();
   }
 
+  /// Fallback save when the widget disposes WITHOUT going through PopScope
+  /// (e.g. forced route replacement, process stop, or Android back gesture
+  /// that bypasses our handler).
+  ///
+  /// IMPORTANT:  the caller is about to dispose the engine.  We must read
+  /// every piece of engine state synchronously here and hand the detached
+  /// snapshot to a fire-and-forget DB write whose continuation never
+  /// touches the engine again.  Do NOT route through
+  /// [saveCurrentPosition] because the in-flight dedup there could hand
+  /// back a pre-existing save that is still trying to talk to the engine.
   void scheduleDisposeFallbackSave() {
     if (!_trackingStarted || _prepareForExitRequested) return;
-    unawaited(saveCurrentPosition());
+
+    ReadingPosition? snapshotPosition;
+    double snapshotProgress = _currentProgress;
+    try {
+      snapshotPosition = engine.getCurrentPosition();
+      snapshotProgress = engine.getProgress() ?? snapshotProgress;
+    } catch (e) {
+      debugPrint('scheduleDisposeFallbackSave: engine snapshot failed: $e');
+      return;
+    }
+    if (snapshotPosition == null) return;
+
+    final capturedPosition = snapshotPosition;
+    final capturedProgress = snapshotProgress;
+    final bookId = book.id;
+    final format = book.format;
+    final db = _db;
+    unawaited(() async {
+      try {
+        await db.updateBookPosition(
+          bookId,
+          format,
+          capturedPosition.toJson(),
+          progress: capturedProgress,
+        );
+      } catch (e) {
+        debugPrint('Fallback dispose save failed: $e');
+      }
+    }());
   }
 
   Future<void> _performSaveCurrentPosition() async {
