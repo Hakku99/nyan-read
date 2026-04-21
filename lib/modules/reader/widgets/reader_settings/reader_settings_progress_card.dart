@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/nyan_radius.dart';
@@ -8,21 +9,29 @@ import '../reader_overlay_tool_button.dart';
 import 'reader_settings_common.dart';
 
 /// Chapter progress and seek bar (reading overlay or legacy sheet layout).
+///
+/// Progress is accepted as a [ValueListenable]<double> so the widget can
+/// repaint only the thumb and the "42%" label when the 1s reading
+/// heartbeat advances the value, rather than rebuilding the whole card.
+/// A one-shot [progress] is still accepted for callers that never animate.
 class ReaderSettingsProgressCard extends StatelessWidget {
   const ReaderSettingsProgressCard({
     super.key,
     required this.chapterLabel,
-    required this.progress,
     required this.showChapterNavigation,
     required this.onSeek,
     required this.onPreviousChapter,
     required this.onNextChapter,
+    this.progress,
+    this.progressListenable,
     this.forOverlay = false,
     this.overlayWidth,
-  });
+  }) : assert(progress != null || progressListenable != null,
+            'either progress or progressListenable must be provided');
 
   final String chapterLabel;
-  final double progress;
+  final double? progress;
+  final ValueListenable<double>? progressListenable;
   final bool showChapterNavigation;
   final ValueChanged<double> onSeek;
   final VoidCallback onPreviousChapter;
@@ -35,7 +44,9 @@ class ReaderSettingsProgressCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final clamped = progress.clamp(0.0, 1.0);
+
+    final progressSink = progressListenable ??
+        ValueNotifier<double>(progress ?? 0.0);
 
     final body = Padding(
       padding: forOverlay
@@ -62,12 +73,18 @@ class ReaderSettingsProgressCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: NyanSpacing.space8),
-              Text(
-                '${(clamped * 100).round()}%',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: theme.colorScheme.primary.withValues(alpha: 0.92),
-                ),
+              ValueListenableBuilder<double>(
+                valueListenable: progressSink,
+                builder: (context, value, _) {
+                  final c = value.clamp(0.0, 1.0);
+                  return Text(
+                    '${(c * 100).round()}%',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.primary.withValues(alpha: 0.92),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -90,14 +107,17 @@ class ReaderSettingsProgressCard extends StatelessWidget {
                 const SizedBox(width: NyanSpacing.space12),
               ],
               Expanded(
-                child: ReaderSettingsSlider(
-                  value: clamped,
-                  min: 0,
-                  max: 1,
-                  divisions: 1000,
-                  onChanged: onSeek,
-                  activeColor: theme.colorScheme.primary,
-                  inactiveColor: theme.dividerColor.withValues(alpha: 0.24),
+                child: ValueListenableBuilder<double>(
+                  valueListenable: progressSink,
+                  builder: (context, value, _) => ReaderSettingsSlider(
+                    value: value.clamp(0.0, 1.0),
+                    min: 0,
+                    max: 1,
+                    divisions: 1000,
+                    onChanged: onSeek,
+                    activeColor: theme.colorScheme.primary,
+                    inactiveColor: theme.dividerColor.withValues(alpha: 0.24),
+                  ),
                 ),
               ),
               if (showChapterNavigation) ...[

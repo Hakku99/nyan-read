@@ -41,9 +41,24 @@ class HighlightableText extends StatefulWidget {
 
 class _HighlightableTextState extends State<HighlightableText> {
   TextSelection? _currentSelection;
-  final List<TapGestureRecognizer> _recognizers = [];
+
+  /// Pool of live gesture recognizers keyed by highlight id.  Each recognizer
+  /// outlives rebuilds; [_buildTextSpan] rebinds its `onTap` to the freshly
+  /// resolved highlight object from [widget.highlights] so the
+  /// recognizer never dangles on a stale closure.
+  final Map<String, TapGestureRecognizer> _recognizerPool = {};
+
   Timer? _tapTimer;
   final GlobalKey _listenerKey = GlobalKey(debugLabel: 'highlightable_listener');
+
+  // Memoised TextSpan.  Rebuilt only when one of the following changes:
+  // paragraph index, the text itself, the text style object, or the
+  // structural fingerprint of the highlights that apply to this paragraph.
+  TextSpan? _cachedSpan;
+  int? _cachedParagraphIndex;
+  String? _cachedText;
+  TextStyle? _cachedStyle;
+  int? _cachedHighlightsFingerprint;
 
   // Swipe detection
   Offset? _pointerDownPosition;
@@ -53,9 +68,10 @@ class _HighlightableTextState extends State<HighlightableText> {
   @override
   void dispose() {
     _tapTimer?.cancel();
-    for (final recognizer in _recognizers) {
+    for (final recognizer in _recognizerPool.values) {
       recognizer.dispose();
     }
+    _recognizerPool.clear();
     super.dispose();
   }
 
@@ -125,85 +141,145 @@ class _HighlightableTextState extends State<HighlightableText> {
     );
   }
 
+  /// Structural fingerprint of the highlights that will contribute spans for
+  /// this paragraph.  Used for cache invalidation — paragraph-local, cheap
+  /// to recompute (O(highlights)), independent of object identity.
+  int _fingerprintHighlights(List<Highlight> highlights) {
+    // Filter + sort deterministically so the fingerprint matches
+    // [_buildTextSpan]'s traversal order.
+    final relevant = highlights
+        .where((h) => h.paragraphIndex == widget.paragraphIndex)
+        .toList()
+      ..sort((a, b) => a.startOffset.compareTo(b.startOffset));
+
+    if (relevant.isEmpty) return 0;
+    return Object.hashAll([
+      for (final h in relevant)
+        Object.hash(h.id, h.startOffset, h.endOffset, h.colorCode),
+    ]);
+  }
+
   TextSpan _buildTextSpan() {
-    // Dispose old recognizers
-    for (final recognizer in _recognizers) {
-      recognizer.dispose();
+    final fingerprint = _fingerprintHighlights(widget.highlights);
+    final cached = _cachedSpan;
+    if (cached != null &&
+        _cachedParagraphIndex == widget.paragraphIndex &&
+        _cachedText == widget.text &&
+        identical(_cachedStyle, widget.style) &&
+        _cachedHighlightsFingerprint == fingerprint) {
+      // Rebind recognizer callbacks in case the parent passed a new
+      // [onHighlightTap] closure.  Binding is O(spans) and does NOT
+      // dispose or reallocate any recognizer.
+      _rebindRecognizerCallbacks();
+      return cached;
     }
-    _recognizers.clear();
 
-    if (widget.highlights.isEmpty) {
-      return TextSpan(text: widget.text, style: widget.style);
-    }
-
-    // Filter highlights for this paragraph
     final paragraphHighlights = widget.highlights
         .where((h) => h.paragraphIndex == widget.paragraphIndex)
-        .toList();
+        .toList()
+      ..sort((a, b) => a.startOffset.compareTo(b.startOffset));
 
+    // Track which recognizers are still in use this build.  Anything left
+    // behind will be disposed at the end — no recognizer leaks, no
+    // per-build allocation for stable highlight sets.
+    final survivingIds = <String>{};
+
+    TextSpan result;
     if (paragraphHighlights.isEmpty) {
-      return TextSpan(text: widget.text, style: widget.style);
-    }
+      result = TextSpan(text: widget.text, style: widget.style);
+    } else {
+      final spans = <InlineSpan>[];
+      int currentIndex = 0;
 
-    // Sort by start offset
-    paragraphHighlights.sort((a, b) => a.startOffset.compareTo(b.startOffset));
+      for (final highlight in paragraphHighlights) {
+        if (highlight.startOffset > widget.text.length ||
+            highlight.endOffset > widget.text.length ||
+            highlight.startOffset < 0 ||
+            highlight.endOffset <= highlight.startOffset) {
+          continue;
+        }
 
-    final spans = <InlineSpan>[];
-    int currentIndex = 0;
+        if (highlight.startOffset < currentIndex) {
+          continue;
+        }
 
-    for (final highlight in paragraphHighlights) {
-      // Validate offsets
-      if (highlight.startOffset > widget.text.length ||
-          highlight.endOffset > widget.text.length ||
-          highlight.startOffset < 0 ||
-          highlight.endOffset <= highlight.startOffset) {
-        continue;
-      }
+        if (currentIndex < highlight.startOffset) {
+          spans.add(TextSpan(
+            text: widget.text.substring(currentIndex, highlight.startOffset),
+            style: widget.style,
+          ));
+        }
 
-      // Skip if this highlight overlaps with previous one
-      if (highlight.startOffset < currentIndex) {
-        continue;
-      }
+        final highlightColor = _parseColor(highlight.colorCode);
+        final recognizer = _acquireRecognizer(highlight);
+        survivingIds.add(highlight.id);
 
-      // Add text before highlight
-      if (currentIndex < highlight.startOffset) {
         spans.add(TextSpan(
-          text: widget.text.substring(currentIndex, highlight.startOffset),
+          text: widget.text
+              .substring(highlight.startOffset, highlight.endOffset),
+          style: widget.style.copyWith(
+            backgroundColor: highlightColor.withValues(alpha: 0.4),
+          ),
+          recognizer: recognizer,
+        ));
+
+        currentIndex = highlight.endOffset;
+      }
+
+      if (currentIndex < widget.text.length) {
+        spans.add(TextSpan(
+          text: widget.text.substring(currentIndex),
           style: widget.style,
         ));
       }
 
-      // Add highlighted text
-      final highlightColor = _parseColor(highlight.colorCode);
-
-      // Create recognizer for this highlight
-      final recognizer = TapGestureRecognizer()
-        ..onTap = () {
-          _tapTimer?.cancel();
-          widget.onHighlightTap?.call(highlight);
-        };
-      _recognizers.add(recognizer);
-
-      spans.add(TextSpan(
-        text: widget.text.substring(highlight.startOffset, highlight.endOffset),
-        style: widget.style.copyWith(
-          backgroundColor: highlightColor.withValues(alpha: 0.4),
-        ),
-        recognizer: recognizer,
-      ));
-
-      currentIndex = highlight.endOffset;
+      result = TextSpan(children: spans);
     }
 
-    // Add remaining text
-    if (currentIndex < widget.text.length) {
-      spans.add(TextSpan(
-        text: widget.text.substring(currentIndex),
-        style: widget.style,
-      ));
+    // Reap any pool entries that no longer back a live span.
+    final staleIds =
+        _recognizerPool.keys.where((id) => !survivingIds.contains(id)).toList();
+    for (final id in staleIds) {
+      _recognizerPool.remove(id)?.dispose();
     }
 
-    return TextSpan(children: spans);
+    _cachedSpan = result;
+    _cachedParagraphIndex = widget.paragraphIndex;
+    _cachedText = widget.text;
+    _cachedStyle = widget.style;
+    _cachedHighlightsFingerprint = fingerprint;
+    return result;
+  }
+
+  /// Fetch (or create) the recognizer for [highlight] and bind it to the
+  /// current `onHighlightTap` closure.  The recognizer itself is pooled
+  /// across rebuilds; only its callback rotates.
+  TapGestureRecognizer _acquireRecognizer(Highlight highlight) {
+    final existing = _recognizerPool[highlight.id];
+    final recognizer = existing ?? TapGestureRecognizer();
+    recognizer.onTap = () {
+      _tapTimer?.cancel();
+      widget.onHighlightTap?.call(highlight);
+    };
+    if (existing == null) {
+      _recognizerPool[highlight.id] = recognizer;
+    }
+    return recognizer;
+  }
+
+  /// Cache-hit fast path: rebind live recognizers against the current
+  /// highlight list so a stale closure never fires a tap.
+  void _rebindRecognizerCallbacks() {
+    if (_recognizerPool.isEmpty) return;
+    for (final highlight in widget.highlights) {
+      if (highlight.paragraphIndex != widget.paragraphIndex) continue;
+      final recognizer = _recognizerPool[highlight.id];
+      if (recognizer == null) continue;
+      recognizer.onTap = () {
+        _tapTimer?.cancel();
+        widget.onHighlightTap?.call(highlight);
+      };
+    }
   }
 
   Color _parseColor(String colorCode) {

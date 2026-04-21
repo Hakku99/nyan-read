@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
 
@@ -60,6 +61,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   Size? _lastLayoutSize;
   BrightnessController? _brightnessControllerRef;
   bool _isDisposed = false;
+  int _renderEpoch = 0;
 
   ReaderController(this.book) {
     engine = ReaderEngineFactory.create(book);
@@ -103,6 +105,13 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   Color get textColor => settingsManager.textColor;
   bool get followSystem => _brightnessControllerRef?.followSystem ?? true;
   double get currentProgress => progressManager.currentProgress;
+
+  /// Reactive handle for the 0..1 reading progress.  Leaf widgets (bottom-left
+  /// "42%" label, overlay scrubber) subscribe to this directly so that the 1s
+  /// reading heartbeat never pulls the whole reader tree through
+  /// [ChangeNotifier.notifyListeners].
+  ValueListenable<double> get progressListenable =>
+      progressManager.progressListenable;
   ReaderCapabilities get capabilities => engine.capabilities;
 
   void attachBrightnessController(BrightnessController bc) {
@@ -118,6 +127,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   ReaderErrorState? get errorState => _errorState;
+  int get renderEpoch => _renderEpoch;
   List<ReaderChapter> get chapters => metaManager.chapters;
   int? get currentChapterIndex => metaManager.currentChapterIndex;
   List<Highlight> get highlights => metaManager.highlights;
@@ -131,12 +141,14 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void init() {
-    progressManager.startTracking();
-    _loadBook();
+    // Defer loading to the next microtask so Provider dependents have
+    // mounted listeners before the first notifyListeners() in _loadBook().
+    scheduleMicrotask(_loadBook);
   }
 
   Future<void> _loadBook() async {
     try {
+      _renderEpoch++;
       _errorState = null;
       notifyListeners();
 
@@ -153,6 +165,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       }
 
       await engine.initialize();
+      progressManager.startTracking();
+      _renderEpoch++;
       notifyListeners();
       await WidgetsBinding.instance.endOfFrame;
 
@@ -164,6 +178,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       await metaManager.loadHighlights();
 
       unawaited(metaManager.backfillBookmarkSnippets());
+      _renderEpoch++;
       notifyListeners();
     } catch (e, stack) {
       ReaderErrorType type = ReaderErrorType.unknown;
@@ -184,6 +199,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
             : null,
         technicalMessage: "$e\n$stack",
       );
+      _renderEpoch++;
       notifyListeners();
     }
   }
@@ -363,6 +379,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     _layoutDebouncer.dispose();
     WidgetsBinding.instance.removeObserver(this);
     engine.dispose();
+    progressManager.dispose();
     super.dispose();
   }
 }
@@ -627,13 +644,13 @@ class _ReaderPageState extends State<ReaderPage> {
                                     ReaderController,
                                     ({
                                       Color backgroundColor,
-                                      double progress,
-                                      bool hasBottomBar
+                                      bool hasBottomBar,
+                                      int renderEpoch
                                     })>(
                                   selector: (_, c) => (
                                     backgroundColor: c.backgroundColor,
-                                    progress: c.currentProgress,
                                     hasBottomBar: c.engine.hasBottomBar,
+                                    renderEpoch: c.renderEpoch,
                                   ),
                                   builder: (context, vm, _) {
                                     // Controller engine reference itself is
@@ -704,17 +721,24 @@ class _ReaderPageState extends State<ReaderPage> {
                                                           vm.hasBottomBar)
                                                       ? 0
                                                       : 1,
-                                                  child: Text(
-                                                    "${(vm.progress * 100).toInt()}%",
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color: isDark
-                                                          ? Colors.black
-                                                              .withValues(alpha: 0.5)
-                                                          : Colors.white
-                                                              .withValues(alpha: 0.5),
-                                                      fontWeight:
-                                                          FontWeight.bold,
+                                                  child: ValueListenableBuilder<
+                                                      double>(
+                                                    valueListenable: controller
+                                                        .progressListenable,
+                                                    builder: (context,
+                                                            progress, _) =>
+                                                        Text(
+                                                      "${(progress * 100).toInt()}%",
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        color: isDark
+                                                            ? Colors.black
+                                                                .withValues(alpha: 0.5)
+                                                            : Colors.white
+                                                                .withValues(alpha: 0.5),
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
@@ -760,18 +784,22 @@ class _ReaderPageState extends State<ReaderPage> {
                             //    index, progress, capabilities) keeps this
                             //    inert during reading.
                             Positioned.fill(
-                                child: Selector<
+                                // P0-4: when the chrome is collapsed, bail out
+                                // before building anything.  _showControls is
+                                // captured from enclosing StatefulWidget state;
+                                // setState will drive a rebuild when it flips.
+                                child: !_showControls
+                                    ? const SizedBox.shrink()
+                                    : Selector<
                                     ReaderController,
                                     ({
                                       int chaptersCount,
                                       int? currentChapterIndex,
-                                      double currentProgress,
                                       ReaderCapabilities capabilities
                                     })>(
                               selector: (_, c) => (
                                 chaptersCount: c.chapters.length,
                                 currentChapterIndex: c.currentChapterIndex,
-                                currentProgress: c.currentProgress,
                                 capabilities: c.capabilities,
                               ),
                               builder: (context, vm, child) {
@@ -862,8 +890,9 @@ class _ReaderPageState extends State<ReaderPage> {
                                                           loc: AppLocalizations
                                                               .of(context)!,
                                                         ),
-                                                        progress: controller
-                                                            .currentProgress,
+                                                        progressListenable:
+                                                            controller
+                                                                .progressListenable,
                                                         showChapterNavigation:
                                                             controller
                                                                 .capabilities

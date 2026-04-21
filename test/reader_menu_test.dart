@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -138,6 +139,9 @@ class MockReaderController extends ChangeNotifier
 
   @override
   double get currentProgress => 0.5;
+  @override
+  ValueListenable<double> get progressListenable =>
+      progressManager.progressListenable;
   @override
   double get brightness => 0.8;
   @override

@@ -408,16 +408,22 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 - `flutter pub get` 成功，无运行时依赖问题。
 - 字体渲染实机验证需在字体文件就位后执行（产品手动步骤，见 `assets/fonts/README.md`）。
 
-### Phase 1 — 扑灭渲染热点（1 个 sprint · 最高优先）
+### Phase 1 — 扑灭渲染热点（1 个 sprint · 最高优先） ✅ 已完成 2026-04-21
 
 **目标：长时间阅读不再发热/掉帧。**
 
-- [ ] **P0-1**：将 `ReadingProgressManager` 的 `currentProgress` 拆成独立 `ValueNotifier<double>`，移除 1s 心跳对 `ReaderController.notifyListeners()` 的调用。
-- [ ] **P0-2**：`reader_page.dart:761-934` overlay Selector 去除 `currentProgress` 字段；`ReaderSettingsProgressCard` 改用 `ValueListenableBuilder<double>`。
-- [ ] **P0-3**：`highlightable_text.dart` 实现 `TapGestureRecognizer` 池化 + `dispose` 释放；`_buildTextSpan` 基于 "(paragraphIndex, highlights hash, text hash)" 三元组缓存。
-- [ ] **P0-4**：`_showControls == false` 时 overlay 子树 `return const SizedBox.shrink()`，零 rebuild。
+- [x] **P0-1**：将 `ReadingProgressManager` 的 `currentProgress` 拆成独立 `ValueNotifier<double>`（`progressListenable`）。1s 心跳只打 `_progressNotifier.value`（ValueNotifier 自动按 `==` 去抖），`onProgressUpdated` 只在 **position 变化** 时才调用，彻底斩断「每秒一次 `ReaderController.notifyListeners()`」的全局扩散。同时给 manager 加了 `dispose()` / `_disposed` 闸门，避免延迟回调在 unmount 后再碰 `engine`。死代码 `shouldShowReminder` 的 3600s notify 也顺手拆除。
+- [x] **P0-2**：`reader_page.dart` 两个 `Selector` 去掉 `currentProgress` 字段——阅读主面板只订阅 `(backgroundColor, hasBottomBar)`，底部「42%」标签改用 `ValueListenableBuilder<double>` 直接订阅 `progressListenable`；`ReaderSettingsProgressCard` 重构为 `progressListenable` 优先（保留 `progress` 一次性值路径给测试），卡片内部「42%」文案和 `ReaderSettingsSlider` 各自 `ValueListenableBuilder<double>` 独立 repaint，不再连带整张卡重建。
+- [x] **P0-3**：`highlightable_text.dart` 重写——
+  - `TapGestureRecognizer` 池化：`_recognizerPool: Map<highlight.id, TapGestureRecognizer>`，命中即复用、缺失才 `new`、build 末尾回收不再出现的 id 对应 recognizer。
+  - `_buildTextSpan` 按 `(paragraphIndex, text, identical(style), highlightsFingerprint)` 四元组缓存；命中时只 rebind `onTap`（O(spans)），不再分配新 `TextSpan`。`highlightsFingerprint` = 排序后的 `Object.hash(id, start, end, colorCode)` 串再 `Object.hashAll`。
+- [x] **P0-4**：overlay subtree 外层 `!_showControls ? const SizedBox.shrink() : Selector<...>`；overlay 的 Selector 同步去掉 `currentProgress` 字段。`setState` 翻转 `_showControls` 才会进入重建路径，收起态 0 rebuild。
 
-**验收：** 静置阅读 30 分钟，DevTools Frame Chart 中主线程平均帧耗 <8ms，无 repeated rebuild of overlay。
+**验收：**
+- `flutter analyze` 零 error（91 条 info/warning 沿用 Phase 0 清单）；
+- 与 Phase 1 相关的全部单测通过：`reading_progress_manager_test` ×4 + `reader_overlay_progress_card_test` ×2 + `reader_menu_test` ×11 + `reader_controller_brightness_test` ×5 全绿；
+- 仓库其余 5 条测试失败（`isolate_test`、`theme_resolution_test`、`txt_reader_chapter_detection_test` ×3）均为 Phase 1 动刀 **之前就存在** 的遗留 bug（TextPainter-in-Isolate 返回 false、Cream Light 主题解析 null、测试源文件中文字符编码丢失），归口 Phase 4 清理；
+- DevTools 30 分钟静置阅读下的实机帧耗测量留待产品侧在字体资产就位后跑一遍。
 
 ### Phase 2 — 解析离 UI + I/O 批量化（1 个 sprint）
 

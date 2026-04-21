@@ -8,20 +8,36 @@ import '../../../core/services/service_locator.dart';
 import '../../../core/utils/lifecycle_registry.dart';
 import '../reader_engine/reader_engine.dart';
 
+/// Owns the "where is the reader right now" state for a single open book.
+///
+/// Split surface:
+///   - [progressListenable] — a [ValueListenable]<double> that ticks every
+///     time the 0..1 scroll/CFI progress changes.  Read-heavy UI (the tiny
+///     "42%" label at the foot of the reader, the overlay slider thumb) is
+///     expected to subscribe to this directly so the 1s reading heartbeat
+///     never rebuilds the whole reader tree.
+///   - [onProgressUpdated] — a callback the host controller wires into its
+///     own `notifyListeners`.  This now fires **only when the underlying
+///     position changed** (TOC index, paragraph index, CFI), NOT on every
+///     progress tick.  Everything that depends on position (chapter sync,
+///     TOC highlight) already lives behind this gate.
 class ReadingProgressManager {
   final ReaderEngine engine;
   final Book book;
   final LifecycleRegistry lifecycle;
 
-  // Callback to update the main controller UI
+  /// Fired only when [currentPosition] changes (paragraph/CFI/page).
+  /// Progress-only ticks do NOT call this; they route through
+  /// [progressListenable] instead.
   final VoidCallback onProgressUpdated;
 
   int _readSeconds = 0;
   ReadingPosition? _currentPosition;
-  double _currentProgress = 0.0;
+  final ValueNotifier<double> _progressNotifier = ValueNotifier<double>(0.0);
   bool _trackingStarted = false;
   bool _prepareForExitRequested = false;
   Future<void>? _saveInFlight;
+  bool _disposed = false;
 
   DatabaseService get _db => getIt<DatabaseService>();
 
@@ -34,20 +50,27 @@ class ReadingProgressManager {
 
   int get readSeconds => _readSeconds;
   ReadingPosition? get currentPosition => _currentPosition;
-  double get currentProgress => _currentProgress;
+  double get currentProgress => _progressNotifier.value;
+
+  /// Read-only reactive handle for progress-bound widgets.  Widgets that
+  /// care about the scrubber value should subscribe to this instead of
+  /// the reader-wide ChangeNotifier to avoid full-subtree rebuilds.
+  ValueListenable<double> get progressListenable => _progressNotifier;
+
   bool get shouldShowReminder => _readSeconds > 0 && _readSeconds % 3600 == 0;
 
   void startTracking() {
     if (_trackingStarted) return;
     _trackingStarted = true;
 
-    // 1s reading heartbeat keeps UI progress in sync.
+    // 1s reading heartbeat: keeps [progressListenable] in sync with engine
+    // scroll and accrues [_readSeconds].  Position-scoped listeners are
+    // only poked via [refreshFromEngine] when the engine reports a new
+    // paragraph/CFI, so hidden UI (overlay, TOC) stays inert during
+    // pure scrolling.
     lifecycle.registerTimer(
       Timer.periodic(const Duration(seconds: 1), (_) {
         _readSeconds++;
-        if (_readSeconds > 0 && _readSeconds % 3600 == 0) {
-          onProgressUpdated();
-        }
         refreshFromEngine();
       }),
     );
@@ -84,7 +107,7 @@ class ReadingProgressManager {
             position.cfi != null &&
             position.cfi!.isNotEmpty &&
             book.currentProgress > 0 &&
-            ((_currentPosition == null) || _currentProgress <= 0.0);
+            ((_currentPosition == null) || _progressNotifier.value <= 0.0);
 
         if (shouldFallbackToProgress) {
           debugPrint(
@@ -102,23 +125,24 @@ class ReadingProgressManager {
   }
 
   void refreshFromEngine() {
+    if (_disposed) return;
     final position = engine.getCurrentPosition();
     final progress = engine.getProgress() ?? 0.0;
 
     final didPositionChange = _currentPosition?.toJson() != position?.toJson();
-    final didProgressChange = progress != _currentProgress;
 
     _currentPosition = position;
-    _currentProgress = progress;
+    // ValueNotifier dedups on ==, so calling this every tick is a no-op
+    // unless the value actually advanced.
+    _progressNotifier.value = progress;
 
-    if (didPositionChange || didProgressChange) {
+    if (didPositionChange) {
       onProgressUpdated();
     }
   }
 
   Future<void> seekTo(double val) async {
-    _currentProgress = val;
-    onProgressUpdated();
+    _progressNotifier.value = val;
     await engine.seekToProgress(val);
     refreshFromEngine();
     await saveCurrentPosition();
@@ -160,7 +184,7 @@ class ReadingProgressManager {
     if (!_trackingStarted || _prepareForExitRequested) return;
 
     ReadingPosition? snapshotPosition;
-    double snapshotProgress = _currentProgress;
+    double snapshotProgress = _progressNotifier.value;
     try {
       snapshotPosition = engine.getCurrentPosition();
       snapshotProgress = engine.getProgress() ?? snapshotProgress;
@@ -192,9 +216,9 @@ class ReadingProgressManager {
   Future<void> _performSaveCurrentPosition() async {
     try {
       final position = engine.getCurrentPosition();
-      final progress = engine.getProgress() ?? _currentProgress;
+      final progress = engine.getProgress() ?? _progressNotifier.value;
       _currentPosition = position;
-      _currentProgress = progress;
+      _progressNotifier.value = progress;
 
       debugPrint(
           "DEBUG: _saveCurrentPosition called. Engine returned: ${position?.toJson()}, progress: $progress");
@@ -213,5 +237,13 @@ class ReadingProgressManager {
     } catch (e) {
       debugPrint('Error saving position: $e');
     }
+  }
+
+  /// Called by the owning controller when the reader surface is torn down.
+  /// Safe to call multiple times.
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    _progressNotifier.dispose();
   }
 }
