@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:nyan_read/l10n/app_localizations.dart';
 
+import '../../../../core/theme/nyan_colors.dart';
 import '../../../../core/theme/nyan_radius.dart';
 import '../../../../core/theme/nyan_spacing.dart';
 import '../../../../core/ui/components/nyan_sheet_card.dart';
@@ -18,7 +19,7 @@ Color _themeLabelColor({
   return isSelected
       ? theme.colorScheme.primary
       : (theme.textTheme.bodySmall?.color?.withValues(alpha: 0.92) ??
-          const Color(0xFF3D3D3D));
+          NyanColors.readerLabelFallbackDark);
 }
 
 /// Reading background presets (Theme tab).
@@ -34,39 +35,39 @@ class ReaderSettingsThemePanel extends StatelessWidget {
   final ValueChanged<Color> onSelectBackground;
   final AppLocalizations loc;
 
-  static const _creamAlt = Color(0xFFFDFCF8);
+  static const _creamAlt = NyanColors.readerPaperDefault;
 
   List<_ReaderThemeOption> _options(AppLocalizations loc) => [
         _ReaderThemeOption(
           label: loc.themeCream,
-          background: const Color(0xFFF7F5EF),
-          preview: const Color(0xFFFFFCF5),
-          ink: const Color(0xFF4A453E),
+          background: NyanColors.readerBgCream,
+          preview: NyanColors.readerPreviewCream,
+          ink: NyanColors.readerInkCream,
         ),
         _ReaderThemeOption(
           label: loc.themeSepia,
-          background: const Color(0xFFEDE3C7),
-          preview: const Color(0xFFF5ECD8),
-          ink: const Color(0xFF5C4F3F),
+          background: NyanColors.readerBgSepia,
+          preview: NyanColors.readerPreviewSepia,
+          ink: NyanColors.readerInkSepia,
         ),
         _ReaderThemeOption(
           label: loc.themeSumi,
-          background: const Color(0xFF262422),
-          preview: const Color(0xFF302D2B),
-          ink: const Color(0xFFE5DED3),
+          background: NyanColors.readerBgSumi,
+          preview: NyanColors.readerPreviewSumi,
+          ink: NyanColors.readerInkSumi,
         ),
         _ReaderThemeOption(
           label: loc.themeCharcoal,
-          background: const Color(0xFF141312),
-          preview: const Color(0xFF1B1A19),
-          ink: const Color(0xFFF1EBDD),
+          background: NyanColors.readerBgCharcoal,
+          preview: NyanColors.readerPreviewCharcoal,
+          ink: NyanColors.readerInkCharcoal,
         ),
       ];
 
   bool _isSelected(Color controllerBg, _ReaderThemeOption option) {
-    if (controllerBg.value == option.background.value) return true;
+    if (controllerBg == option.background) return true;
     if (option.label == loc.themeCream) {
-      return controllerBg.value == _creamAlt.value;
+      return controllerBg == _creamAlt;
     }
     return false;
   }

@@ -44,7 +44,7 @@ class NyanHighlightCard extends StatelessWidget {
         ? const <BoxShadow>[]
         : [
             BoxShadow(
-              color: theme.shadowColor.withOpacity(0.022),
+              color: theme.shadowColor.withValues(alpha: 0.022),
               blurRadius: 9,
               offset: const Offset(0, 3),
             ),

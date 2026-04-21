@@ -120,7 +120,7 @@ class _PinInputWidgetState extends State<PinInputWidget>
             shape: BoxShape.circle,
             color: isFilled ? Colors.white : Colors.transparent,
             border: Border.all(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               width: 2,
             ),
           ),
@@ -184,8 +184,8 @@ class _PinInputWidgetState extends State<PinInputWidget>
         child: InkWell(
           onTap: onPressed,
           customBorder: const CircleBorder(),
-          splashColor: Colors.white.withOpacity(0.2),
-          highlightColor: Colors.white.withOpacity(0.1),
+          splashColor: Colors.white.withValues(alpha: 0.2),
+          highlightColor: Colors.white.withValues(alpha: 0.1),
           child: Center(child: child),
         ),
       ),

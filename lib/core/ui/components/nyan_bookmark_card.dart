@@ -38,7 +38,7 @@ class NyanBookmarkCard extends StatelessWidget {
         ? const <BoxShadow>[]
         : [
             BoxShadow(
-              color: theme.shadowColor.withOpacity(0.025),
+              color: theme.shadowColor.withValues(alpha: 0.025),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),

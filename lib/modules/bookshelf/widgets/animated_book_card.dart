@@ -312,12 +312,12 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                 border: Border.all(
                   color: widget.isSelected
                       ? theme.colorScheme.primary
-                      : theme.colorScheme.outline.withOpacity(0.1),
+                      : theme.colorScheme.outline.withValues(alpha: 0.1),
                   width: widget.isSelected ? 3 : 1,
                 ),
                 color: widget.isSelected
                     ? context.selectionSurface
-                    : theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 boxShadow: NyanShadows.subtle(theme.shadowColor),
               ),
               child: ClipRRect(
@@ -334,7 +334,7 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                           Container(
                             padding: const EdgeInsets.all(NyanSpacing.space8),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withOpacity(0.1),
+                              color: theme.colorScheme.primary.withValues(alpha: 0.1),
                               borderRadius:
                                   BorderRadius.circular(NyanRadius.small),
                             ),
@@ -378,8 +378,8 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                             colors: [
-                              theme.cardColor.withOpacity(0.9),
-                              theme.cardColor.withOpacity(0.0),
+                              theme.cardColor.withValues(alpha: 0.9),
+                              theme.cardColor.withValues(alpha: 0.0),
                             ],
                           ),
                           borderRadius: const BorderRadius.only(
@@ -402,7 +402,7 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                   decoration: BoxDecoration(
                     color: widget.isSelected
                         ? theme.colorScheme.primary
-                        : Colors.grey.withOpacity(0.5),
+                        : Colors.grey.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                   ),

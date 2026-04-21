@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/nyan_colors.dart';
 import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
 import '../nyan_theme_context.dart';
@@ -73,7 +74,7 @@ class NyanOverlayStyle {
     if (theme.brightness == Brightness.dark) {
       return panelSurface(context);
     }
-    return const Color(0xFFFCFBF7);
+    return NyanColors.overlayCreamSurface;
   }
 
   static Color panelSurface(BuildContext context) {
@@ -84,7 +85,7 @@ class NyanOverlayStyle {
         theme.scaffoldBackgroundColor,
       );
     }
-    return const Color(0xFFFCFBF7);
+    return NyanColors.overlayCreamSurface;
   }
 
   static Color brandOlive(BuildContext context) => context.nyanTheme.primary;
@@ -101,9 +102,9 @@ class NyanOverlayStyle {
   static Color destructiveAccent(BuildContext context) {
     final theme = Theme.of(context);
     if (theme.brightness == Brightness.dark) {
-      return const Color(0xFFB69A8D);
+      return NyanColors.destructiveWarmDark;
     }
-    return const Color(0xFFA4877C);
+    return NyanColors.destructiveWarmLight;
   }
 
   static Color destructiveText(BuildContext context) {
@@ -137,7 +138,7 @@ class NyanOverlayStyle {
             theme.colorScheme.surface.withValues(alpha: 0.18),
             panelSurface(context),
           )
-        : const Color(0xFFF8F6F0);
+        : NyanColors.overlayRecessedSurface;
     if (seed == null) {
       return base;
     }
@@ -173,13 +174,13 @@ class NyanOverlayStyle {
 
     return const [
       BoxShadow(
-        color: Color(0x14000000),
+        color: NyanColors.overlayShadowDialogOuter,
         blurRadius: 28,
         spreadRadius: 0,
         offset: Offset(0, 10),
       ),
       BoxShadow(
-        color: Color(0x08000000),
+        color: NyanColors.overlayShadowDialogInner,
         blurRadius: 8,
         spreadRadius: 0,
         offset: Offset(0, 2),
@@ -195,13 +196,13 @@ class NyanOverlayStyle {
 
     return const [
       BoxShadow(
-        color: Color(0x10000000),
+        color: NyanColors.overlayShadowLoadingOuter,
         blurRadius: 22,
         spreadRadius: 0,
         offset: Offset(0, 8),
       ),
       BoxShadow(
-        color: Color(0x06000000),
+        color: NyanColors.overlayShadowLoadingInner,
         blurRadius: 8,
         spreadRadius: 0,
         offset: Offset(0, 2),
@@ -217,7 +218,7 @@ class NyanOverlayStyle {
 
     return const [
       BoxShadow(
-        color: Color(0x0D000000),
+        color: NyanColors.overlayShadowNotice,
         blurRadius: 18,
         spreadRadius: 0,
         offset: Offset(0, 6),

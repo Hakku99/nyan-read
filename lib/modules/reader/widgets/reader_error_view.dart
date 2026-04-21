@@ -155,7 +155,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
                     ? loc.hideTechnicalDetails
                     : loc.showTechnicalDetails,
                 style: TextStyle(
-                  color: errorSecondary.withOpacity(0.5),
+                  color: errorSecondary.withValues(alpha: 0.5),
                   fontSize: 12,
                   decoration: TextDecoration.underline,
                 ),
@@ -166,9 +166,9 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: errorSecondary.withOpacity(0.1)),
+                  border: Border.all(color: errorSecondary.withValues(alpha: 0.1)),
                 ),
                 width: double.infinity,
                 child: SelectableText(

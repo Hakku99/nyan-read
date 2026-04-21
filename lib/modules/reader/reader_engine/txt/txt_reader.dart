@@ -495,7 +495,7 @@ class TxtReaderEngine
                                     '${progressPercent.toInt()}%',
                                     textAlign: TextAlign.left,
                                     style: TextStyle(
-                                      color: config.textColor.withOpacity(0.6),
+                                      color: config.textColor.withValues(alpha: 0.6),
                                       fontSize: 10,
                                     ),
                                   ),
@@ -508,7 +508,7 @@ class TxtReaderEngine
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      color: config.textColor.withOpacity(0.6),
+                                      color: config.textColor.withValues(alpha: 0.6),
                                       fontSize: 10,
                                     ),
                                   ),
@@ -518,7 +518,7 @@ class TxtReaderEngine
                                     '$page / $total',
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
-                                      color: config.textColor.withOpacity(0.6),
+                                      color: config.textColor.withValues(alpha: 0.6),
                                       fontSize: 10,
                                     ),
                                   ),

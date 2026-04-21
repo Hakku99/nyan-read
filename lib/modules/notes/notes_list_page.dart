@@ -4,6 +4,7 @@ import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../core/models/highlight.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/service_locator.dart';
+import '../../core/theme/nyan_colors.dart';
 import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
@@ -131,7 +132,7 @@ class _NotesListPageState extends State<NotesListPage> {
       final hex = colorCode.replaceFirst('#', '');
       return Color(int.parse('FF$hex', radix: 16));
     } catch (_) {
-      return const Color(0xFFF2E58A);
+      return NyanColors.highlightYellow;
     }
   }
 

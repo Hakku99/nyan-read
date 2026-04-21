@@ -73,7 +73,7 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
   Color get onSecondary => NyanColors.white;
   Color get onError => NyanColors.white;
   Color get inverseBorder =>
-      brightness == Brightness.dark ? NyanColors.white.withOpacity(0.08) : divider;
+      brightness == Brightness.dark ? NyanColors.white.withValues(alpha: 0.08) : divider;
 
   ThemeData get themeData {
     final colorScheme = ColorScheme(
@@ -143,13 +143,13 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor:
-              brightness == Brightness.dark ? primary.withOpacity(0.15) : primary,
+              brightness == Brightness.dark ? primary.withValues(alpha: 0.15) : primary,
           foregroundColor: brightness == Brightness.dark ? primary : onPrimary,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(NyanRadius.input),
             side: brightness == Brightness.dark
-                ? BorderSide(color: primary.withOpacity(0.5), width: 1)
+                ? BorderSide(color: primary.withValues(alpha: 0.5), width: 1)
                 : BorderSide.none,
           ),
           padding: const EdgeInsets.symmetric(
@@ -188,7 +188,7 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
           borderSide: BorderSide(color: primary, width: 1.5),
         ),
         labelStyle: TextStyle(color: textSecondary),
-        hintStyle: TextStyle(color: textSecondary.withOpacity(0.7)),
+        hintStyle: TextStyle(color: textSecondary.withValues(alpha: 0.7)),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: surface,

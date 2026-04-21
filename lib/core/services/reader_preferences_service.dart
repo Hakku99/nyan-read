@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../theme/nyan_colors.dart';
+
 /// 翻页方式
 enum PageTurnMode {
   tap, // 点击翻页
@@ -30,7 +32,7 @@ class ReaderPreferencesService extends ChangeNotifier {
   // Reader display settings
   double _fontSize = 18.0;
   double _lineHeight = 1.5;
-  Color _backgroundColor = const Color(0xFFFDFCF8); // Default Cream Paper
+  Color _backgroundColor = NyanColors.readerPaperDefault;
   double? _brightness;
   double _warmth = 0.0; // 0.0 (Cool/None) to 1.0 (Max Warmth)
   double _minPhysicalBrightness = 0.10; // User preferred hardware floor
@@ -127,9 +129,11 @@ class ReaderPreferencesService extends ChangeNotifier {
 
   // Set background color
   Future<void> setBackgroundColor(Color color) async {
-    if (_backgroundColor.value == color.value) return;
+    if (_backgroundColor == color) return;
     _backgroundColor = color;
-    await _prefs?.setInt('reader_background_color', color.value);
+    // toARGB32() 返回与 Flutter 3.27 前 Color.value 相同的 32-bit int，
+    // 因此不会破坏老用户已经持久化的 'reader_background_color' 字段。
+    await _prefs?.setInt('reader_background_color', color.toARGB32());
     notifyListeners();
   }
 
@@ -176,7 +180,7 @@ class ReaderPreferencesService extends ChangeNotifier {
     _pageAnimation = PageAnimation.fade;
     _fontSize = 18.0;
     _lineHeight = 1.5;
-    _backgroundColor = const Color(0xFFFDFCF8);
+    _backgroundColor = NyanColors.readerPaperDefault;
     _warmth = 0.0;
     _followSystemOffset = 0.0;
 
@@ -184,7 +188,8 @@ class ReaderPreferencesService extends ChangeNotifier {
     await _prefs?.setInt('page_animation', PageAnimation.fade.index);
     await _prefs?.setDouble('reader_font_size', 18.0);
     await _prefs?.setDouble('reader_line_height', 1.5);
-    await _prefs?.setInt('reader_background_color', 0xFFFDFCF8);
+    await _prefs?.setInt(
+        'reader_background_color', NyanColors.readerPaperDefault.toARGB32());
     await _prefs?.setDouble('reader_warmth', 0.0);
     await _prefs?.setDouble('reader_follow_system_offset', 0.0);
 

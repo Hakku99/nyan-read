@@ -35,10 +35,10 @@ class BrightnessOverlayWidget extends StatelessWidget {
                   Positioned.fill(
                     child: IgnorePointer(
                       child: Container(
-                        color: Colors.amber.withOpacity(warmth * 0.3),
+                        color: Colors.amber.withValues(alpha: warmth * 0.3),
                         foregroundDecoration: BoxDecoration(
                           backgroundBlendMode: BlendMode.multiply,
-                          color: Colors.orangeAccent.withOpacity(warmth * 0.2),
+                          color: Colors.orangeAccent.withValues(alpha: warmth * 0.2),
                         ),
                       ),
                     ),
@@ -47,7 +47,7 @@ class BrightnessOverlayWidget extends StatelessWidget {
                   Positioned.fill(
                     child: IgnorePointer(
                       child: Container(
-                        color: Colors.black.withOpacity(state.overlayOpacity),
+                        color: Colors.black.withValues(alpha: state.overlayOpacity),
                       ),
                     ),
                   ),

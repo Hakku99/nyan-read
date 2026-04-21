@@ -10,6 +10,7 @@ import '../../core/models/highlight.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/service_locator.dart';
+import '../../core/theme/nyan_colors.dart';
 import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/utils/layout_debouncer.dart';
@@ -275,7 +276,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> resetReaderAppearanceDefaults() async {
     settingsManager.setFontSize(18);
     settingsManager.setLineHeight(1.5);
-    settingsManager.setBackground(const Color(0xFFFDFCF8));
+    settingsManager.setBackground(NyanColors.readerPaperDefault);
     await setWarmth(0);
   }
 
@@ -293,7 +294,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Theme tab: default paper background.
   void resetReaderThemeDefaults() {
-    setBackground(const Color(0xFFFDFCF8));
+    setBackground(NyanColors.readerPaperDefault);
   }
 
   Future<void> jumpToPreviousChapter() async {
@@ -709,9 +710,9 @@ class _ReaderPageState extends State<ReaderPage> {
                                                       fontSize: 10,
                                                       color: isDark
                                                           ? Colors.black
-                                                              .withOpacity(0.5)
+                                                              .withValues(alpha: 0.5)
                                                           : Colors.white
-                                                              .withOpacity(0.5),
+                                                              .withValues(alpha: 0.5),
                                                       fontWeight:
                                                           FontWeight.bold,
                                                     ),
@@ -796,7 +797,7 @@ class _ReaderPageState extends State<ReaderPage> {
                                             opacity: _showControls ? 1.0 : 0.0,
                                             child: Container(
                                                 color: theme.colorScheme.surface
-                                                    .withOpacity(0.95)),
+                                                    .withValues(alpha: 0.95)),
                                           ),
                                         ),
                                         Positioned(

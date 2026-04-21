@@ -30,7 +30,6 @@ dependencies:
   flutter_secure_storage: ^9.0.0
 
   # UI / UX
-  google_fonts: ^8.0.0
   flutter_animate: ^4.2.0
 
   # Reader Engines
@@ -66,6 +65,25 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+
+  # 本地字体注册（见 assets/fonts/README.md 获取 .ttf / .otf 文件）。
+  # 若对应字体文件缺失，Flutter 会在启动时打印 warning 并回落到平台 CJK 默认字体；
+  # 运行逻辑不会崩，但 serif 阅读模式不生效，UI 会使用平台字体。
+  fonts:
+    - family: Noto Sans SC
+      fonts:
+        - asset: assets/fonts/NotoSansSC-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSansSC-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSansSC-SemiBold.ttf
+          weight: 600
+    - family: Source Han Serif SC
+      fonts:
+        - asset: assets/fonts/SourceHanSerifSC-Regular.otf
+          weight: 400
+        - asset: assets/fonts/SourceHanSerifSC-SemiBold.otf
+          weight: 600
 
 
 # Flutter launcher icons configuration is now in flutter_launcher_icons.yaml

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/nyan_colors.dart';
 import '../../theme/nyan_spacing.dart';
 import '../nyan_theme_context.dart';
 import 'nyan_overlay_style.dart';
@@ -34,10 +35,10 @@ class NyanDialogOptionRow extends StatelessWidget {
     final olive = theme.colorScheme.primary;
     final tileColor = value
         ? context.selectionSurface
-        : const Color(0xFFF8F6F0);
+        : NyanColors.overlayRecessedSurface;
     final borderColor = value
         ? theme.colorScheme.primary
-        : const Color(0xFFEAE5DD);
+        : NyanColors.overlayOptionBorder;
 
     return Material(
       color: Colors.transparent,

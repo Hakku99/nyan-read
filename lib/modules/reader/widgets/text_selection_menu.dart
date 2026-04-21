@@ -58,7 +58,7 @@ class TextSelectionMenu extends StatelessWidget {
             Container(
               width: 1,
               height: 32,
-              color: Colors.grey.withOpacity(0.3),
+              color: Colors.grey.withValues(alpha: 0.3),
             ),
             const SizedBox(width: 8),
 
@@ -143,7 +143,7 @@ class _ColorButton extends StatelessWidget {
           border: Border.all(color: Colors.white, width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

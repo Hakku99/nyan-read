@@ -13,7 +13,7 @@ void main() {
       NyanTheme? findTheme(Color bg) {
         try {
           return themePresets.values.firstWhere(
-            (theme) => theme.background.value == bg.value,
+            (theme) => theme.background == bg,
           );
         } catch (e) {
           return null;
@@ -31,7 +31,7 @@ void main() {
       NyanTheme resolveTheme(Color bg) {
         try {
           return themePresets.values.firstWhere(
-            (theme) => theme.background.value == bg.value,
+            (theme) => theme.background == bg,
           );
         } catch (e) {
           return themePresets[ThemePreset.creamLight]!;

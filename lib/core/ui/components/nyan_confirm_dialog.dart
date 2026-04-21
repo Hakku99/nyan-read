@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/nyan_colors.dart';
 import '../../theme/nyan_spacing.dart';
 import '../nyan_theme_context.dart';
 import 'nyan_overlay_style.dart';
@@ -88,7 +89,7 @@ class NyanConfirmDialog extends StatelessWidget {
       context.nyanTheme.textSecondary.withValues(alpha: 0.02),
       NyanOverlayStyle.creamSurface(context),
     );
-    final removeFill = const Color(0xFFA3AB8B);
+    const removeFill = NyanColors.confirmOliveFill;
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(
@@ -111,9 +112,9 @@ class NyanConfirmDialog extends StatelessWidget {
                 children: [
                   _DialogBadge(
                     icon: resolvedIcon,
-                    iconColor: const Color(0xFF9A8578),
+                    iconColor: NyanColors.confirmBadgeIcon,
                     backgroundColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2),
-                    borderColor: const Color(0x6BDCE4D3),
+                    borderColor: NyanColors.confirmBadgeBorder,
                   ),
                   const SizedBox(width: NyanSpacing.space12),
                   Expanded(
@@ -153,7 +154,7 @@ class NyanConfirmDialog extends StatelessWidget {
                       label: cancelLabel,
                       onTap: () => Navigator.of(context).pop(false),
                       backgroundColor: cancelSurface,
-                      borderColor: const Color(0xFFEAE5DD),
+                      borderColor: NyanColors.overlayOptionBorder,
                       foregroundColor: primaryText,
                       fontWeight: FontWeight.w600,
                     ),

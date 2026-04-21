@@ -77,9 +77,9 @@ class _MascotWidget extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: effectiveColor.withOpacity(0.15),
+        color: effectiveColor.withValues(alpha: 0.15),
         shape: BoxShape.circle,
-        border: Border.all(color: effectiveColor.withOpacity(0.5), width: 2),
+        border: Border.all(color: effectiveColor.withValues(alpha: 0.5), width: 2),
       ),
       child: Center(
         child: Icon(

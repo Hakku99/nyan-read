@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../../core/models/highlight.dart';
+import '../../../core/theme/nyan_colors.dart';
 import '../../../core/theme/nyan_spacing.dart';
 import '../../../core/ui/components/nyan_overlay_style.dart';
 import '../../../core/ui/nyan_theme_context.dart';
@@ -48,12 +49,12 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
   }
 
   Color _parseColor(String? colorCode) {
-    if (colorCode == null) return const Color(0xFFF2E58A);
+    if (colorCode == null) return NyanColors.highlightYellow;
     try {
       final hex = colorCode.replaceFirst('#', '');
       return Color(int.parse('FF$hex', radix: 16));
     } catch (_) {
-      return const Color(0xFFF2E58A);
+      return NyanColors.highlightYellow;
     }
   }
 
@@ -214,7 +215,7 @@ class _HighlightDialogPalette {
   static Color dialogSurface(BuildContext context) {
     return Color.alphaBlend(
       context.nyanTheme.textSecondary.withValues(alpha: 0.012),
-      const Color(0xFFF8F5EE),
+      NyanColors.highlightPaperDialog,
     );
   }
 
@@ -230,13 +231,13 @@ class _HighlightDialogPalette {
 
     return const [
       BoxShadow(
-        color: Color(0x12000000),
+        color: NyanColors.shadowSoft,
         blurRadius: 24,
         spreadRadius: 0,
         offset: Offset(0, 8),
       ),
       BoxShadow(
-        color: Color(0x05000000),
+        color: NyanColors.shadowHairline,
         blurRadius: 8,
         spreadRadius: 0,
         offset: Offset(0, 2),
@@ -247,21 +248,21 @@ class _HighlightDialogPalette {
   static Color pickerSurface(BuildContext context) {
     return Color.alphaBlend(
       context.nyanTheme.textSecondary.withValues(alpha: 0.006),
-      const Color(0xFFF4F0E8),
+      NyanColors.highlightPaperPicker,
     );
   }
 
   static Color previewSurface(BuildContext context) {
     return Color.alphaBlend(
       context.nyanTheme.textSecondary.withValues(alpha: 0.012),
-      const Color(0xFFF3EEE3),
+      NyanColors.highlightPaperPreview,
     );
   }
 
   static Color inputSurface(BuildContext context) {
     return Color.alphaBlend(
       context.nyanTheme.textSecondary.withValues(alpha: 0.015),
-      const Color(0xFFF6F0E5),
+      NyanColors.highlightPaperInput,
     );
   }
 
@@ -275,7 +276,7 @@ class _HighlightDialogPalette {
 
   static Color deleteTone(BuildContext context) {
     return Color.alphaBlend(
-      const Color(0xFFA88D7E).withValues(alpha: 0.76),
+      NyanColors.highlightInkSepia.withValues(alpha: 0.76),
       context.nyanTheme.textPrimary.withValues(alpha: 0.1),
     );
   }
@@ -293,27 +294,36 @@ class _HighlightDialogPalette {
         );
   }
 
+  // Flutter 3.27+：Color.r/.g/.b 为 0-1 双精度。下列阈值按 0-255 整数范围给出，
+  // 因此 compare 前乘 255 并 round。
+  static int _r255(Color c) => (c.r * 255).round();
+  static int _g255(Color c) => (c.g * 255).round();
+  static int _b255(Color c) => (c.b * 255).round();
+
   static bool isYellowHighlight(Color color) {
-    return color.red > 230 && color.green > 210 && color.blue < 170;
+    return _r255(color) > 230 && _g255(color) > 210 && _b255(color) < 170;
   }
 
   static Color displayHighlight(Color color) {
     if (isYellowHighlight(color)) {
-      return const Color(0xFFD8C06B);
+      return NyanColors.highlightInkYellow;
     }
-    if (color.blue > color.red && color.blue > color.green) {
-      return const Color(0xFFB9C1C2);
+    final r = _r255(color);
+    final g = _g255(color);
+    final b = _b255(color);
+    if (b > r && b > g) {
+      return NyanColors.highlightInkBlue;
     }
-    if (color.red > 220 && color.blue > 150) {
-      return const Color(0xFFCDA2A8);
+    if (r > 220 && b > 150) {
+      return NyanColors.highlightInkPink;
     }
-    if (color.red > 220 && color.green > 150 && color.blue < 150) {
-      return const Color(0xFFDBB686);
+    if (r > 220 && g > 150 && b < 150) {
+      return NyanColors.highlightInkOrange;
     }
-    if (color.green > color.red && color.green > color.blue) {
-      return const Color(0xFFA9C08E);
+    if (g > r && g > b) {
+      return NyanColors.highlightInkGreen;
     }
-    return Color.alphaBlend(const Color(0x55FFF8EF), color);
+    return Color.alphaBlend(NyanColors.highlightPaperLiftTint, color);
   }
 
   static Color previewSurfaceFor(BuildContext context, Color highlightColor) {
@@ -324,7 +334,7 @@ class _HighlightDialogPalette {
 
   static Color previewBarColor(Color highlightColor) {
     if (isYellowHighlight(highlightColor)) {
-      return const Color(0xFFD4BA53);
+      return NyanColors.highlightPreviewBar;
     }
     return displayHighlight(highlightColor).withValues(alpha: 0.54);
   }

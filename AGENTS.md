@@ -389,17 +389,24 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 
 本路线图基于 2026-04 全局审查报告。**MUST** 按阶段推进，不得越阶跳跃。
 
-### Phase 0 — 设计系统真相归一化（0.5 sprint · 前置条件）
+### Phase 0 — 设计系统真相归一化（0.5 sprint · 前置条件）✅ 已完成 2026-04-20
 
 **目标：消除"设计 token 在文档里正确，在代码里是僵尸"的风险。**
 
-- [ ] **P1-0a**：**字体注册**。两选一——(A) 通过 `google_fonts` 动态加载：在 `NyanTypography` 里把 `TextStyle(fontFamily: 'Noto Sans SC')` 改为 `GoogleFonts.notoSansSc(...)`；或 (B) 把 `NotoSansSC-*.ttf` / `SourceHanSerifSC-*.otf` 加入 `assets/fonts/` 并在 `pubspec.yaml` 的 `flutter.fonts` 段注册。推荐 (A)，体积更小。
-- [ ] **P1-0b**：如果最终选择 (B)，则从 `pubspec.yaml` 移除未使用的 `google_fonts` 依赖，避免误导。
-- [ ] **P1-0c**：grep 全仓 `Color(0xFF` 字面色值；凡在 `lib/modules/**` 中出现的，替换为 `NyanColors.*` 或 `NyanTheme` 扩展读取。允许保留的地方：`lib/core/theme/**` 内部、`reader_config.dart` 里的用户可配置默认色。
-- [ ] **P1-0d**：grep `.withOpacity(`；Flutter 3.27+ 已 deprecated，统一替换为 `.withValues(alpha: x)`（如项目 SDK 尚未到 3.27，写一条 TODO 并在 §6 Phase 4 清理）。
-- [ ] **P1-0e**：确认 `theme_presets.dart` 中的 `themePresets` 是否需要补齐 `sepiaBackground` / `amoled*` 的 `NyanTheme` 预设（UI 上有 4 张主题卡，代码只实现 2 种）——若暂不补，则在主题选择 UI 上把未实现的卡片隐藏或置灰，**MUST NOT** 让用户点到死链。
+- [x] **P1-0a**：**字体注册**（方案 B，本地资产）。`pubspec.yaml` 的 `flutter.fonts` 段已声明 `Noto Sans SC`（400/500/600）+ `Source Han Serif SC`（400/600）。`.ttf` / `.otf` 文件**未入 git**，需下载后放入 `assets/fonts/`，详见 [`assets/fonts/README.md`](../assets/fonts/README.md)。缺失字体时 Flutter 只打印 warning，不影响编译运行，但 serif 阅读模式会回落平台字体。
+- [x] **P1-0b**：从 `pubspec.yaml` 移除未使用的 `google_fonts` 依赖。
+- [x] **P1-0c**：`lib/modules/**` 内 `Color(0xFF...)` 字面值清零；字面色全部迁入 `lib/core/theme/nyan_colors.dart`，按 "reader runtime / reader theme swatch / highlight ink / highlight paper / overlay shadow / overlay micro-palette" 分组命名。`lib/core/ui/components/` 同步整理。允许保留字面值的白名单：`nyan_colors.dart`（规范定义）与 `theme_presets.dart`（`NyanTheme` 预设）。
+- [x] **P1-0d**：`.withOpacity(x)` 全仓替换为 `.withValues(alpha: x)`（共 36 处跨 14 个 Dart 文件）。
+- [x] **P1-0e**：审计结果为 **NO-OP**——先前怀疑的"死链"不存在。设置页 `settings_page.dart` 的主题选择弹窗直接迭代 `themePresets.values`（仅含 `creamLight` / `sumiDark`），只显示 2 张可用卡；reader 的 4 张阅读背景卡（`reader_settings_theme_panel.dart`）本就只改 `backgroundColor`、不依赖 `NyanTheme` 预设，`ReaderSettingsManager._updateEngineConfig` 会按背景 luminance 自动切换字色。
+- [x] **P1-0f**：清理一次性 refactor 脚本残留 `lib/modules/reader/widgets/update_reader_menu.py`。
+- [x] **P1-0g**：Flutter 内置 SDK deprecation 清零 —— `Color.red/.green/.blue/.value` 迁移到 `.r/.g/.b`（新 0-1 double）或 `.toARGB32()`（保留与旧 prefs 的字段兼容）；`ColorScheme.surfaceVariant` 迁移到 `surfaceContainerHighest`。
 
-**验收：** 仓库内 `grep -r "Color(0xFF" lib/modules/` 结果为空；首屏 `Text` 的 `runtimeType` 渲染结果用 Flutter Inspector 检查确认使用了注册字体（或明确使用 google_fonts）；`flutter analyze` 零 deprecated 警告。
+**验收（实际达成）：**
+- `grep -r "Color(0xFF" lib/modules/ --include="*.dart"` → 空 ✓
+- `grep -r "\.withOpacity(" lib/ --include="*.dart"` → 空 ✓
+- `flutter analyze` Flutter 内置 API **零 deprecation** ✓；剩余 6 条 deprecation 来自第三方包（`screen_brightness` x4、`share_plus` x2），归口 Phase 4。
+- `flutter pub get` 成功，无运行时依赖问题。
+- 字体渲染实机验证需在字体文件就位后执行（产品手动步骤，见 `assets/fonts/README.md`）。
 
 ### Phase 1 — 扑灭渲染热点（1 个 sprint · 最高优先）
 
@@ -440,6 +447,11 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 - [ ] **P2-2**：引入 `riverpod` 评估 spike，并制定 `ChangeNotifier → riverpod` 迁移小步走方案（不强行替换，保留现有代码 6 个月共存期）。
 - [ ] **P2-3**：新增 `docs/PERFORMANCE.md`，把本文件 §3.4 的规则机械化为 lint 规则或 CI 脚本。
 - [ ] **P2-4**：为 `ReaderCapabilities` 增加非 boolean 支持级别（`none / limited / full`）。
+- [ ] **P2-5**：升级 `screen_brightness` 到 2.1+，将 `SystemBrightnessAdapter` 中 4 个 deprecated 调用（`current` / `onCurrentBrightnessChanged` / `setScreenBrightness` / `resetScreenBrightness`）改为对应的 `application*` 变体。
+- [ ] **P2-6**：升级 `share_plus`，重构 `settings_page.dart` 里的 `Share.shareXFiles(...)` → `SharePlus.instance.share(ShareParams(...))`。
+- [ ] **P2-7**：批量清理 `flutter analyze` 的 ~84 条 lint info（`use_super_parameters` / `annotate_overrides` / `prefer_interpolation_to_compose_strings` / `curly_braces_in_flow_control_structures` / `use_build_context_synchronously` / `unused_import` / `unused_field`）。建议在 `analysis_options.yaml` 先开为 error，再借机扫除。
+- [ ] **P2-8**：字体子集化脚本 `scripts/subset_fonts.py` —— 用 `pyftsubset` 对 `Noto Sans SC` / `Source Han Serif SC` 做 GB2312+标点子集，单档字体压到 ~2MB，整体包体预算再减 10MB。
+- [ ] **P2-9**：若产品决定实现 sepia / amoled 主题，扩展 `themePresets` 映射；否则删除 `NyanColors.amoled*` 等未接入的孤儿常量以免误导。
 
 ### Phase 5 — 长期演进
 

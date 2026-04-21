@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/services/reader_preferences_service.dart';
 import '../../../core/services/service_locator.dart';
+import '../../../core/theme/nyan_colors.dart';
 import '../../../core/utils/lifecycle_registry.dart';
 import '../reader_engine/reader_engine.dart';
 
@@ -20,8 +21,8 @@ class ReaderSettingsManager {
 
   double _fontSize = 18.0;
   double _lineHeight = 1.5;
-  Color _backgroundColor = const Color(0xFFFDFCF8);
-  Color _textColor = const Color(0xFF4A453E);
+  Color _backgroundColor = NyanColors.readerPaperDefault;
+  Color _textColor = NyanColors.readerInkDefault;
 
   double get fontSize => _fontSize;
   double get lineHeight => _lineHeight;
@@ -38,7 +39,7 @@ class ReaderSettingsManager {
 
   void _updateEngineConfig() {
     final isDark = _backgroundColor.computeLuminance() < 0.5;
-    _textColor = isDark ? const Color(0xFFE6E2D8) : const Color(0xFF4A453E);
+    _textColor = isDark ? NyanColors.readerInkDark : NyanColors.readerInkDefault;
 
     final prefs = getIt<ReaderPreferencesService>();
     engine.setConfig(ReaderConfig(

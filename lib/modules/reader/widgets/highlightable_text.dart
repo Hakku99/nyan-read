@@ -187,7 +187,7 @@ class _HighlightableTextState extends State<HighlightableText> {
       spans.add(TextSpan(
         text: widget.text.substring(highlight.startOffset, highlight.endOffset),
         style: widget.style.copyWith(
-          backgroundColor: highlightColor.withOpacity(0.4),
+          backgroundColor: highlightColor.withValues(alpha: 0.4),
         ),
         recognizer: recognizer,
       ));
