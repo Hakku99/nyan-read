@@ -42,6 +42,7 @@ dependencies:
   # HTML parser instead of reaching into `epub_view/src/data/...` private
   # paths.  Pinned to the range epub_view already transitively uses.
   html: ^0.15.0
+  archive: ^3.6.1
   
   # File Handling (Stubs for now since we can't fully run)
   file_picker: ^10.3.10

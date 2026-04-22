@@ -18,6 +18,7 @@
 
 import 'dart:typed_data';
 
+import 'package:archive/archive.dart';
 import 'package:epub_view/epub_view.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
@@ -32,11 +33,13 @@ class EpubParseResult {
     required this.paragraphCount,
     required this.chapterStartIndexes,
     required this.chapters,
+    this.missingResourcePaths = const <String>[],
   });
 
   final int paragraphCount;
   final List<int> chapterStartIndexes;
   final List<EpubChapterMeta> chapters;
+  final List<String> missingResourcePaths;
 }
 
 class EpubChapterMeta {
@@ -161,11 +164,92 @@ EpubParseResult computeEpubParseResult(EpubBook epubBook) {
   );
 }
 
+class _TolerantOpenResult {
+  _TolerantOpenResult({
+    required this.book,
+    required this.missingPaths,
+  });
+
+  final EpubBook book;
+  final List<String> missingPaths;
+}
+
+Future<_TolerantOpenResult> _openEpubWithMissingResourceTolerance(
+  Uint8List sourceBytes, {
+  int maxAutoFixes = 8,
+}) async {
+  var candidate = sourceBytes;
+  final repairedPaths = <String>[];
+
+  for (var attempt = 0; attempt <= maxAutoFixes; attempt++) {
+    try {
+      final book = await EpubDocument.openData(candidate);
+      return _TolerantOpenResult(
+        book: book,
+        missingPaths: List<String>.unmodifiable(repairedPaths),
+      );
+    } catch (e) {
+      final missingPath = _extractMissingArchivePath(e.toString());
+      if (missingPath == null || repairedPaths.contains(missingPath)) {
+        rethrow;
+      }
+      repairedPaths.add(missingPath);
+      candidate = applyMissingResourceStubs(candidate, repairedPaths);
+    }
+  }
+
+  throw FormatException(
+    'EPUB parsing failed after $maxAutoFixes missing-resource auto-fixes.',
+  );
+}
+
+String? _extractMissingArchivePath(String error) {
+  final match =
+      RegExp(r'file (.+?) not found in archive', caseSensitive: false)
+          .firstMatch(error);
+  if (match == null) {
+    return null;
+  }
+  final path = match.group(1);
+  if (path == null || path.isEmpty) {
+    return null;
+  }
+  return path;
+}
+
+Uint8List applyMissingResourceStubs(
+  Uint8List sourceBytes,
+  List<String> missingPaths,
+) {
+  if (missingPaths.isEmpty) {
+    return sourceBytes;
+  }
+
+  final archive = ZipDecoder().decodeBytes(sourceBytes);
+  for (final path in missingPaths) {
+    final alreadyExists = archive.files.any((entry) => entry.name == path);
+    if (!alreadyExists) {
+      archive.addFile(ArchiveFile(path, 0, <int>[]));
+    }
+  }
+  final encoded = ZipEncoder().encode(archive);
+  if (encoded == null) {
+    return sourceBytes;
+  }
+  return Uint8List.fromList(encoded);
+}
+
 /// Top-level isolate entry — [compute] demands a top-level or static
 /// function reference.  Opens the bytes as an EpubBook and runs the full
 /// parse pipeline, returning only the lightweight DTO so nothing else has
 /// to cross the isolate boundary.
 Future<EpubParseResult> parseEpubBytesInIsolate(Uint8List bytes) async {
-  final book = await EpubDocument.openData(bytes);
-  return computeEpubParseResult(book);
+  final tolerantOpen = await _openEpubWithMissingResourceTolerance(bytes);
+  final parseResult = computeEpubParseResult(tolerantOpen.book);
+  return EpubParseResult(
+    paragraphCount: parseResult.paragraphCount,
+    chapterStartIndexes: parseResult.chapterStartIndexes,
+    chapters: parseResult.chapters,
+    missingResourcePaths: tolerantOpen.missingPaths,
+  );
 }

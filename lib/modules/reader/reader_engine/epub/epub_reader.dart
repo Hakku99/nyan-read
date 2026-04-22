@@ -61,7 +61,18 @@ class EpubReaderEngine implements ReaderEngine {
       // shipping the entire EpubBook graph back across the isolate
       // boundary (which can fail on unsendable nested fields).
       final parseResult = await compute(parseEpubBytesInIsolate, bytes);
-      final document = await EpubDocument.openData(bytes);
+      final sanitizedBytes = applyMissingResourceStubs(
+        bytes,
+        parseResult.missingResourcePaths,
+      );
+      final document = await EpubDocument.openData(sanitizedBytes);
+
+      if (parseResult.missingResourcePaths.isNotEmpty) {
+        debugPrint(
+          '--- [EpubReaderEngine] Auto-healed missing EPUB resources: '
+          '${parseResult.missingResourcePaths.join(', ')} ---',
+        );
+      }
 
       _document = document;
       _paragraphCount = parseResult.paragraphCount;
