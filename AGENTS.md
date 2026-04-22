@@ -457,15 +457,15 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 - 仓库其余 6 条测试失败（`txt_reader_chapter_detection_test` ×3 + `txt_reader_pagination_invalidation_test` ×3）在 `git stash` 掉 Phase 2 改动后依旧复现，系 Phase 2 动刀 **之前就存在** 的遗留 bug（测试源文件 CJK 编码丢失 + Windows 临时目录句柄回收），归口 Phase 4（`P2-7` 延伸）清理；
 - 实机打开 EPUB / PDF 不再首屏卡顿；字号、行高、页边距连续滑动期间磁盘写入受 300ms 去抖窗口合并。
 
-### Phase 3 — 服务层收敛与 DI 清理（0.5 sprint）
+### Phase 3 — 服务层收敛与 DI 清理（0.5 sprint）✅ 已完成 2026-04-22
 
 **目标：启动竞态消除；Manager 可构造器注入 mock。**
 
-- [ ] **P1-1**：Service Locator 统一 `registerSingletonAsync`；`main.dart` `await getIt.allReady()` 后再 `runApp`。
-- [ ] **P1-2**：删除 `ReadingReminderService.instance` 静态单例，统一走 get_it + Provider。
-- [ ] **P1-3**：所有 Manager 改为构造器注入，移除内部 `getIt<>`。
-- [ ] **P1-4**：`BackupRecoveryService.dispose` 在 `NyanApp.dispose` 中被调用。
-- [ ] **P1-5**：`ContentMetaManager` 高亮 CRUD 改增量，移除每次 `loadHighlights()` 全量重载。
+- [x] **P1-1**：Service Locator 统一 `registerSingletonAsync`；`main.dart` `await getIt.allReady()` 后再 `runApp`。
+- [x] **P1-2**：删除 `ReadingReminderService.instance` 静态单例，统一走 get_it + Provider。
+- [x] **P1-3**：所有 Manager 改为构造器注入，移除内部 `getIt<>`。
+- [x] **P1-4**：`BackupRecoveryService.dispose` 在 `NyanApp.dispose` 中被调用。
+- [x] **P1-5**：`ContentMetaManager` 高亮 CRUD 改增量，移除每次 `loadHighlights()` 全量重载。
 
 ### Phase 4 — 技术债清算（选做 1 sprint）
 

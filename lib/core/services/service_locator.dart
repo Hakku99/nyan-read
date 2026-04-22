@@ -8,10 +8,15 @@ import 'bookshelf_preferences_service.dart';
 import '../theme/theme_manager.dart';
 import 'language_manager.dart';
 import 'backup_recovery_service.dart';
+import 'reading_reminder_service.dart';
 
 final getIt = GetIt.instance;
 
 Future<void> setupServiceLocator() async {
+  if (getIt.isRegistered<DatabaseService>()) {
+    return;
+  }
+
   // 1. Core Data & Infrastructure Layer
   debugPrint('--- [DI] 1. 开始注册 DatabaseService ---');
   getIt.registerSingletonAsync<DatabaseService>(() async {
@@ -41,25 +46,47 @@ Future<void> setupServiceLocator() async {
     return service;
   });
 
-  // Wait for async services to be ready
-  // Wait for async services to be ready
+  // 3. Application State & Controllers Layer
+  debugPrint('--- [DI] 101. 正在装载 FeatureManager ---');
+  getIt.registerSingletonAsync<FeatureManager>(() async {
+    final service = FeatureManager();
+    await service.init();
+    return service;
+  });
+
+  debugPrint('--- [DI] 102. 正在装载 ThemeManager ---');
+  getIt.registerSingletonAsync<ThemeManager>(() async {
+    final service = ThemeManager();
+    await service.init();
+    return service;
+  });
+
+  debugPrint('--- [DI] 103. 正在装载 LanguageManager ---');
+  getIt.registerSingletonAsync<LanguageManager>(() async {
+    final service = LanguageManager();
+    await service.init();
+    return service;
+  });
+
+  debugPrint('--- [DI] 103.1 正在装载 ReadingReminderService ---');
+  getIt.registerSingletonAsync<ReadingReminderService>(() async {
+    final service = ReadingReminderService();
+    await service.init();
+    return service;
+  });
+
+  debugPrint('--- [DI] 104. 正在装载 BackupRecoveryService (末日地堡系统) ---');
+  getIt.registerSingletonAsync<BackupRecoveryService>(() async {
+    final service = BackupRecoveryService()..init();
+    return service;
+  });
+
+  // Wait for async services to be ready.
   debugPrint('--- [DI] 99. 开始等待 getIt.allReady() ---');
   await getIt.allReady();
   debugPrint('--- [DI] 100. 所有异步依赖装载完毕！ ---');
 
-  // 3. Application State & Controllers Layer
-  debugPrint('--- [DI] 101. 正在装载 FeatureManager ---');
-  getIt.registerSingleton<FeatureManager>(FeatureManager()..init());
-
-  debugPrint('--- [DI] 102. 正在装载 ThemeManager ---');
-  getIt.registerSingleton<ThemeManager>(ThemeManager()..init());
-
-  debugPrint('--- [DI] 103. 正在装载 LanguageManager ---');
-  getIt.registerSingleton<LanguageManager>(LanguageManager()..init());
-
-  debugPrint('--- [DI] 104. 正在装载 BackupRecoveryService (末日地堡系统) ---');
-  final backupService = BackupRecoveryService()..init();
-  getIt.registerSingleton<BackupRecoveryService>(backupService);
+  final backupService = getIt<BackupRecoveryService>();
 
   // 🛡️ 错峰出行：启动全局沙盒清道夫 (Fire-and-Forget)
   // 延迟 5 秒，避开核心的 SQLite 初始化与首屏渲染 I/O 抢夺

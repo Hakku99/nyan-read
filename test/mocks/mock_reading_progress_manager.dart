@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:nyan_read/core/models/book.dart';
+import 'package:nyan_read/core/services/database_service.dart';
 import 'package:nyan_read/core/utils/lifecycle_registry.dart';
 import 'package:nyan_read/modules/reader/controllers/reading_progress_manager.dart';
 import 'package:nyan_read/modules/reader/reader_engine/reader_engine.dart';
@@ -11,8 +12,9 @@ class MockReadingProgressManager implements ReadingProgressManager {
     required this.engine,
     required this.book,
     required this.lifecycle,
+    DatabaseService? databaseService,
     required this.onProgressUpdated,
-  });
+  }) : databaseService = databaseService ?? _NoopDatabaseService();
 
   @override
   final ReaderEngine engine;
@@ -22,6 +24,9 @@ class MockReadingProgressManager implements ReadingProgressManager {
 
   @override
   final LifecycleRegistry lifecycle;
+
+  @override
+  final DatabaseService databaseService;
 
   @override
   final VoidCallback onProgressUpdated;
@@ -72,3 +77,5 @@ class MockReadingProgressManager implements ReadingProgressManager {
     _progressNotifier.dispose();
   }
 }
+
+class _NoopDatabaseService extends DatabaseService {}

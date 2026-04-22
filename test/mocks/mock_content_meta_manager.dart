@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:nyan_read/core/models/book.dart';
 import 'package:nyan_read/core/models/highlight.dart';
+import 'package:nyan_read/core/services/database_service.dart';
 import 'package:nyan_read/modules/reader/controllers/content_meta_manager.dart';
 import 'package:nyan_read/modules/reader/reader_engine/reader_engine.dart';
 
@@ -8,8 +9,9 @@ class MockContentMetaManager implements ContentMetaManager {
   MockContentMetaManager({
     required this.engine,
     required this.book,
+    DatabaseService? databaseService,
     required this.onMetaChanged,
-  });
+  }) : databaseService = databaseService ?? _NoopDatabaseService();
 
   @override
   final ReaderEngine engine;
@@ -19,6 +21,9 @@ class MockContentMetaManager implements ContentMetaManager {
 
   @override
   final VoidCallback onMetaChanged;
+
+  @override
+  final DatabaseService databaseService;
 
   @override
   List<ReaderChapter> get chapters => const [];
@@ -96,3 +101,5 @@ class MockContentMetaManager implements ContentMetaManager {
     String? colorCode,
   }) async {}
 }
+
+class _NoopDatabaseService extends DatabaseService {}

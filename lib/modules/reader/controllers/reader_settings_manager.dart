@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/services/reader_preferences_service.dart';
-import '../../../core/services/service_locator.dart';
 import '../../../core/theme/nyan_colors.dart';
 import '../../../core/utils/lifecycle_registry.dart';
 import '../reader_engine/reader_engine.dart';
@@ -11,6 +10,7 @@ class ReaderSettingsManager {
     required this.engine,
     required this.lifecycle,
     required this.onSettingsChanged,
+    required this.preferences,
   }) {
     _loadPreferences();
   }
@@ -18,6 +18,7 @@ class ReaderSettingsManager {
   final ReaderEngine engine;
   final LifecycleRegistry lifecycle;
   final VoidCallback onSettingsChanged;
+  final ReaderPreferencesService preferences;
 
   double _fontSize = 18.0;
   double _lineHeight = 1.5;
@@ -30,10 +31,9 @@ class ReaderSettingsManager {
   Color get textColor => _textColor;
 
   void _loadPreferences() {
-    final prefs = getIt<ReaderPreferencesService>();
-    _fontSize = prefs.fontSize;
-    _lineHeight = prefs.lineHeight;
-    _backgroundColor = prefs.backgroundColor;
+    _fontSize = preferences.fontSize;
+    _lineHeight = preferences.lineHeight;
+    _backgroundColor = preferences.backgroundColor;
     _updateEngineConfig();
   }
 
@@ -41,35 +41,34 @@ class ReaderSettingsManager {
     final isDark = _backgroundColor.computeLuminance() < 0.5;
     _textColor = isDark ? NyanColors.readerInkDark : NyanColors.readerInkDefault;
 
-    final prefs = getIt<ReaderPreferencesService>();
     engine.setConfig(ReaderConfig(
       backgroundColor: _backgroundColor,
       textColor: _textColor,
       fontSize: _fontSize,
       lineHeight: _lineHeight,
-      pageTurnMode: prefs.pageTurnMode,
-      pageAnimation: prefs.pageAnimation,
+      pageTurnMode: preferences.pageTurnMode,
+      pageAnimation: preferences.pageAnimation,
     ));
   }
 
   void setFontSize(double size) {
     _fontSize = size;
     _updateEngineConfig();
-    getIt<ReaderPreferencesService>().setFontSize(size);
+    preferences.setFontSize(size);
     onSettingsChanged();
   }
 
   void setLineHeight(double height) {
     _lineHeight = height;
     _updateEngineConfig();
-    getIt<ReaderPreferencesService>().setLineHeight(height);
+    preferences.setLineHeight(height);
     onSettingsChanged();
   }
 
   void setBackground(Color color) {
     _backgroundColor = color;
     _updateEngineConfig();
-    getIt<ReaderPreferencesService>().setBackgroundColor(color);
+    preferences.setBackgroundColor(color);
     onSettingsChanged();
   }
 

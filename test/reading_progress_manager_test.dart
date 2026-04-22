@@ -140,6 +140,7 @@ void main() {
       engine: engine,
       book: _book('dispose-test-book'),
       lifecycle: lifecycle,
+      databaseService: spyDb,
       onProgressUpdated: () {},
     );
 
@@ -198,6 +199,7 @@ void main() {
       engine: engine,
       book: _book('unstarted-book'),
       lifecycle: lifecycle,
+      databaseService: spyDb,
       onProgressUpdated: () {},
     );
 

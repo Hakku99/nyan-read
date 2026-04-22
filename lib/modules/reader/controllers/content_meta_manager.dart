@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/models/book.dart';
 import '../../../core/models/highlight.dart';
@@ -11,13 +10,13 @@ class ContentMetaManager {
   final ReaderEngine engine;
   final Book book;
   final VoidCallback onMetaChanged;
+  final DatabaseService databaseService;
 
   List<ReaderChapter> _chapters = const [];
   int? _currentChapterIndex;
   List<Highlight> _highlights = [];
 
-  // DI: 闁俺绻?get_it 閼惧嘲褰?DatabaseService閿涘瞼顩﹀銏㈡纯閹?new DatabaseService()
-  DatabaseService get _db => GetIt.instance<DatabaseService>();
+  DatabaseService get _db => databaseService;
   TextReaderCapability? get _textCapability => engine.textCapability;
   TextExtractionCapability? get _textExtractionCapability =>
       engine.textExtractionCapability;
@@ -26,6 +25,7 @@ class ContentMetaManager {
     required this.engine,
     required this.book,
     required this.onMetaChanged,
+    required this.databaseService,
   });
 
   List<ReaderChapter> get chapters => _chapters;
@@ -358,18 +358,36 @@ class ContentMetaManager {
       postContext: postContext,
     );
     await _db.insertHighlight(highlight.toMap());
-    await loadHighlights();
+    _highlights = List<Highlight>.unmodifiable([..._highlights, highlight]);
+    _syncTxtRenderHighlights();
+    onMetaChanged();
   }
 
   Future<void> updateHighlight(String highlightId,
       {String? note, String? colorCode}) async {
     await _db.updateHighlight(highlightId, note: note, colorCode: colorCode);
-    await loadHighlights();
+    final now = DateTime.now();
+    _highlights = List<Highlight>.unmodifiable(
+      _highlights.map((h) {
+        if (h.id != highlightId) return h;
+        return h.copyWith(
+          note: note ?? h.note,
+          colorCode: colorCode ?? h.colorCode,
+          updatedAt: now,
+        );
+      }),
+    );
+    _syncTxtRenderHighlights();
+    onMetaChanged();
   }
 
   Future<void> deleteHighlight(String highlightId) async {
     await _db.deleteHighlight(highlightId);
-    await loadHighlights();
+    _highlights = List<Highlight>.unmodifiable(
+      _highlights.where((h) => h.id != highlightId),
+    );
+    _syncTxtRenderHighlights();
+    onMetaChanged();
   }
 }
 

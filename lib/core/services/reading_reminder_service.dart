@@ -3,8 +3,7 @@ import 'package:flutter/foundation.dart';
 
 /// Service for managing reading reminder preferences
 class ReadingReminderService extends ChangeNotifier {
-  static final ReadingReminderService instance = ReadingReminderService._();
-  ReadingReminderService._();
+  ReadingReminderService();
 
   SharedPreferences? _prefs;
   bool _isEnabled = false;

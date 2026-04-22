@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:nyan_read/core/models/book.dart';
+import 'package:nyan_read/core/services/database_service.dart';
 import 'package:nyan_read/core/services/reader_preferences_service.dart';
 import 'package:nyan_read/modules/reader/brightness/brightness_orchestrator.dart';
 import 'package:nyan_read/modules/reader/brightness/brightness_repository.dart';
@@ -49,6 +50,8 @@ class FakeSystemBrightnessAdapter extends SystemBrightnessAdapter {
   }
 }
 
+class _NoopDatabaseService extends DatabaseService {}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -64,6 +67,7 @@ void main() {
 
   test('ReaderController manual adjustment exits Follow System mode', () async {
     final prefs = ReaderPreferencesService();
+    final db = _NoopDatabaseService();
     await prefs.initialize();
     GetIt.instance.registerSingleton<ReaderPreferencesService>(prefs);
 
@@ -84,6 +88,8 @@ void main() {
         filePath: '/test/path',
         format: 'txt',
       ),
+      readerPreferencesService: prefs,
+      databaseService: db,
     );
     controller.attachBrightnessController(brightnessController);
 
@@ -103,6 +109,7 @@ void main() {
 
   test('ReaderController warmth delegates through brightness boundary', () async {
     final prefs = ReaderPreferencesService();
+    final db = _NoopDatabaseService();
     await prefs.initialize();
     GetIt.instance.registerSingleton<ReaderPreferencesService>(prefs);
 
@@ -123,6 +130,8 @@ void main() {
         filePath: '/test/path',
         format: 'txt',
       ),
+      readerPreferencesService: prefs,
+      databaseService: db,
     );
     controller.attachBrightnessController(brightnessController);
 
@@ -145,6 +154,7 @@ void main() {
 
   test('dispose() then setBrightness() does not throw FlutterError', () async {
     final prefs = ReaderPreferencesService();
+    final db = _NoopDatabaseService();
     await prefs.initialize();
     GetIt.instance.registerSingleton<ReaderPreferencesService>(prefs);
 
@@ -165,6 +175,8 @@ void main() {
         filePath: '/test/path',
         format: 'txt',
       ),
+      readerPreferencesService: prefs,
+      databaseService: db,
     );
     controller.attachBrightnessController(brightnessController);
 
@@ -187,6 +199,7 @@ void main() {
     // fire after the controller is disposed (e.g. a DB read completing after
     // the reader page has been popped).
     final prefs = ReaderPreferencesService();
+    final db = _NoopDatabaseService();
     await prefs.initialize();
     GetIt.instance.registerSingleton<ReaderPreferencesService>(prefs);
 
@@ -207,6 +220,8 @@ void main() {
         filePath: '/test/path',
         format: 'txt',
       ),
+      readerPreferencesService: prefs,
+      databaseService: db,
     );
     controller.attachBrightnessController(brightnessController);
 

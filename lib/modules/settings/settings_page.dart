@@ -196,17 +196,12 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   @override
-  void initState() {
-    super.initState();
-    ReadingReminderService.instance.init();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeManager = context.watch<ThemeManager>();
     final featureManager = context.watch<FeatureManager>();
     final languageManager = context.watch<LanguageManager>();
+    final reminderService = context.watch<ReadingReminderService>();
     final readerPrefs = getIt<ReaderPreferencesService>();
     final loc = AppLocalizations.of(context)!;
 
@@ -283,11 +278,9 @@ class _SettingsPageState extends State<SettingsPage> {
           _SectionHeader(title: loc.readingSettings),
           ListenableBuilder(
             listenable: Listenable.merge(
-              [readerPrefs, ReadingReminderService.instance],
+              [readerPrefs, reminderService],
             ),
             builder: (context, child) {
-              final reminderService = ReadingReminderService.instance;
-
               return _SettingsCard(
                 children: [
                   _SelectionRow(
@@ -327,9 +320,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     subtitle: loc.readingReminderSubtitle,
                     value: reminderService.isEnabled,
                     onChanged: (value) {
-                      setState(() {
-                        reminderService.setEnabled(value);
-                      });
+                      reminderService.setEnabled(value);
                     },
                   ),
                   if (reminderService.isEnabled) ...[
@@ -360,9 +351,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           ],
                         );
                         if (interval != null) {
-                          setState(() {
-                            reminderService.setIntervalMinutes(interval);
-                          });
+                          reminderService.setIntervalMinutes(interval);
                         }
                       },
                     ),

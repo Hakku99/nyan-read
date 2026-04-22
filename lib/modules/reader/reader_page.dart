@@ -47,6 +47,8 @@ import 'controllers/content_meta_manager.dart';
 class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   final Book book;
   late ReaderEngine engine;
+  final ReaderPreferencesService _readerPreferencesService;
+  final DatabaseService _databaseService;
 
   ReaderErrorState? _errorState;
 
@@ -63,7 +65,12 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   bool _isDisposed = false;
   int _renderEpoch = 0;
 
-  ReaderController(this.book) {
+  ReaderController(
+    this.book, {
+    required ReaderPreferencesService readerPreferencesService,
+    required DatabaseService databaseService,
+  })  : _readerPreferencesService = readerPreferencesService,
+        _databaseService = databaseService {
     engine = ReaderEngineFactory.create(book);
 
     WidgetsBinding.instance.addObserver(this);
@@ -75,18 +82,21 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       engine: engine,
       lifecycle: _lifecycle,
       onSettingsChanged: _safeNotifyListeners,
+      preferences: _readerPreferencesService,
     );
 
     metaManager = ContentMetaManager(
       engine: engine,
       book: book,
       onMetaChanged: _safeNotifyListeners,
+      databaseService: _databaseService,
     );
 
     progressManager = ReadingProgressManager(
       engine: engine,
       book: book,
       lifecycle: _lifecycle,
+      databaseService: _databaseService,
       onProgressUpdated: _safeNotifyListeners,
     );
   }
@@ -141,7 +151,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       // service (Phase 2 / P0-8). When the OS tells us we are about to go
       // to background we must flush that pending write, otherwise a cold
       // kill eats whatever the last ~300ms of slider drag produced.
-      unawaited(getIt<ReaderPreferencesService>().flushPendingWrites());
+      unawaited(_readerPreferencesService.flushPendingWrites());
     }
   }
 
@@ -368,7 +378,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     await progressManager.prepareForExit();
     // Same rationale as [didChangeAppLifecycleState]: ensure any pending
     // debounced pref writes are on disk before the reader route pops.
-    await getIt<ReaderPreferencesService>().flushPendingWrites();
+    await _readerPreferencesService.flushPendingWrites();
   }
 
   @override
@@ -562,7 +572,11 @@ class _ReaderPageState extends State<ReaderPage> {
 
         return ChangeNotifierProvider(
           create: (_) {
-            final controller = ReaderController(book);
+            final controller = ReaderController(
+              book,
+              readerPreferencesService: getIt<ReaderPreferencesService>(),
+              databaseService: getIt<DatabaseService>(),
+            );
             // Attach the page-level brightness binding for menu and gesture input.
             controller.attachBrightnessController(_brightnessController);
             controller.engine.textCapability?.configureInteractions(

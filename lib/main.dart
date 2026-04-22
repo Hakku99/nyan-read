@@ -6,6 +6,8 @@ import 'package:nyan_read/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'core/services/feature_manager.dart';
 import 'core/services/reader_preferences_service.dart';
+import 'core/services/reading_reminder_service.dart';
+import 'core/services/backup_recovery_service.dart';
 import 'core/theme/theme_manager.dart';
 import 'core/services/language_manager.dart';
 
@@ -30,6 +32,8 @@ void main() async {
     await setupServiceLocator().timeout(const Duration(seconds: 5));
   } catch (e, stack) {
     debugPrint('DI Initialization Failed: $e\n$stack');
+    runApp(_BootstrapErrorApp(error: e.toString()));
+    return;
   }
 
   runApp(
@@ -39,6 +43,7 @@ void main() async {
         ChangeNotifierProvider.value(value: getIt<ThemeManager>()),
         ChangeNotifierProvider.value(value: getIt<LanguageManager>()),
         ChangeNotifierProvider.value(value: getIt<ReaderPreferencesService>()),
+        ChangeNotifierProvider.value(value: getIt<ReadingReminderService>()),
       ],
       child: const NyanApp(),
     ),
@@ -63,6 +68,9 @@ class _NyanAppState extends State<NyanApp> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    if (getIt.isRegistered<BackupRecoveryService>()) {
+      getIt<BackupRecoveryService>().dispose();
+    }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -102,6 +110,26 @@ class _NyanAppState extends State<NyanApp> with WidgetsBindingObserver {
           debugShowCheckedModeBanner: false,
         );
       },
+    );
+  }
+}
+
+class _BootstrapErrorApp extends StatelessWidget {
+  const _BootstrapErrorApp({required this.error});
+
+  final String error;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text('App bootstrap failed.\n$error'),
+          ),
+        ),
+      ),
     );
   }
 }

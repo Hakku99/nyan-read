@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/models/book.dart';
 import '../../../core/services/database_service.dart';
-import '../../../core/services/service_locator.dart';
 import '../../../core/utils/lifecycle_registry.dart';
 import '../reader_engine/reader_engine.dart';
 
@@ -25,6 +24,7 @@ class ReadingProgressManager {
   final ReaderEngine engine;
   final Book book;
   final LifecycleRegistry lifecycle;
+  final DatabaseService databaseService;
 
   /// Fired only when [currentPosition] changes (paragraph/CFI/page).
   /// Progress-only ticks do NOT call this; they route through
@@ -39,12 +39,13 @@ class ReadingProgressManager {
   Future<void>? _saveInFlight;
   bool _disposed = false;
 
-  DatabaseService get _db => getIt<DatabaseService>();
+  DatabaseService get _db => databaseService;
 
   ReadingProgressManager({
     required this.engine,
     required this.book,
     required this.lifecycle,
+    required this.databaseService,
     required this.onProgressUpdated,
   });
 
