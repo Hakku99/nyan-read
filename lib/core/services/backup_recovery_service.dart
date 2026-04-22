@@ -13,12 +13,13 @@ import 'database_service.dart';
 import 'service_locator.dart';
 
 class BackupRecoveryService extends WidgetsBindingObserver {
-  // 机制 A：最多保留 3 份健康快照
+  // Mechanism A: keep at most 3 healthy cold-backup snapshots on disk.
   static const int _maxBackups = 3;
 
   void init() {
     WidgetsBinding.instance.addObserver(this);
-    debugPrint('--- [BackupRecoveryService] 地堡系统初始化，已监听生命周期 ---');
+    debugPrint(
+        '--- [BackupRecoveryService] Lifecycle observer registered; cold-backup system armed ---');
   }
 
   void dispose() {
@@ -28,12 +29,13 @@ class BackupRecoveryService extends WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      debugPrint('--- [BackupRecoveryService] 触发静默冷备机制 (App paused) ---');
+      debugPrint(
+          '--- [BackupRecoveryService] App paused: triggering silent cold backup ---');
       _performColdBackup();
     }
   }
 
-  /// 机制 A: 静默冷备与滚动沙盒
+  /// Mechanism A: silent cold backup + rolling sandbox.
   Future<void> _performColdBackup() async {
     try {
       final dbPath = await getDatabasesPath();
@@ -41,7 +43,8 @@ class BackupRecoveryService extends WidgetsBindingObserver {
       final backupDir = Directory(join(dbPath, 'backups'));
 
       if (!File(mainDbPath).existsSync()) {
-        debugPrint('--- [BackupRecoveryService] 主数据库不存在，跳过冷备 ---');
+        debugPrint(
+            '--- [BackupRecoveryService] Main database missing; skipping cold backup ---');
         return;
       }
 
@@ -49,13 +52,14 @@ class BackupRecoveryService extends WidgetsBindingObserver {
         backupDir.createSync(recursive: true);
       }
 
-      // 生成带时间戳的沙盒目录
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       final snapshotDir =
           Directory(join(backupDir.path, 'snapshot_$timestamp'));
       snapshotDir.createSync(recursive: true);
 
-      // 使用 Isolate 将物理复制切离主线程绞肉机。必须同时复制 -wal 和 -shm 保证数据一致性。
+      // Offload the copy (main DB + -wal + -shm, all three are required for
+      // a consistent snapshot) to an isolate so the UI never stalls on sync
+      // file I/O during lifecycle pauses.
       await Isolate.run(() {
         try {
           final mainDbFile = File(mainDbPath);
@@ -68,43 +72,72 @@ class BackupRecoveryService extends WidgetsBindingObserver {
           if (shmFile.existsSync())
             shmFile.copySync(join(snapshotDir.path, 'nyan_read.db-shm'));
 
-          debugPrint('--- [Isolate] 数据库静默冷备成功: ${snapshotDir.path} ---');
+          debugPrint(
+              '--- [Isolate] Cold backup written: ${snapshotDir.path} ---');
         } catch (e) {
-          debugPrint('--- [Isolate] 数据库物理冷备失败: $e ---');
+          debugPrint(
+              '--- [Isolate] Cold backup file copy failed: $e ---');
         }
       });
 
-      // 自动清理，保持滚动沙盒
       await _cleanupOldBackups(backupDir);
     } catch (e, stack) {
       debugPrint(
-          '--- [BackupRecoveryService] performColdBackup 出现严重异常: $e\n$stack ---');
+          '--- [BackupRecoveryService] _performColdBackup raised fatal error: $e\n$stack ---');
     }
   }
 
+  /// Offloads the directory scan + sync deletes to a helper isolate so the
+  /// boot / lifecycle pause path never blocks the UI thread with file-system
+  /// work. Only primitive strings cross the isolate boundary; logs are
+  /// collected and replayed on the main isolate.  (Phase 2 / P0-7.)
   Future<void> _cleanupOldBackups(Directory backupDir) async {
     try {
-      final dirs = backupDir.listSync().whereType<Directory>().toList();
-      dirs.sort((a, b) =>
-          b.statSync().modified.compareTo(a.statSync().modified)); // 新的在前
+      final logs = await Isolate.run(
+        () => _runCleanupOldBackupsInIsolate(backupDir.path, _maxBackups),
+      );
+      for (final line in logs) {
+        debugPrint(line);
+      }
+    } catch (e) {
+      debugPrint(
+          '--- [BackupRecoveryService] Old-backup cleanup crashed: $e ---');
+    }
+  }
 
-      if (dirs.length > _maxBackups) {
-        for (var i = _maxBackups; i < dirs.length; i++) {
+  static List<String> _runCleanupOldBackupsInIsolate(
+      String backupDirPath, int maxBackups) {
+    final logs = <String>[];
+    try {
+      final backupDir = Directory(backupDirPath);
+      if (!backupDir.existsSync()) return logs;
+
+      final dirs = backupDir.listSync().whereType<Directory>().toList();
+      // Newest first.
+      dirs.sort(
+        (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
+      );
+
+      if (dirs.length > maxBackups) {
+        for (var i = maxBackups; i < dirs.length; i++) {
           try {
             dirs[i].deleteSync(recursive: true);
-            debugPrint(
-                '--- [BackupRecoveryService] 清理旧冷备: ${dirs[i].path} ---');
+            logs.add(
+                '--- [BackupRecoveryService] Deleted stale cold backup: ${dirs[i].path} ---');
           } catch (e) {
-            debugPrint('--- [BackupRecoveryService] 清理旧冷备失败: $e ---');
+            logs.add(
+                '--- [BackupRecoveryService] Failed to delete stale cold backup: $e ---');
           }
         }
       }
     } catch (e) {
-      debugPrint('--- [BackupRecoveryService] 清理旧冷备出现全局异常: $e ---');
+      logs.add(
+          '--- [BackupRecoveryService] Old-backup cleanup aborted: $e ---');
     }
+    return logs;
   }
 
-  /// 机制 C: 资产降维导出 (Markdown Export)
+  /// Mechanism C: asset downgrade export (Markdown).
   Future<String> exportBookNotesToMarkdown(String bookId) async {
     try {
       final dbService = getIt<DatabaseService>();

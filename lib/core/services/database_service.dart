@@ -1,9 +1,10 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
+import 'dart:isolate';
 
+import 'package:flutter/foundation.dart';
+import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart';
 class DatabaseService {
   Database? _database;
 
@@ -137,8 +138,14 @@ class DatabaseService {
     if (!file.existsSync()) return;
 
     try {
-      // Avoid openReadOnlyDatabase here because WAL files may be missed.
-      // Open a dedicated writable connection, force a WAL checkpoint, then verify integrity.
+      // sqflite's Platform Channel MUST run on the main isolate, so the
+      // integrity check stays here. Phase 2 · P0-7 moves the *recovery*
+      // work (rename / copy / delete of the WAL + SHM triad) into an
+      // isolate so a corrupt-DB boot no longer holds the splash screen on
+      // Android while we shuffle megabytes of backup files.
+      //
+      // We also deliberately avoid `openReadOnlyDatabase` because it skips
+      // the WAL, which would hide some classes of corruption.
       final db = await openDatabase(mainDbPath, singleInstance: false);
       final result = await db.rawQuery('PRAGMA integrity_check;');
       await db.close();
@@ -149,7 +156,8 @@ class DatabaseService {
             '--- [DatabaseService] integrity_check failed: PRAGMA integrity_check = $status ---');
         throw Exception('Database corrupted');
       } else {
-        debugPrint('--- [DatabaseService] 涓诲簱瀹屾暣鎬ф牎楠岄€氳繃 (ok) ---');
+        debugPrint(
+            '--- [DatabaseService] Main database integrity check passed (ok) ---');
       }
     } catch (e) {
       debugPrint('--- [DatabaseService] Database self-heal triggered. Recovery reason: $e ---');
@@ -160,27 +168,67 @@ class DatabaseService {
   Future<void> _restoreFromLatestBackup(String mainDbPath) async {
     try {
       final dbPath = await getDatabasesPath();
-      final backupDir = Directory(join(dbPath, 'backups'));
+      final backupDirPath = join(dbPath, 'backups');
 
+      // Phase 2 / P0-7: the whole restore is pure file-system work (no
+      // sqflite channel calls), so we hand it to a helper isolate to keep
+      // the boot path off the UI thread. Only primitive strings cross the
+      // isolate boundary. Logs are collected and replayed on the main
+      // isolate via debugPrint so they still show up in IDE consoles.
+      final outcome = await Isolate.run(
+        () => _runRestoreFromBackupInIsolate(
+          mainDbPath: mainDbPath,
+          backupDirPath: backupDirPath,
+        ),
+      );
+
+      for (final line in outcome.logs) {
+        debugPrint(line);
+      }
+    } catch (e, stack) {
+      debugPrint(
+          '--- [DatabaseService] Catastrophic recovery failed - $e\n$stack ---');
+    }
+  }
+
+  /// Top-level-ish helper for [Isolate.run]. Runs the rename-archive-then
+  /// copy-from-snapshot restore in the helper isolate. Returns a DTO
+  /// instead of calling [debugPrint] directly so the output still shows up
+  /// on the main isolate's logger. Static so Dart can send the closure
+  /// handle across isolates without capturing this.
+  static _DbRestoreOutcome _runRestoreFromBackupInIsolate({
+    required String mainDbPath,
+    required String backupDirPath,
+  }) {
+    final logs = <String>[];
+    try {
+      final backupDir = Directory(backupDirPath);
       if (!backupDir.existsSync()) {
-        debugPrint('--- [DatabaseService] 鐮撮槻锛氭棤鍙敤鍐峰鐩綍锛屾斁寮冪枟鎰堬紒 ---');
-        return;
+        logs.add(
+            '--- [DatabaseService] Self-heal aborted: no backup directory available ---');
+        return _DbRestoreOutcome(logs);
       }
 
       final snapshotDirs = backupDir.listSync().whereType<Directory>().toList();
-      snapshotDirs.sort((a, b) =>
-          b.statSync().modified.compareTo(a.statSync().modified)); // 浠庢柊鍒版棫
+      // Newest snapshot first.
+      snapshotDirs.sort(
+        (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
+      );
 
       if (snapshotDirs.isEmpty) {
-        debugPrint('--- [DatabaseService] 鐮撮槻锛氭棤鍙敤鍐峰蹇収锛屾斁寮冪枟鎰堬紒 ---');
-        return;
+        logs.add(
+            '--- [DatabaseService] Self-heal aborted: no cold-backup snapshots found ---');
+        return _DbRestoreOutcome(logs);
       }
 
       final latestBackupDir = snapshotDirs.first;
-      debugPrint(
+      logs.add(
           '--- [DatabaseService] Captured latest cold backup ${latestBackupDir.path}, restoring main database snapshot ---');
 
-      // Two-step restore: archive the corrupted main files first, then replace with the latest backup set.
+      // Two-step restore: archive the corrupted main files first, then
+      // replace with the latest backup set. The -wal / -shm sidecars are
+      // torn down first because sqlite refuses to touch a main DB whose
+      // WAL header does not match.
       final corruptFile = File(mainDbPath);
       final ts = DateTime.now().millisecondsSinceEpoch;
       if (corruptFile.existsSync()) {
@@ -192,7 +240,6 @@ class DatabaseService {
       if (oldWal.existsSync()) oldWal.deleteSync();
       if (oldShm.existsSync()) oldShm.deleteSync();
 
-      // Restore every database file from the snapshot directory.
       final backupDb = File(join(latestBackupDir.path, 'nyan_read.db'));
       final backupWal = File(join(latestBackupDir.path, 'nyan_read.db-wal'));
       final backupShm = File(join(latestBackupDir.path, 'nyan_read.db-shm'));
@@ -201,10 +248,13 @@ class DatabaseService {
       if (backupWal.existsSync()) backupWal.copySync('$mainDbPath-wal');
       if (backupShm.existsSync()) backupShm.copySync('$mainDbPath-shm');
 
-      debugPrint('--- [DatabaseService] Cold backup restore completed successfully ---');
+      logs.add(
+          '--- [DatabaseService] Cold backup restore completed successfully ---');
     } catch (e, stack) {
-      debugPrint('--- [DatabaseService] Catastrophic recovery failed - $e\n$stack ---');
+      logs.add(
+          '--- [DatabaseService] Cold backup restore failed in isolate: $e\n$stack ---');
     }
+    return _DbRestoreOutcome(logs);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -613,21 +663,44 @@ class DatabaseService {
     return await db.query('highlights');
   }
 
-  /// Batch restore entry point v2: logical metadata sync by title.
+  /// Batch restore entry point v3: logical metadata sync by content_signature.
   ///
-  /// Core contract:
+  /// Core contract (AGENTS.md §3.5.5):
   ///   - Never INSERT a new book here; only UPDATE metadata for existing local books.
-  ///   - Match by title as the logical key to avoid duplicate books caused by UUID splits.
+  ///   - Primary match key is `content_signature` (SHA-256 of the source
+  ///     bytes) so a user who renamed their file / retitled the book still
+  ///     gets their highlights back, AND two different books that happen to
+  ///     share a title (different translations of "Le Petit Prince", for
+  ///     instance) no longer cross-contaminate each other's notes.
+  ///   - Fallback to `title` matching **only** when the backup payload or
+  ///     the local row has no signature yet (legacy data). Fallback hits
+  ///     are logged with `[Restore][legacy]` so we can track migration
+  ///     progress.
   ///   - Rebind matched highlights/bookmarks to the local UUID before upsert.
   Future<int> restoreDataBatch(Map<String, dynamic> parsedJson) async {
     final db = await database;
 
-    // 1. Build a local title -> UUID index for O(1) lookup.
-    final localBooksRaw = await db.query('books', columns: ['id', 'title']);
-    final Map<String, String> localBooksMap = {
-      for (final row in localBooksRaw)
-        (row['title'] as String): (row['id'] as String)
-    };
+    // 1. Build TWO local indexes: the primary one keyed by content_signature,
+    //    and a secondary one keyed by title for legacy fallback. Books with
+    //    a null signature are only reachable via the title index.
+    final localBooksRaw = await db.query(
+      'books',
+      columns: ['id', 'title', 'content_signature'],
+    );
+    final Map<String, String> localBySignature = {};
+    final Map<String, String> localByTitle = {};
+    for (final row in localBooksRaw) {
+      final id = row['id'] as String?;
+      if (id == null) continue;
+      final sig = row['content_signature'] as String?;
+      if (sig != null && sig.isNotEmpty) {
+        localBySignature[sig] = id;
+      }
+      final title = row['title'] as String?;
+      if (title != null && title.isNotEmpty) {
+        localByTitle[title] = id;
+      }
+    }
 
     // [Schema self-heal] Read actual child-table columns to avoid crashes on unexpected schema drift.
     Future<Set<String>> getValidColumns(String table) async {
@@ -644,22 +717,44 @@ class DatabaseService {
 
     final batch = db.batch();
     int syncedBookCount = 0;
+    int legacyFallbackCount = 0;
 
     final books = (parsedJson['books'] as List?) ?? [];
     for (final book in books) {
       if (book is! Map<String, dynamic>) continue;
 
       final title = book['title'] as String?;
-      if (title == null) continue;
+      final signature = book['content_signature'] as String?;
 
-      // 2. Skip unmatched books; never insert a new local book during restore.
-      final localBookId = localBooksMap[title];
+      // 2. Match by content_signature first, falling back to title only if
+      //    we have no signature on either side. Skip entirely if we can not
+      //    identify the target row.
+      String? localBookId;
+      bool matchedByLegacy = false;
+      if (signature != null && signature.isNotEmpty) {
+        localBookId = localBySignature[signature];
+      }
+      if (localBookId == null && title != null && title.isNotEmpty) {
+        localBookId = localByTitle[title];
+        if (localBookId != null) {
+          matchedByLegacy = true;
+        }
+      }
       if (localBookId == null) {
-        debugPrint('--- [Restore] Skip book with no local match: "$title" ---');
+        final label = title ?? signature ?? '(unknown)';
+        debugPrint(
+            '--- [Restore] Skip book with no local match: "$label" ---');
         continue;
       }
 
-      debugPrint('--- [Restore] Matched local book: "$title" -> $localBookId ---');
+      if (matchedByLegacy) {
+        legacyFallbackCount++;
+        debugPrint(
+            '--- [Restore][legacy] Title-fallback matched: "${title ?? '(no title)'}" -> $localBookId ---');
+      } else {
+        debugPrint(
+            '--- [Restore] Signature-matched local book: "${title ?? '(no title)'}" -> $localBookId ---');
+      }
 
       // 3. Only update progress metadata; never rewrite id or file_path.
       final progressUpdate = <String, dynamic>{};
@@ -707,9 +802,24 @@ class DatabaseService {
 
     // 5. noResult: true avoids returning rowIds for every row and reduces memory pressure.
     await batch.commit(noResult: true);
-    debugPrint('--- [DatabaseService] Logical restore finished: $syncedBookCount books synced into local assets ---');
+    if (legacyFallbackCount > 0) {
+      debugPrint(
+          '--- [DatabaseService] Logical restore finished: $syncedBookCount books synced (including $legacyFallbackCount legacy title fallbacks) ---');
+    } else {
+      debugPrint(
+          '--- [DatabaseService] Logical restore finished: $syncedBookCount books synced into local assets ---');
+    }
     return syncedBookCount;
   }
+}
+
+/// Isolate-safe DTO for the cold-backup restore helper.  We collect logs in
+/// the helper isolate and replay them on the main isolate because
+/// `debugPrint` inside an isolate does not flush to IDE consoles on every
+/// platform.
+class _DbRestoreOutcome {
+  _DbRestoreOutcome(this.logs);
+  final List<String> logs;
 }
 
 

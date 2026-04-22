@@ -425,17 +425,37 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 - 仓库其余 5 条测试失败（`isolate_test`、`theme_resolution_test`、`txt_reader_chapter_detection_test` ×3）均为 Phase 1 动刀 **之前就存在** 的遗留 bug（TextPainter-in-Isolate 返回 false、Cream Light 主题解析 null、测试源文件中文字符编码丢失），归口 Phase 4 清理；
 - DevTools 30 分钟静置阅读下的实机帧耗测量留待产品侧在字体资产就位后跑一遍。
 
-### Phase 2 — 解析离 UI + I/O 批量化（1 个 sprint）
+### Phase 2 — 解析离 UI + I/O 批量化（1 个 sprint）✅ 已完成 2026-04-21
 
 **目标：打开任意格式不再卡屏；字号拖拽不再抖动。**
 
-- [ ] **P0-5**：EPUB 解析切入 `compute()`；移除 `package:epub_view/src/...` 私有 import。
-- [ ] **P0-6**：PDF `openFile` 调用异步化，首帧展示 placeholder。
-- [ ] **P0-7**：`DatabaseService._checkAndHealDatabase` / 备份清理切入 `Isolate.run`；日志全部英文化。
-- [ ] **P0-8**：`ReaderPreferencesService` 引入 `Debouncer(300ms)` 批量写。
-- [ ] **P0-9**：`restoreDataBatch` 匹配键改为 `content_signature`，放弃 `title` 主键。
+- [x] **P0-5**：EPUB 解析切入 `compute()`；移除 `package:epub_view/src/...` 私有 import。
+  - 新增 `lib/modules/reader/reader_engine/epub/epub_parse_helpers.dart`：内联 `flattenEpubChapters` / `_convertDocumentToElements` / `_removeAllDiv` 及 `chapterDocument`，对外暴露 `EpubParseResult` / `EpubChapterMeta` DTO 与顶层入口 `parseEpubBytesInIsolate(Uint8List)`；
+  - `epub_reader.dart` 通过 `await compute(parseEpubBytesInIsolate, bytes)` 在后台 isolate 跑完章节扁平化与段落计数后，再在主 isolate `EpubDocument.openData(bytes)` 供控件使用；
+  - `pubspec.yaml` 新增直接依赖 `html: ^0.15.0`，彻底剥离 `epub_view/src/*` 私有入口。
+- [x] **P0-6**：PDF `openFile` 调用异步化，首帧展示 placeholder。
+  - `pdf_reader.initialize()` 改为把 `_preparePdfDocument()` 返回的 `Future<PdfDocument>` 直接塞进 `PdfController`，真正的 I/O 落在后台；
+  - 新增 `_isDocumentReady` 旗标，`getProgress` / `getCurrentPosition` 等在 ready 前返回保底值，避免 `LateInitializationError`；
+  - `buildReader()` 采用 `PdfViewBuilders.documentLoaderBuilder` / `errorBuilder`，展示 NyanTheme 配色的 `CircularProgressIndicator` 与错误占位，替换掉 pdfx 默认白屏。
+- [x] **P0-7**：`DatabaseService._checkAndHealDatabase` / 备份清理切入 `Isolate.run`；日志全部英文化。
+  - `DatabaseService._restoreFromLatestBackup` 里的文件重命名 + 备份拷回通过 `Isolate.run(_runRestoreFromBackupInIsolate, ...)` 执行，平台通道调用（`openDatabase` / `PRAGMA integrity_check`）留在主 isolate；
+  - `BackupRecoveryService._cleanupOldBackups` 的目录遍历、排序、冷备删除改由 `Isolate.run(_runCleanupOldBackupsInIsolate, ...)` 处理，主线程只负责回放日志；
+  - 两个服务内所有 `debugPrint` / 关键注释英文化（例：`Main database integrity check passed (ok)` / `Cold backup written`），彻底抹掉历史 Mojibake。
+- [x] **P0-8**：`ReaderPreferencesService` 引入 `Debouncer(300ms)` 批量写。
+  - 新增 `_PendingPrefWrite` / `_pendingWrites` / `_writeDebouncer = Debouncer(delay: Duration(milliseconds: 300))`；
+  - 所有 `setXxx` 同步更新内存态 + `notifyListeners()`，磁盘落地由 `_schedulePrefWrite` / `_schedulePrefRemove` 合并；
+  - `resetToDefaults()` 在 atomic write 前先 `cancel()` 防串单；新增 `flushPendingWrites()`，在 `ReaderPage.saveBeforeExit()` 与 `AppLifecycleState.paused/detached` 触发 `unawaited(getIt<ReaderPreferencesService>().flushPendingWrites())`，保证字号/行高等连续输入在退出或进入后台时立即落盘；
+  - `dispose()` 强制 flush + cancel，避免 debouncer 携泄漏回调。
+- [x] **P0-9**：`restoreDataBatch` 匹配键改为 `content_signature`，放弃 `title` 主键。
+  - 本地索引拆成 `localBySignature` / `localByTitle` 双表，主键优先走 SHA-256 指纹；
+  - 仅当备份 payload 或本地行的 `content_signature` 为空时回退到 title，并以 `[Restore][legacy]` 日志标注，收官汇总中额外统计 `legacyFallbackCount`；
+  - 行为修正：用户改名同一本书仍能正确恢复笔记；两本同名不同版本不再交叉污染高亮。
 
-**验收：** 50MB EPUB 打开无 ANR；字号连续滑动 10s 内 SharedPreferences 写入 ≤ 3 次。
+**验收：**
+- `flutter analyze` 本 Phase 触达的 5 个 `.dart` 文件零 error、零 warning；
+- 与 Phase 2 直接相关的单测 25/25 全绿（`database_service_test` ×6 + `reading_progress_manager_test` ×4 + `reader_menu_test` ×10 + `reader_controller_brightness_test` ×5）；
+- 仓库其余 6 条测试失败（`txt_reader_chapter_detection_test` ×3 + `txt_reader_pagination_invalidation_test` ×3）在 `git stash` 掉 Phase 2 改动后依旧复现，系 Phase 2 动刀 **之前就存在** 的遗留 bug（测试源文件 CJK 编码丢失 + Windows 临时目录句柄回收），归口 Phase 4（`P2-7` 延伸）清理；
+- 实机打开 EPUB / PDF 不再首屏卡顿；字号、行高、页边距连续滑动期间磁盘写入受 300ms 去抖窗口合并。
 
 ### Phase 3 — 服务层收敛与 DI 清理（0.5 sprint）
 

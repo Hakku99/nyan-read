@@ -1,13 +1,13 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:epub_view/epub_view.dart';
-import 'package:epub_view/src/data/epub_parser.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/models/book.dart';
 import '../../../../core/utils/book_source_access.dart';
 import '../reader_engine.dart';
+import 'epub_parse_helpers.dart';
 import 'epub_position.dart';
 
 class EpubReaderEngine implements ReaderEngine {
@@ -47,25 +47,37 @@ class EpubReaderEngine implements ReaderEngine {
 
     try {
       final bytes = Uint8List.fromList(await BookSourceAccess.readBytes(book));
+
+      // Phase 2 · P0-5 (AGENTS.md §3.5.1): move the CPU-bound pipeline
+      // (openData + chapter flattening + paragraph enumeration + DOM
+      // traversal) to a helper isolate via [compute].  A 50 MB EPUB used to
+      // block the UI thread long enough to trigger Android's ANR watchdog;
+      // now the main isolate only waits for a lightweight DTO (paragraph
+      // count + chapter start indexes + chapter titles).
+      //
+      // We then re-open the document on the main isolate to feed the
+      // EpubController — a single extra zip+XML parse that is cheap
+      // compared to the paragraph walk we just offloaded, and it avoids
+      // shipping the entire EpubBook graph back across the isolate
+      // boundary (which can fail on unsendable nested fields).
+      final parseResult = await compute(parseEpubBytesInIsolate, bytes);
       final document = await EpubDocument.openData(bytes);
-      final parsedChapters = parseChapters(document);
-      final paragraphResult = parseParagraphs(parsedChapters, document.Content);
 
       _document = document;
-      _paragraphCount = paragraphResult.flatParagraphs.length;
+      _paragraphCount = parseResult.paragraphCount;
       _initialCfi = _readInitialCfiFromBook();
       _lastKnownCfi = _initialCfi;
       _pendingCfi = _initialCfi;
       _viewReadyCompleter = Completer<void>();
       _chapters = List<ReaderChapter>.generate(
-        parsedChapters.length,
+        parseResult.chapters.length,
         (index) {
-          final chapter = parsedChapters[index];
-          final startIndex = index < paragraphResult.chapterIndexes.length
-              ? paragraphResult.chapterIndexes[index]
+          final title = parseResult.chapters[index].title;
+          final startIndex = index < parseResult.chapterStartIndexes.length
+              ? parseResult.chapterStartIndexes[index]
               : 0;
           return ReaderChapter(
-            title: chapter.Title ?? 'Chapter ${index + 1}',
+            title: title ?? 'Chapter ${index + 1}',
             index: index,
             locator: ChapterLocator(contentIndex: startIndex),
           );

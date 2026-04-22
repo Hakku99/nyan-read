@@ -137,6 +137,11 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       unawaited(progressManager.saveForLifecyclePause());
+      // Settings drags coalesce through a 300ms Debouncer inside the prefs
+      // service (Phase 2 / P0-8). When the OS tells us we are about to go
+      // to background we must flush that pending write, otherwise a cold
+      // kill eats whatever the last ~300ms of slider drag produced.
+      unawaited(getIt<ReaderPreferencesService>().flushPendingWrites());
     }
   }
 
@@ -361,6 +366,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   /// Public method to save progress before exiting - can be awaited
   Future<void> saveBeforeExit() async {
     await progressManager.prepareForExit();
+    // Same rationale as [didChangeAppLifecycleState]: ensure any pending
+    // debounced pref writes are on disk before the reader route pops.
+    await getIt<ReaderPreferencesService>().flushPendingWrites();
   }
 
   @override

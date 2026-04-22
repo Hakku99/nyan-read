@@ -38,6 +38,10 @@ dependencies:
   internet_file: ^1.2.0
   scrollable_positioned_list: ^0.3.8
   fast_gbk: ^1.0.0
+  # Phase 2 · P0-5: direct dep required so we can inline the EPUB chapter
+  # HTML parser instead of reaching into `epub_view/src/data/...` private
+  # paths.  Pinned to the range epub_view already transitively uses.
+  html: ^0.15.0
   
   # File Handling (Stubs for now since we can't fully run)
   file_picker: ^10.3.10

@@ -143,6 +143,8 @@ class MockReaderController extends ChangeNotifier
   ValueListenable<double> get progressListenable =>
       progressManager.progressListenable;
   @override
+  int get renderEpoch => 0;
+  @override
   double get brightness => 0.8;
   @override
   double get warmth => 0.3;

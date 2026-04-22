@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 
 import '../../../../core/models/book.dart';
+import '../../../../core/theme/theme_presets.dart';
 import '../../../../core/utils/book_source_access.dart';
 import '../reader_engine.dart';
 import 'pdf_position.dart';
@@ -23,6 +24,10 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
   late PdfController _pdfController;
   bool _isInit = false;
   String? _temporaryPdfPath;
+  // Tracks whether the underlying PdfDocument future has resolved; used to
+  // gate [getProgress] / [getCurrentPosition] so we don't hit the controller
+  // before it has real page numbers.
+  bool _isDocumentReady = false;
 
   PdfReaderEngine(this.book);
 
@@ -33,16 +38,32 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
   Future<void> initialize() async {
     if (_isInit) return;
 
-    try {
-      final source = await BookSourceAccess.preparePdfCompatibleSource(book);
-      _temporaryPdfPath = source.isTemporary ? source.path : null;
-      _pdfController = PdfController(
-        document: PdfDocument.openFile(source.path),
-      );
-      _isInit = true;
-    } catch (e) {
-      throw FormatException('Failed to open PDF: $e');
-    }
+    // Phase 2 · P0-6: compose the whole "resolve source + open PDF" pipeline
+    // into a single Future handed to PdfController so [initialize] itself
+    // returns on the next microtask.  Previously this method awaited the
+    // content-URI copy and opened the document synchronously, which held
+    // the reader's load path (and the scaffold CircularProgressIndicator)
+    // for the full duration of a multi-MB PDF parse on Android.
+    final documentFuture = _preparePdfDocument();
+    _pdfController = PdfController(document: documentFuture);
+    _isInit = true;
+
+    // The future is also consumed by PdfController internally, but we track
+    // its resolution ourselves so that getProgress / getCurrentPosition /
+    // getPageCount can bail out cleanly until the document is real.  Errors
+    // are surfaced the next time a caller interacts with the controller.
+    unawaited(documentFuture.then(
+      (_) => _isDocumentReady = true,
+      onError: (Object error, StackTrace stack) {
+        debugPrint('PDF document open failed: $error');
+      },
+    ));
+  }
+
+  Future<PdfDocument> _preparePdfDocument() async {
+    final source = await BookSourceAccess.preparePdfCompatibleSource(book);
+    _temporaryPdfPath = source.isTemporary ? source.path : null;
+    return PdfDocument.openFile(source.path);
   }
 
   @override
@@ -50,7 +71,7 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
 
   @override
   double? getProgress() {
-    if (!_isInit) return 0.0;
+    if (!_isInit || !_isDocumentReady) return 0.0;
     final count = _pdfController.pagesCount;
     if (count == null || count == 0) return 0.0;
     return _pdfController.page / count;
@@ -58,15 +79,58 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
 
   @override
   Widget buildReader(BuildContext context) {
-    if (!_isInit) return const Center(child: CircularProgressIndicator());
+    if (!_isInit) {
+      return _buildPlaceholder(context);
+    }
     return PdfView(
       controller: _pdfController,
       scrollDirection: Axis.vertical,
+      // Phase 2 · P0-6: themed placeholder while the PdfDocument future
+      // resolves.  pdfx 2.9.2 exposes placeholders via the `builders` slot;
+      // we deliberately set [documentLoaderBuilder] (full-surface spinner)
+      // AND [errorBuilder] (inline failure text) because the default builder
+      // in pdfx relies on Material's default blue spinner, which violates
+      // AGENTS.md §4.4 ("CircularProgressIndicator 的默认蓝色必须显式指定").
+      builders: PdfViewBuilders<DefaultBuilderOptions>(
+        options: const DefaultBuilderOptions(),
+        documentLoaderBuilder: _buildPlaceholder,
+        pageLoaderBuilder: _buildPlaceholder,
+        errorBuilder: _buildErrorPlaceholder,
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder(BuildContext context) {
+    final nyan = resolveNyanTheme(Theme.of(context));
+    return Center(
+      child: SizedBox(
+        width: 36,
+        height: 36,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.4,
+          valueColor: AlwaysStoppedAnimation<Color>(nyan.primary),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorPlaceholder(BuildContext context, Exception error) {
+    final nyan = resolveNyanTheme(Theme.of(context));
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          'Failed to open PDF: $error',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: nyan.textSecondary, fontSize: 13),
+        ),
+      ),
     );
   }
 
   @override
   Future<void> goToPosition(ReadingPosition position) async {
+    if (!_isDocumentReady) return;
     final pageNumber = position.pageNumber;
     if (pageNumber != null) {
       _pdfController.jumpToPage(pageNumber);
@@ -75,6 +139,7 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
 
   @override
   Future<void> seekToProgress(double progress) async {
+    if (!_isDocumentReady) return;
     final count = _pdfController.pagesCount;
     if (count == null || count == 0) return;
     final page = (progress * (count - 1)).round() + 1;
@@ -83,6 +148,7 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
 
   @override
   ReadingPosition? getCurrentPosition() {
+    if (!_isInit || !_isDocumentReady) return null;
     return PdfReadingPosition(pageNumber: _pdfController.page);
   }
 
@@ -97,7 +163,7 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
 
   @override
   Future<List<ReaderChapter>> getChapters() async {
-    if (!_isInit) return [];
+    if (!_isInit || !_isDocumentReady) return [];
 
     try {
       final count = _pdfController.pagesCount;
@@ -125,6 +191,7 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
 
   @override
   Future<void> nextPage() async {
+    if (!_isDocumentReady) return;
     await _pdfController.nextPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.ease,
@@ -133,6 +200,7 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
 
   @override
   Future<void> previousPage() async {
+    if (!_isDocumentReady) return;
     await _pdfController.previousPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.ease,
@@ -140,14 +208,15 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
   }
 
   @override
-  int getPageCount() => _isInit ? (_pdfController.pagesCount ?? 0) : 0;
+  int getPageCount() =>
+      (_isInit && _isDocumentReady) ? (_pdfController.pagesCount ?? 0) : 0;
 
   @override
-  int getCurrentPageIndex() => _isInit ? (_pdfController.page - 1) : 0;
+  int getCurrentPageIndex() =>
+      (_isInit && _isDocumentReady) ? (_pdfController.page - 1) : 0;
 
   @override
   bool get hasBottomBar => false;
-
 
   @override
   void dispose() {
