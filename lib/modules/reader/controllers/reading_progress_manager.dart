@@ -10,7 +10,7 @@ import '../reader_engine/reader_engine.dart';
 /// Owns the "where is the reader right now" state for a single open book.
 ///
 /// Split surface:
-///   - [progressListenable] — a [ValueListenable]<double> that ticks every
+///   - [progressListenable] — a `ValueListenable<double>` that ticks every
 ///     time the 0..1 scroll/CFI progress changes.  Read-heavy UI (the tiny
 ///     "42%" label at the foot of the reader, the overlay slider thumb) is
 ///     expected to subscribe to this directly so the 1s reading heartbeat

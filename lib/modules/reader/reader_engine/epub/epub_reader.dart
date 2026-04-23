@@ -12,11 +12,11 @@ import 'epub_position.dart';
 
 class EpubReaderEngine implements ReaderEngine {
   static const ReaderCapabilities _capabilities = ReaderCapabilities(
-    supportsTypography: false,
-    supportsTheme: false,
-    supportsHighlights: false,
-    supportsAnnotations: false,
-    supportsPageAnimation: false,
+    typography: CapabilityLevel.none,
+    theme: CapabilityLevel.none,
+    highlights: CapabilityLevel.none,
+    annotations: CapabilityLevel.none,
+    pageAnimation: CapabilityLevel.none,
     chapterNavigation: ReaderChapterNavigation.semantic,
   );
 

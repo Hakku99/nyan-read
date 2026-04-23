@@ -348,7 +348,7 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     preset: ThemePreset.sumiDark,
     name: 'Sumi Dark',
     primary: NyanColors.inkNightPrimary,
-    primaryDeep: NyanColors.amoledPrimary,
+    primaryDeep: NyanColors.inkNightPrimaryDeep,
     surface: NyanColors.inkNightSurface,
     surfaceMuted: Color(0xFF202520),
     background: NyanColors.inkNightBackground,

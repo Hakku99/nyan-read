@@ -196,11 +196,11 @@ class TxtReaderEngine
         TextExtractionCapability,
         PageMetricsCapability {
   static const ReaderCapabilities _capabilities = ReaderCapabilities(
-    supportsTypography: true,
-    supportsTheme: true,
-    supportsHighlights: true,
-    supportsAnnotations: true,
-    supportsPageAnimation: false,
+    typography: CapabilityLevel.full,
+    theme: CapabilityLevel.full,
+    highlights: CapabilityLevel.full,
+    annotations: CapabilityLevel.full,
+    pageAnimation: CapabilityLevel.none,
     chapterNavigation: ReaderChapterNavigation.semantic,
   );
 

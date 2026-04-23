@@ -101,6 +101,12 @@ enum ReaderChapterNavigation {
   synthetic,
 }
 
+enum CapabilityLevel {
+  none,
+  limited,
+  full,
+}
+
 class ReaderConfig {
   final Color backgroundColor;
   final Color textColor;
@@ -120,21 +126,27 @@ class ReaderConfig {
 }
 
 class ReaderCapabilities {
-  final bool supportsTypography;
-  final bool supportsTheme;
-  final bool supportsHighlights;
-  final bool supportsAnnotations;
-  final bool supportsPageAnimation;
+  final CapabilityLevel typography;
+  final CapabilityLevel theme;
+  final CapabilityLevel highlights;
+  final CapabilityLevel annotations;
+  final CapabilityLevel pageAnimation;
   final ReaderChapterNavigation chapterNavigation;
 
   const ReaderCapabilities({
-    required this.supportsTypography,
-    required this.supportsTheme,
-    required this.supportsHighlights,
-    required this.supportsAnnotations,
-    required this.supportsPageAnimation,
+    required this.typography,
+    required this.theme,
+    required this.highlights,
+    required this.annotations,
+    required this.pageAnimation,
     required this.chapterNavigation,
   });
+
+  bool get supportsTypography => typography != CapabilityLevel.none;
+  bool get supportsTheme => theme != CapabilityLevel.none;
+  bool get supportsHighlights => highlights != CapabilityLevel.none;
+  bool get supportsAnnotations => annotations != CapabilityLevel.none;
+  bool get supportsPageAnimation => pageAnimation != CapabilityLevel.none;
 
   bool get supportsChapterNavigation =>
       chapterNavigation != ReaderChapterNavigation.none;
@@ -143,21 +155,21 @@ class ReaderCapabilities {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is ReaderCapabilities &&
-        other.supportsTypography == supportsTypography &&
-        other.supportsTheme == supportsTheme &&
-        other.supportsHighlights == supportsHighlights &&
-        other.supportsAnnotations == supportsAnnotations &&
-        other.supportsPageAnimation == supportsPageAnimation &&
+        other.typography == typography &&
+        other.theme == theme &&
+        other.highlights == highlights &&
+        other.annotations == annotations &&
+        other.pageAnimation == pageAnimation &&
         other.chapterNavigation == chapterNavigation;
   }
 
   @override
   int get hashCode => Object.hash(
-        supportsTypography,
-        supportsTheme,
-        supportsHighlights,
-        supportsAnnotations,
-        supportsPageAnimation,
+        typography,
+        theme,
+        highlights,
+        annotations,
+        pageAnimation,
         chapterNavigation,
       );
 }

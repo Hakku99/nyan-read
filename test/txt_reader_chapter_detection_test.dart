@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/models/book.dart';
+import 'package:nyan_read/core/services/database_service.dart';
 import 'package:nyan_read/modules/reader/controllers/content_meta_manager.dart';
 import 'package:nyan_read/modules/reader/reader_engine/txt/txt_position.dart';
 import 'package:nyan_read/modules/reader/reader_engine/txt/txt_reader.dart';
@@ -12,23 +13,23 @@ void main() {
   group('TxtReaderEngine chapter detection', () {
     test('detects Chinese web novel and light novel variants', () async {
       final engine = await _createEngineWithContent('''
-??? ????
-???? 1
-?1??????
-???? 2
-?3?xxxx yyy
-???? 2.5
-?2? ??
-???? 3
-????4? ??
-???? 3.5
-????5???
-???? 3.8
-??????
-???? 4
-?? ????
-???? 5
-???? ??? ??
+序章 开端
+正文 1
+第1章 初见
+正文 2
+第3话 xxxx yyy
+正文 2.5
+第2章 归途
+正文 3
+第4回 夜雨
+正文 3.5
+第5节 尾声
+正文 3.8
+番外篇 夏日
+正文 4
+卷一 破晓
+正文 5
+终章
 ''');
       addTearDown(engine.dispose);
 
@@ -38,15 +39,15 @@ void main() {
       expect(
         titles,
         containsAll(<String>[
-          '??? ????',
-          '?1??????',
-          '?2? ??',
-          '?3?xxxx yyy',
-          '????4? ??',
-          '????5???',
-          '??????',
-          '?? ????',
-          '???? ??? ??',
+          '序章 开端',
+          '第1章 初见',
+          '第2章 归途',
+          '第3话 xxxx yyy',
+          '第4回 夜雨',
+          '第5节 尾声',
+          '番外篇 夏日',
+          '卷一 破晓',
+          '终章',
         ]),
       );
     });
@@ -59,9 +60,9 @@ Chapter 1 The Beginning
 Body paragraph
 Volume 2 Chapter 7 Reunion
 Body paragraph
-1?xxxx
+1 开局
 Body paragraph
-12????
+12 终局
 Body paragraph
 Afterword
 ''');
@@ -76,8 +77,8 @@ Afterword
           'Prologue',
           'Chapter 1 The Beginning',
           'Volume 2 Chapter 7 Reunion',
-          '1?xxxx',
-          '12????',
+          '1 开局',
+          '12 终局',
           'Afterword',
         ]),
       );
@@ -104,18 +105,18 @@ Afterword
 
   test('chapter navigation buttons follow TOC order directly', () async {
     final engine = await _createEngineWithContent('''
-??? ??
-?? 1
-?1? ??
-?? 2
-?? 3
-?2? ??
-?? 4
-?? 5
-??? ??
-?? 5.5
-?3? ??
-?? 6
+序章 起点
+正文 1
+第1章 初遇
+正文 2
+正文 3
+第2章 转折
+正文 4
+正文 5
+卷一 尾声
+正文 5.5
+第3章 终章
+正文 6
 ''');
     addTearDown(engine.dispose);
 
@@ -129,17 +130,18 @@ Afterword
     final metaManager = ContentMetaManager(
       engine: engine,
       book: book,
+      databaseService: _NoopDatabaseService(),
       onMetaChanged: () {},
     );
 
     await metaManager.loadChapters();
     final chapters = metaManager.chapters;
     expect(chapters.map((c) => c.title), [
-      '??? ??',
-      '?1? ??',
-      '?2? ??',
-      '??? ??',
-      '?3? ??',
+      '序章 起点',
+      '第1章 初遇',
+      '第2章 转折',
+      '卷一 尾声',
+      '第3章 终章',
     ]);
 
     await engine.goToPosition(TxtReadingPosition(paragraphIndex: 11));
@@ -182,3 +184,5 @@ Future<TxtReaderEngine> _createEngineWithContent(String content) async {
   await engine.initialize();
   return engine;
 }
+
+class _NoopDatabaseService extends DatabaseService {}

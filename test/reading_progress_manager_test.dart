@@ -29,11 +29,11 @@ class _FakeEngine extends ReaderEngine {
 
   @override
   ReaderCapabilities get capabilities => const ReaderCapabilities(
-        supportsTypography: false,
-        supportsTheme: false,
-        supportsHighlights: false,
-        supportsAnnotations: false,
-        supportsPageAnimation: false,
+        typography: CapabilityLevel.none,
+        theme: CapabilityLevel.none,
+        highlights: CapabilityLevel.none,
+        annotations: CapabilityLevel.none,
+        pageAnimation: CapabilityLevel.none,
         chapterNavigation: ReaderChapterNavigation.none,
       );
 

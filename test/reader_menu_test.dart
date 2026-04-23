@@ -40,11 +40,11 @@ class FakeReaderEngine
     implements ReaderEngine, TextExtractionCapability, PageMetricsCapability {
   FakeReaderEngine({
     this.capabilities = const ReaderCapabilities(
-      supportsTypography: true,
-      supportsTheme: true,
-      supportsHighlights: true,
-      supportsAnnotations: true,
-      supportsPageAnimation: false,
+      typography: CapabilityLevel.full,
+      theme: CapabilityLevel.full,
+      highlights: CapabilityLevel.full,
+      annotations: CapabilityLevel.full,
+      pageAnimation: CapabilityLevel.none,
       chapterNavigation: ReaderChapterNavigation.semantic,
     ),
   });
@@ -489,11 +489,11 @@ void main() {
     final mockController = MockReaderController(
       engine: FakeReaderEngine(
         capabilities: const ReaderCapabilities(
-          supportsTypography: false,
-          supportsTheme: false,
-          supportsHighlights: false,
-          supportsAnnotations: false,
-          supportsPageAnimation: false,
+          typography: CapabilityLevel.none,
+          theme: CapabilityLevel.none,
+          highlights: CapabilityLevel.none,
+          annotations: CapabilityLevel.none,
+          pageAnimation: CapabilityLevel.none,
           chapterNavigation: ReaderChapterNavigation.none,
         ),
       ),
@@ -552,11 +552,11 @@ void main() {
     final mockController = MockReaderController(
       engine: FakeReaderEngine(
         capabilities: const ReaderCapabilities(
-          supportsTypography: false,
-          supportsTheme: false,
-          supportsHighlights: false,
-          supportsAnnotations: false,
-          supportsPageAnimation: false,
+          typography: CapabilityLevel.none,
+          theme: CapabilityLevel.none,
+          highlights: CapabilityLevel.none,
+          annotations: CapabilityLevel.none,
+          pageAnimation: CapabilityLevel.none,
           chapterNavigation: ReaderChapterNavigation.synthetic,
         ),
       ),

@@ -12,11 +12,11 @@ import 'pdf_position.dart';
 
 class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
   static const ReaderCapabilities _capabilities = ReaderCapabilities(
-    supportsTypography: false,
-    supportsTheme: false,
-    supportsHighlights: false,
-    supportsAnnotations: false,
-    supportsPageAnimation: false,
+    typography: CapabilityLevel.none,
+    theme: CapabilityLevel.none,
+    highlights: CapabilityLevel.none,
+    annotations: CapabilityLevel.none,
+    pageAnimation: CapabilityLevel.none,
     chapterNavigation: ReaderChapterNavigation.synthetic,
   );
 

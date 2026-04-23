@@ -125,14 +125,14 @@ class BrightnessOrchestrator extends ChangeNotifier with WidgetsBindingObserver 
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
+  void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_isDisposed) return;
 
-    if (lifecycleState == AppLifecycleState.inactive ||
-        lifecycleState == AppLifecycleState.paused ||
-        lifecycleState == AppLifecycleState.detached) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
       unawaited(_handleBackgrounding());
-    } else if (lifecycleState == AppLifecycleState.resumed) {
+    } else if (state == AppLifecycleState.resumed) {
       unawaited(_handleResume());
     }
   }

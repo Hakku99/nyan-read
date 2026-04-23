@@ -12,24 +12,13 @@ class NyanColors {
   static const Color creamTextSecondary = Color(0xFF8A8377);
   static const Color creamDivider = Color(0xFFE5DED2);
 
-  static const Color sepiaBackground = Color(0xFFEEE5D6);
-  static const Color sepiaSurface = Color(0xFFF7EFE3);
-  static const Color sepiaPrimary = Color(0xFF9C8D73);
-  static const Color sepiaTextMain = Color(0xFF463B31);
-  static const Color sepiaTextSecondary = Color(0xFF8D8274);
-  static const Color sepiaDivider = Color(0xFFD7CCC8);
-
   static const Color inkNightBackground = Color(0xFF1D211E);
   static const Color inkNightSurface = Color(0xFF262B27);
   static const Color inkNightPrimary = Color(0xFF93A07C);
+  static const Color inkNightPrimaryDeep = Color(0xFF9AAD86);
   static const Color inkNightTextMain = Color(0xFFE8E1D5);
   static const Color inkNightTextSecondary = Color(0xFFAAA396);
   static const Color inkNightDivider = Color(0xFF3A3F3A);
-
-  static const Color amoledBackground = Color(0xFF101010);
-  static const Color amoledSurface = Color(0xFF171717);
-  static const Color amoledPrimary = Color(0xFF9AAD86);
-  static const Color amoledTextMain = Color(0xFFF3ECDC);
 
   static const Color highlightYellow = Color(0xFFF2E58A);
   static const Color highlightGreen = Color(0xFFA8D18D);

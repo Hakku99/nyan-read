@@ -33,7 +33,23 @@
 
 如需进一步压缩：
 - 使用 `pyftsubset` 做中文常用字子集（GB2312 ~6700 字），单档可降到 ~2 MB；
-- 相关脚本放到 `scripts/subset_fonts.py`（目前未实现，见 §6 Phase 4 tech-debt）。
+- 已提供脚本：`scripts/subset_fonts.py`。
+
+示例：
+
+```bash
+# 预览命令（不执行）
+python scripts/subset_fonts.py --dry-run
+
+# 生成子集字体到 assets/fonts/subset/
+python scripts/subset_fonts.py
+```
+
+依赖安装：
+
+```bash
+pip install fonttools brotli zopfli
+```
 
 ## 4. 为什么不走 `google_fonts` 在线加载？
 

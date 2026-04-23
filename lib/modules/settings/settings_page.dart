@@ -112,7 +112,12 @@ Future<void> _showExportActionsSheet(
                 Navigator.of(sheetContext).pop();
                 final xFile =
                     XFile(exportFilePath, mimeType: 'application/json');
-                await Share.shareXFiles([xFile], subject: 'Nyan Read Export');
+                await SharePlus.instance.share(
+                  ShareParams(
+                    files: [xFile],
+                    subject: 'Nyan Read Export',
+                  ),
+                );
               },
             ),
           ],
@@ -571,13 +576,11 @@ class _SelectionRow extends StatelessWidget {
     required this.title,
     required this.valueLabel,
     required this.onTap,
-    this.subtitle,
     this.inset = false,
   });
 
   final String title;
   final String valueLabel;
-  final String? subtitle;
   final VoidCallback onTap;
   final bool inset;
 
@@ -615,18 +618,6 @@ class _SelectionRow extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: NyanSpacing.space4),
-                    Text(
-                      subtitle!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        height: 1.3,
-                        color: theme.textTheme.bodySmall?.color?.withValues(
-                          alpha: 0.8,
-                        ),
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -674,7 +665,6 @@ class _SwitchRow extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.subtitle,
-    this.titleColor,
     this.subtitleColor,
   });
 
@@ -682,7 +672,6 @@ class _SwitchRow extends StatelessWidget {
   final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
-  final Color? titleColor;
   final Color? subtitleColor;
 
   @override
@@ -707,7 +696,6 @@ class _SwitchRow extends StatelessWidget {
                   title,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: titleColor,
                   ),
                 ),
                 if (subtitle != null) ...[
@@ -783,8 +771,6 @@ class _ActionRow extends StatelessWidget {
     this.subtitle,
     this.iconColor,
     this.titleColor,
-    this.titleWeight = FontWeight.w600,
-    this.subtitleColor,
     this.chevronColor,
     this.iconBackgroundAlpha,
   });
@@ -795,8 +781,6 @@ class _ActionRow extends StatelessWidget {
   final VoidCallback onTap;
   final Color? iconColor;
   final Color? titleColor;
-  final FontWeight titleWeight;
-  final Color? subtitleColor;
   final Color? chevronColor;
   final double? iconBackgroundAlpha;
 
@@ -837,7 +821,7 @@ class _ActionRow extends StatelessWidget {
                   Text(
                     title,
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: titleWeight,
+                      fontWeight: FontWeight.w600,
                       color: titleColor,
                     ),
                   ),
@@ -847,11 +831,9 @@ class _ActionRow extends StatelessWidget {
                       subtitle!,
                       style: theme.textTheme.bodySmall?.copyWith(
                         height: 1.3,
-                        color:
-                            subtitleColor ??
-                            theme.textTheme.bodySmall?.color?.withValues(
-                              alpha: 0.78,
-                            ),
+                        color: theme.textTheme.bodySmall?.color?.withValues(
+                          alpha: 0.78,
+                        ),
                       ),
                     ),
                   ],

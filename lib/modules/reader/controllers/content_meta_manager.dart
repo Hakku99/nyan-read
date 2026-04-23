@@ -47,7 +47,7 @@ class ContentMetaManager {
   /// 閸旂姾娴囨妯瑰瘨 + 閸撳秶鐤嗛悩鑸碘偓浣藉殰閹?(State Pre-processing)
   ///
   /// 闁潧鎯婇崡鏇炴倻閺佺増宓佸ù浣稿斧閸掓瑱绱板銈嗘煙濞夋洘妲搁崬顖欑閻?閼奉亝鍓ゅù浣规寜缁?閵?
-  /// UI 鐏?(TxtReaderEngine) 閸欘亙绱伴弨璺哄煂閸ф劖鐖ｇ紒婵嗩嚠閸嬨儱鎮嶉惃?List<Highlight>閵?
+  /// UI 鐏?(TxtReaderEngine) 閸欘亙绱伴弨璺哄煂閸ф劖鐖ｇ紒婵嗩嚠閸嬨儱鎮嶉惃?`List<Highlight>`閵?
   Future<void> loadHighlights() async {
     try {
       final rawData = await _db.getHighlights(book.id);
@@ -250,7 +250,9 @@ class ContentMetaManager {
   Future<void> jumpToNextChapter(Future<void> Function() saveProgressFn) async {
     await syncCurrentChapterFromPosition(engine.getCurrentPosition());
     if (_currentChapterIndex == null ||
-        _currentChapterIndex! >= _chapters.length - 1) return;
+        _currentChapterIndex! >= _chapters.length - 1) {
+      return;
+    }
     await jumpToChapter(
       _currentChapterIndex! + 1,
       _chapters[_currentChapterIndex! + 1].locator,

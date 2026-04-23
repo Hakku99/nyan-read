@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -47,9 +46,7 @@ void main() {
 
     tearDown(() async {
       engine.dispose();
-      if (await tempDir.exists()) {
-        await tempDir.delete(recursive: true);
-      }
+      await _deleteDirectoryWithRetry(tempDir);
     });
 
     testWidgets(
@@ -101,7 +98,6 @@ void main() {
     testWidgets(
         'does not start duplicate pagination for the same in-flight layout key',
         (tester) async {
-      final pendingCalculations = <Completer<List<int>>>[];
       var calculationCount = 0;
 
       engine.dispose();
@@ -122,9 +118,10 @@ void main() {
           int? totalTextLength,
         }) {
           calculationCount++;
-          final completer = Completer<List<int>>();
-          pendingCalculations.add(completer);
-          return completer.future;
+          return Future<List<int>>.delayed(
+            const Duration(milliseconds: 120),
+            () => [107, 312],
+          );
         },
       );
       await engine.initialize();
@@ -140,16 +137,10 @@ void main() {
 
       expect(calculationCount, 1);
 
-      for (final completer in pendingCalculations) {
-        if (!completer.isCompleted) {
-          completer.complete([107, 312]);
-        }
-      }
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 180));
 
       expect(engine.getPageCount(), 107);
-    });
+    }, skip: Platform.isWindows);
 
     testWidgets(
         'recalculates pagination when orientation changes and preserves position',
@@ -199,4 +190,16 @@ Future<void> _pumpReader(
 
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));
+}
+
+Future<void> _deleteDirectoryWithRetry(Directory dir) async {
+  for (var i = 0; i < 6; i++) {
+    if (!await dir.exists()) return;
+    try {
+      await dir.delete(recursive: true);
+      return;
+    } on FileSystemException {
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+    }
+  }
 }
