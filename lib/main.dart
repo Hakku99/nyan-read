@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import 'core/services/feature_manager.dart';
 import 'core/services/reader_preferences_service.dart';
 import 'core/services/reading_reminder_service.dart';
 import 'core/services/backup_recovery_service.dart';
+import 'core/services/riverpod_providers.dart';
 import 'core/theme/theme_manager.dart';
 import 'core/services/language_manager.dart';
 
@@ -36,27 +38,29 @@ void main() async {
   }
 
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: getIt<FeatureManager>()),
-        ChangeNotifierProvider.value(value: getIt<ThemeManager>()),
-        ChangeNotifierProvider.value(value: getIt<LanguageManager>()),
-        ChangeNotifierProvider.value(value: getIt<ReaderPreferencesService>()),
-        ChangeNotifierProvider.value(value: getIt<ReadingReminderService>()),
-      ],
-      child: const NyanApp(),
+    ProviderScope(
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: getIt<FeatureManager>()),
+          ChangeNotifierProvider.value(value: getIt<ThemeManager>()),
+          ChangeNotifierProvider.value(value: getIt<LanguageManager>()),
+          ChangeNotifierProvider.value(value: getIt<ReaderPreferencesService>()),
+          ChangeNotifierProvider.value(value: getIt<ReadingReminderService>()),
+        ],
+        child: const NyanApp(),
+      ),
     ),
   );
 }
 
-class NyanApp extends StatefulWidget {
+class NyanApp extends ConsumerStatefulWidget {
   const NyanApp({super.key});
 
   @override
-  State<NyanApp> createState() => _NyanAppState();
+  ConsumerState<NyanApp> createState() => _NyanAppState();
 }
 
-class _NyanAppState extends State<NyanApp> with WidgetsBindingObserver {
+class _NyanAppState extends ConsumerState<NyanApp> with WidgetsBindingObserver {
   DateTime? _pausedAt;
 
   @override
@@ -82,7 +86,7 @@ class _NyanAppState extends State<NyanApp> with WidgetsBindingObserver {
       if (_pausedAt != null) {
         final diff = DateTime.now().difference(_pausedAt!);
         if (diff.inMinutes >= 3) {
-          final fm = Provider.of<FeatureManager>(context, listen: false);
+          final fm = ref.read(featureManagerRpProvider);
           if (fm.isPrivateShelfUnlocked) {
             fm.lockPrivateShelf();
             debugPrint("Auto-locked Private Shelf after 3 mins background.");
@@ -95,8 +99,11 @@ class _NyanAppState extends State<NyanApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ThemeManager, LanguageManager>(
-      builder: (context, themeManager, languageManager, child) {
+    final themeManager = ref.watch(themeManagerRpProvider);
+    final languageManager = ref.watch(languageManagerRpProvider);
+    return ListenableBuilder(
+      listenable: Listenable.merge([themeManager, languageManager]),
+      builder: (context, _) {
         return MaterialApp.router(
           title: 'Nyan Read',
           locale: languageManager.locale,

@@ -2,22 +2,19 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
-import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/services/backup_recovery_service.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
-import '../../core/services/feature_manager.dart';
-import '../../core/services/language_manager.dart';
 import '../../core/services/reader_preferences_service.dart';
-import '../../core/services/reading_reminder_service.dart';
+import '../../core/services/riverpod_providers.dart';
 import '../../core/services/service_locator.dart';
 import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
-import '../../core/theme/theme_manager.dart';
 import '../../core/theme/theme_presets.dart';
 import '../../core/ui/components/components.dart';
 import '../../core/utils/snackbar_utils.dart';
@@ -192,45 +189,53 @@ Future<void> _handleImportData(BuildContext context) async {
   }
 }
 
-class SettingsPage extends StatefulWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
+class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final themeManager = context.watch<ThemeManager>();
-    final featureManager = context.watch<FeatureManager>();
-    final languageManager = context.watch<LanguageManager>();
-    final reminderService = context.watch<ReadingReminderService>();
-    final readerPrefs = getIt<ReaderPreferencesService>();
-    final loc = AppLocalizations.of(context)!;
+    final themeManager = ref.read(themeManagerRpProvider);
+    final featureManager = ref.read(featureManagerRpProvider);
+    final languageManager = ref.read(languageManagerRpProvider);
+    final reminderService = ref.read(readingReminderRpProvider);
+    final readerPrefs = ref.read(readerPreferencesRpProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        leadingWidth: NyanSpacing.minTapTarget + NyanSpacing.space12,
-        titleSpacing: NyanSpacing.space4,
-        centerTitle: false,
-        title: Text(
-          loc.settingsTitle,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-            height: 1.1,
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        themeManager,
+        featureManager,
+        languageManager,
+        reminderService,
+      ]),
+      builder: (context, _) {
+        final theme = Theme.of(context);
+        final loc = AppLocalizations.of(context)!;
+        return Scaffold(
+          appBar: AppBar(
+            leadingWidth: NyanSpacing.minTapTarget + NyanSpacing.space12,
+            titleSpacing: NyanSpacing.space4,
+            centerTitle: false,
+            title: Text(
+              loc.settingsTitle,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                height: 1.1,
+              ),
+            ),
           ),
-        ),
-      ),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          _kSettingsHorizontalPadding,
-          _kSettingsHorizontalPadding,
-          _kSettingsHorizontalPadding,
-          _kSettingsHorizontalPadding + MediaQuery.of(context).padding.bottom,
-        ),
-        children: [
+          body: ListView(
+            padding: EdgeInsets.fromLTRB(
+              _kSettingsHorizontalPadding,
+              _kSettingsHorizontalPadding,
+              _kSettingsHorizontalPadding,
+              _kSettingsHorizontalPadding + MediaQuery.of(context).padding.bottom,
+            ),
+            children: [
           _SectionHeader(title: loc.appearance),
           _SettingsCard(
             children: [
@@ -451,8 +456,10 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
           ],
-        ],
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 

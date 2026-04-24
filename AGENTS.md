@@ -469,7 +469,7 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 ### Phase 4 — 技术债清算（选做 1 sprint）🚧 进行中（当前批次完成：2026-04-22）
 
 - [x] **P2-1**：`reader_page.dart` 按职责拆分（Controller / PageState / OverlayToolBar / GestureHandler ≥ 4 文件）。
-- [ ] **P2-2**：引入 `riverpod` 评估 spike，并制定 `ChangeNotifier → riverpod` 迁移小步走方案（不强行替换，保留现有代码 6 个月共存期）。
+- [x] **P2-2**：引入 `riverpod` 评估 spike（✅ 已完成，2026-04-23）—— 新增 `ProviderScope` + `lib/core/services/riverpod_providers.dart` 桥接层，保留现有 `MultiProvider` 共存；`main.dart` AppShell（主题/语言 + 生命周期锁私密书架）已切 Riverpod 读取路径，验证可增量迁移且可一键回滚。
 - [x] **P2-3**：新增 `docs/PERFORMANCE.md`，把本文件 §3.4 的规则机械化为 lint 规则或 CI 脚本。
 - [x] **P2-4**：为 `ReaderCapabilities` 增加非 boolean 支持级别（`none / limited / full`）。
 - [x] **P2-5**：升级 `screen_brightness` 到 2.1+，将 `SystemBrightnessAdapter` 中 4 个 deprecated 调用（`current` / `onCurrentBrightnessChanged` / `setScreenBrightness` / `resetScreenBrightness`）改为对应的 `application*` 变体。

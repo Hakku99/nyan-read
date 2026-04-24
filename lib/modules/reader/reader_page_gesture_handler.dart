@@ -56,7 +56,8 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     Offset globalPosition, {
     ReaderController? controller,
   }) {
-    final c = controller ?? context.read<ReaderController>();
+    final c = controller ?? _boundController;
+    if (c == null) return;
 
     if (_isPanning) return;
 

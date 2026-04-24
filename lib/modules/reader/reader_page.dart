@@ -2,19 +2,16 @@ import 'package:flutter/services.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/book.dart';
 import '../../core/models/highlight.dart';
-import '../../core/services/database_service.dart';
-import '../../core/services/reader_preferences_service.dart';
-import '../../core/services/service_locator.dart';
+import '../../core/services/riverpod_providers.dart';
 import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../bookmark/bookmark_list_page.dart';
 import '../notes/notes_list_page.dart';
 import 'reader_engine/reader_engine.dart';
-import 'reader_error.dart';
 import 'widgets/reader_error_view.dart';
 import 'widgets/highlight_note_dialog.dart';
 import 'widgets/reader_menu.dart';
@@ -28,6 +25,7 @@ import 'brightness/brightness_repository.dart';
 import 'brightness/system_brightness_adapter.dart';
 import 'controllers/brightness_controller.dart';
 import 'controllers/reader_controller.dart';
+import 'controllers/reader_controller_provider.dart';
 import 'brightness/overlay_widget.dart';
 import 'widgets/brightness_hud_widget.dart';
 import 'widgets/chapter_list_widget.dart';
@@ -38,18 +36,19 @@ export 'controllers/reader_controller.dart';
 part 'reader_page_overlay.dart';
 part 'reader_page_gesture_handler.dart';
 
-class ReaderPage extends StatefulWidget {
+class ReaderPage extends ConsumerStatefulWidget {
   final String bookId;
 
   const ReaderPage({super.key, required this.bookId});
 
   @override
-  State<ReaderPage> createState() => _ReaderPageState();
+  ConsumerState<ReaderPage> createState() => _ReaderPageState();
 }
 
-class _ReaderPageState extends State<ReaderPage> {
+class _ReaderPageState extends ConsumerState<ReaderPage> {
   late Future<Map<String, dynamic>?> _bookFuture;
   late final BrightnessController _brightnessController;
+  ReaderController? _boundController;
   final GlobalKey<ScaffoldState> readerPageScaffoldKey =
       GlobalKey<ScaffoldState>();
   final GlobalKey _readerBodyKey = GlobalKey();
@@ -65,9 +64,11 @@ class _ReaderPageState extends State<ReaderPage> {
   @override
   void initState() {
     super.initState();
-    _bookFuture = getIt<DatabaseService>().getBookById(widget.bookId);
+    final databaseService = ref.read(databaseServiceRpProvider);
+    final readerPreferencesService = ref.read(readerPreferencesRpProvider);
+    _bookFuture = databaseService.getBookById(widget.bookId);
     final brightnessRepository =
-        BrightnessRepository(getIt<ReaderPreferencesService>());
+        BrightnessRepository(readerPreferencesService);
     final brightnessOrchestrator = BrightnessOrchestrator(
       repository: brightnessRepository,
       systemAdapter: SystemBrightnessAdapter(),
@@ -79,6 +80,7 @@ class _ReaderPageState extends State<ReaderPage> {
   @override
   void dispose() {
     _chapterSyncDebounce?.cancel();
+    _boundController = null;
     unawaited(_brightnessController.shutdown());
     _brightnessController.dispose();
     super.dispose();
@@ -99,57 +101,51 @@ class _ReaderPageState extends State<ReaderPage> {
 
         final book = Book.fromMap(snapshot.data!);
 
-        return ChangeNotifierProvider(
-          create: (_) {
-            final controller = ReaderController(
-              book,
-              readerPreferencesService: getIt<ReaderPreferencesService>(),
-              databaseService: getIt<DatabaseService>(),
-            );
-            // Attach the page-level brightness binding for menu and gesture input.
-            controller.attachBrightnessController(_brightnessController);
-            controller.engine.textCapability?.configureInteractions(
-              onTextHighlighted:
-                  (paragraphIndex, start, end, text, colorCode) {
-                final paragraphText = controller
-                        .engine.textCapability
-                        ?.getParagraphText(paragraphIndex) ??
+        final controllerArgs = ReaderControllerProviderArgs(
+          book: book,
+          brightnessController: _brightnessController,
+        );
+        final controller = ref.watch(
+          readerControllerRpProvider(controllerArgs),
+        );
+        _boundController = controller;
+        controller.engine.textCapability?.configureInteractions(
+          onTextHighlighted: (paragraphIndex, start, end, text, colorCode) {
+            final paragraphText =
+                controller.engine.textCapability?.getParagraphText(paragraphIndex) ??
                     '';
-                unawaited(
-                  controller.addHighlight(
-                    paragraphIndex,
-                    start,
-                    end,
-                    text,
-                    colorCode,
-                    paragraphText,
-                  ),
-                );
-              },
-              onHighlightTapped: (highlight) {
-                if (!mounted) return;
-                _showHighlightNoteDialog(context, controller, highlight);
-              },
-              onContentTap: (globalPosition) {
-                if (!mounted) return;
-                _handleContentTap(context, globalPosition, controller);
-              },
+            unawaited(
+              controller.addHighlight(
+                paragraphIndex,
+                start,
+                end,
+                text,
+                colorCode,
+                paragraphText,
+              ),
             );
-            controller.init();
-            return controller;
           },
-          child: Builder(
-            builder: (context) {
-              // Selector for background color prevents rebuilding Scaffold on progress changes
-              return Selector<ReaderController, Color>(
-                selector: (_, c) => c.backgroundColor,
-                builder: (context, bgColor, _) {
+          onHighlightTapped: (highlight) {
+            if (!mounted) return;
+            _showHighlightNoteDialog(context, controller, highlight);
+          },
+          onContentTap: (globalPosition) {
+            if (!mounted) return;
+            _handleContentTap(context, globalPosition, controller);
+          },
+        );
+
+        return Builder(
+          builder: (context) {
+              return ListenableBuilder(
+                listenable: controller,
+                builder: (context, _) {
+                  final bgColor = controller.backgroundColor;
                   return PopScope(
                     canPop: false,
                     onPopInvokedWithResult: (didPop, result) async {
                       if (didPop) return;
                       // Save progress before navigating away
-                      final controller = context.read<ReaderController>();
                       await controller.saveBeforeExit();
                       await _brightnessController.shutdown();
                       if (context.mounted) {
@@ -191,29 +187,18 @@ class _ReaderPageState extends State<ReaderPage> {
                                     _handlePanUpdate(context, details),
                                 onPanEnd: (details) =>
                                     _handlePanEnd(context, details),
-                                child: Selector<
-                                    ReaderController,
-                                    ({
-                                      Color backgroundColor,
-                                      bool hasBottomBar,
-                                      int renderEpoch
-                                    })>(
-                                  selector: (_, c) => (
-                                    backgroundColor: c.backgroundColor,
-                                    hasBottomBar: c.engine.hasBottomBar,
-                                    renderEpoch: c.renderEpoch,
-                                  ),
-                                  builder: (context, vm, _) {
+                                child: ListenableBuilder(
+                                  listenable: controller,
+                                  builder: (context, _) {
+                                    final backgroundColor = controller.backgroundColor;
+                                    final hasBottomBar = controller.engine.hasBottomBar;
                                     // Controller engine reference itself is
                                     // stable; we only need it for
                                     // buildReader() + the scroll callback.
                                     // Read (not watch) to avoid adding
                                     // another subscription.
-                                    final controller =
-                                        context.read<ReaderController>();
-                                    final isDark = vm.backgroundColor
-                                            .computeLuminance() <
-                                        0.5;
+                                    final isDark =
+                                        backgroundColor.computeLuminance() < 0.5;
                                     final systemOverlayStyle = isDark
                                         ? SystemUiOverlayStyle.light.copyWith(
                                             statusBarColor: Colors.transparent,
@@ -268,10 +253,10 @@ class _ReaderPageState extends State<ReaderPage> {
                                                     ? padding.bottom + 4
                                                     : 16,
                                                 child: Opacity(
-                                                  opacity: (_showControls ||
-                                                          vm.hasBottomBar)
-                                                      ? 0
-                                                      : 1,
+                                                  opacity:
+                                                      (_showControls || hasBottomBar)
+                                                          ? 0
+                                                          : 1,
                                                   child: ValueListenableBuilder<
                                                       double>(
                                                     valueListenable: controller
@@ -305,9 +290,10 @@ class _ReaderPageState extends State<ReaderPage> {
                             ),
 
                             // 2. Error View
-                            Selector<ReaderController, ReaderErrorState?>(
-                              selector: (_, c) => c.errorState,
-                              builder: (context, errorState, _) {
+                            ListenableBuilder(
+                              listenable: controller,
+                              builder: (context, _) {
+                                final errorState = controller.errorState;
                                 if (errorState == null) {
                                   return const SizedBox.shrink();
                                 }
@@ -319,9 +305,7 @@ class _ReaderPageState extends State<ReaderPage> {
                                     child: ReaderErrorView(
                                       errorState: errorState,
                                       onBack: () => Navigator.pop(context),
-                                      onRetry: () => context
-                                          .read<ReaderController>()
-                                          .retry(),
+                                      onRetry: controller.retry,
                                     ),
                                   ),
                                 );
@@ -336,35 +320,23 @@ class _ReaderPageState extends State<ReaderPage> {
                             //    index, progress, capabilities) keeps this
                             //    inert during reading.
                             Positioned.fill(
-                                // P0-4: when the chrome is collapsed, bail out
-                                // before building anything.  _showControls is
-                                // captured from enclosing StatefulWidget state;
-                                // setState will drive a rebuild when it flips.
-                                child: !_showControls
-                                    ? const SizedBox.shrink()
-                                    : Selector<
-                                    ReaderController,
-                                    ({
-                                      int chaptersCount,
-                                      int? currentChapterIndex,
-                                      ReaderCapabilities capabilities
-                                    })>(
-                              selector: (_, c) => (
-                                chaptersCount: c.chapters.length,
-                                currentChapterIndex: c.currentChapterIndex,
-                                capabilities: c.capabilities,
-                              ),
-                              builder: (context, vm, child) {
-                                final controller =
-                                    context.read<ReaderController>();
-                                final theme = Theme.of(context);
-                                final bottomPadding =
-                                    MediaQuery.of(context).padding.bottom;
-                                final topPadding =
-                                    MediaQuery.of(context).padding.top;
+                              // P0-4: when the chrome is collapsed, bail out
+                              // before building anything.  _showControls is
+                              // captured from enclosing StatefulWidget state;
+                              // setState will drive a rebuild when it flips.
+                              child: !_showControls
+                                  ? const SizedBox.shrink()
+                                  : ListenableBuilder(
+                                      listenable: controller,
+                                      builder: (context, _) {
+                                        final theme = Theme.of(context);
+                                        final bottomPadding =
+                                            MediaQuery.of(context).padding.bottom;
+                                        final topPadding =
+                                            MediaQuery.of(context).padding.top;
 
-                                return Stack(
-                                  children: [
+                                        return Stack(
+                                          children: [
                                         // Status Bar Helper
                                         Positioned(
                                           top: 0,
@@ -511,9 +483,10 @@ class _ReaderPageState extends State<ReaderPage> {
                                           ),
                                         ),
                                       ],
-                                    );
-                                  },
-                                )),
+                                        );
+                                      },
+                                    ),
+                            ),
 
                                 // 4. Edge Gesture Binding for Brightness
                                 // Keep gesture preview on the shared controller to avoid
@@ -552,8 +525,7 @@ class _ReaderPageState extends State<ReaderPage> {
                   ); // end PopScope
                 },
               );
-            },
-          ),
+          },
         );
       },
     );
@@ -579,22 +551,20 @@ class _ReaderPageState extends State<ReaderPage> {
             constraints: BoxConstraints(
               maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.75,
             ),
-            child: ChangeNotifierProvider<ReaderController>.value(
-              value: controller,
-              // Modal routes sit above the reader body; replicate software dim here
-              // so the sheet matches the dimmed reading surface.
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(NyanRadius.sheet),
-                ),
-                child: BrightnessOverlayWidget(
-                  stackFit: StackFit.passthrough,
-                  stateListenable: _brightnessController.stateListenable,
-                  warmthListenable: _brightnessController.warmthListenable,
-                  child: ReaderMenu(
-                    scaffoldKey: readerPageScaffoldKey,
-                    brightnessController: _brightnessController,
-                  ),
+            // Modal routes sit above the reader body; replicate software dim here
+            // so the sheet matches the dimmed reading surface.
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(NyanRadius.sheet),
+              ),
+              child: BrightnessOverlayWidget(
+                stackFit: StackFit.passthrough,
+                stateListenable: _brightnessController.stateListenable,
+                warmthListenable: _brightnessController.warmthListenable,
+                child: ReaderMenu(
+                  controller: controller,
+                  scaffoldKey: readerPageScaffoldKey,
+                  brightnessController: _brightnessController,
                 ),
               ),
             ),

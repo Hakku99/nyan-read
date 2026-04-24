@@ -375,6 +375,7 @@ void main() {
           home: Scaffold(
             key: scaffoldKey,
             body: ReaderMenu(
+              controller: mockController,
               scaffoldKey: scaffoldKey,
               brightnessController: brightnessController,
             ),
@@ -438,6 +439,7 @@ void main() {
           home: Scaffold(
             key: scaffoldKey,
             body: ReaderMenu(
+              controller: mockController,
               scaffoldKey: scaffoldKey,
               brightnessController: brightnessController,
             ),
@@ -514,6 +516,7 @@ void main() {
           home: Scaffold(
             key: scaffoldKey,
             body: ReaderMenu(
+              controller: mockController,
               scaffoldKey: scaffoldKey,
               brightnessController: brightnessController,
             ),
@@ -577,6 +580,7 @@ void main() {
           home: Scaffold(
             key: scaffoldKey,
             body: ReaderMenu(
+              controller: mockController,
               scaffoldKey: scaffoldKey,
               brightnessController: brightnessController,
             ),
@@ -628,6 +632,7 @@ void main() {
           home: Scaffold(
             key: scaffoldKey,
             body: ReaderMenu(
+              controller: mockController,
               scaffoldKey: scaffoldKey,
               brightnessController: brightnessController,
             ),
@@ -699,6 +704,7 @@ void main() {
           home: Scaffold(
             key: scaffoldKey,
             body: ReaderMenu(
+              controller: mockController,
               scaffoldKey: scaffoldKey,
               brightnessController: brightnessController,
             ),
@@ -747,6 +753,7 @@ void main() {
           home: Scaffold(
             key: scaffoldKey,
             body: ReaderMenu(
+              controller: mockController,
               scaffoldKey: scaffoldKey,
               brightnessController: brightnessController,
             ),
@@ -800,6 +807,7 @@ void main() {
           home: Scaffold(
             key: scaffoldKey,
             body: ReaderMenu(
+              controller: mockController,
               scaffoldKey: scaffoldKey,
               brightnessController: brightnessController,
             ),
@@ -857,6 +865,7 @@ void main() {
                         heightFactor: 0.68,
                         alignment: Alignment.bottomCenter,
                         child: ReaderMenu(
+                          controller: mockController,
                           scaffoldKey: scaffoldKey,
                           brightnessController: brightnessController,
                         ),
@@ -912,6 +921,7 @@ void main() {
           home: Scaffold(
             key: scaffoldKey,
             body: ReaderMenu(
+              controller: mockController,
               scaffoldKey: scaffoldKey,
               brightnessController: brightnessController,
             ),

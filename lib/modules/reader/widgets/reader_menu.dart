@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 
 import 'package:nyan_read/l10n/app_localizations.dart';
 
@@ -21,11 +20,13 @@ enum _ReaderMenuSection { display, text, theme }
 class ReaderMenu extends StatefulWidget {
   const ReaderMenu({
     super.key,
+    required this.controller,
     required this.scaffoldKey,
     required this.brightnessController,
     this.scrollController,
   });
 
+  final ReaderController controller;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final BrightnessController brightnessController;
   final ScrollController? scrollController;
@@ -53,7 +54,7 @@ class _ReaderMenuState extends State<ReaderMenu> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<ReaderController>();
+    final controller = widget.controller;
     final capabilities = controller.capabilities;
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);

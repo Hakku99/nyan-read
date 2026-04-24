@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
@@ -9,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../core/services/feature_manager.dart';
+import '../../core/services/riverpod_providers.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
 import '../../core/services/service_locator.dart';
@@ -46,14 +48,14 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _HomeScreenContent extends StatefulWidget {
+class _HomeScreenContent extends ConsumerStatefulWidget {
   const _HomeScreenContent();
 
   @override
-  State<_HomeScreenContent> createState() => _HomeScreenContentState();
+  ConsumerState<_HomeScreenContent> createState() => _HomeScreenContentState();
 }
 
-class _HomeScreenContentState extends State<_HomeScreenContent>
+class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     with TickerProviderStateMixin {
   late TabController _tabController;
   final _prefs = getIt<BookshelfPreferencesService>();
@@ -187,7 +189,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
       final db = getIt<DatabaseService>();
       final existingIndex = await BookImportFingerprint.buildExistingIndex(db);
 
-      final featureManager = context.read<FeatureManager>();
+      final featureManager = ref.read(featureManagerRpProvider);
       final isPrivateShelfUnlocked =
           featureManager.isPro && featureManager.isPrivateShelfUnlocked;
       final isPrivate = isPrivateShelfUnlocked && _tabController.index == 1;
@@ -340,7 +342,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
 
   void _showImportMenu(BuildContext context) {
     final parentContext = context;
-    final featureManager = context.read<FeatureManager>();
+    final featureManager = ref.read(featureManagerRpProvider);
     final vm = context.read<BookshelfViewModel>();
     final showPrivacyTab =
         featureManager.isPro && featureManager.isPrivateShelfUnlocked;
@@ -400,7 +402,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
 
   Future<void> _handlePrivacyLock(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
-    final fm = context.read<FeatureManager>();
+    final fm = ref.read(featureManagerRpProvider);
     final privacyService = PrivacyLockService();
 
     if (fm.isPrivateShelfUnlocked) {
@@ -425,7 +427,7 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
   void _unlockPrivateShelfAfterRouteSettles() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      this.context.read<FeatureManager>().unlockPrivateShelf();
+      ref.read(featureManagerRpProvider).unlockPrivateShelf();
     });
   }
 
@@ -779,84 +781,89 @@ class _HomeScreenContentState extends State<_HomeScreenContent>
 
   @override
   Widget build(BuildContext context) {
-    final featureManager = context.watch<FeatureManager>();
-    final isSelectionMode =
-        context.select<BookshelfViewModel, bool>((vm) => vm.isSelectionMode);
+    final featureManager = ref.read(featureManagerRpProvider);
+    return ListenableBuilder(
+      listenable: featureManager,
+      builder: (context, _) {
+        final isSelectionMode =
+            context.select<BookshelfViewModel, bool>((vm) => vm.isSelectionMode);
 
-    // Logic: Only show Privacy Tab if Pro AND Unlocked
-    final showPrivacyTab =
-        featureManager.isPro && featureManager.isPrivateShelfUnlocked;
-    final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
+        // Logic: Only show Privacy Tab if Pro AND Unlocked
+        final showPrivacyTab =
+            featureManager.isPro && featureManager.isPrivateShelfUnlocked;
+        final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
 
-    return Scaffold(
-      appBar: isSelectionMode
-          ? _buildSelectionAppBar(context, featureManager, showPrivacyTab)
-          : null,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            NyanShelfUi.bookshelfPageHorizontalPadding,
-            NyanSpacing.space12,
-            NyanShelfUi.bookshelfPageHorizontalPadding,
-            0,
-          ),
-          child: Selector<
-              BookshelfViewModel,
-              ({bool isLoading, List<Book> pub, List<Book> priv})>(
-            selector: (_, vm) => (
-              isLoading: vm.isLoading,
-              pub: vm.publicBooks,
-              priv: vm.privateBooks,
+        return Scaffold(
+          appBar: isSelectionMode
+              ? _buildSelectionAppBar(context, featureManager, showPrivacyTab)
+              : null,
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                NyanShelfUi.bookshelfPageHorizontalPadding,
+                NyanSpacing.space12,
+                NyanShelfUi.bookshelfPageHorizontalPadding,
+                0,
+              ),
+              child: Selector<
+                  BookshelfViewModel,
+                  ({bool isLoading, List<Book> pub, List<Book> priv})>(
+                selector: (_, vm) => (
+                  isLoading: vm.isLoading,
+                  pub: vm.publicBooks,
+                  priv: vm.privateBooks,
+                ),
+                builder: (context, state, child) {
+                  if (state.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final activeBooks =
+                      showPrivacyTab && selectedTabIndex == 1
+                          ? state.priv
+                          : state.pub;
+
+                  return _buildLibrarySurface(
+                    context,
+                    featureManager: featureManager,
+                    showPrivacyTab: showPrivacyTab,
+                    activeBooks: activeBooks,
+                    showHeaderSections: !isSelectionMode,
+                    isSelectionMode: isSelectionMode,
+                  );
+                },
+              ),
             ),
-            builder: (context, state, child) {
-              if (state.isLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final activeBooks =
-                  showPrivacyTab && selectedTabIndex == 1
-                      ? state.priv
-                      : state.pub;
-
-              return _buildLibrarySurface(
-                context,
-                featureManager: featureManager,
-                showPrivacyTab: showPrivacyTab,
-                activeBooks: activeBooks,
-                showHeaderSections: !isSelectionMode,
-                isSelectionMode: isSelectionMode,
-              );
-            },
           ),
-        ),
-      ),
-      floatingActionButton: isSelectionMode
-          ? null
-          : Builder(
-              builder: (context) {
-                final nyan = context.nyanTheme;
-                return Padding(
-                  padding: const EdgeInsets.only(
-                    right: NyanSpacing.space4,
-                    bottom: NyanSpacing.space8,
-                  ),
-                  child: FloatingActionButton(
-                    onPressed: () => _showImportMenu(context),
-                    backgroundColor: nyan.fabBackground,
-                    foregroundColor: nyan.fabForeground,
-                    elevation: 2,
-                    highlightElevation: 4,
-                    hoverElevation: 3,
-                    focusElevation: 3,
-                    disabledElevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(NyanRadius.card),
-                    ),
-                    child: const Icon(Icons.add),
-                  ),
-                );
-              },
-            ),
+          floatingActionButton: isSelectionMode
+              ? null
+              : Builder(
+                  builder: (context) {
+                    final nyan = context.nyanTheme;
+                    return Padding(
+                      padding: const EdgeInsets.only(
+                        right: NyanSpacing.space4,
+                        bottom: NyanSpacing.space8,
+                      ),
+                      child: FloatingActionButton(
+                        onPressed: () => _showImportMenu(context),
+                        backgroundColor: nyan.fabBackground,
+                        foregroundColor: nyan.fabForeground,
+                        elevation: 2,
+                        highlightElevation: 4,
+                        hoverElevation: 3,
+                        focusElevation: 3,
+                        disabledElevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(NyanRadius.card),
+                        ),
+                        child: const Icon(Icons.add),
+                      ),
+                    );
+                  },
+                ),
+        );
+      },
     );
   }
 
