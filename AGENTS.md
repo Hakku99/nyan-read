@@ -93,9 +93,9 @@
 #### 2.2.5 API 契约稳定性
 - **MUST NOT**：修改 `ReaderEngine` / `ReadingPosition` / `ChapterLocator` / `DatabaseService` 公共方法签名而不在 PR/对话中**显式声明契约影响**，并更新 `READER_ARCHITECTURE.md`。
 
-### 2.3 状态管理规范（当前栈：`provider` + `get_it`）
+### 2.3 状态管理规范（当前栈：`flutter_riverpod` + `get_it`）
 
-本项目**当前**采用 `provider` + `get_it` 组合。迁移到 Riverpod 是路线图 §6 的长期目标，在此之前：
+本项目**当前**采用 `flutter_riverpod` + `get_it` 组合。历史 `provider` 已从运行时主链路移除；测试代码若仍有旧封装，必须作为技术债显式记录并计划迁移。
 
 - **MUST**：全局无状态服务（`DatabaseService`、`ReaderPreferencesService`、`FeatureManager` 等）通过 `get_it` 注册并在 `setupServiceLocator()` 里 `await getIt.allReady()` 后才 `runApp`。
 - **MUST NOT**：在 `service_locator.dart` 以外的地方调用 `GetIt.instance<X>()` ——服务必须通过**构造器注入**传给 Manager / ViewModel。UI 层可以用 `context.read<X>()` / `context.watch<X>()`。
@@ -469,7 +469,7 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 ### Phase 4 — 技术债清算（选做 1 sprint）🚧 进行中（当前批次完成：2026-04-22）
 
 - [x] **P2-1**：`reader_page.dart` 按职责拆分（Controller / PageState / OverlayToolBar / GestureHandler ≥ 4 文件）。
-- [x] **P2-2**：引入 `riverpod` 评估 spike（✅ 已完成，2026-04-23）—— 新增 `ProviderScope` + `lib/core/services/riverpod_providers.dart` 桥接层，保留现有 `MultiProvider` 共存；`main.dart` AppShell（主题/语言 + 生命周期锁私密书架）已切 Riverpod 读取路径，验证可增量迁移且可一键回滚。
+- [x] **P2-2**：引入 `riverpod` 评估 spike（✅ 已完成，2026-04-24）—— 完成 app shell 去 `MultiProvider`、`bookshelf/reader/settings/admin` 模块迁移、`provider` 依赖移除与关键测试适配，运行时主链路全面切至 Riverpod + get_it。
 - [x] **P2-3**：新增 `docs/PERFORMANCE.md`，把本文件 §3.4 的规则机械化为 lint 规则或 CI 脚本。
 - [x] **P2-4**：为 `ReaderCapabilities` 增加非 boolean 支持级别（`none / limited / full`）。
 - [x] **P2-5**：升级 `screen_brightness` 到 2.1+，将 `SystemBrightnessAdapter` 中 4 个 deprecated 调用（`current` / `onCurrentBrightnessChanged` / `setScreenBrightness` / `resetScreenBrightness`）改为对应的 `application*` 变体。
