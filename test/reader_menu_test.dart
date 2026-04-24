@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
 import 'package:nyan_read/modules/reader/widgets/reader_menu.dart';
 import 'package:nyan_read/core/ui/components/nyan_confirm_dialog.dart';
 import 'package:nyan_read/core/ui/components/nyan_overlay_style.dart';
@@ -363,12 +362,7 @@ void main() {
     final scaffoldKey = GlobalKey<ScaffoldState>();
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ReaderController>.value(value: mockController),
-          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
-        ],
-        child: MaterialApp(
+      MaterialApp(
           theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -380,7 +374,6 @@ void main() {
               brightnessController: brightnessController,
             ),
           ),
-        ),
       ),
     );
 
@@ -427,12 +420,7 @@ void main() {
     final scaffoldKey = GlobalKey<ScaffoldState>();
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ReaderController>.value(value: mockController),
-          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
-        ],
-        child: MaterialApp(
+      MaterialApp(
           theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -444,7 +432,6 @@ void main() {
               brightnessController: brightnessController,
             ),
           ),
-        ),
       ),
     );
 
@@ -504,12 +491,7 @@ void main() {
     final scaffoldKey = GlobalKey<ScaffoldState>();
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ReaderController>.value(value: mockController),
-          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
-        ],
-        child: MaterialApp(
+      MaterialApp(
           theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -521,7 +503,6 @@ void main() {
               brightnessController: brightnessController,
             ),
           ),
-        ),
       ),
     );
 
@@ -568,12 +549,7 @@ void main() {
     final scaffoldKey = GlobalKey<ScaffoldState>();
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ReaderController>.value(value: mockController),
-          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
-        ],
-        child: MaterialApp(
+      MaterialApp(
           theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -585,7 +561,6 @@ void main() {
               brightnessController: brightnessController,
             ),
           ),
-        ),
       ),
     );
 
@@ -620,12 +595,7 @@ void main() {
     final scaffoldKey = GlobalKey<ScaffoldState>();
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ReaderController>.value(value: mockController),
-          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
-        ],
-        child: MaterialApp(
+      MaterialApp(
           theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -637,7 +607,6 @@ void main() {
               brightnessController: brightnessController,
             ),
           ),
-        ),
       ),
     );
 
@@ -692,12 +661,7 @@ void main() {
     final scaffoldKey = GlobalKey<ScaffoldState>();
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ReaderController>.value(value: mockController),
-          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
-        ],
-        child: MaterialApp(
+      MaterialApp(
           theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -709,7 +673,6 @@ void main() {
               brightnessController: brightnessController,
             ),
           ),
-        ),
       ),
     );
 
@@ -741,12 +704,7 @@ void main() {
     final scaffoldKey = GlobalKey<ScaffoldState>();
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ReaderController>.value(value: mockController),
-          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
-        ],
-        child: MaterialApp(
+      MaterialApp(
           theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -758,7 +716,6 @@ void main() {
               brightnessController: brightnessController,
             ),
           ),
-        ),
       ),
     );
 
@@ -795,12 +752,7 @@ void main() {
     final scaffoldKey = GlobalKey<ScaffoldState>();
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ReaderController>.value(value: mockController),
-          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
-        ],
-        child: MaterialApp(
+      MaterialApp(
           theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -812,7 +764,6 @@ void main() {
               brightnessController: brightnessController,
             ),
           ),
-        ),
       ),
     );
 
@@ -840,12 +791,7 @@ void main() {
     final scaffoldKey = GlobalKey<ScaffoldState>();
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ReaderController>.value(value: mockController),
-          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
-        ],
-        child: MaterialApp(
+      MaterialApp(
           theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -877,7 +823,6 @@ void main() {
               },
             ),
           ),
-        ),
       ),
     );
 
@@ -909,12 +854,7 @@ void main() {
     final scaffoldKey = GlobalKey<ScaffoldState>();
 
     await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ReaderController>.value(value: mockController),
-          ChangeNotifierProvider<ThemeManager>.value(value: mockThemeManager),
-        ],
-        child: MaterialApp(
+      MaterialApp(
           theme: mockThemeManager.currentThemeData,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -926,7 +866,6 @@ void main() {
               brightnessController: brightnessController,
             ),
           ),
-        ),
       ),
     );
 

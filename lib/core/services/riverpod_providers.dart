@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'feature_manager.dart';
 import 'language_manager.dart';
 import 'database_service.dart';
+import 'bookshelf_preferences_service.dart';
 import 'reader_preferences_service.dart';
 import 'reading_reminder_service.dart';
 import 'service_locator.dart';
@@ -35,4 +36,8 @@ final readingReminderRpProvider = Provider<ReadingReminderService>((ref) {
 
 final databaseServiceRpProvider = Provider<DatabaseService>((ref) {
   return getIt<DatabaseService>();
+});
+
+final bookshelfPreferencesRpProvider = Provider<BookshelfPreferencesService>((ref) {
+  return getIt<BookshelfPreferencesService>();
 });

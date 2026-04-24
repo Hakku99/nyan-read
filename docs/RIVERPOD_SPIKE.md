@@ -23,7 +23,7 @@ Introduce Riverpod without breaking the existing `provider + get_it` runtime.
 - Migrated `admin_panel.dart` and `home_screen.dart` FeatureManager access:
   - replaced `context.read/watch<FeatureManager>()` with `ref.read(...)`
   - used `ListenableBuilder` on `FeatureManager` to preserve reactive rebuilds
-  - kept `BookshelfViewModel` on existing Provider path (intentionally unchanged)
+  - `BookshelfViewModel` was kept on Provider path at this stage (later migrated)
 - Migrated `reader_page.dart` host layer to Riverpod bridge providers:
   - `ReaderPage` is now a `ConsumerStatefulWidget`
   - `DatabaseService` and `ReaderPreferencesService` are resolved via Riverpod
@@ -54,6 +54,21 @@ Introduce Riverpod without breaking the existing `provider + get_it` runtime.
   - removed final `ChangeNotifierProvider<ReaderController>.value` wrapper from
     `reader_page.dart` root build path
   - reader page + menu analysis/tests remain green
+- Bookshelf module migrated to Riverpod host pattern:
+  - removed `ChangeNotifierProvider`, `Selector`, and `context.read/watch/select`
+    usage from `home_screen.dart`
+  - added `bookshelf_view_model_provider.dart` with auto-dispose provider for
+    `BookshelfViewModel`
+  - feature/view-model/preferences/database dependencies now resolve through
+    Riverpod bridge providers
+- App shell `MultiProvider` removed:
+  - `main.dart` no longer wraps `NyanApp` with `MultiProvider`
+  - app bootstrap now runs on `ProviderScope` only
+  - all runtime reads for app shell/services resolve through Riverpod bridge providers
+- Final closure:
+  - removed `provider` dependency from `pubspec.yaml`
+  - migrated `test/reader_menu_test.dart` away from Provider wrappers
+  - runtime codebase no longer imports `package:provider/provider.dart`
 
 ## Why this shape
 
@@ -63,6 +78,6 @@ Introduce Riverpod without breaking the existing `provider + get_it` runtime.
 
 ## Next migration steps
 
-1. Add a Riverpod-backed `BookshelfViewModel` spike while preserving old Provider path.
-2. Start deleting now-unused `provider` package usage module-by-module (bookshelf first).
-3. Remove legacy `MultiProvider` only after all entry pages are migrated.
+1. Run full regression on route entry points after app-shell de-providerization.
+2. Triage remaining analyzer info-level debt (mostly async-context lints in bookshelf).
+3. Optionally add Riverpod-focused test utilities to reduce boilerplate in widget tests.

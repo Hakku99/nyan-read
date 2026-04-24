@@ -3,14 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
-import 'package:provider/provider.dart';
-import 'core/services/feature_manager.dart';
-import 'core/services/reader_preferences_service.dart';
-import 'core/services/reading_reminder_service.dart';
 import 'core/services/backup_recovery_service.dart';
 import 'core/services/riverpod_providers.dart';
-import 'core/theme/theme_manager.dart';
-import 'core/services/language_manager.dart';
 
 import 'core/services/service_locator.dart';
 import 'core/router/app_router.dart';
@@ -39,16 +33,7 @@ void main() async {
 
   runApp(
     ProviderScope(
-      child: MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(value: getIt<FeatureManager>()),
-          ChangeNotifierProvider.value(value: getIt<ThemeManager>()),
-          ChangeNotifierProvider.value(value: getIt<LanguageManager>()),
-          ChangeNotifierProvider.value(value: getIt<ReaderPreferencesService>()),
-          ChangeNotifierProvider.value(value: getIt<ReadingReminderService>()),
-        ],
-        child: const NyanApp(),
-      ),
+      child: const NyanApp(),
     ),
   );
 }

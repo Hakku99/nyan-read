@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
@@ -11,9 +10,7 @@ import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../core/services/feature_manager.dart';
 import '../../core/services/riverpod_providers.dart';
-import '../../core/services/database_service.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
-import '../../core/services/service_locator.dart';
 import '../../core/models/book.dart';
 import '../../core/services/mascot_manager.dart';
 import '../../core/theme/nyan_radius.dart';
@@ -34,17 +31,14 @@ import 'widgets/import_book_sheet.dart';
 import 'widgets/bookshelf_shelf_toolbar.dart';
 import 'widgets/segmented_tab_control.dart';
 import 'bookshelf_view_model.dart';
+import 'bookshelf_view_model_provider.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Provide the ViewModel at the highest level of this route
-    return ChangeNotifierProvider(
-      create: (_) => BookshelfViewModel(getIt(), getIt()),
-      child: const _HomeScreenContent(),
-    );
+    return const _HomeScreenContent();
   }
 }
 
@@ -58,12 +52,15 @@ class _HomeScreenContent extends ConsumerStatefulWidget {
 class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  final _prefs = getIt<BookshelfPreferencesService>();
+  late final BookshelfPreferencesService _prefs;
   bool _isHeroCollapsed = false;
+
+  BookshelfViewModel get _vm => ref.read(bookshelfViewModelRpProvider);
 
   @override
   void initState() {
     super.initState();
+    _prefs = ref.read(bookshelfPreferencesRpProvider);
     _tabController = TabController(length: 2, vsync: this);
   }
 
@@ -89,14 +86,12 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   }
 
   Future<void> _deleteSelectedBooks(BuildContext context) async {
-    final pageContext = this.context;
-    final loc = AppLocalizations.of(pageContext)!;
-    final vm = pageContext.read<BookshelfViewModel>();
+    final loc = AppLocalizations.of(context)!;
+    final vm = _vm;
 
     if (vm.selectedCount == 0) return;
 
-    final prefs = getIt<BookshelfPreferencesService>();
-    bool deleteFile = prefs.deleteFilesOnRemove;
+    bool deleteFile = _prefs.deleteFilesOnRemove;
 
     final confirmed = await showNyanConfirmDialog(
       context,
@@ -127,40 +122,36 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       final deletedCount = vm.selectedCount;
       try {
         await vm.deleteSelectedBooks(deleteFile);
-        if (mounted) {
-          SnackBarUtils.show(
-            pageContext,
-            loc.deletedBooks(deletedCount),
-              tone: NyanSnackTone.success,
-          );
-        }
+        if (!context.mounted) return;
+        SnackBarUtils.show(
+          context,
+          loc.deletedBooks(deletedCount),
+          tone: NyanSnackTone.success,
+        );
       } catch (e) {
-        if (mounted) {
-          SnackBarUtils.show(
-            pageContext,
-            'Error deleting books: $e',
-            tone: NyanSnackTone.error,
-          );
-        }
+        if (!context.mounted) return;
+        SnackBarUtils.show(
+          context,
+          'Error deleting books: $e',
+          tone: NyanSnackTone.error,
+        );
       }
     }
   }
 
   Future<void> _moveSelectedBooks(BuildContext context, bool toPrivate) async {
-    final pageContext = this.context;
-    final vm = pageContext.read<BookshelfViewModel>();
+    final vm = _vm;
     if (vm.selectedCount == 0) return;
 
     try {
       await vm.moveSelectedBooks(toPrivate);
     } catch (e) {
-      if (mounted) {
-        SnackBarUtils.show(
-          pageContext,
-          'Error moving books: $e',
-          tone: NyanSnackTone.error,
-        );
-      }
+      if (!context.mounted) return;
+      SnackBarUtils.show(
+        context,
+        'Error moving books: $e',
+        tone: NyanSnackTone.error,
+      );
     }
   }
 
@@ -175,6 +166,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     if (result == null || result.files.isEmpty) {
       return;
     }
+    if (!context.mounted) return;
 
     var progressVisible = false;
     try {
@@ -186,7 +178,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       );
       progressVisible = true;
 
-      final db = getIt<DatabaseService>();
+      final db = ref.read(databaseServiceRpProvider);
       final existingIndex = await BookImportFingerprint.buildExistingIndex(db);
 
       final featureManager = ref.read(featureManagerRpProvider);
@@ -251,37 +243,35 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
       await _cleanupPickerTempFiles();
 
-      if (context.mounted && progressVisible) {
+      if (!context.mounted) return;
+      if (progressVisible) {
         Navigator.of(context, rootNavigator: true).pop();
         progressVisible = false;
       }
 
-      if (mounted) {
-        final shelfLabel = isPrivate ? loc.privateShelf : loc.publicShelf;
+      final shelfLabel = isPrivate ? loc.privateShelf : loc.publicShelf;
+      if (successCount > 0) {
+        SnackBarUtils.show(
+          context,
+          loc.importedBooks(successCount, shelfLabel),
+          tone: NyanSnackTone.success,
+        );
+      } else if (skippedCount > 0) {
+        SnackBarUtils.show(
+          context,
+          loc.duplicatesSkipped(skippedCount),
+          tone: NyanSnackTone.info,
+        );
+      }
 
-        if (successCount > 0) {
-          SnackBarUtils.show(
-            context,
-            loc.importedBooks(successCount, shelfLabel),
-            tone: NyanSnackTone.success,
-          );
-        } else if (skippedCount > 0) {
-          SnackBarUtils.show(
-            context,
-            loc.duplicatesSkipped(skippedCount),
-            tone: NyanSnackTone.info,
-          );
-        }
-
-        if (successCount > 0) {
-          context.read<BookshelfViewModel>().loadBooks();
-        }
+      if (successCount > 0) {
+        _vm.loadBooks();
       }
     } catch (e) {
       if (context.mounted && progressVisible) {
         Navigator.of(context, rootNavigator: true).pop();
       }
-      if (mounted) {
+      if (context.mounted) {
         SnackBarUtils.show(
           context,
           loc.importFailed(e.toString()),
@@ -335,7 +325,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     try {
       await FilePicker.platform.clearTemporaryFiles();
     } catch (e) {
-      debugPrint('Failed to clear file picker temporary files: ' + e.toString());
+      debugPrint('Failed to clear file picker temporary files: $e');
     }
   }
 
@@ -343,7 +333,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   void _showImportMenu(BuildContext context) {
     final parentContext = context;
     final featureManager = ref.read(featureManagerRpProvider);
-    final vm = context.read<BookshelfViewModel>();
+    final vm = _vm;
     final showPrivacyTab =
         featureManager.isPro && featureManager.isPrivateShelfUnlocked;
     final isPrivateShelf = showPrivacyTab && _tabController.index == 1;
@@ -397,7 +387,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     await _prefs.setSort(selected.sortBy, selected.isAscending);
     if (!context.mounted) return;
 
-    context.read<BookshelfViewModel>().loadBooks();
+    _vm.loadBooks();
   }
 
   Future<void> _handlePrivacyLock(BuildContext context) async {
@@ -507,10 +497,11 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   ) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(kToolbarHeight),
-      child: Selector<BookshelfViewModel, int>(
-        selector: (_, vm) => vm.selectedCount,
-        builder: (context, selectedCount, _) {
-          final vm = context.read<BookshelfViewModel>();
+      child: ListenableBuilder(
+        listenable: _vm,
+        builder: (context, _) {
+          final vm = _vm;
+          final selectedCount = vm.selectedCount;
           final theme = Theme.of(context);
           final textTheme = theme.textTheme;
 
@@ -563,8 +554,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                   onPressed: () async {
                     final bookId = vm.selectedBookIds.first;
                     final bookData =
-                        await getIt<DatabaseService>().getBookById(bookId);
-                    if (bookData != null && mounted) {
+                        await ref.read(databaseServiceRpProvider).getBookById(bookId);
+                    if (bookData != null && context.mounted) {
                       final book = Book.fromMap(bookData);
                       Navigator.push(
                         context,
@@ -649,7 +640,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       onContinue: () {
         context.push('/reader/${continueReadingBook.id}').then((_) {
           if (mounted) {
-            context.read<BookshelfViewModel>().loadBooks();
+            _vm.loadBooks();
           }
         });
       },
@@ -781,12 +772,12 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
   @override
   Widget build(BuildContext context) {
+    final vm = ref.watch(bookshelfViewModelRpProvider);
     final featureManager = ref.read(featureManagerRpProvider);
     return ListenableBuilder(
-      listenable: featureManager,
+      listenable: Listenable.merge([featureManager, vm]),
       builder: (context, _) {
-        final isSelectionMode =
-            context.select<BookshelfViewModel, bool>((vm) => vm.isSelectionMode);
+        final isSelectionMode = vm.isSelectionMode;
 
         // Logic: Only show Privacy Tab if Pro AND Unlocked
         final showPrivacyTab =
@@ -805,34 +796,18 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                 NyanShelfUi.bookshelfPageHorizontalPadding,
                 0,
               ),
-              child: Selector<
-                  BookshelfViewModel,
-                  ({bool isLoading, List<Book> pub, List<Book> priv})>(
-                selector: (_, vm) => (
-                  isLoading: vm.isLoading,
-                  pub: vm.publicBooks,
-                  priv: vm.privateBooks,
-                ),
-                builder: (context, state, child) {
-                  if (state.isLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  final activeBooks =
-                      showPrivacyTab && selectedTabIndex == 1
-                          ? state.priv
-                          : state.pub;
-
-                  return _buildLibrarySurface(
-                    context,
-                    featureManager: featureManager,
-                    showPrivacyTab: showPrivacyTab,
-                    activeBooks: activeBooks,
-                    showHeaderSections: !isSelectionMode,
-                    isSelectionMode: isSelectionMode,
-                  );
-                },
-              ),
+              child: vm.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _buildLibrarySurface(
+                      context,
+                      featureManager: featureManager,
+                      showPrivacyTab: showPrivacyTab,
+                      activeBooks: showPrivacyTab && selectedTabIndex == 1
+                          ? vm.privateBooks
+                          : vm.publicBooks,
+                      showHeaderSections: !isSelectionMode,
+                      isSelectionMode: isSelectionMode,
+                    ),
             ),
           ),
           floatingActionButton: isSelectionMode
@@ -1002,26 +977,25 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   }
 
   Widget _buildGridBookTile(BuildContext context, Book book) {
-    return Selector<BookshelfViewModel, ({bool isSelectionMode, bool isSelected})>(
-      selector: (_, vm) => (
-        isSelectionMode: vm.isSelectionMode,
-        isSelected: vm.isBookSelected(book.id),
-      ),
-      builder: (context, state, child) {
-        final vm = context.read<BookshelfViewModel>();
+    return ListenableBuilder(
+      listenable: _vm,
+      builder: (context, _) {
+        final vm = _vm;
+        final isSelectionMode = vm.isSelectionMode;
+        final isSelected = vm.isBookSelected(book.id);
         return NyanBookGridCard(
           book: book,
-          isSelected: state.isSelected,
-          isSelectionMode: state.isSelectionMode,
+          isSelected: isSelected,
+          isSelectionMode: isSelectionMode,
           onTap: () {
-            if (state.isSelectionMode) {
+            if (isSelectionMode) {
               vm.toggleBookSelection(book.id);
             } else {
               context.push('/reader/${book.id}').then((_) => vm.loadBooks());
             }
           },
           onLongPress: () {
-            if (state.isSelectionMode) {
+            if (isSelectionMode) {
               vm.toggleBookSelection(book.id);
             } else {
               vm.toggleSelectionMode(active: true, initialBookId: book.id);
@@ -1094,27 +1068,26 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   }
 
   Widget _buildListBookTile(BuildContext context, Book book) {
-    return Selector<BookshelfViewModel, ({bool isSelectionMode, bool isSelected})>(
-      selector: (_, vm) => (
-        isSelectionMode: vm.isSelectionMode,
-        isSelected: vm.isBookSelected(book.id),
-      ),
-      builder: (context, state, child) {
-        final vm = context.read<BookshelfViewModel>();
+    return ListenableBuilder(
+      listenable: _vm,
+      builder: (context, _) {
+        final vm = _vm;
+        final isSelectionMode = vm.isSelectionMode;
+        final isSelected = vm.isBookSelected(book.id);
         return NyanBookCard(
           book: book,
           bookData: book.toMap(),
-          isSelected: state.isSelected,
-          isSelectionMode: state.isSelectionMode,
+          isSelected: isSelected,
+          isSelectionMode: isSelectionMode,
           onTap: () {
-            if (state.isSelectionMode) {
+            if (isSelectionMode) {
               vm.toggleBookSelection(book.id);
             } else {
               context.push('/reader/${book.id}').then((_) => vm.loadBooks());
             }
           },
           onLongPress: () {
-            if (state.isSelectionMode) {
+            if (isSelectionMode) {
               vm.toggleBookSelection(book.id);
             } else {
               vm.toggleSelectionMode(active: true, initialBookId: book.id);
