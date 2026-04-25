@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:fast_gbk/fast_gbk.dart';
 import 'package:flutter/foundation.dart';
@@ -111,6 +111,91 @@ String _decodeBytesForParse(Uint8List bytes) {
       return latin1.decode(bytes);
     }
   }
+}
+
+class TxtInlineImageTag {
+  const TxtInlineImageTag({
+    required this.src,
+    this.alt,
+  });
+
+  final String src;
+  final String? alt;
+}
+
+final RegExp _standaloneImgTagPattern = RegExp(
+  r'^<img\b[^>]*>$',
+  caseSensitive: false,
+);
+final RegExp _imgSrcPattern = RegExp(
+  r'''src\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))''',
+  caseSensitive: false,
+);
+final RegExp _imgAltPattern = RegExp(
+  r'''alt\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))''',
+  caseSensitive: false,
+);
+
+String? _firstNonNullGroup(RegExpMatch match) {
+  for (int i = 1; i <= match.groupCount; i++) {
+    final value = match.group(i);
+    if (value != null && value.isNotEmpty) {
+      return value;
+    }
+  }
+  return null;
+}
+
+@visibleForTesting
+TxtInlineImageTag? tryParseTxtStandaloneImgTag(String line) {
+  final normalized = line.trim();
+  if (!_standaloneImgTagPattern.hasMatch(normalized)) {
+    return null;
+  }
+  final srcMatch = _imgSrcPattern.firstMatch(normalized);
+  final src = srcMatch == null ? null : _firstNonNullGroup(srcMatch);
+  if (src == null || src.isEmpty) {
+    return null;
+  }
+  final altMatch = _imgAltPattern.firstMatch(normalized);
+  final alt = altMatch == null ? null : _firstNonNullGroup(altMatch);
+  return TxtInlineImageTag(src: src, alt: alt);
+}
+
+bool _looksLikeWindowsAbsolutePath(String src) {
+  return RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(src);
+}
+
+@visibleForTesting
+Uri? resolveTxtImageSourceUri({
+  required Book book,
+  required String rawSrc,
+}) {
+  final src = rawSrc.trim();
+  if (src.isEmpty) return null;
+
+  if (_looksLikeWindowsAbsolutePath(src)) {
+    return File(src).uri;
+  }
+
+  Uri? parsed;
+  try {
+    parsed = Uri.parse(src);
+  } catch (_) {
+    parsed = null;
+  }
+
+  if (parsed != null && parsed.hasScheme) {
+    return parsed;
+  }
+
+  if (book.sourceType != BookSourceType.filePath || book.sourceLocator.isEmpty) {
+    return null;
+  }
+
+  final baseFile = File(book.sourceLocator);
+  final parentDir = baseFile.parent;
+  return parentDir.uri.resolve(src);
 }
 
 // The following helpers are intentionally top-level statics so they can
@@ -574,6 +659,17 @@ class TxtReaderEngine
           return SizedBox(height: bottomMargin);
         }
 
+        final imageTag = tryParseTxtStandaloneImgTag(line);
+        if (imageTag != null) {
+          return _buildInlineImageBlock(
+            context: context,
+            imageTag: imageTag,
+            config: config,
+            padding: itemPadding,
+            bottomMargin: bottomMargin,
+          );
+        }
+
         return HighlightableText(
           text: line,
           paragraphIndex: index,
@@ -593,6 +689,123 @@ class TxtReaderEngine
           onTap: onContentTap,
         );
       },
+    );
+  }
+
+  Widget _buildInlineImageBlock({
+    required BuildContext context,
+    required TxtInlineImageTag imageTag,
+    required ReaderConfig config,
+    required EdgeInsets padding,
+    required double bottomMargin,
+  }) {
+    final sourceUri = resolveTxtImageSourceUri(book: book, rawSrc: imageTag.src);
+    final placeholderText =
+        (imageTag.alt != null && imageTag.alt!.trim().isNotEmpty)
+            ? imageTag.alt!.trim()
+            : 'Image';
+
+    Widget body;
+    if (sourceUri == null) {
+      body = _buildImageFallback(
+        text: '[$placeholderText unavailable]',
+        config: config,
+      );
+    } else {
+      body = _buildImageByUri(
+        context: context,
+        sourceUri: sourceUri,
+        config: config,
+        fallbackAlt: placeholderText,
+      );
+    }
+
+    return Padding(
+      padding: padding.copyWith(bottom: padding.bottom + bottomMargin),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapUp: (details) => onContentTap?.call(details.globalPosition),
+        child: body,
+      ),
+    );
+  }
+
+  Widget _buildImageByUri({
+    required BuildContext context,
+    required Uri sourceUri,
+    required ReaderConfig config,
+    required String fallbackAlt,
+  }) {
+    ImageProvider<Object>? provider;
+    if (sourceUri.scheme == 'http' || sourceUri.scheme == 'https') {
+      provider = NetworkImage(sourceUri.toString());
+    } else if (sourceUri.scheme == 'file' || sourceUri.scheme.isEmpty) {
+      provider = FileImage(File.fromUri(sourceUri));
+    } else if (sourceUri.scheme == 'data') {
+      try {
+        final uriData = UriData.parse(sourceUri.toString());
+        final bytes = uriData.contentAsBytes();
+        if (bytes.isNotEmpty) {
+          provider = MemoryImage(bytes);
+        }
+      } on FormatException {
+        provider = null;
+      }
+    }
+
+    if (provider == null) {
+      return _buildImageFallback(
+        text: '[$fallbackAlt unsupported source]',
+        config: config,
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: 80,
+          maxHeight: 360,
+          minWidth: double.infinity,
+        ),
+        child: Image(
+          image: provider,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildImageFallback(
+              text: '[$fallbackAlt load failed]',
+              config: config,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageFallback({
+    required String text,
+    required ReaderConfig config,
+  }) {
+    return Container(
+      alignment: Alignment.center,
+      constraints: const BoxConstraints(minHeight: 80),
+      decoration: BoxDecoration(
+        color: config.backgroundColor,
+        border: Border.all(color: config.textColor.withValues(alpha: 0.25)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: config.textColor.withValues(alpha: 0.7),
+            fontSize: 12,
+            height: 1.4,
+          ),
+        ),
+      ),
     );
   }
 
