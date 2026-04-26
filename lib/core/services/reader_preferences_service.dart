@@ -67,6 +67,10 @@ class ReaderPreferencesService extends ChangeNotifier {
   double _minPhysicalBrightness = 0.10; // User preferred hardware floor
   double _followSystemOffset = 0.0; // +/- offset from system brightness
 
+  /// When false, the left-edge vertical drag gesture to adjust brightness is
+  /// ignored (reduces accidental drags while still allowing sheet controls).
+  bool _edgeBrightnessGestureEnabled = true;
+
   // Coalesced-write state.  Keyed by SharedPreferences key so that a second
   // write to the same key supersedes the first (no write amplification).
   final Map<String, _PendingPrefWrite> _pendingWrites = {};
@@ -84,6 +88,8 @@ class ReaderPreferencesService extends ChangeNotifier {
   double get warmth => _warmth;
   double get minPhysicalBrightness => _minPhysicalBrightness;
   double get followSystemOffset => _followSystemOffset;
+
+  bool get edgeBrightnessGestureEnabled => _edgeBrightnessGestureEnabled;
 
   /// Returns the gamma-corrected brightness value (0.0 - 1.0)
   /// Input: Linear slider value (0.0 - 1.0)
@@ -127,6 +133,8 @@ class ReaderPreferencesService extends ChangeNotifier {
         _prefs?.getDouble('reader_min_physical_brightness') ?? 0.10;
     _followSystemOffset =
         _prefs?.getDouble('reader_follow_system_offset') ?? 0.0;
+    _edgeBrightnessGestureEnabled =
+        _prefs?.getBool('reader_edge_brightness_gesture_enabled') ?? true;
   }
 
   // 设置翻页方式
@@ -207,6 +215,14 @@ class ReaderPreferencesService extends ChangeNotifier {
     if (_followSystemOffset == offset) return;
     _followSystemOffset = offset;
     _schedulePrefWrite('reader_follow_system_offset', offset);
+    notifyListeners();
+  }
+
+  /// Enables or disables the in-reader left-edge vertical brightness gesture.
+  Future<void> setEdgeBrightnessGestureEnabled(bool value) async {
+    if (_edgeBrightnessGestureEnabled == value) return;
+    _edgeBrightnessGestureEnabled = value;
+    _schedulePrefWrite('reader_edge_brightness_gesture_enabled', value);
     notifyListeners();
   }
 

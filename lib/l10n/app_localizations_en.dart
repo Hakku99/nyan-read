@@ -21,6 +21,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readingSettings => 'Reading Settings';
 
   @override
+  String get readerQuickProgressSubtitle => 'Chapter seek and position';
+
+  @override
+  String get readerQuickToolsSubtitle => 'Bookmarks, notes, and full settings';
+
+  @override
+  String get readerQuickOpenFullSettings => 'All settings';
+
+  @override
+  String get readerMenuBackToQuick => 'Quick';
+
+  @override
+  String get readerEdgeBrightnessOn => 'Left edge brightness: on';
+
+  @override
+  String get readerEdgeBrightnessOff => 'Left edge brightness: off';
+
+  @override
   String get pageTurnMode => 'Page Turn Mode';
 
   @override

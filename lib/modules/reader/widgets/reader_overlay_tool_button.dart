@@ -38,19 +38,19 @@ class ReaderOverlayToolButton extends StatelessWidget {
                 : NyanOverlayStyle.recessedSurface(
                     context,
                     seed: theme.colorScheme.primary,
-                    strength: 0.02,
+                    strength: 0.012,
                   ),
             borderRadius: BorderRadius.circular(NyanRadius.input),
             border: Border.all(
               color: isAccent
                   ? theme.colorScheme.primary.withValues(alpha: 0.18)
-                  : Colors.transparent,
+                  : theme.dividerColor.withValues(alpha: 0.14),
               width: 0.72,
             ),
           ),
           child: Icon(
             icon,
-            size: 21,
+            size: 20,
             color: theme.colorScheme.primary,
           ),
         ),

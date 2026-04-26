@@ -122,6 +122,42 @@ abstract class AppLocalizations {
   /// **'Reading Settings'**
   String get readingSettings;
 
+  /// No description provided for @readerQuickProgressSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapter seek and position'**
+  String get readerQuickProgressSubtitle;
+
+  /// No description provided for @readerQuickToolsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmarks, notes, and full settings'**
+  String get readerQuickToolsSubtitle;
+
+  /// No description provided for @readerQuickOpenFullSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'All settings'**
+  String get readerQuickOpenFullSettings;
+
+  /// No description provided for @readerMenuBackToQuick.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick'**
+  String get readerMenuBackToQuick;
+
+  /// No description provided for @readerEdgeBrightnessOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Left edge brightness: on'**
+  String get readerEdgeBrightnessOn;
+
+  /// No description provided for @readerEdgeBrightnessOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Left edge brightness: off'**
+  String get readerEdgeBrightnessOff;
+
   /// No description provided for @pageTurnMode.
   ///
   /// In en, this message translates to:

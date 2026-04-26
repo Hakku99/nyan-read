@@ -24,12 +24,23 @@ class ReaderMenu extends StatefulWidget {
     required this.scaffoldKey,
     required this.brightnessController,
     this.scrollController,
+    this.onBackToQuickPanel,
+    this.showSheetChrome = true,
+    this.showHeader = true,
+    this.bottomInsetOverride,
   });
 
   final ReaderController controller;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final BrightnessController brightnessController;
   final ScrollController? scrollController;
+
+  /// When set (e.g. L2 opened on top of L1), shows a back control that pops
+  /// this sheet and returns to the quick panel.
+  final VoidCallback? onBackToQuickPanel;
+  final bool showSheetChrome;
+  final bool showHeader;
+  final double? bottomInsetOverride;
 
   @override
   State<ReaderMenu> createState() => _ReaderMenuState();
@@ -63,34 +74,30 @@ class _ReaderMenuState extends State<ReaderMenu> {
       _selectedSection = sections.first;
     }
 
-    return SafeArea(
-      top: false,
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        heightFactor: 1.0,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 680),
-          child: Container(
-            decoration: BoxDecoration(
-              color: theme.bottomSheetTheme.backgroundColor ?? theme.cardColor,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(NyanRadius.sheet),
-              ),
-              boxShadow: NyanOverlayStyle.dialogShadow(context),
-            ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
+    Widget body = LayoutBuilder(
+      builder: (context, constraints) {
                 final compactLayout = constraints.maxHeight < 620;
-                final allowScrollFallback =
-                    constraints.maxHeight < 540 ||
+                final allowScrollFallback = constraints.maxHeight < 540 ||
                     MediaQuery.textScalerOf(context).scale(1) > 1.12;
                 final sectionGap =
                     compactLayout ? NyanSpacing.space8 : NyanSpacing.space12;
+                final headerBottomGap =
+                    compactLayout ? NyanSpacing.space8 : NyanSpacing.space12;
+                // Embedded: one small tail gap only (matches quick body + shell);
+                // system inset is from the parent SafeArea, not double-stacked here.
                 final contentPadding = EdgeInsets.fromLTRB(
                   NyanSpacing.space20,
-                  compactLayout ? NyanSpacing.space12 : NyanSpacing.space16,
+                  widget.showHeader
+                      ? (compactLayout
+                          ? NyanSpacing.space12
+                          : NyanSpacing.space16)
+                      : 0,
                   NyanSpacing.space20,
-                  NyanSpacing.space8 + MediaQuery.of(context).padding.bottom,
+                  !widget.showHeader
+                      ? 0.0
+                      : (NyanSpacing.space8 +
+                          (widget.bottomInsetOverride ??
+                              MediaQuery.of(context).padding.bottom)),
                 );
                 final resetSection = _ReaderSettingsResetSection(
                   label: _resetLabelForSection(
@@ -113,33 +120,48 @@ class _ReaderMenuState extends State<ReaderMenu> {
                     }
                   },
                 );
+                Future<void> resetAllAction() async {
+                  HapticFeedback.lightImpact();
+                  await controller.resetReaderAppearanceDefaults();
+                }
+                final actionsRow = _ReaderSettingsActionsRow(
+                  resetCurrentTabLabel: _resetLabelForSection(
+                    context,
+                    loc,
+                    _selectedSection,
+                  ),
+                  resetAllLabel: loc.readerResetAll,
+                  onResetCurrentTab: resetSection.onResetCurrentTab,
+                  onResetAll: resetAllAction,
+                );
 
                 Widget buildHeaderAndPanel() {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: NyanSpacing.space4,
-                          decoration: BoxDecoration(
-                            color: theme.dividerColor.withValues(alpha: 0.44),
-                            borderRadius:
-                                BorderRadius.circular(NyanRadius.small),
+                      if (widget.showHeader) ...[
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: NyanSpacing.space4,
+                            decoration: BoxDecoration(
+                              color: theme.dividerColor.withValues(alpha: 0.44),
+                              borderRadius:
+                                  BorderRadius.circular(NyanRadius.small),
+                            ),
                           ),
                         ),
-                      ),
-                      SizedBox(height: sectionGap),
-                      _ReaderMenuHeader(
-                        title: loc.readingSettings,
-                        resetAllLabel: loc.readerResetAll,
-                        onResetAll: () async {
-                          HapticFeedback.lightImpact();
-                          await controller.resetReaderAppearanceDefaults();
-                        },
-                      ),
-                      if (sections.length > 1) ...[
                         SizedBox(height: sectionGap),
+                        _ReaderMenuHeader(
+                          title: loc.readingSettings,
+                          quickModeTooltip: loc.readerMenuBackToQuick,
+                          fullModeTooltip: loc.readingSettings,
+                          onOpenQuickMode: widget.onBackToQuickPanel,
+                          onBackToQuickPanel: widget.onBackToQuickPanel,
+                        ),
+                        SizedBox(height: headerBottomGap),
+                      ],
+                      if (sections.length > 1) ...[
                         SegmentedTabControl(
                           tabs: [
                             for (final section in sections)
@@ -157,14 +179,24 @@ class _ReaderMenuState extends State<ReaderMenu> {
                               NyanOverlayStyle.recessedSurface(context),
                           labelLineHeight: 1.15,
                         ),
+                        SizedBox(height: sectionGap),
                       ],
-                      SizedBox(height: sectionGap),
-                      _buildSelectedPanel(
-                        context,
-                        controller,
-                        capabilities,
-                        loc,
-                        denseLayout: compactLayout,
+                      ClipRect(
+                        child: AnimatedSize(
+                          duration: const Duration(milliseconds: 240),
+                          curve: Curves.easeInOutCubic,
+                          alignment: Alignment.topCenter,
+                          child: ListenableBuilder(
+                            listenable: controller,
+                            builder: (context, _) => _buildSelectedPanel(
+                              context,
+                              controller,
+                              capabilities,
+                              loc,
+                              denseLayout: compactLayout,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   );
@@ -179,7 +211,7 @@ class _ReaderMenuState extends State<ReaderMenu> {
                       children: [
                         buildHeaderAndPanel(),
                         const SizedBox(height: NyanSpacing.space8),
-                        resetSection,
+                        actionsRow,
                       ],
                     ),
                   );
@@ -193,12 +225,33 @@ class _ReaderMenuState extends State<ReaderMenu> {
                     children: [
                       buildHeaderAndPanel(),
                       const SizedBox(height: NyanSpacing.space8),
-                      resetSection,
+                      actionsRow,
                     ],
                   ),
                 );
-              },
+      },
+    );
+
+    if (!widget.showSheetChrome) {
+      return body;
+    }
+
+    return SafeArea(
+      top: false,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        heightFactor: 1.0,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: Container(
+            decoration: BoxDecoration(
+              color: theme.bottomSheetTheme.backgroundColor ?? theme.cardColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(NyanRadius.sheet),
+              ),
+              boxShadow: NyanOverlayStyle.dialogShadow(context),
             ),
+            child: body,
           ),
         ),
       ),
@@ -224,13 +277,9 @@ class _ReaderMenuState extends State<ReaderMenu> {
     };
   }
 
-  Widget _buildSelectedPanel(
-    BuildContext context,
-    ReaderController controller,
-    ReaderCapabilities capabilities,
-    AppLocalizations loc,
-    {required bool denseLayout}
-  ) {
+  Widget _buildSelectedPanel(BuildContext context, ReaderController controller,
+      ReaderCapabilities capabilities, AppLocalizations loc,
+      {required bool denseLayout}) {
     switch (_selectedSection) {
       case _ReaderMenuSection.display:
         return ReaderSettingsDisplayPanel(
@@ -282,71 +331,158 @@ Future<void> _confirmResetAllFromHeader(
 class _ReaderMenuHeader extends StatelessWidget {
   const _ReaderMenuHeader({
     required this.title,
-    required this.resetAllLabel,
-    required this.onResetAll,
+    required this.quickModeTooltip,
+    required this.fullModeTooltip,
+    required this.onOpenQuickMode,
+    this.onBackToQuickPanel,
   });
 
   final String title;
-  final String resetAllLabel;
-  final Future<void> Function() onResetAll;
+  final String quickModeTooltip;
+  final String fullModeTooltip;
+  final VoidCallback? onOpenQuickMode;
+  final VoidCallback? onBackToQuickPanel;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final titleStyle = theme.textTheme.titleSmall?.copyWith(
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w600,
       fontSize: 16,
       letterSpacing: -0.08,
       height: 1.2,
       color: theme.colorScheme.onSurface.withValues(alpha: 0.92),
     );
 
+    return SizedBox(
+      height: NyanSpacing.minTapTarget,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: NyanSpacing.space4 / 2),
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: titleStyle,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: NyanSpacing.space8),
+          Container(
+            decoration: BoxDecoration(
+              color: NyanOverlayStyle.recessedSurface(context, strength: 0.02),
+              borderRadius: BorderRadius.circular(NyanRadius.input),
+              border: Border.all(
+                color: theme.dividerColor.withValues(alpha: 0.16),
+                width: 0.8,
+              ),
+            ),
+            child: ReaderLayerModeToggle(
+              quickSelected: onBackToQuickPanel == null,
+              quickTooltip: quickModeTooltip,
+              fullTooltip: fullModeTooltip,
+              onTapQuick: onOpenQuickMode == null
+                  ? null
+                  : () {
+                      HapticFeedback.lightImpact();
+                      onOpenQuickMode!();
+                    },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ReaderLayerModeToggle extends StatelessWidget {
+  const ReaderLayerModeToggle({
+    super.key,
+    required this.quickSelected,
+    required this.quickTooltip,
+    required this.fullTooltip,
+    this.onTapQuick,
+    this.onTapFull,
+  });
+
+  final bool quickSelected;
+  final String? quickTooltip;
+  final String? fullTooltip;
+  final VoidCallback? onTapQuick;
+  final VoidCallback? onTapFull;
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: titleStyle,
-          ),
+        ReaderLayerModeToggleCell(
+          icon: Icons.dashboard_customize_rounded,
+          selected: quickSelected,
+          tooltip: quickTooltip,
+          onTap: onTapQuick,
         ),
-        const SizedBox(width: NyanSpacing.space8),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(
-            onPressed: () => _confirmResetAllFromHeader(
-              context,
-              AppLocalizations.of(context)!,
-              onResetAll,
-            ),
-            icon: Icon(
-              Icons.restart_alt_rounded,
-              size: 18,
-              color: theme.colorScheme.primary,
-            ),
-            label: Text(
-              resetAllLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(
-                horizontal: NyanSpacing.space8,
-                vertical: NyanSpacing.space4,
-              ),
-              minimumSize: const Size(0, NyanSpacing.minTapTarget),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-          ),
+        ReaderLayerModeToggleCell(
+          icon: Icons.tune_rounded,
+          selected: !quickSelected,
+          tooltip: fullTooltip,
+          onTap: onTapFull,
         ),
       ],
     );
+  }
+}
+
+class ReaderLayerModeToggleCell extends StatelessWidget {
+  const ReaderLayerModeToggleCell({
+    super.key,
+    required this.icon,
+    required this.selected,
+    required this.tooltip,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final bool selected;
+  final String? tooltip;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final button = InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(NyanRadius.input),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        width: NyanSpacing.minTapTarget,
+        height: NyanSpacing.minTapTarget,
+        decoration: BoxDecoration(
+          color: selected
+              ? theme.colorScheme.primary.withValues(alpha: 0.14)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(NyanRadius.input),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: selected
+              ? theme.colorScheme.primary
+              : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+        ),
+      ),
+    );
+    if (tooltip == null || tooltip!.isEmpty) {
+      return button;
+    }
+    return Tooltip(message: tooltip!, child: button);
   }
 }
 
@@ -386,27 +522,21 @@ class _ReaderSettingsResetSection extends StatelessWidget {
               children: [
                 Icon(
                   Icons.refresh_rounded,
-                  size: 20,
+                  size: 18,
                   color: theme.colorScheme.primary.withValues(alpha: 0.88),
                 ),
                 const SizedBox(width: NyanSpacing.space8),
                 ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: textMaxWidth),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      height: 1.0,
+                    ),
                   ),
                 ),
               ],
@@ -414,6 +544,84 @@ class _ReaderSettingsResetSection extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _ReaderSettingsActionsRow extends StatelessWidget {
+  const _ReaderSettingsActionsRow({
+    required this.resetCurrentTabLabel,
+    required this.resetAllLabel,
+    required this.onResetCurrentTab,
+    required this.onResetAll,
+  });
+
+  final String resetCurrentTabLabel;
+  final String resetAllLabel;
+  final Future<void> Function() onResetCurrentTab;
+  final Future<void> Function() onResetAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Flexible(
+          child: _ReaderSettingsResetSection(
+            label: resetCurrentTabLabel,
+            onResetCurrentTab: onResetCurrentTab,
+          ),
+        ),
+        const SizedBox(width: NyanSpacing.space4),
+        Flexible(
+          child: Align(
+            alignment: Alignment.center,
+            child: TextButton(
+              onPressed: () async => _confirmResetAllFromHeader(
+                context,
+                loc,
+                onResetAll,
+              ),
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: NyanSpacing.space8,
+                  vertical: NyanSpacing.space8,
+                ),
+                minimumSize: const Size(0, NyanSpacing.minTapTarget),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.restart_alt_rounded,
+                    size: 18,
+                    color: theme.colorScheme.primary.withValues(alpha: 0.88),
+                  ),
+                  const SizedBox(width: NyanSpacing.space8),
+                  Flexible(
+                    child: Text(
+                      resetAllLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.0,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

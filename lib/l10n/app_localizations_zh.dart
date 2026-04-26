@@ -21,6 +21,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readingSettings => '阅读设置';
 
   @override
+  String get readerQuickProgressSubtitle => '章节跳转与阅读位置';
+
+  @override
+  String get readerQuickToolsSubtitle => '书签、笔记与完整设置';
+
+  @override
+  String get readerQuickOpenFullSettings => '全部设置';
+
+  @override
+  String get readerMenuBackToQuick => '快捷';
+
+  @override
+  String get readerEdgeBrightnessOn => '左缘滑动调亮：开';
+
+  @override
+  String get readerEdgeBrightnessOff => '左缘滑动调亮：关';
+
+  @override
   String get pageTurnMode => '翻页模式';
 
   @override

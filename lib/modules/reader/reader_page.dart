@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/book.dart';
 import '../../core/models/highlight.dart';
+import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/riverpod_providers.dart';
 import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_spacing.dart';
@@ -17,6 +18,7 @@ import 'widgets/highlight_note_dialog.dart';
 import 'widgets/reader_menu.dart';
 import 'dart:async';
 import '../../core/ui/components/nyan_overlay_style.dart';
+import '../../core/ui/components/nyan_sheet_card.dart';
 import '../../l10n/app_localizations.dart';
 import 'widgets/reader_chapter_summary.dart';
 import 'widgets/reader_settings/reader_settings_progress_card.dart';
@@ -58,7 +60,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   bool _isPanning = false;
   static const double _swipeThreshold = 10.0;
   static const Duration _tapLogicDedupWindow = Duration(milliseconds: 350);
+  static const Duration _pageTurnMinInterval = Duration(milliseconds: 220);
   DateTime? _lastTapLogicAt;
+  DateTime? _lastPageTurnAt;
+  bool _isPageTurning = false;
   Timer? _chapterSyncDebounce;
 
   @override
@@ -67,8 +72,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     final databaseService = ref.read(databaseServiceRpProvider);
     final readerPreferencesService = ref.read(readerPreferencesRpProvider);
     _bookFuture = databaseService.getBookById(widget.bookId);
-    final brightnessRepository =
-        BrightnessRepository(readerPreferencesService);
+    final brightnessRepository = BrightnessRepository(readerPreferencesService);
     final brightnessOrchestrator = BrightnessOrchestrator(
       repository: brightnessRepository,
       systemAdapter: SystemBrightnessAdapter(),
@@ -111,9 +115,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
         _boundController = controller;
         controller.engine.textCapability?.configureInteractions(
           onTextHighlighted: (paragraphIndex, start, end, text, colorCode) {
-            final paragraphText =
-                controller.engine.textCapability?.getParagraphText(paragraphIndex) ??
-                    '';
+            final paragraphText = controller.engine.textCapability
+                    ?.getParagraphText(paragraphIndex) ??
+                '';
             unawaited(
               controller.addHighlight(
                 paragraphIndex,
@@ -137,446 +141,277 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
         return Builder(
           builder: (context) {
-              return ListenableBuilder(
-                listenable: controller,
-                builder: (context, _) {
-                  final bgColor = controller.backgroundColor;
-                  return PopScope(
-                    canPop: false,
-                    onPopInvokedWithResult: (didPop, result) async {
-                      if (didPop) return;
-                      // Save progress before navigating away
-                      await controller.saveBeforeExit();
-                      await _brightnessController.shutdown();
-                      if (context.mounted) {
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    child: Scaffold(
-                      key: readerPageScaffoldKey,
-                      backgroundColor: bgColor,
-                      resizeToAvoidBottomInset: false,
-                      // The outer `Consumer<ReaderController>` that used to
-                      // wrap BrightnessOverlayWidget here was pure
-                      // rebuild-on-every-notify overhead: nothing at this
-                      // depth actually reads the controller.  Inner Selectors
-                      // below subscribe to exactly the slices they need.
-                      body: BrightnessOverlayWidget(
-                        stateListenable:
-                            _brightnessController.stateListenable,
-                        warmthListenable:
-                            _brightnessController.warmthListenable,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            // 1. Reader body + inline progress % label.
-                            //    Selector on a record so it only rebuilds when
-                            //    (backgroundColor, progress, hasBottomBar)
-                            //    actually change - not on every paragraph
-                            //    sync or manager notify.
-                            Positioned.fill(
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTapDown: (details) =>
-                                    _handleTapDown(context, details),
-                                onTapUp: (details) =>
-                                    _handleTapUp(context, details),
-                                onPanStart: (details) =>
-                                    _handlePanStart(context, details),
-                                onPanUpdate: (details) =>
-                                    _handlePanUpdate(context, details),
-                                onPanEnd: (details) =>
-                                    _handlePanEnd(context, details),
-                                child: ListenableBuilder(
-                                  listenable: controller,
-                                  builder: (context, _) {
-                                    final backgroundColor = controller.backgroundColor;
-                                    final hasBottomBar = controller.engine.hasBottomBar;
-                                    // Controller engine reference itself is
-                                    // stable; we only need it for
-                                    // buildReader() + the scroll callback.
-                                    // Read (not watch) to avoid adding
-                                    // another subscription.
-                                    final isDark =
-                                        backgroundColor.computeLuminance() < 0.5;
-                                    final systemOverlayStyle = isDark
-                                        ? SystemUiOverlayStyle.light.copyWith(
-                                            statusBarColor: Colors.transparent,
-                                            systemNavigationBarColor:
-                                                Colors.transparent,
-                                          )
-                                        : SystemUiOverlayStyle.dark.copyWith(
-                                            statusBarColor: Colors.transparent,
-                                            systemNavigationBarColor:
-                                                Colors.transparent,
-                                          );
+            final readerPrefs = ref.watch(readerPreferencesRpProvider);
+            return ListenableBuilder(
+              listenable: controller,
+              builder: (context, _) {
+                final bgColor = controller.backgroundColor;
+                return PopScope(
+                  canPop: false,
+                  onPopInvokedWithResult: (didPop, result) async {
+                    if (didPop) return;
+                    // Save progress before navigating away
+                    await controller.saveBeforeExit();
+                    await _brightnessController.shutdown();
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: Scaffold(
+                    key: readerPageScaffoldKey,
+                    backgroundColor: bgColor,
+                    resizeToAvoidBottomInset: false,
+                    // The outer `Consumer<ReaderController>` that used to
+                    // wrap BrightnessOverlayWidget here was pure
+                    // rebuild-on-every-notify overhead: nothing at this
+                    // depth actually reads the controller.  Inner Selectors
+                    // below subscribe to exactly the slices they need.
+                    body: BrightnessOverlayWidget(
+                      stateListenable: _brightnessController.stateListenable,
+                      warmthListenable: _brightnessController.warmthListenable,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // 1. Reader body + inline progress % label.
+                          //    Selector on a record so it only rebuilds when
+                          //    (backgroundColor, progress, hasBottomBar)
+                          //    actually change - not on every paragraph
+                          //    sync or manager notify.
+                          Positioned.fill(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTapDown: (details) =>
+                                  _handleTapDown(context, details),
+                              onTapUp: (details) =>
+                                  _handleTapUp(context, details),
+                              onPanStart: (details) =>
+                                  _handlePanStart(context, details),
+                              onPanUpdate: (details) =>
+                                  _handlePanUpdate(context, details),
+                              onPanEnd: (details) =>
+                                  _handlePanEnd(context, details),
+                              child: ListenableBuilder(
+                                listenable: controller,
+                                builder: (context, _) {
+                                  final backgroundColor =
+                                      controller.backgroundColor;
+                                  final hasBottomBar =
+                                      controller.engine.hasBottomBar;
+                                  // Controller engine reference itself is
+                                  // stable; we only need it for
+                                  // buildReader() + the scroll callback.
+                                  // Read (not watch) to avoid adding
+                                  // another subscription.
+                                  final isDark =
+                                      backgroundColor.computeLuminance() < 0.5;
+                                  final systemOverlayStyle = isDark
+                                      ? SystemUiOverlayStyle.light.copyWith(
+                                          statusBarColor: Colors.transparent,
+                                          systemNavigationBarColor:
+                                              Colors.transparent,
+                                        )
+                                      : SystemUiOverlayStyle.dark.copyWith(
+                                          statusBarColor: Colors.transparent,
+                                          systemNavigationBarColor:
+                                              Colors.transparent,
+                                        );
 
-                                    return AnnotatedRegion<
-                                        SystemUiOverlayStyle>(
-                                      value: systemOverlayStyle,
-                                      child: LayoutBuilder(
-                                        builder: (context, constraints) {
-                                          final padding =
-                                              MediaQuery.of(context).padding;
-                                          return Stack(
-                                            children: [
-                                              Padding(
-                                                key: _readerBodyKey,
-                                                padding: EdgeInsets.only(
-                                                  top: padding.top,
-                                                  bottom: padding.bottom,
-                                                ),
-                                                child: NotificationListener<
-                                                    ScrollNotification>(
-                                                  onNotification:
-                                                      (ScrollNotification _) {
-                                                    _scheduleDebouncedChapterSync(
-                                                      controller,
-                                                    );
-                                                    return false;
-                                                  },
-                                                  // RepaintBoundary isolates
-                                                  // the scrolling engine body
-                                                  // from the overlay layers
-                                                  // above it so a scroll
-                                                  // repaint does not dirty
-                                                  // the Scaffold.
-                                                  child: RepaintBoundary(
-                                                    child: controller.engine
-                                                        .buildReader(context),
-                                                  ),
+                                  return AnnotatedRegion<SystemUiOverlayStyle>(
+                                    value: systemOverlayStyle,
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final padding =
+                                            MediaQuery.of(context).padding;
+                                        return Stack(
+                                          children: [
+                                            Padding(
+                                              key: _readerBodyKey,
+                                              padding: EdgeInsets.only(
+                                                top: padding.top,
+                                                bottom: padding.bottom,
+                                              ),
+                                              child: NotificationListener<
+                                                  ScrollNotification>(
+                                                onNotification:
+                                                    (ScrollNotification _) {
+                                                  _scheduleDebouncedChapterSync(
+                                                    controller,
+                                                  );
+                                                  return false;
+                                                },
+                                                // RepaintBoundary isolates
+                                                // the scrolling engine body
+                                                // from the overlay layers
+                                                // above it so a scroll
+                                                // repaint does not dirty
+                                                // the Scaffold.
+                                                child: RepaintBoundary(
+                                                  child: controller.engine
+                                                      .buildReader(context),
                                                 ),
                                               ),
-                                              Positioned(
-                                                left: 16,
-                                                bottom: padding.bottom > 0
-                                                    ? padding.bottom + 4
-                                                    : 16,
-                                                child: Opacity(
-                                                  opacity:
-                                                      (_showControls || hasBottomBar)
-                                                          ? 0
-                                                          : 1,
-                                                  child: ValueListenableBuilder<
-                                                      double>(
-                                                    valueListenable: controller
-                                                        .progressListenable,
-                                                    builder: (context,
-                                                            progress, _) =>
-                                                        Text(
-                                                      "${(progress * 100).toInt()}%",
-                                                      style: TextStyle(
-                                                        fontSize: 10,
-                                                        color: isDark
-                                                            ? Colors.black
-                                                                .withValues(alpha: 0.5)
-                                                            : Colors.white
-                                                                .withValues(alpha: 0.5),
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
+                                            ),
+                                            Positioned(
+                                              left: 16,
+                                              bottom: padding.bottom > 0
+                                                  ? padding.bottom + 4
+                                                  : 16,
+                                              child: Opacity(
+                                                opacity: (_showControls ||
+                                                        hasBottomBar)
+                                                    ? 0
+                                                    : 1,
+                                                child: ValueListenableBuilder<
+                                                    double>(
+                                                  valueListenable: controller
+                                                      .progressListenable,
+                                                  builder:
+                                                      (context, progress, _) =>
+                                                          Text(
+                                                    "${(progress * 100).toInt()}%",
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      color: isDark
+                                                          ? Colors.black
+                                                              .withValues(
+                                                                  alpha: 0.5)
+                                                          : Colors.white
+                                                              .withValues(
+                                                                  alpha: 0.5),
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
                                               ),
-                                            ],
-                                          );
-                                        },
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-
-                            // 2. Error View
-                            ListenableBuilder(
-                              listenable: controller,
-                              builder: (context, _) {
-                                final errorState = controller.errorState;
-                                if (errorState == null) {
-                                  return const SizedBox.shrink();
-                                }
-                                // Wrap in Positioned.fill to ensure it has size in the Stack
-                                return Positioned.fill(
-                                  child: Container(
-                                    color: Theme.of(context)
-                                        .scaffoldBackgroundColor,
-                                    child: ReaderErrorView(
-                                      errorState: errorState,
-                                      onBack: () => Navigator.pop(context),
-                                      onRetry: controller.retry,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-
-                            // 3. UI Overlays - only ever visible when
-                            //    _showControls is true, but the subtree used
-                            //    to rebuild on every controller notify even
-                            //    while hidden.  Selector on the actual inputs
-                            //    (chapters list length, current chapter
-                            //    index, progress, capabilities) keeps this
-                            //    inert during reading.
-                            Positioned.fill(
-                              // P0-4: when the chrome is collapsed, bail out
-                              // before building anything.  _showControls is
-                              // captured from enclosing StatefulWidget state;
-                              // setState will drive a rebuild when it flips.
-                              child: !_showControls
-                                  ? const SizedBox.shrink()
-                                  : ListenableBuilder(
-                                      listenable: controller,
-                                      builder: (context, _) {
-                                        final theme = Theme.of(context);
-                                        final bottomPadding =
-                                            MediaQuery.of(context).padding.bottom;
-                                        final topPadding =
-                                            MediaQuery.of(context).padding.top;
-
-                                        return Stack(
-                                          children: [
-                                        // Status Bar Helper
-                                        Positioned(
-                                          top: 0,
-                                          left: 0,
-                                          right: 0,
-                                          height: topPadding,
-                                          child: AnimatedOpacity(
-                                            duration: const Duration(
-                                                milliseconds: 200),
-                                            opacity: _showControls ? 1.0 : 0.0,
-                                            child: Container(
-                                                color: theme.colorScheme.surface
-                                                    .withValues(alpha: 0.95)),
-                                          ),
-                                        ),
-                                        Positioned(
-                                          left: 0,
-                                          right: 0,
-                                          bottom: bottomPadding > 0
-                                              ? bottomPadding + 12
-                                              : 18,
-                                          child: IgnorePointer(
-                                            ignoring: !_showControls,
-                                            child: AnimatedOpacity(
-                                              duration: const Duration(
-                                                  milliseconds: 180),
-                                              opacity:
-                                                  _showControls ? 1.0 : 0.0,
-                                              child: Center(
-                                                child: ConstrainedBox(
-                                                  constraints:
-                                                      const BoxConstraints(
-                                                    maxWidth: 680,
-                                                  ),
-                                                  child: LayoutBuilder(
-                                                    builder:
-                                                        (context, constraints) {
-                                                      final availableWidth =
-                                                          constraints.maxWidth;
-                                                      final overlayChromeWidth =
-                                                          _overlayChromeWidth(
-                                                        showChapterNavigation:
-                                                            controller
-                                                                .capabilities
-                                                                .supportsChapterNavigation,
-                                                        showNotes: controller
-                                                                .capabilities
-                                                                .supportsHighlights ||
-                                                            controller
-                                                                .capabilities
-                                                                .supportsAnnotations,
-                                                        availableWidth:
-                                                            availableWidth,
-                                                      );
-                                                      return Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      ReaderSettingsProgressCard(
-                                                        key: const Key(
-                                                            'reader-overlay-progress'),
-                                                        forOverlay: true,
-                                                        overlayWidth:
-                                                            overlayChromeWidth,
-                                                        chapterLabel:
-                                                            readerChapterSummaryLabel(
-                                                          chapters: controller
-                                                              .chapters,
-                                                          currentChapterIndex:
-                                                              controller
-                                                                  .currentChapterIndex,
-                                                          loc: AppLocalizations
-                                                              .of(context)!,
-                                                        ),
-                                                        progressListenable:
-                                                            controller
-                                                                .progressListenable,
-                                                        showChapterNavigation:
-                                                            controller
-                                                                .capabilities
-                                                                .supportsChapterNavigation,
-                                                        onSeek: controller
-                                                            .seekTo,
-                                                        onPreviousChapter:
-                                                            controller
-                                                                .jumpToPreviousChapter,
-                                                        onNextChapter:
-                                                            controller
-                                                                .jumpToNextChapter,
-                                                      ),
-                                                      const SizedBox(
-                                                          height: 10),
-                                                      _ReaderOverlayToolBar(
-                                                          showChapterNavigation:
-                                                              controller
-                                                                  .capabilities
-                                                                  .supportsChapterNavigation,
-                                                          chromeWidth:
-                                                              overlayChromeWidth,
-                                                          showNotes: controller
-                                                                  .capabilities
-                                                                  .supportsHighlights ||
-                                                              controller
-                                                                  .capabilities
-                                                                  .supportsAnnotations,
-                                                          onOpenChapters: () =>
-                                                              unawaited(
-                                                            _openChapterList(
-                                                              context,
-                                                              controller,
-                                                            ),
-                                                          ),
-                                                          onAddBookmark: () =>
-                                                              _addBookmarkFromOverlay(
-                                                            context,
-                                                            controller,
-                                                          ),
-                                                          onOpenBookmarks: () =>
-                                                              _openBookmarksPage(
-                                                            context,
-                                                            controller,
-                                                          ),
-                                                          onOpenNotes: () =>
-                                                              _openNotesPage(
-                                                            context,
-                                                            controller,
-                                                          ),
-                                                          onOpenSettings: () =>
-                                                              _showSettingsBottomSheet(
-                                                            context,
-                                                            controller,
-                                                          ),
-                                                      ),
-                                                    ],
-                                                  );
-                                                    },
-                                                  ),
-                                                ),
-                                              ),
                                             ),
-                                          ),
-                                        ),
-                                      ],
+                                          ],
                                         );
                                       },
                                     ),
+                                  );
+                                },
+                              ),
                             ),
+                          ),
 
-                                // 4. Edge Gesture Binding for Brightness
-                                // Keep gesture preview on the shared controller to avoid
-                                // duplicate writes through multiple state owners.
-                                Positioned(
-                                  left: 0,
-                                  top: 0,
-                                  bottom: 0,
-                                  width: 50.0,
-                                  child: GestureDetector(
-                                    behavior: HitTestBehavior.translucent,
-                                    onVerticalDragStart: (_) =>
-                                        _brightnessController.handleDragStart(),
-                                    onVerticalDragUpdate: (details) {
-                                      _brightnessController.handleDragUpdate(
-                                        details.primaryDelta ?? 0.0,
-                                        MediaQuery.of(context).size.height,
-                                      );
-                                    },
-                                    onVerticalDragEnd: (details) {
-                                      _brightnessController
-                                          .handleInteractionEnd();
-                                    },
-                                    child: const SizedBox.expand(),
+                          // 2. Error View
+                          ListenableBuilder(
+                            listenable: controller,
+                            builder: (context, _) {
+                              final errorState = controller.errorState;
+                              if (errorState == null) {
+                                return const SizedBox.shrink();
+                              }
+                              // Wrap in Positioned.fill to ensure it has size in the Stack
+                              return Positioned.fill(
+                                child: Container(
+                                  color:
+                                      Theme.of(context).scaffoldBackgroundColor,
+                                  child: ReaderErrorView(
+                                    errorState: errorState,
+                                    onBack: () => Navigator.pop(context),
+                                    onRetry: controller.retry,
                                   ),
                                 ),
+                              );
+                            },
+                          ),
 
-                            // 5. Brightness HUD Overlay
-                            // Injected just below overlays and gesture catchers
-                            BrightnessHudWidget(
-                                controller: _brightnessController),
-                          ],
-                        ),
+                          // 3. Edge Gesture Binding for Brightness
+                          // Keep gesture preview on the shared controller to avoid
+                          // duplicate writes through multiple state owners.
+                          if (readerPrefs.edgeBrightnessGestureEnabled)
+                            Positioned(
+                              left: 0,
+                              bottom: 0,
+                              width: 50.0,
+                              height: math.max(
+                                72.0,
+                                MediaQuery.of(context).size.height * 0.10,
+                              ),
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.translucent,
+                                onVerticalDragStart: (_) =>
+                                    _brightnessController.handleDragStart(),
+                                onVerticalDragUpdate: (details) {
+                                  _brightnessController.handleDragUpdate(
+                                    details.primaryDelta ?? 0.0,
+                                    MediaQuery.of(context).size.height,
+                                  );
+                                },
+                                onVerticalDragEnd: (details) {
+                                  _brightnessController.handleInteractionEnd();
+                                },
+                                child: const SizedBox.expand(),
+                              ),
+                            ),
+
+                          // 4. Brightness HUD Overlay
+                          // Injected just below overlays and gesture catchers
+                          BrightnessHudWidget(
+                              controller: _brightnessController),
+                        ],
                       ),
-                    ), // end Scaffold
-                  ); // end PopScope
-                },
-              );
+                    ),
+                  ), // end Scaffold
+                ); // end PopScope
+              },
+            );
           },
         );
       },
     );
   }
 
+  Future<void> _showQuickActionsBottomSheet(
+    BuildContext context,
+    ReaderController controller,
+  ) async {
+    if (_showControls) return;
+    _setControlsVisible(true);
+    await controller.syncChapterAfterScroll();
+    if (!mounted || !context.mounted) {
+      _setControlsVisible(false);
+      return;
+    }
 
-  void _showSettingsBottomSheet(
-      BuildContext context, ReaderController controller) {
-    _showReaderControls(controller);
-
-    showModalBottomSheet(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       isDismissible: true,
       enableDrag: true,
       backgroundColor: Colors.transparent,
       barrierColor: NyanOverlayStyle.modalBarrierColor(context),
-      builder: (BuildContext sheetContext) {
-        return Align(
-          alignment: Alignment.bottomCenter,
-          heightFactor: 1.0,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.75,
-            ),
-            // Modal routes sit above the reader body; replicate software dim here
-            // so the sheet matches the dimmed reading surface.
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(NyanRadius.sheet),
-              ),
-              child: BrightnessOverlayWidget(
-                stackFit: StackFit.passthrough,
-                stateListenable: _brightnessController.stateListenable,
-                warmthListenable: _brightnessController.warmthListenable,
-                child: ReaderMenu(
-                  controller: controller,
-                  scaffoldKey: readerPageScaffoldKey,
-                  brightnessController: _brightnessController,
-                ),
-              ),
-            ),
-          ),
+      builder: (sheetContext) {
+        return _ReaderQuickActionsSheet(
+          controller: controller,
+          readerPreferences: ref.read(readerPreferencesRpProvider),
+          scaffoldKey: readerPageScaffoldKey,
+          onOpenChapters: () {
+            Navigator.of(sheetContext).pop();
+            unawaited(_openChapterList(context, controller));
+          },
+          onAddBookmark: () {
+            Navigator.of(sheetContext).pop();
+            unawaited(_addBookmarkFromOverlay(context, controller));
+          },
+          onOpenBookmarks: () {
+            Navigator.of(sheetContext).pop();
+            unawaited(_openBookmarksPage(context, controller));
+          },
+          onOpenNotes: () {
+            Navigator.of(sheetContext).pop();
+            unawaited(_openNotesPage(context, controller));
+          },
+          brightnessController: _brightnessController,
         );
       },
-    ).whenComplete(() {
-      // Hide the status bar controls helper when the bottom sheet closes
-      if (_showControls) {
-        _setControlsVisible(false);
-      }
-    });
+    );
+
+    if (mounted) {
+      _setControlsVisible(false);
+    }
   }
 
   Future<void> _openChapterList(

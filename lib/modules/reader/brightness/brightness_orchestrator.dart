@@ -7,7 +7,8 @@ import 'brightness_state.dart';
 import 'overlay_brightness_policy.dart';
 import 'system_brightness_adapter.dart';
 
-class BrightnessOrchestrator extends ChangeNotifier with WidgetsBindingObserver {
+class BrightnessOrchestrator extends ChangeNotifier
+    with WidgetsBindingObserver {
   BrightnessOrchestrator({
     required BrightnessRepository repository,
     required SystemBrightnessAdapter systemAdapter,
@@ -29,6 +30,11 @@ class BrightnessOrchestrator extends ChangeNotifier with WidgetsBindingObserver 
   bool _isApplyingBrightness = false;
   double? _queuedManualTarget;
   double? _ignoredSystemBrightness;
+  Timer? _followSystemAnimationTimer;
+  double? _followSystemAnimationTarget;
+  static const Duration _followSystemAnimationTick = Duration(milliseconds: 16);
+  static const double _followSystemSmoothingFactor = 0.24;
+  static const double _followSystemSnapEpsilon = 0.003;
 
   BrightnessState get state => _state;
   double get warmth => _repository.warmth;
@@ -56,8 +62,9 @@ class BrightnessOrchestrator extends ChangeNotifier with WidgetsBindingObserver 
       lastAppliedSystemBrightness: null,
     ));
 
-    _systemBrightnessSubscription =
-        _systemAdapter.brightnessChanges().listen(_handleSystemBrightnessChange);
+    _systemBrightnessSubscription = _systemAdapter
+        .brightnessChanges()
+        .listen(_handleSystemBrightnessChange);
 
     if (!_state.followSystem) {
       await _applyManualBrightness(force: true);
@@ -66,6 +73,7 @@ class BrightnessOrchestrator extends ChangeNotifier with WidgetsBindingObserver 
 
   void previewBrightness(double brightness) {
     if (_isDisposed) return;
+    _stopFollowSystemAnimation();
     final normalizedBrightness = _normalize(brightness);
     _setState(_state.copyWith(
       mode: BrightnessMode.manual,
@@ -76,6 +84,7 @@ class BrightnessOrchestrator extends ChangeNotifier with WidgetsBindingObserver 
 
   Future<void> commitBrightness([double? brightness]) async {
     if (_isDisposed) return;
+    _stopFollowSystemAnimation();
     final normalizedBrightness =
         _normalize(brightness ?? _state.clampedUiBrightness);
     _setState(_state.copyWith(
@@ -98,6 +107,7 @@ class BrightnessOrchestrator extends ChangeNotifier with WidgetsBindingObserver 
     }
 
     final currentSystemBrightness = await _safeCurrentBrightness();
+    _stopFollowSystemAnimation();
     _setState(_state.copyWith(
       mode: BrightnessMode.followSystem,
       uiBrightness: currentSystemBrightness,
@@ -140,6 +150,7 @@ class BrightnessOrchestrator extends ChangeNotifier with WidgetsBindingObserver 
   Future<void> shutdown() async {
     if (_isShuttingDown) return;
     _isShuttingDown = true;
+    _stopFollowSystemAnimation();
     await _systemBrightnessSubscription?.cancel();
     _systemBrightnessSubscription = null;
     WidgetsBinding.instance.removeObserver(this);
@@ -174,11 +185,7 @@ class BrightnessOrchestrator extends ChangeNotifier with WidgetsBindingObserver 
     }
 
     if (_state.followSystem) {
-      _setState(_state.copyWith(
-        uiBrightness: systemBrightness,
-        lastObservedSystemBrightness: systemBrightness,
-        lastAppliedSystemBrightness: null,
-      ));
+      _setFollowSystemBrightnessTarget(systemBrightness);
       return;
     }
 
@@ -202,7 +209,8 @@ class BrightnessOrchestrator extends ChangeNotifier with WidgetsBindingObserver 
   Future<void> _drainManualApplyQueue() async {
     _isApplyingBrightness = true;
     try {
-      while (!_isDisposed && !_state.followSystem && _queuedManualTarget != null) {
+      while (
+          !_isDisposed && !_state.followSystem && _queuedManualTarget != null) {
         final target = _queuedManualTarget!;
         _queuedManualTarget = null;
         await _applyManualBrightness(target: target);
@@ -272,13 +280,13 @@ class BrightnessOrchestrator extends ChangeNotifier with WidgetsBindingObserver 
     final normalizedState = nextState.copyWith(
       uiBrightness: nextState.clampedUiBrightness,
       hardwareFloor: nextState.normalizedHardwareFloor,
-      lastAppliedSystemBrightness: nextState.followSystem
-          ? null
-          : nextState.lastAppliedSystemBrightness,
+      lastAppliedSystemBrightness:
+          nextState.followSystem ? null : nextState.lastAppliedSystemBrightness,
     );
 
     if (_state.mode == normalizedState.mode &&
-        (_state.clampedUiBrightness - normalizedState.clampedUiBrightness).abs() <
+        (_state.clampedUiBrightness - normalizedState.clampedUiBrightness)
+                .abs() <
             0.001 &&
         (_state.hardwareFloor - normalizedState.hardwareFloor).abs() < 0.001 &&
         _state.originalSystemBrightness ==
@@ -296,4 +304,63 @@ class BrightnessOrchestrator extends ChangeNotifier with WidgetsBindingObserver 
   }
 
   double _normalize(double brightness) => brightness.clamp(0.0, 1.0).toDouble();
+
+  void _setFollowSystemBrightnessTarget(double target) {
+    if (_isDisposed) return;
+    final normalizedTarget = _normalize(target);
+    _followSystemAnimationTarget = normalizedTarget;
+
+    final current = _state.clampedUiBrightness;
+    if ((current - normalizedTarget).abs() < _followSystemSnapEpsilon) {
+      _setState(_state.copyWith(
+        uiBrightness: normalizedTarget,
+        lastObservedSystemBrightness: normalizedTarget,
+        lastAppliedSystemBrightness: null,
+      ));
+      return;
+    }
+
+    _followSystemAnimationTimer ??= Timer.periodic(
+      _followSystemAnimationTick,
+      (_) => _tickFollowSystemAnimation(),
+    );
+  }
+
+  void _tickFollowSystemAnimation() {
+    if (_isDisposed || !_state.followSystem) {
+      _stopFollowSystemAnimation();
+      return;
+    }
+    final target = _followSystemAnimationTarget;
+    if (target == null) {
+      _stopFollowSystemAnimation();
+      return;
+    }
+
+    final current = _state.clampedUiBrightness;
+    final delta = target - current;
+    if (delta.abs() < _followSystemSnapEpsilon) {
+      _setState(_state.copyWith(
+        uiBrightness: target,
+        lastObservedSystemBrightness: target,
+        lastAppliedSystemBrightness: null,
+      ));
+      _followSystemAnimationTarget = null;
+      _stopFollowSystemAnimation();
+      return;
+    }
+
+    final next = current + (delta * _followSystemSmoothingFactor);
+    _setState(_state.copyWith(
+      uiBrightness: _normalize(next),
+      lastObservedSystemBrightness: target,
+      lastAppliedSystemBrightness: null,
+    ));
+  }
+
+  void _stopFollowSystemAnimation() {
+    _followSystemAnimationTimer?.cancel();
+    _followSystemAnimationTimer = null;
+    _followSystemAnimationTarget = null;
+  }
 }

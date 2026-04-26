@@ -61,20 +61,12 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
 
     if (_isPanning) return;
 
-    final now = DateTime.now();
-    if (_lastTapLogicAt != null &&
-        now.difference(_lastTapLogicAt!) < _ReaderPageState._tapLogicDedupWindow) {
-      return;
-    }
-    _lastTapLogicAt = now;
-
     if (_showControls) {
       _setControlsVisible(false);
       return;
     }
 
-    final box =
-        _readerBodyKey.currentContext?.findRenderObject() as RenderBox?;
+    final box = _readerBodyKey.currentContext?.findRenderObject() as RenderBox?;
     final double height;
     double localY;
 
@@ -88,19 +80,50 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
 
     if (height <= 0) return;
 
+    final now = DateTime.now();
     final ratio = localY / height;
     if (ratio < 0.40) {
-      unawaited(c.previousPage());
+      _triggerPageTurn(c, forward: false, at: now);
     } else if (ratio > 0.60) {
-      unawaited(c.nextPage());
+      _triggerPageTurn(c, forward: true, at: now);
     } else {
-      _showReaderControls(c);
+      _showReaderControls(context, c);
     }
   }
 
-  void _showReaderControls(ReaderController controller) {
-    _setControlsVisible(true);
-    unawaited(controller.syncChapterAfterScroll());
+  void _triggerPageTurn(
+    ReaderController controller, {
+    required bool forward,
+    required DateTime at,
+  }) {
+    if (_lastTapLogicAt != null &&
+        at.difference(_lastTapLogicAt!) <
+            _ReaderPageState._tapLogicDedupWindow) {
+      return;
+    }
+    if (_isPageTurning) {
+      return;
+    }
+    if (_lastPageTurnAt != null &&
+        at.difference(_lastPageTurnAt!) <
+            _ReaderPageState._pageTurnMinInterval) {
+      return;
+    }
+
+    _lastTapLogicAt = at;
+    _lastPageTurnAt = at;
+    _isPageTurning = true;
+
+    final turnFuture =
+        forward ? controller.nextPage() : controller.previousPage();
+    unawaited(turnFuture.whenComplete(() {
+      if (!mounted) return;
+      _isPageTurning = false;
+    }));
+  }
+
+  void _showReaderControls(BuildContext context, ReaderController controller) {
+    unawaited(_showQuickActionsBottomSheet(context, controller));
   }
 
   void _resetPanState() {

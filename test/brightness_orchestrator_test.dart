@@ -15,7 +15,8 @@ class FakeSystemBrightnessAdapter extends SystemBrightnessAdapter {
   double currentValue;
   final List<double> setCalls = <double>[];
   int resetCalls = 0;
-  final StreamController<double> _changes = StreamController<double>.broadcast();
+  final StreamController<double> _changes =
+      StreamController<double>.broadcast();
 
   @override
   Future<double> currentBrightness() async => currentValue;
@@ -101,7 +102,8 @@ void main() {
     await adapter.close();
   });
 
-  test('shutdown restores original system brightness after manual mode', () async {
+  test('shutdown restores original system brightness after manual mode',
+      () async {
     final prefs = ReaderPreferencesService();
     await prefs.initialize();
 
@@ -127,5 +129,35 @@ void main() {
       policy.calculate(uiBrightness: 0.0, hardwareFloor: 0.05),
       closeTo(OverlayBrightnessPolicy.maxOverlayOpacity, 0.001),
     );
+  });
+
+  test('follow-system brightness transitions smoothly instead of jumping',
+      () async {
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+
+    final adapter = FakeSystemBrightnessAdapter(currentValue: 0.30);
+    final orchestrator = BrightnessOrchestrator(
+      repository: BrightnessRepository(prefs),
+      systemAdapter: adapter,
+    );
+
+    await orchestrator.initialize();
+    expect(orchestrator.state.followSystem, isTrue);
+    expect(orchestrator.state.uiBrightness, closeTo(0.30, 0.001));
+
+    adapter.currentValue = 0.85;
+    adapter._changes.add(0.85);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    final earlyValue = orchestrator.state.uiBrightness;
+    expect(earlyValue, greaterThan(0.30));
+    expect(earlyValue, lessThan(0.85));
+
+    await Future<void>.delayed(const Duration(milliseconds: 320));
+    expect(orchestrator.state.uiBrightness, closeTo(0.85, 0.02));
+
+    await orchestrator.shutdown();
+    await adapter.close();
   });
 }

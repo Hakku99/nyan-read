@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/nyan_radius.dart';
 import '../../../../core/theme/nyan_spacing.dart';
-import '../../../../core/ui/components/nyan_overlay_style.dart';
 import '../../../../core/ui/components/nyan_sheet_card.dart';
 import '../reader_overlay_tool_button.dart';
 import 'reader_settings_common.dart';
 
 /// Chapter progress and seek bar (reading overlay or legacy sheet layout).
 ///
-/// Progress is accepted as a [ValueListenable]<double> so the widget can
+/// Progress is accepted as a `ValueListenable<double>` so the widget can
 /// repaint only the thumb and the "42%" label when the 1s reading
 /// heartbeat advances the value, rather than rebuilding the whole card.
 /// A one-shot [progress] is still accepted for callers that never animate.
@@ -25,9 +24,14 @@ class ReaderSettingsProgressCard extends StatelessWidget {
     this.progress,
     this.progressListenable,
     this.forOverlay = false,
+    this.forQuickSheet = false,
     this.overlayWidth,
-  }) : assert(progress != null || progressListenable != null,
-            'either progress or progressListenable must be provided');
+  })  : assert(progress != null || progressListenable != null,
+            'either progress or progressListenable must be provided'),
+        assert(
+          !(forQuickSheet && forOverlay),
+          'forQuickSheet and forOverlay are mutually exclusive',
+        );
 
   final String chapterLabel;
   final double? progress;
@@ -39,24 +43,33 @@ class ReaderSettingsProgressCard extends StatelessWidget {
 
   /// When true, uses the same surface treatment as the reader overlay toolbar.
   final bool forOverlay;
+
+  /// Embedded in the L1 quick sheet: no outer [NyanSheetCard]; [forOverlay] must
+  /// be false. Uses overlay-style chapter nav affordances.
+  final bool forQuickSheet;
   final double? overlayWidth;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final progressSink = progressListenable ??
-        ValueNotifier<double>(progress ?? 0.0);
+    final progressSink =
+        progressListenable ?? ValueNotifier<double>(progress ?? 0.0);
+
+    final useOverlayStyleButtons = forOverlay || forQuickSheet;
+    final sheetPadding = forQuickSheet
+        ? EdgeInsets.zero
+        : forOverlay
+            ? kReaderOverlayChromePadding
+            : const EdgeInsets.fromLTRB(
+                NyanSpacing.space16,
+                NyanSpacing.space16,
+                NyanSpacing.space16,
+                NyanSpacing.space12,
+              );
 
     final body = Padding(
-      padding: forOverlay
-          ? kReaderOverlayChromePadding
-          : const EdgeInsets.fromLTRB(
-              NyanSpacing.space16,
-              NyanSpacing.space16,
-              NyanSpacing.space16,
-              NyanSpacing.space12,
-            ),
+      padding: sheetPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -88,11 +101,14 @@ class ReaderSettingsProgressCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: forOverlay ? NyanSpacing.space12 : NyanSpacing.space16),
+          SizedBox(
+              height: (forOverlay || forQuickSheet)
+                  ? NyanSpacing.space12
+                  : NyanSpacing.space16),
           Row(
             children: [
               if (showChapterNavigation) ...[
-                if (forOverlay)
+                if (useOverlayStyleButtons)
                   ReaderOverlayToolButton(
                     icon: Icons.chevron_left_rounded,
                     onTap: onPreviousChapter,
@@ -122,7 +138,7 @@ class ReaderSettingsProgressCard extends StatelessWidget {
               ),
               if (showChapterNavigation) ...[
                 const SizedBox(width: NyanSpacing.space12),
-                if (forOverlay)
+                if (useOverlayStyleButtons)
                   ReaderOverlayToolButton(
                     icon: Icons.chevron_right_rounded,
                     onTap: onNextChapter,
@@ -141,25 +157,23 @@ class ReaderSettingsProgressCard extends StatelessWidget {
       ),
     );
 
+    if (forQuickSheet) {
+      return SizedBox(
+        width: overlayWidth,
+        child: body,
+      );
+    }
+
     if (forOverlay) {
       return Align(
         alignment: Alignment.center,
-        child: Container(
+        child: SizedBox(
           key: const Key('reader-overlay-progress-card-surface'),
           width: overlayWidth,
-          decoration: BoxDecoration(
-            color: Color.alphaBlend(
-              theme.colorScheme.surface.withValues(alpha: 0.92),
-              theme.scaffoldBackgroundColor,
-            ),
-            borderRadius: BorderRadius.circular(NyanRadius.panel),
-            border: Border.all(
-              color: theme.dividerColor.withValues(alpha: 0.18),
-              width: 0.72,
-            ),
-            boxShadow: NyanOverlayStyle.noticeShadow(context),
+          child: NyanSheetCard(
+            radius: NyanRadius.card,
+            children: [body],
           ),
-          child: body,
         ),
       );
     }
