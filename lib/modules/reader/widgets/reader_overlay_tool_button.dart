@@ -12,12 +12,14 @@ class ReaderOverlayToolButton extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.isAccent = false,
+    this.transparentBackground = false,
     this.tooltip,
   });
 
   final IconData icon;
   final VoidCallback onTap;
   final bool isAccent;
+  final bool transparentBackground;
   final String? tooltip;
 
   @override
@@ -33,25 +35,33 @@ class ReaderOverlayToolButton extends StatelessWidget {
           width: NyanSpacing.minTapTarget,
           height: NyanSpacing.minTapTarget,
           decoration: BoxDecoration(
-            color: isAccent
-                ? theme.colorScheme.primary.withValues(alpha: 0.14)
+            color: transparentBackground
+                ? Colors.transparent
+                : isAccent
+                ? NyanOverlayStyle.recessedSurface(
+                    context,
+                    seed: theme.colorScheme.primary,
+                    strength: 0.1,
+                  )
                 : NyanOverlayStyle.recessedSurface(
                     context,
                     seed: theme.colorScheme.primary,
-                    strength: 0.012,
+                    strength: 0.008,
                   ),
             borderRadius: BorderRadius.circular(NyanRadius.input),
             border: Border.all(
               color: isAccent
-                  ? theme.colorScheme.primary.withValues(alpha: 0.18)
-                  : theme.dividerColor.withValues(alpha: 0.14),
+                  ? theme.colorScheme.primary.withValues(alpha: 0.2)
+                  : theme.dividerColor.withValues(alpha: 0.12),
               width: 0.72,
             ),
           ),
           child: Icon(
             icon,
             size: 20,
-            color: theme.colorScheme.primary,
+            color: isAccent
+                ? theme.colorScheme.primary.withValues(alpha: 0.9)
+                : theme.colorScheme.primary.withValues(alpha: 0.74),
           ),
         ),
       ),

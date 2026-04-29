@@ -88,6 +88,7 @@ class ReaderSettingsDisplayPanel extends StatelessWidget {
                                   inactiveColor: theme.dividerColor
                                       .withValues(alpha: 0.24),
                                   enabled: !follow,
+                                  edgeToEdgeTrack: true,
                                 );
                               },
                             ),
@@ -186,6 +187,7 @@ class ReaderSettingsDisplayPanel extends StatelessWidget {
                           thumbColor: NyanColors.highlightOrange
                               .withValues(alpha: 0.95),
                           inactiveColor: warmthInactive,
+                          edgeToEdgeTrack: true,
                         );
                       },
                     ),

@@ -81,8 +81,7 @@ class _ReaderMenuState extends State<ReaderMenu> {
                     MediaQuery.textScalerOf(context).scale(1) > 1.12;
                 final sectionGap =
                     compactLayout ? NyanSpacing.space8 : NyanSpacing.space12;
-                final headerBottomGap =
-                    compactLayout ? NyanSpacing.space8 : NyanSpacing.space12;
+                const headerBottomGap = NyanSpacing.space12;
                 // Embedded: one small tail gap only (matches quick body + shell);
                 // system inset is from the parent SafeArea, not double-stacked here.
                 final contentPadding = EdgeInsets.fromLTRB(
@@ -376,7 +375,7 @@ class _ReaderMenuHeader extends StatelessWidget {
           const SizedBox(width: NyanSpacing.space8),
           Container(
             decoration: BoxDecoration(
-              color: NyanOverlayStyle.recessedSurface(context, strength: 0.02),
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(NyanRadius.input),
               border: Border.all(
                 color: theme.dividerColor.withValues(alpha: 0.16),
@@ -419,22 +418,25 @@ class ReaderLayerModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ReaderLayerModeToggleCell(
-          icon: Icons.dashboard_customize_rounded,
-          selected: quickSelected,
-          tooltip: quickTooltip,
-          onTap: onTapQuick,
-        ),
-        ReaderLayerModeToggleCell(
-          icon: Icons.tune_rounded,
-          selected: !quickSelected,
-          tooltip: fullTooltip,
-          onTap: onTapFull,
-        ),
-      ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(NyanRadius.input),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ReaderLayerModeToggleCell(
+            icon: Icons.dashboard_customize_rounded,
+            selected: quickSelected,
+            tooltip: quickTooltip,
+            onTap: onTapQuick,
+          ),
+          ReaderLayerModeToggleCell(
+            icon: Icons.tune_rounded,
+            selected: !quickSelected,
+            tooltip: fullTooltip,
+            onTap: onTapFull,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -474,7 +476,7 @@ class ReaderLayerModeToggleCell extends StatelessWidget {
           icon,
           size: 18,
           color: selected
-              ? theme.colorScheme.primary
+              ? theme.colorScheme.primary.withValues(alpha: 0.9)
               : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
         ),
       ),

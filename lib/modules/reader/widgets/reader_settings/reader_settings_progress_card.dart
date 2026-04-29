@@ -56,7 +56,9 @@ class ReaderSettingsProgressCard extends StatelessWidget {
     final progressSink =
         progressListenable ?? ValueNotifier<double>(progress ?? 0.0);
 
-    final useOverlayStyleButtons = forOverlay || forQuickSheet;
+    final useOverlayStyleButtons = forOverlay;
+    final isQuickSurface = forQuickSheet;
+    final quickNavGap = isQuickSurface ? NyanSpacing.space4 : NyanSpacing.space12;
     final sheetPadding = forQuickSheet
         ? EdgeInsets.zero
         : forOverlay
@@ -80,8 +82,9 @@ class ReaderSettingsProgressCard extends StatelessWidget {
                   chapterLabel,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    height: 1.2,
                   ),
                 ),
               ),
@@ -93,7 +96,7 @@ class ReaderSettingsProgressCard extends StatelessWidget {
                   return Text(
                     '${(c * 100).round()}%',
                     style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w500,
                       color: theme.colorScheme.primary.withValues(alpha: 0.92),
                     ),
                   );
@@ -102,13 +105,20 @@ class ReaderSettingsProgressCard extends StatelessWidget {
             ],
           ),
           SizedBox(
-              height: (forOverlay || forQuickSheet)
-                  ? NyanSpacing.space12
-                  : NyanSpacing.space16),
+            height: isQuickSurface
+                ? NyanSpacing.space12
+                : (forOverlay ? NyanSpacing.space12 : NyanSpacing.space16),
+          ),
           Row(
             children: [
               if (showChapterNavigation) ...[
-                if (useOverlayStyleButtons)
+                if (isQuickSurface)
+                  _QuickArrowIconButton(
+                    icon: Icons.chevron_left_rounded,
+                    onTap: onPreviousChapter,
+                    tooltip: 'Previous chapter',
+                  )
+                else if (useOverlayStyleButtons)
                   ReaderOverlayToolButton(
                     icon: Icons.chevron_left_rounded,
                     onTap: onPreviousChapter,
@@ -120,7 +130,7 @@ class ReaderSettingsProgressCard extends StatelessWidget {
                     onTap: onPreviousChapter,
                     tooltip: 'Previous chapter',
                   ),
-                const SizedBox(width: NyanSpacing.space12),
+                SizedBox(width: quickNavGap),
               ],
               Expanded(
                 child: ValueListenableBuilder<double>(
@@ -137,8 +147,14 @@ class ReaderSettingsProgressCard extends StatelessWidget {
                 ),
               ),
               if (showChapterNavigation) ...[
-                const SizedBox(width: NyanSpacing.space12),
-                if (useOverlayStyleButtons)
+                SizedBox(width: quickNavGap),
+                if (isQuickSurface)
+                  _QuickArrowIconButton(
+                    icon: Icons.chevron_right_rounded,
+                    onTap: onNextChapter,
+                    tooltip: 'Next chapter',
+                  )
+                else if (useOverlayStyleButtons)
                   ReaderOverlayToolButton(
                     icon: Icons.chevron_right_rounded,
                     onTap: onNextChapter,
@@ -182,5 +198,41 @@ class ReaderSettingsProgressCard extends StatelessWidget {
       radius: NyanRadius.card,
       children: [body],
     );
+  }
+}
+
+class _QuickArrowIconButton extends StatelessWidget {
+  const _QuickArrowIconButton({
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final button = InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(NyanRadius.input),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: NyanSpacing.space4,
+          vertical: 10,
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: theme.colorScheme.primary.withValues(alpha: 0.76),
+        ),
+      ),
+    );
+    if (tooltip == null || tooltip!.isEmpty) {
+      return button;
+    }
+    return Tooltip(message: tooltip!, child: button);
   }
 }

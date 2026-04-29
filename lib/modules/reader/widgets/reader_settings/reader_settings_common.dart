@@ -38,6 +38,8 @@ class ReaderSettingsSlider extends StatefulWidget {
     this.dragLabelAbove = false,
     this.dragLabelBelowGap,
     this.overlayRadius = 16,
+    this.horizontalStretch = 0,
+    this.edgeToEdgeTrack = false,
   });
 
   final double value;
@@ -57,6 +59,8 @@ class ReaderSettingsSlider extends StatefulWidget {
   /// When non-null, drag % sits [dragLabelBelowGap] px below the track (fixed layout).
   final double? dragLabelBelowGap;
   final double overlayRadius;
+  final double horizontalStretch;
+  final bool edgeToEdgeTrack;
 
   @override
   State<ReaderSettingsSlider> createState() => _ReaderSettingsSliderState();
@@ -70,12 +74,14 @@ class _ReaderSettingsSliderState extends State<ReaderSettingsSlider> {
     final theme = Theme.of(context);
     final effective = widget.enabled ? widget.onChanged : null;
 
-    final sliderChild = SliderTheme(
+    final slider = SliderTheme(
       data: SliderTheme.of(context).copyWith(
         trackHeight: 5,
         thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
         overlayShape: RoundSliderOverlayShape(overlayRadius: widget.overlayRadius),
-        trackShape: const RoundedRectSliderTrackShape(),
+        trackShape: widget.edgeToEdgeTrack
+            ? const _EdgeToEdgeRoundedSliderTrackShape()
+            : const RoundedRectSliderTrackShape(),
         thumbColor: widget.thumbColor ?? widget.activeColor,
         overlayColor: (widget.thumbColor ?? widget.activeColor)
             ?.withValues(alpha: 0.12),
@@ -100,6 +106,21 @@ class _ReaderSettingsSliderState extends State<ReaderSettingsSlider> {
             : null,
       ),
     );
+    final sliderChild = widget.horizontalStretch == 0
+        ? slider
+        : LayoutBuilder(
+            builder: (context, constraints) {
+              final stretchedWidth =
+                  constraints.maxWidth + (widget.horizontalStretch * 2);
+              return Align(
+                alignment: Alignment.center,
+                child: SizedBox(
+                  width: stretchedWidth,
+                  child: slider,
+                ),
+              );
+            },
+          );
 
     final labelStyle = theme.textTheme.labelSmall?.copyWith(
       fontSize: 10,
@@ -145,6 +166,27 @@ class _ReaderSettingsSliderState extends State<ReaderSettingsSlider> {
         ),
       ],
     );
+  }
+}
+
+/// Uses the whole available width for track rect to align sliders with
+/// surrounding text/action baselines instead of keeping Material's inner inset.
+class _EdgeToEdgeRoundedSliderTrackShape extends RoundedRectSliderTrackShape {
+  const _EdgeToEdgeRoundedSliderTrackShape();
+
+  @override
+  Rect getPreferredRect({
+    required RenderBox parentBox,
+    Offset offset = Offset.zero,
+    required SliderThemeData sliderTheme,
+    bool isEnabled = false,
+    bool isDiscrete = false,
+  }) {
+    final trackHeight = sliderTheme.trackHeight ?? 0;
+    final trackLeft = offset.dx;
+    final trackTop = offset.dy + (parentBox.size.height - trackHeight) / 2;
+    final trackWidth = parentBox.size.width;
+    return Rect.fromLTWH(trackLeft, trackTop, trackWidth, trackHeight);
   }
 }
 

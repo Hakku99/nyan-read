@@ -33,26 +33,29 @@ class _ReaderQuickToolRow extends StatelessWidget {
         ReaderOverlayToolButton(
           icon: Icons.toc_rounded,
           onTap: onOpenChapters,
+          transparentBackground: true,
         ),
       ReaderOverlayToolButton(
         icon: Icons.bookmark_add_outlined,
         onTap: onAddBookmark,
+        transparentBackground: true,
       ),
       ReaderOverlayToolButton(
         icon: Icons.bookmarks_rounded,
         onTap: onOpenBookmarks,
+        transparentBackground: true,
       ),
       if (showNotes)
         ReaderOverlayToolButton(
           icon: Icons.edit_note_rounded,
           onTap: onOpenNotes,
+          transparentBackground: true,
         ),
       ReaderOverlayToolButton(
-        icon: edgeBrightnessGestureEnabled
-            ? Icons.toggle_on_rounded
-            : Icons.toggle_off_rounded,
+        icon: Icons.brightness_6_outlined,
         onTap: onToggleEdgeBrightnessGesture,
         isAccent: edgeBrightnessGestureEnabled,
+        transparentBackground: true,
         tooltip: edgeBrightnessGestureEnabled
             ? loc.readerEdgeBrightnessOn
             : loc.readerEdgeBrightnessOff,
@@ -61,6 +64,7 @@ class _ReaderQuickToolRow extends StatelessWidget {
         icon: Icons.tune_rounded,
         onTap: onOpenSettings,
         isAccent: true,
+        transparentBackground: true,
       ),
     ];
 
@@ -85,6 +89,168 @@ class _ReaderQuickToolRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _QuickEdgeBrightnessRemark extends StatelessWidget {
+  const _QuickEdgeBrightnessRemark({
+    required this.edgeEnabled,
+    required this.label,
+  });
+
+  final bool edgeEnabled;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        NyanSpacing.space12,
+        NyanSpacing.space4,
+        NyanSpacing.space12,
+        0,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.brightness_6_outlined,
+            size: 14,
+            color: theme.colorScheme.primary.withValues(alpha: 0.56),
+          ),
+          const SizedBox(width: NyanSpacing.space8),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w400,
+                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.72),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionsDock extends StatelessWidget {
+  const _QuickActionsDock({
+    required this.showChapterNavigation,
+    required this.showNotes,
+    required this.overlayChromeWidth,
+    required this.onOpenChapters,
+    required this.onAddBookmark,
+    required this.onOpenBookmarks,
+    required this.onOpenNotes,
+    required this.onOpenSettings,
+    required this.edgeBrightnessGestureEnabled,
+    required this.onToggleEdgeBrightnessGesture,
+  });
+
+  final bool showChapterNavigation;
+  final bool showNotes;
+  final double overlayChromeWidth;
+  final VoidCallback onOpenChapters;
+  final VoidCallback onAddBookmark;
+  final VoidCallback onOpenBookmarks;
+  final VoidCallback onOpenNotes;
+  final VoidCallback onOpenSettings;
+  final bool edgeBrightnessGestureEnabled;
+  final VoidCallback onToggleEdgeBrightnessGesture;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ReaderQuickToolRow(
+      showChapterNavigation: showChapterNavigation,
+      chromeWidth: overlayChromeWidth,
+      showNotes: showNotes,
+      onOpenChapters: onOpenChapters,
+      onAddBookmark: onAddBookmark,
+      onOpenBookmarks: onOpenBookmarks,
+      onOpenNotes: onOpenNotes,
+      onOpenSettings: onOpenSettings,
+      edgeBrightnessGestureEnabled: edgeBrightnessGestureEnabled,
+      onToggleEdgeBrightnessGesture: onToggleEdgeBrightnessGesture,
+    );
+  }
+}
+
+class _QuickNowReadingSection extends StatelessWidget {
+  const _QuickNowReadingSection({
+    required this.controller,
+    required this.loc,
+    required this.showChapterNavigation,
+  });
+
+  final ReaderController controller;
+  final AppLocalizations loc;
+  final bool showChapterNavigation;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) => ReaderSettingsProgressCard(
+        key: const Key('reader-overlay-progress'),
+        forQuickSheet: true,
+        chapterLabel: readerChapterSummaryLabel(
+          chapters: controller.chapters,
+          currentChapterIndex: controller.currentChapterIndex,
+          loc: loc,
+        ),
+        progressListenable: controller.progressListenable,
+        showChapterNavigation: showChapterNavigation,
+        onSeek: controller.seekTo,
+        onPreviousChapter: controller.jumpToPreviousChapter,
+        onNextChapter: controller.jumpToNextChapter,
+      ),
+    );
+  }
+}
+
+class _QuickLayerCardShell extends StatelessWidget {
+  const _QuickLayerCardShell({
+    required this.nowReadingZone,
+    required this.quickActionsZone,
+    required this.remarkZone,
+  });
+
+  final Widget nowReadingZone;
+  final Widget quickActionsZone;
+  final Widget remarkZone;
+
+  @override
+  Widget build(BuildContext context) {
+    return NyanSheetCard(
+      radius: NyanRadius.card,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            NyanSpacing.space16,
+            NyanSpacing.space16,
+            NyanSpacing.space16,
+            NyanSpacing.space16,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              nowReadingZone,
+              const SizedBox(height: NyanSpacing.space8),
+              Container(
+                height: 1,
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.12),
+              ),
+              const SizedBox(height: NyanSpacing.space8),
+              quickActionsZone,
+              remarkZone,
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -167,7 +333,6 @@ class _ReaderQuickActionsSheetState extends State<_ReaderQuickActionsSheet> {
 
   Widget _buildQuickBody({
     required BuildContext context,
-    required ThemeData theme,
     required AppLocalizations loc,
     required double bottomInset,
     required bool showChapterNavigation,
@@ -199,140 +364,51 @@ class _ReaderQuickActionsSheetState extends State<_ReaderQuickActionsSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              NyanSheetCard(
-                radius: NyanRadius.card,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      NyanSpacing.space16,
-                      NyanSpacing.space12,
-                      NyanSpacing.space16,
-                      NyanSpacing.space12,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ReaderSettingsProgressCard(
-                          key: const Key('reader-overlay-progress'),
-                          forQuickSheet: true,
-                          chapterLabel: readerChapterSummaryLabel(
-                            chapters: widget.controller.chapters,
-                            currentChapterIndex:
-                                widget.controller.currentChapterIndex,
-                            loc: loc,
+              _QuickLayerCardShell(
+                nowReadingZone: _QuickNowReadingSection(
+                  controller: widget.controller,
+                  loc: loc,
+                  showChapterNavigation: showChapterNavigation,
+                ),
+                quickActionsZone: ListenableBuilder(
+                  listenable: widget.readerPreferences,
+                  builder: (context, _) {
+                    return _QuickActionsDock(
+                      showChapterNavigation: showChapterNavigation,
+                      overlayChromeWidth: overlayChromeWidth,
+                      showNotes: showNotes,
+                      onOpenChapters: widget.onOpenChapters,
+                      onAddBookmark: widget.onAddBookmark,
+                      onOpenBookmarks: widget.onOpenBookmarks,
+                      onOpenNotes: widget.onOpenNotes,
+                      onOpenSettings: _switchToFull,
+                      edgeBrightnessGestureEnabled:
+                          widget.readerPreferences.edgeBrightnessGestureEnabled,
+                      onToggleEdgeBrightnessGesture: () {
+                        HapticFeedback.selectionClick();
+                        unawaited(
+                          widget.readerPreferences.setEdgeBrightnessGestureEnabled(
+                            !widget
+                                .readerPreferences.edgeBrightnessGestureEnabled,
                           ),
-                          progressListenable:
-                              widget.controller.progressListenable,
-                          showChapterNavigation: showChapterNavigation,
-                          onSeek: widget.controller.seekTo,
-                          onPreviousChapter:
-                              widget.controller.jumpToPreviousChapter,
-                          onNextChapter:
-                              widget.controller.jumpToNextChapter,
-                        ),
-                        const SizedBox(height: NyanSpacing.space12),
-                        ListenableBuilder(
-                          listenable: widget.readerPreferences,
-                          builder: (context, _) {
-                            final edgeEnabled = widget
-                                .readerPreferences.edgeBrightnessGestureEnabled;
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: NyanSpacing.space12,
-                                vertical: NyanSpacing.space8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: NyanOverlayStyle.recessedSurface(
-                                  context,
-                                  strength: 0.016,
-                                ),
-                                borderRadius: BorderRadius.circular(
-                                  NyanRadius.input,
-                                ),
-                                border: Border.all(
-                                  color:
-                                      theme.dividerColor.withValues(alpha: 0.12),
-                                  width: 0.72,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    edgeEnabled
-                                        ? Icons.toggle_on_rounded
-                                        : Icons.toggle_off_rounded,
-                                    size: 18,
-                                    color: theme.colorScheme.primary
-                                        .withValues(alpha: 0.9),
-                                  ),
-                                  const SizedBox(width: NyanSpacing.space8),
-                                  Expanded(
-                                    child: Text(
-                                      edgeEnabled
-                                          ? loc.readerEdgeBrightnessOn
-                                          : loc.readerEdgeBrightnessOff,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.labelMedium
-                                          ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: theme.colorScheme.primary
-                                            .withValues(alpha: 0.92),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: NyanSpacing.space8),
-                        ListenableBuilder(
-                          listenable: widget.readerPreferences,
-                          builder: (context, _) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: NyanOverlayStyle.recessedSurface(
-                                  context,
-                                  strength: 0.012,
-                                ),
-                                borderRadius:
-                                    BorderRadius.circular(NyanRadius.input),
-                                border: Border.all(
-                                  color:
-                                      theme.dividerColor.withValues(alpha: 0.12),
-                                  width: 0.72,
-                                ),
-                              ),
-                              child: _ReaderQuickToolRow(
-                                showChapterNavigation: showChapterNavigation,
-                                chromeWidth: overlayChromeWidth,
-                                showNotes: showNotes,
-                                onOpenChapters: widget.onOpenChapters,
-                                onAddBookmark: widget.onAddBookmark,
-                                onOpenBookmarks: widget.onOpenBookmarks,
-                                onOpenNotes: widget.onOpenNotes,
-                                onOpenSettings: _switchToFull,
-                                edgeBrightnessGestureEnabled: widget
-                                    .readerPreferences.edgeBrightnessGestureEnabled,
-                                onToggleEdgeBrightnessGesture: () {
-                                  HapticFeedback.selectionClick();
-                                  unawaited(
-                                    widget.readerPreferences
-                                        .setEdgeBrightnessGestureEnabled(
-                                      !widget.readerPreferences
-                                          .edgeBrightnessGestureEnabled,
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                        );
+                      },
+                    );
+                  },
+                ),
+                remarkZone: ListenableBuilder(
+                  listenable: widget.readerPreferences,
+                  builder: (context, _) {
+                    final edgeEnabled =
+                        widget.readerPreferences.edgeBrightnessGestureEnabled;
+                    return _QuickEdgeBrightnessRemark(
+                      edgeEnabled: edgeEnabled,
+                      label: edgeEnabled
+                          ? loc.readerEdgeBrightnessOn
+                          : loc.readerEdgeBrightnessOff,
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -346,9 +422,8 @@ class _ReaderQuickActionsSheetState extends State<_ReaderQuickActionsSheet> {
     required AppLocalizations loc,
   }) {
     final theme = Theme.of(context);
-    final titleStyle = theme.textTheme.titleSmall?.copyWith(
+    final titleStyle = theme.textTheme.bodyLarge?.copyWith(
       fontWeight: FontWeight.w600,
-      fontSize: 16,
       letterSpacing: -0.08,
       height: 1.2,
       color: theme.colorScheme.onSurface.withValues(alpha: 0.92),
@@ -374,7 +449,7 @@ class _ReaderQuickActionsSheetState extends State<_ReaderQuickActionsSheet> {
             const SizedBox(width: NyanSpacing.space8),
             Container(
               decoration: BoxDecoration(
-                color: NyanOverlayStyle.recessedSurface(context, strength: 0.02),
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(NyanRadius.input),
                 border: Border.all(
                   color: theme.dividerColor.withValues(alpha: 0.16),
@@ -451,7 +526,7 @@ class _ReaderQuickActionsSheetState extends State<_ReaderQuickActionsSheet> {
                     ),
                     const SizedBox(height: NyanSpacing.space12),
                     _buildFixedHeader(context: context, loc: loc),
-                    const SizedBox(height: NyanSpacing.space8),
+                    const SizedBox(height: NyanSpacing.space12),
                     ClipRect(
                       child: AnimatedSize(
                         duration: const Duration(milliseconds: 240),
@@ -462,7 +537,6 @@ class _ReaderQuickActionsSheetState extends State<_ReaderQuickActionsSheet> {
                           child: _activePage == _ReaderSheetPage.quick
                               ? _buildQuickBody(
                                   context: context,
-                                  theme: theme,
                                   loc: loc,
                                   bottomInset: bottomInset,
                                   showChapterNavigation: showChapterNavigation,
