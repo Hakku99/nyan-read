@@ -41,85 +41,89 @@ class AdminPanel extends ConsumerWidget {
               ),
             ),
           ),
-          body: ListView(
-            padding: EdgeInsets.fromLTRB(
-              _kAdminHorizontalPadding,
-              _kAdminHorizontalPadding,
-              _kAdminHorizontalPadding,
-              _kAdminHorizontalPadding + MediaQuery.of(context).padding.bottom,
-            ),
-            children: [
-              _AdminSectionHeader(title: loc.adminPanelModeSection),
-              _AdminSettingsCard(
-                children: [
-                  _AdminSwitchRow(
-                    title: loc.adminProModeEnabled,
-                    subtitle: loc.adminProModeSubtitle,
-                    value: fm.currentMode == AppMode.pro,
-                    onChanged: (value) {
-                      fm.toggleMode(value ? AppMode.pro : AppMode.free);
-                    },
-                  ),
-                  if (fm.isPro) ...[
-                    const _AdminDivider(),
+          body: SafeArea(
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(
+                _kAdminHorizontalPadding,
+                _kAdminHorizontalPadding,
+                _kAdminHorizontalPadding,
+                _kAdminHorizontalPadding +
+                    MediaQuery.of(context).padding.bottom,
+              ),
+              children: [
+                _AdminSectionHeader(title: loc.adminPanelModeSection),
+                _AdminSettingsCard(
+                  children: [
                     _AdminSwitchRow(
-                      title: loc.adminForceUnlockPrivacyShelf,
-                      subtitle: loc.adminForceUnlockPrivacyShelfSubtitle,
-                      value: fm.isPrivateShelfUnlocked,
+                      title: loc.adminProModeEnabled,
+                      subtitle: loc.adminProModeSubtitle,
+                      value: fm.currentMode == AppMode.pro,
                       onChanged: (value) {
-                        if (value) {
-                          fm.unlockPrivateShelf();
-                        } else {
-                          fm.lockPrivateShelf();
-                        }
+                        fm.toggleMode(value ? AppMode.pro : AppMode.free);
                       },
                     ),
+                    if (fm.isPro) ...[
+                      const _AdminDivider(),
+                      _AdminSwitchRow(
+                        title: loc.adminForceUnlockPrivacyShelf,
+                        subtitle: loc.adminForceUnlockPrivacyShelfSubtitle,
+                        value: fm.isPrivateShelfUnlocked,
+                        onChanged: (value) {
+                          if (value) {
+                            fm.unlockPrivateShelf();
+                          } else {
+                            fm.lockPrivateShelf();
+                          }
+                        },
+                      ),
+                    ],
                   ],
-                ],
-              ),
-              const SizedBox(height: _kAdminSectionGap),
-              _AdminSectionHeader(title: loc.adminFeatureFlagsSection),
-              _AdminSettingsCard(
-                children: [
-                  _AdminFlagRow(
-                    title: loc.ads,
-                    value: fm.adsEnabled,
-                    nyan: nyan,
-                    loc: loc,
-                  ),
-                  const _AdminDivider(),
-                  _AdminFlagRow(
-                    title: loc.privacy,
-                    value: fm.privacyShelfEnabled,
-                    nyan: nyan,
-                    loc: loc,
-                  ),
-                  const _AdminDivider(),
-                  _AdminFlagRow(
-                    title: loc.tts,
-                    value: fm.ttsEnabled,
-                    nyan: nyan,
-                    loc: loc,
-                  ),
-                ],
-              ),
-              const SizedBox(height: _kAdminCardGap),
-              _AdminSettingsCard(
-                backgroundColor: Color.alphaBlend(
-                  nyan.primary.withValues(
-                      alpha: nyan.brightness == Brightness.dark ? 0.12 : 0.05),
-                  nyan.surface,
                 ),
-                borderColor: nyan.primaryDeep.withValues(
-                    alpha: nyan.brightness == Brightness.dark ? 0.42 : 0.2),
-                children: [
-                  _AdminHintRow(
-                    title: loc.adminPanelHintTitle,
-                    subtitle: loc.adminPanelHintSubtitle,
+                const SizedBox(height: _kAdminSectionGap),
+                _AdminSectionHeader(title: loc.adminFeatureFlagsSection),
+                _AdminSettingsCard(
+                  children: [
+                    _AdminFlagRow(
+                      title: loc.ads,
+                      value: fm.adsEnabled,
+                      nyan: nyan,
+                      loc: loc,
+                    ),
+                    const _AdminDivider(),
+                    _AdminFlagRow(
+                      title: loc.privacy,
+                      value: fm.privacyShelfEnabled,
+                      nyan: nyan,
+                      loc: loc,
+                    ),
+                    const _AdminDivider(),
+                    _AdminFlagRow(
+                      title: loc.tts,
+                      value: fm.ttsEnabled,
+                      nyan: nyan,
+                      loc: loc,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: _kAdminCardGap),
+                _AdminSettingsCard(
+                  backgroundColor: Color.alphaBlend(
+                    nyan.primary.withValues(
+                        alpha:
+                            nyan.brightness == Brightness.dark ? 0.12 : 0.05),
+                    nyan.surface,
                   ),
-                ],
-              ),
-            ],
+                  borderColor: nyan.primaryDeep.withValues(
+                      alpha: nyan.brightness == Brightness.dark ? 0.42 : 0.2),
+                  children: [
+                    _AdminHintRow(
+                      title: loc.adminPanelHintTitle,
+                      subtitle: loc.adminPanelHintSubtitle,
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -284,13 +288,15 @@ class _AdminSwitchRow extends StatelessWidget {
                 }),
                 trackOutlineColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
-                    return Colors.transparent;
+                    return theme.colorScheme.surface.withValues(alpha: 0);
                   }
                   return theme.dividerColor.withValues(
                     alpha: isDark ? 0.14 : 0.18,
                   );
                 }),
-                overlayColor: WidgetStateProperty.all(Colors.transparent),
+                overlayColor: WidgetStateProperty.all(
+                  theme.colorScheme.surface.withValues(alpha: 0),
+                ),
               ),
             ),
             child: Switch(

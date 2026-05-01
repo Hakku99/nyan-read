@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/nyan_radius.dart';
 import '../../../core/theme/nyan_spacing.dart';
 
@@ -61,20 +62,22 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
 
     final unselectedColor = widget.unselectedColor ??
         theme.textTheme.bodySmall?.color ??
-        Colors.grey;
+        theme.colorScheme.onSurface.withValues(alpha: 0.62);
 
     // Text color for selected tab (tinted pill uses primary ink; solid fill uses onPrimary in light).
     final Color selectedTextColor = widget.selectedColor != null
         ? (isDark ? theme.colorScheme.primary : theme.colorScheme.onPrimary)
         : subtle
             ? theme.colorScheme.primary
-            : (isDark ? theme.colorScheme.primary : theme.colorScheme.onPrimary);
+            : (isDark
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onPrimary);
 
     return Container(
       height: 40,
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(NyanRadius.card),
+        borderRadius: BorderRadius.circular(AppRadius.large),
         border: Border.all(
           color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
           width: 1,
@@ -103,8 +106,8 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                     borderRadius: BorderRadius.circular(NyanRadius.input),
                     border: isDark && !subtle
                         ? Border.all(
-                            color:
-                                theme.colorScheme.primary.withValues(alpha: 0.5),
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.5),
                             width: 1,
                           )
                         : subtle && isDark

@@ -53,7 +53,8 @@ class ChapterListWidget extends StatefulWidget {
 
 class _ChapterListWidgetState extends State<ChapterListWidget> {
   final ItemScrollController _itemScrollController = ItemScrollController();
-  final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
+  final ItemPositionsListener _itemPositionsListener =
+      ItemPositionsListener.create();
 
   _TocSortOrder _sortOrder = _TocSortOrder.asc;
   bool _showJumpToCurrent = false;
@@ -109,8 +110,10 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
   @override
   void initState() {
     super.initState();
-    _itemPositionsListener.itemPositions.addListener(_handleItemPositionsChanged);
-    if (widget.currentChapterIndex != null && widget.currentChapterIndex! >= 0) {
+    _itemPositionsListener.itemPositions
+        .addListener(_handleItemPositionsChanged);
+    if (widget.currentChapterIndex != null &&
+        widget.currentChapterIndex! >= 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _jumpToCurrentChapter(animated: false);
       });
@@ -119,7 +122,8 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
 
   @override
   void dispose() {
-    _itemPositionsListener.itemPositions.removeListener(_handleItemPositionsChanged);
+    _itemPositionsListener.itemPositions
+        .removeListener(_handleItemPositionsChanged);
     super.dispose();
   }
 
@@ -134,8 +138,8 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
         .where((item) => item.itemLeadingEdge < 1 && item.itemTrailingEdge > 0)
         .map((item) => item.index)
         .toSet();
-    final shouldShow =
-        currentVisibleIndex == -1 || !visiblePositions.contains(currentVisibleIndex);
+    final shouldShow = currentVisibleIndex == -1 ||
+        !visiblePositions.contains(currentVisibleIndex);
     if (_showJumpToCurrent != shouldShow) {
       setState(() {
         _showJumpToCurrent = shouldShow;
@@ -144,7 +148,8 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
   }
 
   void _jumpToCurrentChapter({required bool animated}) {
-    if (!_itemScrollController.isAttached || widget.currentChapterIndex == null) {
+    if (!_itemScrollController.isAttached ||
+        widget.currentChapterIndex == null) {
       return;
     }
     final index = _visibleEntries.indexWhere(
@@ -166,8 +171,8 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
   bool _shouldUseCompactSheet(BuildContext context, int visibleCount) {
     if (visibleCount > _kTocMaxShrinkWrapRows) return false;
     final scale = MediaQuery.textScalerOf(context).scale(1.0);
-    final estimate =
-        _kTocSheetChromeHeight * scale + visibleCount * (_kTocApproxRowHeight * scale);
+    final estimate = _kTocSheetChromeHeight * scale +
+        visibleCount * (_kTocApproxRowHeight * scale);
     return estimate <= widget.maxSheetHeight * 0.98;
   }
 
@@ -199,7 +204,8 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
               indexLabel: '${item.sourceIndex + 1}',
               isCurrent: item.isCurrent,
               showDivider: index != entries.length - 1,
-              onTap: () => widget.onChapterTap(item.sourceIndex, item.chapter.locator),
+              onTap: () =>
+                  widget.onChapterTap(item.sourceIndex, item.chapter.locator),
             );
           },
         ),
@@ -311,8 +317,9 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
                   else
                     ConstrainedBox(
                       constraints: BoxConstraints(
-                        maxHeight: (widget.maxSheetHeight - _kTocSheetChromeHeight)
-                            .clamp(120.0, widget.maxSheetHeight),
+                        maxHeight:
+                            (widget.maxSheetHeight - _kTocSheetChromeHeight)
+                                .clamp(120.0, widget.maxSheetHeight),
                       ),
                       child: _buildListStack(
                         loc: loc,
@@ -385,7 +392,8 @@ class _BookHeaderCard extends StatelessWidget {
     final titleSmallSize = theme.textTheme.titleSmall?.fontSize ?? 14;
     final titleMediumSize = theme.textTheme.titleMedium?.fontSize ?? 20;
     // Between titleSmall and titleMedium: slightly larger than current, smaller than old header.
-    final bookTitleFontSize = lerpDouble(titleSmallSize, titleMediumSize, 0.45)!;
+    final bookTitleFontSize =
+        lerpDouble(titleSmallSize, titleMediumSize, 0.45)!;
     return InkWell(
       borderRadius: BorderRadius.circular(NyanRadius.panel),
       onLongPress: onCopyTitle,
@@ -405,7 +413,8 @@ class _BookHeaderCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(NyanRadius.input),
               ),
               alignment: Alignment.center,
-              child: Icon(Icons.menu_book_rounded, color: nyanTheme.primary, size: 19),
+              child: Icon(Icons.menu_book_rounded,
+                  color: nyanTheme.primary, size: 19),
             ),
             const SizedBox(width: NyanSpacing.space12),
             Expanded(
@@ -484,14 +493,18 @@ class ChapterListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final nyanTheme = resolveNyanTheme(Theme.of(context));
-    final rowColor = isCurrent ? nyanTheme.primary.withValues(alpha: 0.08) : Colors.transparent;
+    final rowColor = isCurrent
+        ? nyanTheme.primary.withValues(alpha: 0.08)
+        : nyanTheme.surface.withValues(alpha: 0);
     final numberBg = isCurrent ? nyanTheme.primary : nyanTheme.surfaceMuted;
     final numberFg = isCurrent ? nyanTheme.onPrimary : nyanTheme.textSecondary;
-    final titleColor = isCurrent ? nyanTheme.primaryDeep : nyanTheme.textPrimary;
+    final titleColor =
+        isCurrent ? nyanTheme.primaryDeep : nyanTheme.textPrimary;
     final loc = AppLocalizations.of(context)!;
 
     return Semantics(
-      label: '$indexLabel, $title, ${isCurrent ? loc.jumpToCurrentChapter : ''}',
+      label:
+          '$indexLabel, $title, ${isCurrent ? loc.jumpToCurrentChapter : ''}',
       button: true,
       child: Material(
         color: rowColor,
@@ -543,7 +556,7 @@ class ChapterListItem extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       height: 1.3,
-                      fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
                       color: titleColor,
                     ),
                   ),

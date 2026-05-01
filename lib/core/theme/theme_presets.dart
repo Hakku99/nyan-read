@@ -68,23 +68,27 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
     required this.fabForeground,
   });
 
-  Color get onPrimary =>
-      brightness == Brightness.dark ? const Color(0xFF1C1B1A) : NyanColors.white;
+  Color get onPrimary => brightness == Brightness.dark
+      ? const Color(0xFF1C1B1A)
+      : NyanColors.white;
   Color get onSecondary => NyanColors.white;
   Color get onError => NyanColors.white;
-  Color get inverseBorder =>
-      brightness == Brightness.dark ? NyanColors.white.withValues(alpha: 0.08) : divider;
+  Color get inverseBorder => brightness == Brightness.dark
+      ? NyanColors.white.withValues(alpha: 0.08)
+      : divider;
 
   ThemeData get themeData {
+    final transparentSurface = surface.withValues(alpha: 0);
+    final softError = brightness == Brightness.dark
+        ? errorSecondaryTextColor
+        : errorPrimaryTextColor;
     final colorScheme = ColorScheme(
       brightness: brightness,
       primary: primary,
       onPrimary: onPrimary,
       secondary: accent,
       onSecondary: onSecondary,
-      error: brightness == Brightness.dark
-          ? const Color(0xFFCF6679)
-          : Colors.redAccent,
+      error: softError,
       onError: onError,
       surface: surface,
       onSurface: textPrimary,
@@ -142,8 +146,9 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              brightness == Brightness.dark ? primary.withValues(alpha: 0.15) : primary,
+          backgroundColor: brightness == Brightness.dark
+              ? primary.withValues(alpha: 0.15)
+              : primary,
           foregroundColor: brightness == Brightness.dark ? primary : onPrimary,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -204,6 +209,17 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
           borderRadius: BorderRadius.circular(NyanRadius.panel),
         ),
       ),
+      switchTheme: SwitchThemeData(
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return transparentSurface;
+          }
+          return divider.withValues(
+              alpha: brightness == Brightness.dark ? 0.14 : 0.18);
+        }),
+        overlayColor: WidgetStatePropertyAll(transparentSurface),
+      ),
       textTheme: NyanTypography.textTheme(
         textMain: textPrimary,
         textSecondary: textSecondary,
@@ -256,8 +272,10 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
       divider: divider ?? this.divider,
       borderColor: borderColor ?? this.borderColor,
       brightness: brightness ?? this.brightness,
-      primaryButtonBackground: primaryButtonBackground ?? this.primaryButtonBackground,
-      primaryButtonForeground: primaryButtonForeground ?? this.primaryButtonForeground,
+      primaryButtonBackground:
+          primaryButtonBackground ?? this.primaryButtonBackground,
+      primaryButtonForeground:
+          primaryButtonForeground ?? this.primaryButtonForeground,
       successColor: successColor ?? this.successColor,
       warningColor: warningColor ?? this.warningColor,
       infoColor: infoColor ?? this.infoColor,
@@ -293,10 +311,10 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
       divider: Color.lerp(divider, other.divider, t)!,
       borderColor: Color.lerp(borderColor, other.borderColor, t)!,
       brightness: t < 0.5 ? brightness : other.brightness,
-      primaryButtonBackground:
-          Color.lerp(primaryButtonBackground, other.primaryButtonBackground, t)!,
-      primaryButtonForeground:
-          Color.lerp(primaryButtonForeground, other.primaryButtonForeground, t)!,
+      primaryButtonBackground: Color.lerp(
+          primaryButtonBackground, other.primaryButtonBackground, t)!,
+      primaryButtonForeground: Color.lerp(
+          primaryButtonForeground, other.primaryButtonForeground, t)!,
       successColor: Color.lerp(successColor, other.successColor, t)!,
       warningColor: Color.lerp(warningColor, other.warningColor, t)!,
       infoColor: Color.lerp(infoColor, other.infoColor, t)!,
@@ -309,7 +327,8 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
         other.errorSecondaryTextColor,
         t,
       )!,
-      errorAccentColor: Color.lerp(errorAccentColor, other.errorAccentColor, t)!,
+      errorAccentColor:
+          Color.lerp(errorAccentColor, other.errorAccentColor, t)!,
       fabBackground: Color.lerp(fabBackground, other.fabBackground, t)!,
       fabForeground: Color.lerp(fabForeground, other.fabForeground, t)!,
     );
@@ -327,20 +346,20 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     background: NyanColors.creamBackground,
     textPrimary: NyanColors.creamTextMain,
     textSecondary: NyanColors.creamTextSecondary,
-    textMuted: Color(0xFFB0ACA5),
+    textMuted: NyanColors.creamTextMuted,
     accent: NyanColors.creamPrimaryDeep,
     divider: NyanColors.creamDivider,
     borderColor: NyanColors.creamDivider,
     brightness: Brightness.light,
     primaryButtonBackground: NyanColors.creamPrimary,
     primaryButtonForeground: NyanColors.creamSurface,
-    successColor: Color(0xFF6B8E23),
+    successColor: NyanColors.creamSuccess,
     warningColor: NyanColors.highlightOrange,
-    infoColor: Color(0xFF7FABAC),
-    errorBackgroundColor: Color(0xFFFFF0F0),
-    errorPrimaryTextColor: Color(0xFFC62828),
-    errorSecondaryTextColor: Color(0xFFD32F2F),
-    errorAccentColor: Color(0xFFFFCDD2),
+    infoColor: NyanColors.readerInfoBlue,
+    errorBackgroundColor: NyanColors.errorBackgroundLight,
+    errorPrimaryTextColor: NyanColors.errorPrimaryLight,
+    errorSecondaryTextColor: NyanColors.errorSecondaryLight,
+    errorAccentColor: NyanColors.errorAccentLight,
     fabBackground: NyanColors.creamPrimaryDeep,
     fabForeground: NyanColors.creamSurface,
   ),
@@ -350,33 +369,29 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     primary: NyanColors.inkNightPrimary,
     primaryDeep: NyanColors.inkNightPrimaryDeep,
     surface: NyanColors.inkNightSurface,
-    surfaceMuted: Color(0xFF202520),
+    surfaceMuted: NyanColors.inkNightSurfaceMuted,
     background: NyanColors.inkNightBackground,
     textPrimary: NyanColors.inkNightTextMain,
     textSecondary: NyanColors.inkNightTextSecondary,
-    textMuted: Color(0xFF8F8A84),
+    textMuted: NyanColors.inkNightTextMuted,
     accent: NyanColors.highlightOrange,
     divider: NyanColors.inkNightDivider,
     borderColor: NyanColors.inkNightDivider,
     brightness: Brightness.dark,
     primaryButtonBackground: NyanColors.inkNightPrimary,
     primaryButtonForeground: NyanColors.inkNightTextMain,
-    successColor: Color(0xFF8FBC8F),
+    successColor: NyanColors.inkNightSuccess,
     warningColor: NyanColors.highlightOrange,
-    infoColor: Color(0xFF7FABAC),
-    errorBackgroundColor: Color(0xFF2B2020),
-    errorPrimaryTextColor: Color(0xFFFFCDD2),
-    errorSecondaryTextColor: Color(0xFFE57373),
-    errorAccentColor: Color(0xFFEF9A9A),
+    infoColor: NyanColors.readerInfoBlue,
+    errorBackgroundColor: NyanColors.errorBackgroundDark,
+    errorPrimaryTextColor: NyanColors.errorPrimaryDark,
+    errorSecondaryTextColor: NyanColors.errorSecondaryDark,
+    errorAccentColor: NyanColors.errorAccentDark,
     fabBackground: NyanColors.inkNightPrimary,
     fabForeground: NyanColors.inkNightTextMain,
   ),
 };
 
 NyanTheme resolveNyanTheme(ThemeData theme) {
-  return theme.extension<NyanTheme>() ??
-      themePresets[ThemePreset.creamLight]!;
+  return theme.extension<NyanTheme>() ?? themePresets[ThemePreset.creamLight]!;
 }
-
-
-

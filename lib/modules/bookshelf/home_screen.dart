@@ -329,7 +329,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     }
   }
 
-
   void _showImportMenu(BuildContext context) {
     final parentContext = context;
     final featureManager = ref.read(featureManagerRpProvider);
@@ -343,7 +342,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor:
+          Theme.of(context).colorScheme.surface.withValues(alpha: 0),
       builder: (context) {
         return ImportBookSheet(
           isEmptyShelf: activeBooks.isEmpty,
@@ -357,7 +357,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     );
   }
 
-
   void _showSortMenu(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
     final sortOptions = [
@@ -369,7 +368,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       (SortBy.title, false, loc.titleDesc),
     ];
 
-    final selected = await showNyanSelectionSheet<({SortBy sortBy, bool isAscending})>(
+    final selected =
+        await showNyanSelectionSheet<({SortBy sortBy, bool isAscending})>(
       context: context,
       title: loc.sortBy,
       currentValue: (sortBy: _prefs.sortBy, isAscending: _prefs.isAscending),
@@ -553,8 +553,9 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                   tooltip: AppLocalizations.of(context)!.viewDetails,
                   onPressed: () async {
                     final bookId = vm.selectedBookIds.first;
-                    final bookData =
-                        await ref.read(databaseServiceRpProvider).getBookById(bookId);
+                    final bookData = await ref
+                        .read(databaseServiceRpProvider)
+                        .getBookById(bookId);
                     if (bookData != null && context.mounted) {
                       final book = Book.fromMap(bookData);
                       Navigator.push(
@@ -571,8 +572,9 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                 ),
               if (selectedCount > 0 && featureManager.isPro)
                 buildToolbarButton(
-                  icon:
-                      showPrivacyTab ? Icons.lock_open_rounded : Icons.lock_rounded,
+                  icon: showPrivacyTab
+                      ? Icons.lock_open_rounded
+                      : Icons.lock_rounded,
                   tooltip: showPrivacyTab
                       ? AppLocalizations.of(context)!.moveToPublic
                       : AppLocalizations.of(context)!.moveToPrivate,
@@ -603,7 +605,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               const SizedBox(width: NyanSpacing.space8),
             ],
             backgroundColor: theme.scaffoldBackgroundColor,
-            surfaceTintColor: Colors.transparent,
+            surfaceTintColor: theme.colorScheme.surface.withValues(alpha: 0),
             elevation: 0,
             scrolledUnderElevation: 0,
             iconTheme: theme.iconTheme.copyWith(
@@ -646,6 +648,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       },
     );
   }
+
   Widget _buildLibrarySurface(
     BuildContext context, {
     required FeatureManager featureManager,
@@ -815,10 +818,11 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               : Builder(
                   builder: (context) {
                     final nyan = context.nyanTheme;
+                    final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
                     return Padding(
-                      padding: const EdgeInsets.only(
+                      padding: EdgeInsets.only(
                         right: NyanSpacing.space4,
-                        bottom: NyanSpacing.space8,
+                        bottom: NyanSpacing.space8 + safeBottom,
                       ),
                       child: FloatingActionButton(
                         onPressed: () => _showImportMenu(context),
@@ -859,31 +863,34 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       return [
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.only(bottom: _shelfScrollBottomPadding(context)),
+            padding:
+                EdgeInsets.only(bottom: _shelfScrollBottomPadding(context)),
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: minEmptyBody),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                final compactLayout = constraints.maxHeight < 520;
+                  final compactLayout = constraints.maxHeight < 520;
 
-                return Center(
-                  child: NyanEmptyState(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: NyanSpacing.space24,
+                  return Center(
+                    child: NyanEmptyState(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: NyanSpacing.space24,
+                      ),
+                      iconSpacing: NyanSpacing.space12,
+                      descriptionSpacing: NyanSpacing.space4,
+                      textMinHeight: compactLayout ? 112 : 132,
+                      icon: MascotManager().render(
+                        MascotScene.emptyShelf,
+                        size: compactLayout ? 112 : 128,
+                      ),
+                      title: isPrivate
+                          ? loc.emptyShelfMessage
+                          : loc.emptyShelfTitle,
+                      description: isPrivate
+                          ? loc.emptyPrivateShelf
+                          : loc.emptyShelfSubtitle,
                     ),
-                    iconSpacing: NyanSpacing.space12,
-                    descriptionSpacing: NyanSpacing.space4,
-                    textMinHeight: compactLayout ? 112 : 132,
-                    icon: MascotManager().render(
-                      MascotScene.emptyShelf,
-                      size: compactLayout ? 112 : 128,
-                    ),
-                    title: isPrivate ? loc.emptyShelfMessage : loc.emptyShelfTitle,
-                    description: isPrivate
-                        ? loc.emptyPrivateShelf
-                        : loc.emptyShelfSubtitle,
-                  ),
-                );
+                  );
                 },
               ),
             ),
@@ -933,7 +940,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     }
 
     final leadingBooks = books.take(AdsUI.bookshelfGridInsertionCount).toList();
-    final trailingBooks = books.skip(AdsUI.bookshelfGridInsertionCount).toList();
+    final trailingBooks =
+        books.skip(AdsUI.bookshelfGridInsertionCount).toList();
 
     return [
       SliverPadding(
@@ -941,7 +949,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         sliver: SliverGrid(
           gridDelegate: _bookshelfGridDelegate(),
           delegate: SliverChildBuilderDelegate(
-            (context, index) => _buildGridBookTile(context, leadingBooks[index]),
+            (context, index) =>
+                _buildGridBookTile(context, leadingBooks[index]),
             childCount: leadingBooks.length,
           ),
         ),
@@ -1113,9 +1122,3 @@ class _ImportedBookSource {
     required this.signatureHint,
   });
 }
-
-
-
-
-
-

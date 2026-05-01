@@ -61,7 +61,7 @@ Future<void> _showExportActionsSheet(
 
   await showModalBottomSheet<void>(
     context: context,
-    backgroundColor: Colors.transparent,
+    backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0),
     isScrollControlled: true,
     builder: (sheetContext) {
       final theme = Theme.of(sheetContext);
@@ -76,8 +76,7 @@ Future<void> _showExportActionsSheet(
           left: _kSettingsSheetOuterPadding,
           right: _kSettingsSheetOuterPadding,
           top: NyanSpacing.space12,
-          bottom:
-              _kSettingsSheetBottomPadding +
+          bottom: _kSettingsSheetBottomPadding +
               MediaQuery.of(sheetContext).padding.bottom,
         ),
         titleTopSpacing: NyanSpacing.space8,
@@ -233,229 +232,237 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               _kSettingsHorizontalPadding,
               _kSettingsHorizontalPadding,
               _kSettingsHorizontalPadding,
-              _kSettingsHorizontalPadding + MediaQuery.of(context).padding.bottom,
+              _kSettingsHorizontalPadding +
+                  MediaQuery.of(context).padding.bottom,
             ),
             children: [
-          _SectionHeader(title: loc.appearance),
-          _SettingsCard(
-            children: [
-              _SelectionRow(
-                title: loc.themePreset,
-                valueLabel: _getThemeName(themeManager.currentPreset, loc),
-                onTap: () async {
-                  final preset = await showNyanSelectionSheet<ThemePreset>(
-                    context: context,
-                    title: loc.themePreset,
-                    currentValue: themeManager.currentPreset,
-                    options: themePresets.values
-                        .map(
-                          (theme) => NyanSelectionOption(
-                            value: theme.preset,
-                            label: _getThemeName(theme.preset, loc),
-                          ),
-                        )
-                        .toList(),
-                  );
-                  if (preset != null) {
-                    await themeManager.setPreset(preset);
-                  }
-                },
-              ),
-              const _SettingsDivider(),
-              _SelectionRow(
-                title: loc.language,
-                valueLabel: languageManager.locale.languageCode == 'zh'
-                    ? '\u4E2D\u6587'
-                    : 'English',
-                onTap: () async {
-                  final locale = await showNyanSelectionSheet<Locale>(
-                    context: context,
-                    title: loc.language,
-                    currentValue: languageManager.locale,
-                    options: const [
-                      NyanSelectionOption(value: Locale('zh'), label: '\u4E2D\u6587'),
-                      NyanSelectionOption(value: Locale('en'), label: 'English'),
-                    ],
-                  );
-                  if (locale != null) {
-                    await languageManager.setLocale(locale);
-                  }
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: _kSettingsSectionGap),
-          _SectionHeader(title: loc.readingSettings),
-          ListenableBuilder(
-            listenable: Listenable.merge(
-              [readerPrefs, reminderService],
-            ),
-            builder: (context, child) {
-              return _SettingsCard(
+              _SectionHeader(title: loc.appearance),
+              _SettingsCard(
                 children: [
                   _SelectionRow(
-                    title: loc.pageAnimation,
-                    valueLabel: _getPageAnimationLabel(
-                      readerPrefs.pageAnimation,
-                      loc,
-                    ),
+                    title: loc.themePreset,
+                    valueLabel: _getThemeName(themeManager.currentPreset, loc),
                     onTap: () async {
-                      final animation = await showNyanSelectionSheet<PageAnimation>(
+                      final preset = await showNyanSelectionSheet<ThemePreset>(
                         context: context,
-                        title: loc.pageAnimation,
-                        currentValue: readerPrefs.pageAnimation,
-                        options: [
-                          NyanSelectionOption(
-                            value: PageAnimation.fade,
-                            label: loc.pageAnimFade,
-                          ),
-                          NyanSelectionOption(
-                            value: PageAnimation.paper,
-                            label: loc.pageAnimPaper,
-                          ),
-                          NyanSelectionOption(
-                            value: PageAnimation.none,
-                            label: loc.pageAnimNone,
-                          ),
-                        ],
+                        title: loc.themePreset,
+                        currentValue: themeManager.currentPreset,
+                        options: themePresets.values
+                            .map(
+                              (theme) => NyanSelectionOption(
+                                value: theme.preset,
+                                label: _getThemeName(theme.preset, loc),
+                              ),
+                            )
+                            .toList(),
                       );
-                      if (animation != null) {
-                        await readerPrefs.setPageAnimation(animation);
+                      if (preset != null) {
+                        await themeManager.setPreset(preset);
                       }
                     },
                   ),
                   const _SettingsDivider(),
-                  _SwitchRow(
-                    title: loc.readingReminder,
-                    subtitle: loc.readingReminderSubtitle,
-                    value: reminderService.isEnabled,
-                    onChanged: (value) {
-                      reminderService.setEnabled(value);
+                  _SelectionRow(
+                    title: loc.language,
+                    valueLabel: languageManager.locale.languageCode == 'zh'
+                        ? '\u4E2D\u6587'
+                        : 'English',
+                    onTap: () async {
+                      final locale = await showNyanSelectionSheet<Locale>(
+                        context: context,
+                        title: loc.language,
+                        currentValue: languageManager.locale,
+                        options: const [
+                          NyanSelectionOption(
+                              value: Locale('zh'), label: '\u4E2D\u6587'),
+                          NyanSelectionOption(
+                              value: Locale('en'), label: 'English'),
+                        ],
+                      );
+                      if (locale != null) {
+                        await languageManager.setLocale(locale);
+                      }
                     },
                   ),
-                  if (reminderService.isEnabled) ...[
-                    const _SettingsDivider(),
-                    _SelectionRow(
-                      title: loc.reminderInterval,
-                      valueLabel:
-                          loc.reminderMinutes(reminderService.intervalMinutes),
-                      inset: true,
-                      onTap: () async {
-                        final interval = await showNyanSelectionSheet<int>(
-                          context: context,
+                ],
+              ),
+              const SizedBox(height: _kSettingsSectionGap),
+              _SectionHeader(title: loc.readingSettings),
+              ListenableBuilder(
+                listenable: Listenable.merge(
+                  [readerPrefs, reminderService],
+                ),
+                builder: (context, child) {
+                  return _SettingsCard(
+                    children: [
+                      _SelectionRow(
+                        title: loc.pageAnimation,
+                        valueLabel: _getPageAnimationLabel(
+                          readerPrefs.pageAnimation,
+                          loc,
+                        ),
+                        onTap: () async {
+                          final animation =
+                              await showNyanSelectionSheet<PageAnimation>(
+                            context: context,
+                            title: loc.pageAnimation,
+                            currentValue: readerPrefs.pageAnimation,
+                            options: [
+                              NyanSelectionOption(
+                                value: PageAnimation.fade,
+                                label: loc.pageAnimFade,
+                              ),
+                              NyanSelectionOption(
+                                value: PageAnimation.paper,
+                                label: loc.pageAnimPaper,
+                              ),
+                              NyanSelectionOption(
+                                value: PageAnimation.none,
+                                label: loc.pageAnimNone,
+                              ),
+                            ],
+                          );
+                          if (animation != null) {
+                            await readerPrefs.setPageAnimation(animation);
+                          }
+                        },
+                      ),
+                      const _SettingsDivider(),
+                      _SwitchRow(
+                        title: loc.readingReminder,
+                        subtitle: loc.readingReminderSubtitle,
+                        value: reminderService.isEnabled,
+                        onChanged: (value) {
+                          reminderService.setEnabled(value);
+                        },
+                      ),
+                      if (reminderService.isEnabled) ...[
+                        const _SettingsDivider(),
+                        _SelectionRow(
                           title: loc.reminderInterval,
-                          currentValue: reminderService.intervalMinutes,
-                          options: [
-                            NyanSelectionOption(
-                              value: 30,
-                              label: loc.reminderMinutes(30),
-                            ),
-                            NyanSelectionOption(
-                              value: 60,
-                              label: loc.reminderMinutes(60),
-                            ),
-                            NyanSelectionOption(
-                              value: 90,
-                              label: loc.reminderMinutes(90),
-                            ),
-                          ],
-                        );
-                        if (interval != null) {
-                          reminderService.setIntervalMinutes(interval);
-                        }
+                          valueLabel: loc
+                              .reminderMinutes(reminderService.intervalMinutes),
+                          inset: true,
+                          onTap: () async {
+                            final interval = await showNyanSelectionSheet<int>(
+                              context: context,
+                              title: loc.reminderInterval,
+                              currentValue: reminderService.intervalMinutes,
+                              options: [
+                                NyanSelectionOption(
+                                  value: 30,
+                                  label: loc.reminderMinutes(30),
+                                ),
+                                NyanSelectionOption(
+                                  value: 60,
+                                  label: loc.reminderMinutes(60),
+                                ),
+                                NyanSelectionOption(
+                                  value: 90,
+                                  label: loc.reminderMinutes(90),
+                                ),
+                              ],
+                            );
+                            if (interval != null) {
+                              reminderService.setIntervalMinutes(interval);
+                            }
+                          },
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: _kSettingsSectionGap),
+              _SectionHeader(title: loc.dataManagement),
+              _SettingsCard(
+                children: [
+                  _ActionRow(
+                    icon: Icons.save_alt_rounded,
+                    title: loc.exportData,
+                    subtitle: loc.exportDataSubtitle,
+                    onTap: () => _handleExportData(context),
+                  ),
+                  const _SettingsDivider(),
+                  _ActionRow(
+                    icon: Icons.upload_file_rounded,
+                    title: loc.importData,
+                    subtitle: loc.importDataSubtitle,
+                    onTap: () => _handleImportData(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: _kSettingsCardGap),
+              StatefulBuilder(
+                builder: (context, setLocalState) {
+                  final bookshelfPrefs = getIt<BookshelfPreferencesService>();
+                  final theme = Theme.of(context);
+                  final isDark = theme.brightness == Brightness.dark;
+                  final cautionSubtitleColor =
+                      theme.colorScheme.error.withValues(
+                    alpha: isDark ? 0.72 : 0.66,
+                  );
+
+                  return _SettingsCard(
+                    children: [
+                      _SwitchRow(
+                        title: loc.deleteFilesOnRemove,
+                        subtitle: loc.deleteFilesOnRemoveSubtitle,
+                        subtitleColor: cautionSubtitleColor.withValues(
+                          alpha: isDark ? 0.88 : 0.8,
+                        ),
+                        value: bookshelfPrefs.deleteFilesOnRemove,
+                        onChanged: (value) async {
+                          await bookshelfPrefs.setDeleteFilesOnRemove(value);
+                          setLocalState(() {});
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: _kSettingsCardGap),
+              _SettingsCard(
+                children: [
+                  _ActionRow(
+                    icon: Icons.admin_panel_settings_rounded,
+                    iconColor: Theme.of(context).textTheme.bodySmall?.color,
+                    title: loc.adminPanel,
+                    onTap: () => context.push('/admin'),
+                  ),
+                ],
+              ),
+              if (!featureManager.isPro) ...[
+                const SizedBox(height: _kSettingsCardGap),
+                _SettingsCard(
+                  backgroundColor: Color.alphaBlend(
+                    theme.colorScheme.primary.withValues(
+                      alpha: theme.brightness == Brightness.dark ? 0.11 : 0.045,
+                    ),
+                    theme.cardColor,
+                  ),
+                  borderColor: theme.colorScheme.primary.withValues(
+                    alpha: theme.brightness == Brightness.dark ? 0.2 : 0.12,
+                  ),
+                  shadowAlpha: theme.brightness == Brightness.dark ? 0 : 0.024,
+                  children: [
+                    _ActionRow(
+                      icon: Icons.auto_awesome_rounded,
+                      iconColor: Theme.of(context).colorScheme.primary,
+                      iconBackgroundAlpha:
+                          theme.brightness == Brightness.dark ? 0.2 : 0.14,
+                      titleColor: theme.textTheme.bodyLarge?.color
+                          ?.withValues(alpha: 0.94),
+                      chevronColor:
+                          theme.colorScheme.primary.withValues(alpha: 0.58),
+                      title: loc.upgradeToPro,
+                      onTap: () {
+                        // TODO: Implement upgrade flow
                       },
                     ),
                   ],
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: _kSettingsSectionGap),
-          _SectionHeader(title: loc.dataManagement),
-          _SettingsCard(
-            children: [
-              _ActionRow(
-                icon: Icons.save_alt_rounded,
-                title: loc.exportData,
-                subtitle: loc.exportDataSubtitle,
-                onTap: () => _handleExportData(context),
-              ),
-              const _SettingsDivider(),
-              _ActionRow(
-                icon: Icons.upload_file_rounded,
-                title: loc.importData,
-                subtitle: loc.importDataSubtitle,
-                onTap: () => _handleImportData(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: _kSettingsCardGap),
-          StatefulBuilder(
-            builder: (context, setLocalState) {
-              final bookshelfPrefs = getIt<BookshelfPreferencesService>();
-              final theme = Theme.of(context);
-              final isDark = theme.brightness == Brightness.dark;
-              final cautionSubtitleColor = theme.colorScheme.error.withValues(
-                alpha: isDark ? 0.72 : 0.66,
-              );
-
-              return _SettingsCard(
-                children: [
-                  _SwitchRow(
-                    title: loc.deleteFilesOnRemove,
-                    subtitle: loc.deleteFilesOnRemoveSubtitle,
-                    subtitleColor: cautionSubtitleColor.withValues(
-                      alpha: isDark ? 0.88 : 0.8,
-                    ),
-                    value: bookshelfPrefs.deleteFilesOnRemove,
-                    onChanged: (value) async {
-                      await bookshelfPrefs.setDeleteFilesOnRemove(value);
-                      setLocalState(() {});
-                    },
-                  ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: _kSettingsCardGap),
-          _SettingsCard(
-            children: [
-              _ActionRow(
-                icon: Icons.admin_panel_settings_rounded,
-                iconColor: Theme.of(context).textTheme.bodySmall?.color,
-                title: loc.adminPanel,
-                onTap: () => context.push('/admin'),
-              ),
-            ],
-          ),
-          if (!featureManager.isPro) ...[
-            const SizedBox(height: _kSettingsCardGap),
-            _SettingsCard(
-              backgroundColor: Color.alphaBlend(
-                theme.colorScheme.primary.withValues(
-                  alpha: theme.brightness == Brightness.dark ? 0.11 : 0.045,
-                ),
-                theme.cardColor,
-              ),
-              borderColor: theme.colorScheme.primary.withValues(
-                alpha: theme.brightness == Brightness.dark ? 0.2 : 0.12,
-              ),
-              shadowAlpha: theme.brightness == Brightness.dark ? 0 : 0.024,
-              children: [
-                _ActionRow(
-                  icon: Icons.auto_awesome_rounded,
-                  iconColor: Theme.of(context).colorScheme.primary,
-                  iconBackgroundAlpha: theme.brightness == Brightness.dark ? 0.2 : 0.14,
-                  titleColor: theme.textTheme.bodyLarge?.color?.withValues(alpha: 0.94),
-                  chevronColor: theme.colorScheme.primary.withValues(alpha: 0.58),
-                  title: loc.upgradeToPro,
-                  onTap: () {
-                    // TODO: Implement upgrade flow
-                  },
                 ),
               ],
-            ),
-          ],
             ],
           ),
         );
@@ -532,8 +539,7 @@ class _SettingsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final resolvedBorderColor =
-        borderColor ??
+    final resolvedBorderColor = borderColor ??
         theme.dividerColor.withValues(alpha: isDark ? 0.2 : 0.16);
 
     return Container(
@@ -548,7 +554,8 @@ class _SettingsCard extends StatelessWidget {
             ? const []
             : [
                 BoxShadow(
-                  color: theme.shadowColor.withValues(alpha: shadowAlpha ?? 0.014),
+                  color:
+                      theme.shadowColor.withValues(alpha: shadowAlpha ?? 0.014),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -711,8 +718,7 @@ class _SwitchRow extends StatelessWidget {
                     subtitle!,
                     style: theme.textTheme.bodySmall?.copyWith(
                       height: 1.3,
-                      color:
-                          subtitleColor ??
+                      color: subtitleColor ??
                           theme.textTheme.bodySmall?.color?.withValues(
                             alpha: 0.8,
                           ),
@@ -750,13 +756,15 @@ class _SwitchRow extends StatelessWidget {
                 }),
                 trackOutlineColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
-                    return Colors.transparent;
+                    return theme.colorScheme.surface.withValues(alpha: 0);
                   }
                   return theme.dividerColor.withValues(
                     alpha: isDark ? 0.14 : 0.18,
                   );
                 }),
-                overlayColor: WidgetStateProperty.all(Colors.transparent),
+                overlayColor: WidgetStateProperty.all(
+                  theme.colorScheme.surface.withValues(alpha: 0),
+                ),
               ),
             ),
             child: Switch(
@@ -812,8 +820,7 @@ class _ActionRow extends StatelessWidget {
               height: 36,
               decoration: BoxDecoration(
                 color: tone.withValues(
-                  alpha:
-                      iconBackgroundAlpha ??
+                  alpha: iconBackgroundAlpha ??
                       (theme.brightness == Brightness.dark ? 0.12 : 0.08),
                 ),
                 borderRadius: BorderRadius.circular(NyanRadius.small),
@@ -851,8 +858,7 @@ class _ActionRow extends StatelessWidget {
             Icon(
               Icons.chevron_right_rounded,
               size: 20,
-              color:
-                  chevronColor ??
+              color: chevronColor ??
                   theme.textTheme.bodySmall?.color?.withValues(alpha: 0.56),
             ),
           ],

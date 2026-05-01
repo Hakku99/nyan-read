@@ -204,16 +204,20 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                   // another subscription.
                                   final isDark =
                                       backgroundColor.computeLuminance() < 0.5;
+                                  final transparentSystem = Theme.of(context)
+                                      .colorScheme
+                                      .surface
+                                      .withValues(alpha: 0);
                                   final systemOverlayStyle = isDark
                                       ? SystemUiOverlayStyle.light.copyWith(
-                                          statusBarColor: Colors.transparent,
+                                          statusBarColor: transparentSystem,
                                           systemNavigationBarColor:
-                                              Colors.transparent,
+                                              transparentSystem,
                                         )
                                       : SystemUiOverlayStyle.dark.copyWith(
-                                          statusBarColor: Colors.transparent,
+                                          statusBarColor: transparentSystem,
                                           systemNavigationBarColor:
-                                              Colors.transparent,
+                                              transparentSystem,
                                         );
 
                                   return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -271,13 +275,13 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                                     "${(progress * 100).toInt()}%",
                                                     style: TextStyle(
                                                       fontSize: 10,
-                                                      color: isDark
-                                                          ? Colors.black
-                                                              .withValues(
-                                                                  alpha: 0.5)
-                                                          : Colors.white
-                                                              .withValues(
-                                                                  alpha: 0.5),
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withValues(
+                                                              alpha: isDark
+                                                                  ? 0.42
+                                                                  : 0.5),
                                                       fontWeight:
                                                           FontWeight.bold,
                                                     ),
@@ -381,7 +385,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       isScrollControlled: true,
       isDismissible: true,
       enableDrag: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor:
+          Theme.of(context).colorScheme.surface.withValues(alpha: 0),
       barrierColor: NyanOverlayStyle.modalBarrierColor(context),
       builder: (sheetContext) {
         return _ReaderQuickActionsSheet(
@@ -426,7 +431,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       isScrollControlled: true,
       isDismissible: true,
       enableDrag: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor:
+          Theme.of(context).colorScheme.surface.withValues(alpha: 0),
       barrierColor: NyanOverlayStyle.modalBarrierColor(context),
       builder: (sheetContext) {
         final maxSheetHeight = MediaQuery.sizeOf(sheetContext).height * 0.92;
@@ -463,7 +469,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                       chapters: controller.chapters,
                       currentChapterIndex: controller.currentChapterIndex,
                       currentProgress: controller.currentProgress,
-                      maxSheetHeight: maxSheetHeight,
+                      maxSheetHeight: maxSheetHeight -
+                          MediaQuery.viewPaddingOf(sheetContext).bottom,
                       onChapterTap: (index, locator) {
                         Navigator.of(sheetContext).pop();
                         controller.jumpToChapter(index, locator);

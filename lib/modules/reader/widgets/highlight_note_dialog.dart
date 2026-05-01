@@ -84,7 +84,7 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
         horizontal: _HighlightNoteDialogTokens.outerInset,
         vertical: _HighlightNoteDialogTokens.outerInset,
       ),
-      backgroundColor: Colors.transparent,
+      backgroundColor: theme.colorScheme.surface.withValues(alpha: 0),
       elevation: 0,
       child: ConstrainedBox(
         constraints: const BoxConstraints(
@@ -354,7 +354,11 @@ class _HighlightDialogPalette {
   }
 
   static Color pickerLiftSurface(BuildContext context, Color highlightColor) {
-    final cream = Color.lerp(dialogSurface(context), Colors.white, 0.28)!;
+    final cream = Color.lerp(
+      dialogSurface(context),
+      Theme.of(context).colorScheme.surface,
+      0.28,
+    )!;
     final liftTint = displayHighlight(highlightColor).withValues(
       alpha: isYellowHighlight(highlightColor) ? 0.1 : 0.08,
     );
@@ -438,7 +442,7 @@ class _ColorPickerRow extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color.lerp(surface, Colors.white, 0.1)!,
+            Color.lerp(surface, Theme.of(context).colorScheme.surface, 0.1)!,
             surface,
           ],
         ),
@@ -489,10 +493,10 @@ class _HighlightColorSwatch extends StatelessWidget {
     final softenedColor = _HighlightDialogPalette.displayHighlight(color);
     final borderColor = isSelected
         ? _HighlightDialogPalette.pickerRingColor(color)
-        : Colors.transparent;
+        : Theme.of(context).colorScheme.surface.withValues(alpha: 0);
     final outerColor = isSelected
         ? _HighlightDialogPalette.pickerOuterSurface(context, color)
-        : Colors.transparent;
+        : Theme.of(context).colorScheme.surface.withValues(alpha: 0);
     final liftSurface = _HighlightDialogPalette.pickerLiftSurface(
       context,
       color,
@@ -509,7 +513,7 @@ class _HighlightColorSwatch extends StatelessWidget {
         : const <BoxShadow>[];
 
     return Material(
-      color: Colors.transparent,
+      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0),
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),
@@ -529,7 +533,12 @@ class _HighlightColorSwatch extends StatelessWidget {
               width: isSelected ? 26 : 20,
               height: isSelected ? 26 : 20,
               decoration: BoxDecoration(
-                color: isSelected ? liftSurface : Colors.transparent,
+                color: isSelected
+                    ? liftSurface
+                    : Theme.of(context)
+                        .colorScheme
+                        .surface
+                        .withValues(alpha: 0),
                 shape: BoxShape.circle,
                 border: isSelected
                     ? Border.all(
@@ -598,7 +607,7 @@ class _HighlightPreviewCard extends StatelessWidget {
             Color.lerp(
               _HighlightDialogPalette.previewSurfaceFor(
                   context, highlightColor),
-              Colors.white,
+              theme.colorScheme.surface,
               0.12,
             )!,
             _HighlightDialogPalette.previewSurface(context),
@@ -697,7 +706,7 @@ class _NoteInputCard extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Color.lerp(inputSurface, Colors.white, 0.08)!,
+                Color.lerp(inputSurface, theme.colorScheme.surface, 0.08)!,
                 inputSurface,
               ],
             ),
@@ -751,7 +760,7 @@ class _NoteInputCard extends StatelessWidget {
                       isCollapsed: true,
                       isDense: true,
                       filled: false,
-                      fillColor: Colors.transparent,
+                      fillColor: NyanColors.transparent,
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
@@ -790,7 +799,7 @@ class _DeleteIconButton extends StatelessWidget {
       button: true,
       label: semanticLabel,
       child: Material(
-        color: Colors.transparent,
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(999),
@@ -878,7 +887,10 @@ class _DialogActionRow extends StatelessWidget {
               onTap: onSave,
               backgroundColor: NyanOverlayStyle.brandOlive(context),
               borderColor: NyanOverlayStyle.brandOlive(context),
-              foregroundColor: Colors.white.withValues(alpha: 0.97),
+              foregroundColor: Theme.of(context)
+                  .colorScheme
+                  .onPrimary
+                  .withValues(alpha: 0.97),
               fontWeight: FontWeight.w700,
               horizontalPadding: savePadding,
             ),
@@ -929,7 +941,7 @@ class _DialogActionButton extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Material(
-      color: Colors.transparent,
+      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(

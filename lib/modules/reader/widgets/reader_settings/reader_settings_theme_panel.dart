@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:nyan_read/l10n/app_localizations.dart';
 
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/nyan_colors.dart';
 import '../../../../core/theme/nyan_radius.dart';
 import '../../../../core/theme/nyan_spacing.dart';
@@ -14,12 +15,13 @@ Color _themeLabelColor({
 }) {
   final previewDark = preview.computeLuminance() < 0.45;
   if (previewDark) {
-    return Colors.white.withValues(alpha: isSelected ? 1.0 : 0.88);
+    return theme.colorScheme.onPrimary
+        .withValues(alpha: isSelected ? 1.0 : 0.88);
   }
   return isSelected
       ? theme.colorScheme.primary
       : (theme.textTheme.bodySmall?.color?.withValues(alpha: 0.92) ??
-          NyanColors.readerLabelFallbackDark);
+          theme.colorScheme.onSurface.withValues(alpha: 0.9));
 }
 
 /// Reading background presets (Theme tab).
@@ -148,16 +150,16 @@ class _ThemeCard extends StatelessWidget {
       selected: isSelected,
       label: semanticsLabel,
       child: Material(
-        color: Colors.transparent,
+        color: theme.colorScheme.surface.withValues(alpha: 0),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(NyanRadius.input),
+          borderRadius: BorderRadius.circular(AppRadius.medium),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: option.preview,
-              borderRadius: BorderRadius.circular(NyanRadius.input),
+              borderRadius: BorderRadius.circular(AppRadius.medium),
               boxShadow: isSelected
                   ? [
                       BoxShadow(

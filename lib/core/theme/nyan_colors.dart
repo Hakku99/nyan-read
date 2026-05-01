@@ -10,7 +10,9 @@ class NyanColors {
   static const Color creamPrimaryDeep = Color(0xFF7E8B61);
   static const Color creamTextMain = Color(0xFF3F3A34);
   static const Color creamTextSecondary = Color(0xFF8A8377);
+  static const Color creamTextMuted = Color(0xFFB0ACA5);
   static const Color creamDivider = Color(0xFFE5DED2);
+  static const Color creamSuccess = Color(0xFF6B8E23);
 
   static const Color inkNightBackground = Color(0xFF1D211E);
   static const Color inkNightSurface = Color(0xFF262B27);
@@ -18,13 +20,27 @@ class NyanColors {
   static const Color inkNightPrimaryDeep = Color(0xFF9AAD86);
   static const Color inkNightTextMain = Color(0xFFE8E1D5);
   static const Color inkNightTextSecondary = Color(0xFFAAA396);
+  static const Color inkNightTextMuted = Color(0xFF8F8A84);
+  static const Color inkNightSurfaceMuted = Color(0xFF202520);
   static const Color inkNightDivider = Color(0xFF3A3F3A);
+  static const Color inkNightSuccess = Color(0xFF8FBC8F);
 
   static const Color highlightYellow = Color(0xFFF2E58A);
   static const Color highlightGreen = Color(0xFFA8D18D);
   static const Color highlightBlue = Color(0xFF9EC5E8);
   static const Color highlightPink = Color(0xFFE8A0BF);
   static const Color highlightOrange = Color(0xFFF2BE7E);
+  static const Color readerInfoBlue = Color(0xFF7FABAC);
+
+  static const Color errorBackgroundLight = Color(0xFFFFF0F0);
+  static const Color errorPrimaryLight = Color(0xFFC62828);
+  static const Color errorSecondaryLight = Color(0xFFD32F2F);
+  static const Color errorAccentLight = Color(0xFFFFCDD2);
+
+  static const Color errorBackgroundDark = Color(0xFF2B2020);
+  static const Color errorPrimaryDark = Color(0xFFFFCDD2);
+  static const Color errorSecondaryDark = Color(0xFFE57373);
+  static const Color errorAccentDark = Color(0xFFEF9A9A);
 
   // ===========================================================================
   // Reader runtime defaults (出厂默认的阅读画布色；用户可在阅读设置中覆盖)
@@ -72,6 +88,7 @@ class NyanColors {
   static const Color highlightPaperPicker = Color(0xFFF4F0E8);
   static const Color highlightPaperPreview = Color(0xFFF3EEE3);
   static const Color highlightPaperInput = Color(0xFFF6F0E5);
+
   /// 半透明暖白叠加层，用于在 highlight 原色上增加"纸面"白雾效果。
   static const Color highlightPaperLiftTint = Color(0x55FFF8EF);
 
@@ -81,16 +98,22 @@ class NyanColors {
   // ===========================================================================
   /// ~7% 纯黑，用于 HighlightNoteDialog 主阴影。
   static const Color shadowSoft = Color(0x12000000);
+
   /// ~2% 纯黑，用于 HighlightNoteDialog 辅助阴影。
   static const Color shadowHairline = Color(0x05000000);
+
   /// ~8% 纯黑 — NyanOverlayStyle.dialogShadow 外层。
   static const Color overlayShadowDialogOuter = Color(0x14000000);
+
   /// ~3% 纯黑 — NyanOverlayStyle.dialogShadow 内层。
   static const Color overlayShadowDialogInner = Color(0x08000000);
+
   /// ~6% 纯黑 — NyanOverlayStyle.loadingShadow 外层。
   static const Color overlayShadowLoadingOuter = Color(0x10000000);
+
   /// ~2% 纯黑 — NyanOverlayStyle.loadingShadow 内层。
   static const Color overlayShadowLoadingInner = Color(0x06000000);
+
   /// ~5% 纯黑 — NyanOverlayStyle.noticeShadow（单层）。
   static const Color overlayShadowNotice = Color(0x0D000000);
 
@@ -100,18 +123,25 @@ class NyanColors {
   // ===========================================================================
   /// 顶层浮层的纸面基色（creamSurface 之上再加一层暖白）。
   static const Color overlayCreamSurface = Color(0xFFFCFBF7);
+
   /// 嵌入式凹陷层表面（选项行、展开区）。
   static const Color overlayRecessedSurface = Color(0xFFF8F6F0);
+
   /// 未选中项的边框/分隔线。
   static const Color overlayOptionBorder = Color(0xFFEAE5DD);
+
   /// 危险/破坏动作强调色 — 暗色主题用暖褐。
   static const Color destructiveWarmDark = Color(0xFFB69A8D);
+
   /// 危险/破坏动作强调色 — 亮色主题用深一级的暖褐。
   static const Color destructiveWarmLight = Color(0xFFA4877C);
+
   /// NyanConfirmDialog 的破坏按钮底色（抹茶暖一级）。
   static const Color confirmOliveFill = Color(0xFFA3AB8B);
+
   /// NyanConfirmDialog badge 图标色。
   static const Color confirmBadgeIcon = Color(0xFF9A8578);
+
   /// NyanConfirmDialog badge 薄荷描边（~42% alpha）。
   static const Color confirmBadgeBorder = Color(0x6BDCE4D3);
 
