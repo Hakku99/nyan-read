@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/nyan_colors.dart';
-import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
 import '../nyan_theme_context.dart';
 
@@ -53,11 +52,11 @@ class NyanOverlayStyle {
   static const double noticeMaxWidthFactor = 0.76;
   static const double noticeMaxWidthCap = 360;
   static const double noticeMinHeight = 56;
-  static const double noticeHorizontalPadding = 18;
-  static const double noticeVerticalPadding = 12;
+  static const double noticeHorizontalPadding = 16;
+  static const double noticeVerticalPadding = 11;
   static const double noticeIconBadgeSize = 24;
   static const double noticeIconSize = 18;
-  static const double noticeIconGap = 10;
+  static const double noticeIconGap = 9;
 
   static const double optionRowRadius = 24;
   static const double optionTileMinHeight = 88;
@@ -90,7 +89,8 @@ class NyanOverlayStyle {
 
   static Color brandOlive(BuildContext context) => context.nyanTheme.primary;
 
-  static Color brandOliveDeep(BuildContext context) => context.nyanTheme.primaryDeep;
+  static Color brandOliveDeep(BuildContext context) =>
+      context.nyanTheme.primaryDeep;
 
   static Color mutedBrandOlive(BuildContext context) {
     final nyanTheme = context.nyanTheme;
@@ -143,9 +143,8 @@ class NyanOverlayStyle {
       return base;
     }
 
-    final resolvedStrength = theme.brightness == Brightness.dark
-        ? strength * 1.4
-        : strength;
+    final resolvedStrength =
+        theme.brightness == Brightness.dark ? strength * 1.4 : strength;
     return Color.alphaBlend(
       seed.withValues(alpha: resolvedStrength),
       base,
@@ -156,14 +155,16 @@ class NyanOverlayStyle {
     final theme = Theme.of(context);
     final nyanTheme = context.nyanTheme;
     final base = Color.lerp(nyanTheme.divider, nyanTheme.textSecondary, 0.24)!;
-    return base.withValues(alpha: alpha ?? (theme.brightness == Brightness.dark ? 0.3 : 0.34));
+    return base.withValues(
+        alpha: alpha ?? (theme.brightness == Brightness.dark ? 0.3 : 0.34));
   }
 
   static Color modalBarrierColor(BuildContext context) {
     final theme = Theme.of(context);
     final nyanTheme = context.nyanTheme;
     final tint = Color.lerp(theme.shadowColor, nyanTheme.textSecondary, 0.08)!;
-    return tint.withValues(alpha: theme.brightness == Brightness.dark ? 0.56 : 0.2);
+    return tint.withValues(
+        alpha: theme.brightness == Brightness.dark ? 0.56 : 0.2);
   }
 
   static List<BoxShadow> dialogShadow(BuildContext context) {
@@ -210,15 +211,47 @@ class NyanOverlayStyle {
     ];
   }
 
-  static List<BoxShadow> noticeShadow(BuildContext context) {
+  static Color noticeBorder(
+    BuildContext context, {
+    required NyanOverlayTone tone,
+  }) {
+    final palette = tonePalette(context, tone);
+    final theme = Theme.of(context);
+    final base = Color.lerp(divider(context), palette.border, 0.42)!;
+    return base.withValues(
+        alpha: theme.brightness == Brightness.dark ? 0.34 : 0.26);
+  }
+
+  static Color noticeSurface(
+    BuildContext context, {
+    required NyanOverlayTone tone,
+  }) {
+    final theme = Theme.of(context);
+    final palette = tonePalette(context, tone);
+    final base = creamSurface(context);
+    return Color.alphaBlend(
+      palette.tint
+          .withValues(alpha: theme.brightness == Brightness.dark ? 0.1 : 0.045),
+      base,
+    );
+  }
+
+  static List<BoxShadow> noticeShadow(
+    BuildContext context, {
+    required NyanOverlayTone tone,
+  }) {
     final theme = Theme.of(context);
     if (theme.brightness == Brightness.dark) {
       return const [];
     }
+    final palette = tonePalette(context, tone);
 
-    return const [
+    return [
       BoxShadow(
-        color: NyanColors.overlayShadowNotice,
+        color: Color.alphaBlend(
+          palette.tint.withValues(alpha: 0.04),
+          NyanColors.overlayShadowNotice,
+        ),
         blurRadius: 18,
         spreadRadius: 0,
         offset: Offset(0, 6),
@@ -239,10 +272,10 @@ class NyanOverlayStyle {
       NyanOverlayTone.neutral => nyanTheme.textSecondary,
       NyanOverlayTone.success => brandOlive(context),
       NyanOverlayTone.info => Color.lerp(
-        nyanTheme.textSecondary,
-        nyanTheme.primaryDeep,
-        isDark ? 0.24 : 0.12,
-      )!,
+          nyanTheme.textSecondary,
+          nyanTheme.primaryDeep,
+          isDark ? 0.24 : 0.12,
+        )!,
       NyanOverlayTone.danger => destructiveAccent(context),
     };
 
@@ -273,9 +306,11 @@ class NyanOverlayStyle {
     return NyanOverlayTonePalette(
       tint: base,
       foreground: switch (tone) {
-        NyanOverlayTone.neutral => nyanTheme.textSecondary.withValues(alpha: isDark ? 0.8 : 0.72),
+        NyanOverlayTone.neutral =>
+          nyanTheme.textSecondary.withValues(alpha: isDark ? 0.8 : 0.72),
         NyanOverlayTone.success => brandOliveDeep(context),
-        NyanOverlayTone.info => brandOliveDeep(context).withValues(alpha: isDark ? 0.84 : 0.78),
+        NyanOverlayTone.info =>
+          brandOliveDeep(context).withValues(alpha: isDark ? 0.84 : 0.78),
         NyanOverlayTone.danger => destructiveText(context),
       },
       secondary: nyanTheme.textSecondary.withValues(alpha: isDark ? 0.78 : 0.7),
@@ -286,7 +321,8 @@ class NyanOverlayStyle {
         _ => divider(context, alpha: isDark ? 0.3 : 0.22),
       },
       iconSurface: Color.alphaBlend(
-        base.withValues(alpha: switch (tone) {
+        base.withValues(
+            alpha: switch (tone) {
           NyanOverlayTone.neutral => isDark ? 0.08 : 0.03,
           NyanOverlayTone.success => isDark ? 0.1 : 0.1,
           NyanOverlayTone.info => isDark ? 0.085 : 0.06,

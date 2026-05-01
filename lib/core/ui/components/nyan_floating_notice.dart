@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../theme/nyan_typography.dart';
 import '../nyan_theme_context.dart';
 import 'nyan_overlay_style.dart';
 
@@ -25,13 +26,14 @@ class NyanFloatingNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final overlayTone = switch (tone) {
+      NyanFloatingNoticeTone.info => NyanOverlayTone.info,
+      NyanFloatingNoticeTone.success => NyanOverlayTone.success,
+      NyanFloatingNoticeTone.error => NyanOverlayTone.danger,
+    };
     final palette = NyanOverlayStyle.tonePalette(
       context,
-      switch (tone) {
-        NyanFloatingNoticeTone.info => NyanOverlayTone.info,
-        NyanFloatingNoticeTone.success => NyanOverlayTone.success,
-        NyanFloatingNoticeTone.error => NyanOverlayTone.danger,
-      },
+      overlayTone,
     );
     final screenWidth = MediaQuery.of(context).size.width;
     final maxWidth = math.min(
@@ -48,13 +50,22 @@ class NyanFloatingNotice extends StatelessWidget {
         ),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: NyanOverlayStyle.creamSurface(context),
+            color: NyanOverlayStyle.noticeSurface(
+              context,
+              tone: overlayTone,
+            ),
             borderRadius: BorderRadius.circular(NyanOverlayStyle.toastRadius),
             border: Border.all(
-              color: NyanOverlayStyle.divider(context, alpha: 0.18),
+              color: NyanOverlayStyle.noticeBorder(
+                context,
+                tone: overlayTone,
+              ),
               width: 1,
             ),
-            boxShadow: NyanOverlayStyle.noticeShadow(context),
+            boxShadow: NyanOverlayStyle.noticeShadow(
+              context,
+              tone: overlayTone,
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(
@@ -73,10 +84,11 @@ class NyanFloatingNotice extends StatelessWidget {
                     maxLines: maxLines,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      fontSize: 16,
+                      fontSize: NyanTypography.body,
                       fontWeight: FontWeight.w600,
-                      height: 1.18,
-                      color: context.nyanTheme.textPrimary.withValues(alpha: 0.92),
+                      height: 1.16,
+                      color:
+                          context.nyanTheme.textPrimary.withValues(alpha: 0.92),
                     ),
                   ),
                 ),
@@ -171,9 +183,8 @@ class _NyanFloatingNoticeOverlayState extends State<NyanFloatingNoticeOverlay>
                       ? Curves.easeInCubic.transform(_controller.value)
                       : Curves.easeOutCubic.transform(_controller.value);
                   final opacity = curve;
-                  final translateY = _isClosing
-                      ? (1 - curve) * 6
-                      : (1 - curve) * 16;
+                  final translateY =
+                      _isClosing ? (1 - curve) * 6 : (1 - curve) * 16;
 
                   return Opacity(
                     opacity: opacity,
@@ -212,20 +223,30 @@ class _NoticeBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final olive = NyanOverlayStyle.brandOlive(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final iconColor = switch (tone) {
-      NyanFloatingNoticeTone.success => NyanOverlayStyle.brandOliveDeep(context),
+      NyanFloatingNoticeTone.success =>
+        NyanOverlayStyle.brandOliveDeep(context).withValues(
+          alpha: isDark ? 0.9 : 0.84,
+        ),
       NyanFloatingNoticeTone.error => NyanOverlayStyle.destructiveText(context),
-      NyanFloatingNoticeTone.info => NyanOverlayStyle.brandOliveDeep(context),
+      NyanFloatingNoticeTone.info => palette.foreground.withValues(
+          alpha: isDark ? 0.9 : 0.82,
+        ),
     };
     final backgroundColor = switch (tone) {
       NyanFloatingNoticeTone.success => Color.alphaBlend(
-          olive.withValues(alpha: 0.12),
-          NyanOverlayStyle.creamSurface(context),
+          olive.withValues(alpha: isDark ? 0.18 : 0.12),
+          NyanOverlayStyle.noticeSurface(context,
+              tone: NyanOverlayTone.success),
         ),
-      NyanFloatingNoticeTone.error => NyanOverlayStyle.destructiveSubtleBackground(context),
+      NyanFloatingNoticeTone.error => Color.alphaBlend(
+          palette.tint.withValues(alpha: isDark ? 0.2 : 0.12),
+          NyanOverlayStyle.noticeSurface(context, tone: NyanOverlayTone.danger),
+        ),
       NyanFloatingNoticeTone.info => Color.alphaBlend(
-          palette.tint.withValues(alpha: 0.08),
-          NyanOverlayStyle.creamSurface(context),
+          palette.tint.withValues(alpha: isDark ? 0.16 : 0.08),
+          NyanOverlayStyle.noticeSurface(context, tone: NyanOverlayTone.info),
         ),
     };
 

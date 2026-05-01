@@ -123,6 +123,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPanel => 'Admin Panel';
 
   @override
+  String get adminPanelTitle => 'Admin / Manager Mode';
+
+  @override
+  String get adminPanelModeSection => 'Mode Control';
+
+  @override
+  String get adminProModeEnabled => 'Pro Mode Enabled';
+
+  @override
+  String get adminProModeSubtitle => 'Unlocks Privacy Shelf and disables ads';
+
+  @override
+  String get adminForceUnlockPrivacyShelf => 'Force Unlock Privacy Shelf';
+
+  @override
+  String get adminForceUnlockPrivacyShelfSubtitle =>
+      'Bypass password verification';
+
+  @override
+  String get adminFeatureFlagsSection => 'Feature Flags';
+
+  @override
+  String get adminStateOn => 'On';
+
+  @override
+  String get adminStateOff => 'Off';
+
+  @override
+  String get adminPanelHintTitle => 'Internal control panel';
+
+  @override
+  String get adminPanelHintSubtitle =>
+      'Use this page for debugging and capability verification.';
+
+  @override
   String get language => 'Language';
 
   @override
@@ -581,6 +616,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noBookmarksYet => 'No bookmarks yet';
+
+  @override
+  String get bookmarkContextTitle => 'Reading marks';
+
+  @override
+  String get bookmarkContextDescription =>
+      'Tap a passage to return. Swipe left to delete.';
+
+  @override
+  String get bookmarkEmptyDescription =>
+      'Passages worth returning to will gather here.';
+
+  @override
+  String get bookmarkEmptyHint => 'Tap the bookmark while reading to save one.';
+
+  @override
+  String get bookmarkNoteTag => 'Note';
 
   @override
   String bookmarkName(int index) {

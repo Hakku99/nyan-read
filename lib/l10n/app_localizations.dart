@@ -320,6 +320,72 @@ abstract class AppLocalizations {
   /// **'Admin Panel'**
   String get adminPanel;
 
+  /// No description provided for @adminPanelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin / Manager Mode'**
+  String get adminPanelTitle;
+
+  /// No description provided for @adminPanelModeSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode Control'**
+  String get adminPanelModeSection;
+
+  /// No description provided for @adminProModeEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro Mode Enabled'**
+  String get adminProModeEnabled;
+
+  /// No description provided for @adminProModeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocks Privacy Shelf and disables ads'**
+  String get adminProModeSubtitle;
+
+  /// No description provided for @adminForceUnlockPrivacyShelf.
+  ///
+  /// In en, this message translates to:
+  /// **'Force Unlock Privacy Shelf'**
+  String get adminForceUnlockPrivacyShelf;
+
+  /// No description provided for @adminForceUnlockPrivacyShelfSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bypass password verification'**
+  String get adminForceUnlockPrivacyShelfSubtitle;
+
+  /// No description provided for @adminFeatureFlagsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature Flags'**
+  String get adminFeatureFlagsSection;
+
+  /// No description provided for @adminStateOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get adminStateOn;
+
+  /// No description provided for @adminStateOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get adminStateOff;
+
+  /// No description provided for @adminPanelHintTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Internal control panel'**
+  String get adminPanelHintTitle;
+
+  /// No description provided for @adminPanelHintSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this page for debugging and capability verification.'**
+  String get adminPanelHintSubtitle;
+
   /// No description provided for @language.
   ///
   /// In en, this message translates to:
@@ -1123,6 +1189,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No bookmarks yet'**
   String get noBookmarksYet;
+
+  /// No description provided for @bookmarkContextTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading marks'**
+  String get bookmarkContextTitle;
+
+  /// No description provided for @bookmarkContextDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a passage to return. Swipe left to delete.'**
+  String get bookmarkContextDescription;
+
+  /// No description provided for @bookmarkEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Passages worth returning to will gather here.'**
+  String get bookmarkEmptyDescription;
+
+  /// No description provided for @bookmarkEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the bookmark while reading to save one.'**
+  String get bookmarkEmptyHint;
+
+  /// No description provided for @bookmarkNoteTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get bookmarkNoteTag;
 
   /// No description provided for @bookmarkName.
   ///

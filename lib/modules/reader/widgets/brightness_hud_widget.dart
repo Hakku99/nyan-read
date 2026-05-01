@@ -37,7 +37,8 @@ class _BrightnessHudWidgetState extends State<BrightnessHudWidget> {
                 tween: Tween<double>(begin: 0, end: isAdjusting ? 1 : 0),
                 duration: Duration(
                   milliseconds: isAdjusting
-                      ? NyanOverlayStyle.overlayTransitionDuration.inMilliseconds
+                      ? NyanOverlayStyle
+                          .overlayTransitionDuration.inMilliseconds
                       : 130,
                 ),
                 curve: NyanOverlayStyle.overlayCurve,
@@ -114,7 +115,10 @@ class _BrightnessCenterPanel extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(_panelRadius),
-        boxShadow: NyanOverlayStyle.noticeShadow(context),
+        boxShadow: NyanOverlayStyle.noticeShadow(
+          context,
+          tone: NyanOverlayTone.info,
+        ),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(_panelRadius),
@@ -168,12 +172,17 @@ class _BrightnessCenterPanel extends StatelessWidget {
                             builder: (context, value, _) {
                               return Text(
                                 '${value.round()}%',
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(
                                       fontSize: 21,
                                       height: 1.0,
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: -0.2,
-                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures()
+                                      ],
                                       color: accent,
                                     ),
                               );
@@ -188,7 +197,8 @@ class _BrightnessCenterPanel extends StatelessWidget {
                               height: 32,
                               child: AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 160),
-                                layoutBuilder: (currentChild, previousChildren) {
+                                layoutBuilder:
+                                    (currentChild, previousChildren) {
                                   return Stack(
                                     alignment: Alignment.centerRight,
                                     children: [
@@ -205,14 +215,19 @@ class _BrightnessCenterPanel extends StatelessWidget {
                                         maxLines: 1,
                                         softWrap: false,
                                         overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w400,
                                               height: 1.18,
-                                              color: cs.onSurfaceVariant.withValues(alpha: 0.72),
+                                              color: cs.onSurfaceVariant
+                                                  .withValues(alpha: 0.72),
                                             ),
                                       )
-                                    : const SizedBox(key: ValueKey('normalModeHint')),
+                                    : const SizedBox(
+                                        key: ValueKey('normalModeHint')),
                               ),
                             ),
                           ),
@@ -278,7 +293,8 @@ class _BrightnessTrack extends StatelessWidget {
                   LayoutBuilder(
                     builder: (context, constraints) {
                       const thumbSize = 14.0;
-                      final maxLeft = (constraints.maxWidth - thumbSize).clamp(0.0, double.infinity);
+                      final maxLeft = (constraints.maxWidth - thumbSize)
+                          .clamp(0.0, double.infinity);
                       final left = (clamped * maxLeft).clamp(0.0, maxLeft);
                       return Stack(
                         children: [

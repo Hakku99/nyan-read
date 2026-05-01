@@ -4,6 +4,7 @@ import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/service_locator.dart';
 import '../../core/theme/nyan_radius.dart';
+import '../../core/theme/nyan_shadows.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
 import '../../core/ui/components/components.dart';
@@ -30,61 +31,13 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
 
   bool get _isZh =>
       Localizations.localeOf(context).languageCode.startsWith('zh');
+  AppLocalizations get _loc => AppLocalizations.of(context)!;
 
   String _headerSubtitle() {
     if (_isZh) {
       return '\u300a${widget.bookTitle}\u300b';
     }
     return widget.bookTitle;
-  }
-
-  String _contextTitle() {
-    if (_isZh) {
-      return '\u9605\u8bfb\u75d5\u8ff9';
-    }
-    return 'Reading marks';
-  }
-
-  String _contextDescription() {
-    if (_isZh) {
-      return '\u70b9\u5f00\u7247\u6bb5\u8fd4\u56de\u539f\u6587\uff0c\u5de6\u6ed1\u5373\u53ef\u5220\u9664\u3002';
-    }
-    return 'Tap a passage to return. Swipe left to delete.';
-  }
-
-  String _noteTagLabel() {
-    if (_isZh) {
-      return '\u6709\u7b14\u8bb0';
-    }
-    return 'Note';
-  }
-
-  String _deleteActionLabel() {
-    if (_isZh) {
-      return '\u5220\u9664';
-    }
-    return 'Delete';
-  }
-
-  String _emptyStateTitle(AppLocalizations loc) {
-    if (_isZh) {
-      return '\u8fd8\u6ca1\u6709\u7559\u4e0b\u4e66\u7b7e';
-    }
-    return loc.noBookmarksYet;
-  }
-
-  String _emptyStateDescription() {
-    if (_isZh) {
-      return '\u60f3\u91cd\u6e29\u7684\u6bb5\u843d\uff0c\u4f1a\u7559\u5728\u8fd9\u91cc\u3002';
-    }
-    return 'Passages worth returning to will gather here.';
-  }
-
-  String _emptyStateHint() {
-    if (_isZh) {
-      return '\u9605\u8bfb\u65f6\u8f7b\u70b9\u4e66\u7b7e\u5373\u53ef\u4fdd\u5b58';
-    }
-    return 'Tap the bookmark while reading to save one.';
   }
 
   String _formatCreatedAt(dynamic createdAt) {
@@ -107,9 +60,9 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
 
   String _bookmarkMetaLabel(int index) {
     if (_isZh) {
-      return '\u4e66\u7b7e ' + index.toString();
+      return '\u4e66\u7b7e $index';
     }
-    return 'Bookmark ' + index.toString();
+    return 'Bookmark $index';
   }
 
   @override
@@ -144,7 +97,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
   }
 
   Future<void> _deleteBookmark(String id) async {
-    final loc = AppLocalizations.of(context)!;
+    final loc = _loc;
     final index = _bookmarks.indexWhere((bookmark) => bookmark['id'] == id);
     if (index == -1) {
       return;
@@ -176,58 +129,39 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
     final nyanTheme = context.nyanTheme;
 
     return Scaffold(
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color.alphaBlend(
-                nyanTheme.primary.withValues(
-                  alpha: theme.brightness == Brightness.dark ? 0.08 : 0.05,
-                ),
-                nyanTheme.background,
+      backgroundColor: nyanTheme.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            NyanPageHeader(
+              title: loc.bookmarksTitle(_bookmarks.length),
+              subtitle: _headerSubtitle(),
+              titleStyle: theme.textTheme.titleLarge?.copyWith(
+                fontSize: NyanTypography.section,
+                fontWeight: FontWeight.w600,
               ),
-              nyanTheme.background,
-              nyanTheme.background,
-            ],
-            stops: const [0, 0.24, 1],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              NyanPageHeader(
-                title: loc.bookmarksTitle(_bookmarks.length),
-                subtitle: _headerSubtitle(),
-                titleStyle: theme.textTheme.titleLarge?.copyWith(
-                  fontSize: NyanTypography.section,
-                  fontWeight: FontWeight.w600,
-                ),
-                subtitleStyle: theme.textTheme.bodySmall?.copyWith(
-                  color: nyanTheme.textSecondary.withValues(alpha: 0.78),
-                ),
-                padding: const EdgeInsets.fromLTRB(
-                  NyanSpacing.space16,
-                  NyanSpacing.space12,
-                  NyanSpacing.space16,
-                  NyanSpacing.space8,
-                ),
-                leading: SizedBox(
-                  width: NyanSpacing.minTapTarget,
-                  height: NyanSpacing.minTapTarget,
-                  child: IconButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    tooltip:
-                        MaterialLocalizations.of(context).backButtonTooltip,
-                    padding: EdgeInsets.zero,
-                  ),
+              subtitleStyle: theme.textTheme.bodySmall?.copyWith(
+                color: nyanTheme.textSecondary.withValues(alpha: 0.78),
+              ),
+              padding: const EdgeInsets.fromLTRB(
+                NyanSpacing.space16,
+                NyanSpacing.space12,
+                NyanSpacing.space16,
+                NyanSpacing.space8,
+              ),
+              leading: SizedBox(
+                width: NyanSpacing.minTapTarget,
+                height: NyanSpacing.minTapTarget,
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                  padding: EdgeInsets.zero,
                 ),
               ),
-              Expanded(child: _buildBody()),
-            ],
-          ),
+            ),
+            Expanded(child: _buildBody()),
+          ],
         ),
       ),
     );
@@ -236,8 +170,6 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
   Widget _buildBody() {
     final theme = Theme.of(context);
     final nyanTheme = context.nyanTheme;
-    final loc = AppLocalizations.of(context)!;
-
     if (_isLoading) {
       return Center(
         child: CircularProgressIndicator(color: nyanTheme.primary),
@@ -283,13 +215,13 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
             ),
           ),
         ),
-        title: _emptyStateTitle(loc),
+        title: _loc.noBookmarksYet,
         titleStyle: theme.textTheme.titleMedium?.copyWith(
           fontSize: NyanTypography.section,
           fontWeight: FontWeight.w600,
           color: nyanTheme.textPrimary.withValues(alpha: isDark ? 0.88 : 0.84),
         ),
-        description: _emptyStateDescription(),
+        description: _loc.bookmarkEmptyDescription,
         descriptionStyle: theme.textTheme.bodyMedium?.copyWith(
           height: 1.3,
           color: nyanTheme.textSecondary.withValues(
@@ -300,7 +232,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
         descriptionSpacing: NyanSpacing.space12,
         actionSpacing: NyanSpacing.space12,
         action: Text(
-          _emptyStateHint(),
+          _loc.bookmarkEmptyHint,
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall?.copyWith(
             color: nyanTheme.textSecondary.withValues(
@@ -316,7 +248,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         NyanSpacing.space16,
-        0,
+        NyanSpacing.space4,
         NyanSpacing.space16,
         NyanSpacing.space24,
       ),
@@ -358,6 +290,13 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
     final nyanTheme = context.nyanTheme;
     final isDark = theme.brightness == Brightness.dark;
 
+    final panelSurface = isDark
+        ? Color.alphaBlend(
+            nyanTheme.surface.withValues(alpha: 0.9),
+            nyanTheme.background,
+          )
+        : nyanTheme.surface;
+
     return Container(
       margin: const EdgeInsets.only(bottom: NyanSpacing.space12),
       padding: const EdgeInsets.symmetric(
@@ -365,15 +304,14 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
         vertical: NyanSpacing.space12,
       ),
       decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          nyanTheme.primary.withValues(alpha: isDark ? 0.05 : 0.035),
-          nyanTheme.surface,
-        ),
+        color: panelSurface,
         borderRadius: BorderRadius.circular(NyanRadius.card),
         border: Border.all(
-          color: theme.dividerColor.withValues(alpha: isDark ? 0.14 : 0.12),
+          color: theme.dividerColor.withValues(alpha: isDark ? 0.22 : 0.18),
           width: 0.6,
         ),
+        boxShadow:
+            isDark ? const [] : NyanShadows.subtle(nyanTheme.textPrimary),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -400,10 +338,9 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _contextTitle(),
+                  _loc.bookmarkContextTitle,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontSize: 15,
                     height: 1.08,
                     color: nyanTheme.textPrimary.withValues(
                       alpha: isDark ? 0.9 : 0.82,
@@ -412,9 +349,8 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
                 ),
                 const SizedBox(height: NyanSpacing.space4),
                 Text(
-                  _contextDescription(),
+                  _loc.bookmarkContextDescription,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    fontSize: 13,
                     color: nyanTheme.textSecondary.withValues(
                       alpha: isDark ? 0.82 : 0.74,
                     ),
@@ -438,10 +374,10 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
       child: Text(
         label,
         style: theme.textTheme.labelMedium?.copyWith(
-          fontSize: 10.5,
-          letterSpacing: 0.9,
+          fontSize: NyanTypography.meta,
+          letterSpacing: 0.3,
           color: nyanTheme.textSecondary.withValues(alpha: 0.56),
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -452,11 +388,11 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
     final nyanTheme = context.nyanTheme;
     final isDark = theme.brightness == Brightness.dark;
     final railBase = Color.alphaBlend(
-      nyanTheme.errorBackgroundColor.withValues(alpha: isDark ? 0.2 : 0.46),
+      nyanTheme.errorBackgroundColor.withValues(alpha: isDark ? 0.16 : 0.3),
       nyanTheme.surface,
     );
     final railTint = Color.alphaBlend(
-      nyanTheme.errorAccentColor.withValues(alpha: isDark ? 0.08 : 0.06),
+      nyanTheme.errorAccentColor.withValues(alpha: isDark ? 0.06 : 0.04),
       nyanTheme.background,
     );
     final railBorder = nyanTheme.errorAccentColor.withValues(
@@ -466,7 +402,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
     return Align(
       alignment: Alignment.centerRight,
       child: SizedBox(
-        width: 88,
+        width: 104,
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(NyanRadius.card),
@@ -483,21 +419,27 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: NyanSpacing.space12),
+            padding:
+                const EdgeInsets.symmetric(horizontal: NyanSpacing.space12),
             child: Align(
               alignment: Alignment.centerRight,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    _deleteActionLabel(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 11,
-                      color: nyanTheme.errorPrimaryTextColor.withValues(
-                        alpha: isDark ? 0.68 : 0.56,
+                  Flexible(
+                    child: Text(
+                      _loc.delete,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.fade,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontSize: NyanTypography.meta,
+                        color: nyanTheme.errorPrimaryTextColor.withValues(
+                          alpha: isDark ? 0.68 : 0.56,
+                        ),
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
                       ),
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.2,
                     ),
                   ),
                   const SizedBox(width: NyanSpacing.space4),
@@ -543,7 +485,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
         label: bookmarkLabel,
         excerpt: excerpt,
         note: supportingNote,
-        noteTagLabel: _noteTagLabel(),
+        noteTagLabel: _loc.bookmarkNoteTag,
         onTap: () => Navigator.pop(context, bookmark),
       ),
     );

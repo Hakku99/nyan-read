@@ -122,6 +122,39 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminPanel => '管理面板';
 
   @override
+  String get adminPanelTitle => '管理 / 开发模式';
+
+  @override
+  String get adminPanelModeSection => '模式控制';
+
+  @override
+  String get adminProModeEnabled => '启用专业模式';
+
+  @override
+  String get adminProModeSubtitle => '解锁私密书架并关闭广告';
+
+  @override
+  String get adminForceUnlockPrivacyShelf => '强制解锁私密书架';
+
+  @override
+  String get adminForceUnlockPrivacyShelfSubtitle => '跳过密码校验';
+
+  @override
+  String get adminFeatureFlagsSection => '功能开关状态';
+
+  @override
+  String get adminStateOn => '开启';
+
+  @override
+  String get adminStateOff => '关闭';
+
+  @override
+  String get adminPanelHintTitle => '内部控制面板';
+
+  @override
+  String get adminPanelHintSubtitle => '用于调试和功能能力验证，不影响阅读数据。';
+
+  @override
   String get language => '语言';
 
   @override
@@ -547,6 +580,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get noBookmarksYet => '暂无书签';
+
+  @override
+  String get bookmarkContextTitle => '阅读痕迹';
+
+  @override
+  String get bookmarkContextDescription => '点开片段返回原文，左滑即可删除。';
+
+  @override
+  String get bookmarkEmptyDescription => '想重温的段落，会留在这里。';
+
+  @override
+  String get bookmarkEmptyHint => '阅读时轻点书签即可保存';
+
+  @override
+  String get bookmarkNoteTag => '有笔记';
 
   @override
   String bookmarkName(int index) {
