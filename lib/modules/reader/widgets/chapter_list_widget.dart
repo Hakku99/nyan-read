@@ -196,6 +196,9 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
             NyanSpacing.space4,
             NyanSpacing.space12,
             NyanSpacing.space16,
+          ).copyWith(
+            bottom: NyanSpacing.space16 +
+                (_showJumpToCurrent ? NyanSpacing.space32 : 0),
           ),
           itemBuilder: (context, index) {
             final item = entries[index];
@@ -212,7 +215,7 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
         if (_showJumpToCurrent)
           Positioned(
             right: NyanSpacing.space16,
-            bottom: NyanSpacing.space20,
+            bottom: NyanSpacing.space16,
             child: Semantics(
               label: loc.jumpToCurrentChapter,
               child: FloatingActionButton.extended(
@@ -293,7 +296,7 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
       color: theme.colorScheme.surface,
       child: SafeArea(
         top: false,
-        bottom: false,
+        bottom: true,
         child: compact
             ? Column(
                 mainAxisSize: MainAxisSize.min,
