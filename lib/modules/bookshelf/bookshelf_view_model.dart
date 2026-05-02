@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 
 import '../../core/models/book.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
+import '../../core/utils/book_source_platform.dart';
 
 class BookshelfViewModel extends ChangeNotifier {
   final DatabaseService _db;
@@ -99,7 +99,12 @@ class BookshelfViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Deletes selected books from memory and database (and optionally files)
+  /// Deletes selected books from memory and database (and optionally files).
+  ///
+  /// When [deleteFiles] is true, deletes each book's source on disk: plain
+  /// filesystem paths via [File.delete], Android `content://` URIs via
+  /// [BookSourcePlatform.deletePersistedUriDocument]. Per-file failures are
+  /// logged and do not abort the batch; DB rows are still removed first.
   Future<void> deleteSelectedBooks(bool deleteFiles) async {
     if (_selectedBookIds.isEmpty) return;
 
@@ -110,15 +115,12 @@ class BookshelfViewModel extends ChangeNotifier {
     final selectedBooks =
         idsToDelete.map((id) => booksById[id]).whereType<Book>().toList();
     final pathsToDelete = deleteFiles
-        ? await _collectPrivateCopyPaths(selectedBooks)
+        ? _collectDeletableSourcePaths(selectedBooks)
         : const <String>[];
 
     try {
-      // Remove database state first so bookshelf and associated metadata are
-      // updated atomically. Private-copy cleanup stays best-effort afterwards
-      // to avoid deleting user-managed external source files by mistake.
       await _db.deleteBooksWithAssociatedData(idsToDelete);
-      await _deletePrivateCopiesBestEffort(pathsToDelete);
+      await _deleteSourceFilesBestEffort(pathsToDelete);
 
       _selectedBookIds.clear();
       _isSelectionMode = false;
@@ -130,48 +132,90 @@ class BookshelfViewModel extends ChangeNotifier {
     }
   }
 
-  Future<List<String>> _collectPrivateCopyPaths(List<Book> books) async {
+  /// Locators the user opted to delete alongside DB rows (`content://` or
+  /// filesystem paths).
+  ///
+  /// Skips empty locators and unknown source kinds.
+  List<String> _collectDeletableSourcePaths(List<Book> books) {
     if (books.isEmpty) return const [];
 
-    final appDocsDir = await getApplicationDocumentsDirectory();
-    final normalizedAppDocsPath = _normalizePath(appDocsDir.path);
-    final pathsToDelete = <String>{};
+    final seenNormalized = <String>{};
+    final pathsToDelete = <String>[];
 
     for (final book in books) {
+      final locator = book.sourceLocator.trim();
+      if (locator.isEmpty) {
+        continue;
+      }
+
+      if (book.isAndroidContentUri) {
+        if (!locator.toLowerCase().startsWith('content://')) {
+          continue;
+        }
+        final key = locator.toLowerCase();
+        if (!seenNormalized.add(key)) {
+          continue;
+        }
+        pathsToDelete.add(book.sourceLocator);
+        continue;
+      }
+
       if (!book.isFilePathSource) {
         continue;
       }
 
-      final normalizedFilePath = _normalizePath(book.sourceLocator);
-      if (_isWithinDirectory(normalizedFilePath, normalizedAppDocsPath)) {
-        pathsToDelete.add(book.sourceLocator);
+      if (locator.toLowerCase().startsWith('content://')) {
+        continue;
       }
+
+      final normalized = path.normalize(locator).toLowerCase();
+      if (!seenNormalized.add(normalized)) {
+        continue;
+      }
+
+      pathsToDelete.add(book.sourceLocator);
     }
 
-    return pathsToDelete.toList(growable: false);
+    return pathsToDelete;
   }
 
-  Future<void> _deletePrivateCopiesBestEffort(List<String> filePaths) async {
-    for (final filePath in filePaths) {
+  Future<void> _deleteSourceFilesBestEffort(List<String> locators) async {
+    for (final rawLocator in locators) {
+      final locator = rawLocator.trim();
+      if (locator.isEmpty) {
+        continue;
+      }
+
+      final lower = locator.toLowerCase();
+      if (lower.startsWith('content://')) {
+        final deleted =
+            await BookSourcePlatform.deletePersistedUriDocument(locator);
+        if (!deleted) {
+          debugPrint(
+            'Failed to delete content Uri (unsupported provider or no '
+            'persistable delete permission): $locator',
+          );
+        }
+        continue;
+      }
+
       try {
-        final file = File(filePath);
+        var fsPath = locator;
+        if (lower.startsWith('file://')) {
+          fsPath = Uri.parse(locator).toFilePath();
+        }
+        fsPath = path.normalize(fsPath);
+        final file = File(fsPath);
         if (await file.exists()) {
           await file.delete();
         }
       } catch (e, stackTrace) {
         debugPrint(
-          'Failed to delete imported private copy: $filePath\n$e\n$stackTrace',
+          'Failed to delete source file: $locator\n$e\n$stackTrace',
         );
       }
     }
   }
-
-  bool _isWithinDirectory(String filePath, String directoryPath) {
-    if (filePath == directoryPath) return false;
-    return path.isWithin(directoryPath, filePath);
-  }
-
-  String _normalizePath(String value) => path.normalize(value).toLowerCase();
 
   /// Moves selected books between public and private shelf
   Future<void> moveSelectedBooks(bool toPrivate) async {
@@ -192,4 +236,3 @@ class BookshelfViewModel extends ChangeNotifier {
     }
   }
 }
-

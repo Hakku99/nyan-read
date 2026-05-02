@@ -2,6 +2,8 @@ package com.example.nyan_read
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.provider.DocumentsContract
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -44,6 +46,11 @@ class MainActivity : FlutterActivity() {
                             result.success(copyUriToTempFile(uriString, extension))
                         }
 
+                        "deletePersistedUriDocument" -> {
+                            require(!uriString.isNullOrBlank()) { "uri is required" }
+                            result.success(deletePersistedUriDocument(uriString))
+                        }
+
                         else -> result.notImplemented()
                     }
                 } catch (e: Exception) {
@@ -54,14 +61,26 @@ class MainActivity : FlutterActivity() {
 
     private fun persistReadPermission(uriString: String): Boolean {
         val uri = Uri.parse(uriString)
+        // Prefer read+write persistence so SAF deletes can succeed when the
+        // provider allows it; fall back to read-only if the picker grant lacks write.
+        val readWriteFlags =
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         return try {
-            contentResolver.takePersistableUriPermission(
-                uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION,
-            )
+            contentResolver.takePersistableUriPermission(uri, readWriteFlags)
             true
         } catch (_: SecurityException) {
-            false
+            try {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+                true
+            } catch (_: SecurityException) {
+                false
+            } catch (_: UnsupportedOperationException) {
+                false
+            }
         } catch (_: UnsupportedOperationException) {
             false
         }
@@ -106,4 +125,21 @@ class MainActivity : FlutterActivity() {
         if (normalized.isEmpty()) return ".tmp"
         return if (normalized.startsWith('.')) normalized else ".$normalized"
     }
+
+    private fun deletePersistedUriDocument(uriString: String): Boolean {
+        val uri = Uri.parse(uriString)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            return false
+        }
+        return try {
+            DocumentsContract.deleteDocument(contentResolver, uri)
+        } catch (_: SecurityException) {
+            false
+        } catch (_: UnsupportedOperationException) {
+            false
+        } catch (_: IllegalArgumentException) {
+            false
+        }
+    }
 }
+

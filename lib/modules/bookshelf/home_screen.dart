@@ -123,9 +123,10 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       try {
         await vm.deleteSelectedBooks(deleteFile);
         if (!context.mounted) return;
+        final deletedMsg = loc.deletedBooks(deletedCount);
         SnackBarUtils.show(
           context,
-          loc.deletedBooks(deletedCount),
+          deletedMsg,
           tone: NyanSnackTone.success,
         );
       } catch (e) {
@@ -578,12 +579,13 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                   tooltip: showPrivacyTab
                       ? AppLocalizations.of(context)!.moveToPublic
                       : AppLocalizations.of(context)!.moveToPrivate,
-                  onPressed: () => _moveSelectedBooks(context, !showPrivacyTab),
+                  onPressed: () =>
+                      _moveSelectedBooks(this.context, !showPrivacyTab),
                 ),
               buildToolbarButton(
                 icon: Icons.delete_outline_rounded,
                 tooltip: AppLocalizations.of(context)!.delete,
-                onPressed: () => _deleteSelectedBooks(context),
+                onPressed: () => _deleteSelectedBooks(this.context),
               ),
               Builder(
                 builder: (context) {

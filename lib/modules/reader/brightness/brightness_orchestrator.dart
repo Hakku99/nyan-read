@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/widgets.dart';
 
@@ -32,8 +33,11 @@ class BrightnessOrchestrator extends ChangeNotifier
   double? _ignoredSystemBrightness;
   Timer? _followSystemAnimationTimer;
   double? _followSystemAnimationTarget;
+  double? _followAnimationStartValue;
+  Stopwatch? _followAnimationStopwatch;
   static const Duration _followSystemAnimationTick = Duration(milliseconds: 16);
-  static const double _followSystemSmoothingFactor = 0.24;
+  static const Duration _followSystemAnimationDuration =
+      Duration(milliseconds: 1200);
   static const double _followSystemSnapEpsilon = 0.003;
 
   BrightnessState get state => _state;
@@ -272,7 +276,7 @@ class BrightnessOrchestrator extends ChangeNotifier
     } catch (_) {}
   }
 
-  void _setState(BrightnessState nextState) {
+  void _setState(BrightnessState nextState, {bool forceNotify = false}) {
     final overlayOpacity = _overlayPolicy.calculate(
       uiBrightness: nextState.clampedUiBrightness,
       hardwareFloor: nextState.normalizedHardwareFloor,
@@ -284,7 +288,8 @@ class BrightnessOrchestrator extends ChangeNotifier
           nextState.followSystem ? null : nextState.lastAppliedSystemBrightness,
     );
 
-    if (_state.mode == normalizedState.mode &&
+    if (!forceNotify &&
+        _state.mode == normalizedState.mode &&
         (_state.clampedUiBrightness - normalizedState.clampedUiBrightness)
                 .abs() <
             0.001 &&
@@ -312,6 +317,7 @@ class BrightnessOrchestrator extends ChangeNotifier
 
     final current = _state.clampedUiBrightness;
     if ((current - normalizedTarget).abs() < _followSystemSnapEpsilon) {
+      _stopFollowSystemAnimation();
       _setState(_state.copyWith(
         uiBrightness: normalizedTarget,
         lastObservedSystemBrightness: normalizedTarget,
@@ -319,6 +325,11 @@ class BrightnessOrchestrator extends ChangeNotifier
       ));
       return;
     }
+
+    // Retarget from the currently rendered value so OS updates mid-tween
+    // ease toward the new goal instead of snapping back to an old start.
+    _followAnimationStartValue = current;
+    _followAnimationStopwatch = Stopwatch()..start();
 
     _followSystemAnimationTimer ??= Timer.periodic(
       _followSystemAnimationTick,
@@ -332,35 +343,50 @@ class BrightnessOrchestrator extends ChangeNotifier
       return;
     }
     final target = _followSystemAnimationTarget;
-    if (target == null) {
+    final start = _followAnimationStartValue;
+    final stopwatch = _followAnimationStopwatch;
+    if (target == null || start == null || stopwatch == null) {
       _stopFollowSystemAnimation();
       return;
     }
 
-    final current = _state.clampedUiBrightness;
-    final delta = target - current;
-    if (delta.abs() < _followSystemSnapEpsilon) {
-      _setState(_state.copyWith(
-        uiBrightness: target,
+    final totalUs = _followSystemAnimationDuration.inMicroseconds;
+    final rawT = totalUs > 0
+        ? (stopwatch.elapsedMicroseconds / totalUs).clamp(0.0, 1.0)
+        : 1.0;
+    if (rawT >= 1.0) {
+      _setState(
+        _state.copyWith(
+          uiBrightness: target,
+          lastObservedSystemBrightness: target,
+          lastAppliedSystemBrightness: null,
+        ),
+        forceNotify: true,
+      );
+      _stopFollowSystemAnimation();
+      return;
+    }
+
+    final curved = Curves.easeInOut.transform(rawT);
+    final next = lerpDouble(start, target, curved)!;
+    // Sub-0.001 steps are normal at the start of easeInOut; still emit so the
+    // slider / overlay track every tick until the 1.2s tween completes.
+    _setState(
+      _state.copyWith(
+        uiBrightness: _normalize(next),
         lastObservedSystemBrightness: target,
         lastAppliedSystemBrightness: null,
-      ));
-      _followSystemAnimationTarget = null;
-      _stopFollowSystemAnimation();
-      return;
-    }
-
-    final next = current + (delta * _followSystemSmoothingFactor);
-    _setState(_state.copyWith(
-      uiBrightness: _normalize(next),
-      lastObservedSystemBrightness: target,
-      lastAppliedSystemBrightness: null,
-    ));
+      ),
+      forceNotify: true,
+    );
   }
 
   void _stopFollowSystemAnimation() {
     _followSystemAnimationTimer?.cancel();
     _followSystemAnimationTimer = null;
     _followSystemAnimationTarget = null;
+    _followAnimationStartValue = null;
+    _followAnimationStopwatch = null;
   }
 }
+

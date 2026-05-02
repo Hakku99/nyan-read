@@ -8,6 +8,7 @@ import 'core/services/riverpod_providers.dart';
 
 import 'core/services/service_locator.dart';
 import 'core/router/app_router.dart';
+import 'core/ui/nyan_app_keys.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -91,6 +92,7 @@ class _NyanAppState extends ConsumerState<NyanApp> with WidgetsBindingObserver {
       builder: (context, _) {
         return MaterialApp.router(
           title: 'Nyan Read',
+          scaffoldMessengerKey: nyanScaffoldMessengerKey,
           locale: languageManager.locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,

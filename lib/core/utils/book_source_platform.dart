@@ -37,6 +37,35 @@ class BookSourcePlatform {
     return bytes;
   }
 
+  /// Deletes a document exposed via a persisted `content://` Uri (SAF).
+  ///
+  /// Returns false on non-Android, invalid Uri, or when the provider denies
+  /// delete (e.g. missing persistable write permission).
+  static Future<bool> deletePersistedUriDocument(String uri) async {
+    if (!_isAndroid) return false;
+    final trimmed = uri.trim();
+    if (!trimmed.toLowerCase().startsWith('content://')) return false;
+    try {
+      final deleted = await _channel.invokeMethod<bool>(
+        'deletePersistedUriDocument',
+        {'uri': trimmed},
+      );
+      return deleted ?? false;
+    } on MissingPluginException catch (_) {
+      // Hot reload / hot restart does not pick up MainActivity.kt changes.
+      debugPrint(
+        'deletePersistedUriDocument: MissingPluginException — the Android '
+        'native handler is missing from the running APK. Stop the app and '
+        'install a full debug/release build (`flutter run` or rebuild APK), '
+        'not hot reload.',
+      );
+      return false;
+    } catch (e, stackTrace) {
+      debugPrint('deletePersistedUriDocument failed: $e\n$stackTrace');
+      return false;
+    }
+  }
+
   static Future<String> copyUriToTempFile(
     String uri, {
     required String extension,
