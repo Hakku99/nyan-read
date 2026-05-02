@@ -40,6 +40,7 @@ When touching `reader_engine/**`, `modules/reader/**`, `core/services/database_s
 
 1. Static check:
    - `flutter analyze`
+   - `dart run tool/check_design_tokens.dart`
 2. Targeted tests:
    - `flutter test test/reader_controller_brightness_test.dart --reporter=expanded`
    - `flutter test test/reader_menu_test.dart --reporter=expanded`
@@ -68,6 +69,7 @@ Add a performance gate job that runs at least:
 
 ```bash
 flutter analyze
+dart run tool/check_design_tokens.dart
 flutter test test/reader_controller_brightness_test.dart --reporter=expanded
 flutter test test/reader_menu_test.dart --reporter=expanded
 flutter test test/reading_progress_manager_test.dart --reporter=expanded
@@ -77,7 +79,24 @@ flutter test test/txt_reader_pagination_invalidation_test.dart --reporter=expand
 
 On Windows runners, the in-flight pagination dedup case is intentionally skipped in the test file to avoid false-negative timeout noise.
 
-## 6) Anti-pattern quick list
+## 6) Design token gate (lib/ hex colors)
+
+This mirrors `AGENTS.md`: widget/feature code under `lib/` must not embed `Color(0x...)`
+literals. Palette constants belong in `lib/core/theme/nyan_colors.dart`; preset wiring may
+use literals in `lib/core/theme/theme_presets.dart` only.
+
+Static gate (run locally or in CI after `flutter pub get`):
+
+```bash
+dart run tool/check_design_tokens.dart
+```
+
+Notes:
+
+- `test/**` is intentionally not scanned (fixtures may use raw colors).
+- `Colors.*` cleanup remains incremental and is reviewed manually until a stricter gate is agreed.
+
+## 7) Anti-pattern quick list
 
 Reject changes that introduce:
 
