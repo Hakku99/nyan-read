@@ -18,7 +18,8 @@ class FakeSystemBrightnessAdapter extends SystemBrightnessAdapter {
   double currentValue;
   final List<double> setCalls = <double>[];
   int resetCalls = 0;
-  final StreamController<double> _changes = StreamController<double>.broadcast();
+  final StreamController<double> _changes =
+      StreamController<double>.broadcast();
 
   @override
   Future<double> currentBrightness() async => currentValue;
@@ -107,7 +108,8 @@ void main() {
     controller.dispose();
   });
 
-  test('ReaderController warmth delegates through brightness boundary', () async {
+  test('ReaderController warmth delegates through brightness boundary',
+      () async {
     final prefs = ReaderPreferencesService();
     final db = _NoopDatabaseService();
     await prefs.initialize();
@@ -246,7 +248,9 @@ void main() {
     await adapter.close();
   });
 
-  test('Follow System mode stops writing brightness and tracks external changes', () async {
+  test(
+      'Follow System mode stops writing brightness and tracks external changes',
+      () async {
     final prefs = ReaderPreferencesService();
     await prefs.initialize();
     GetIt.instance.registerSingleton<ReaderPreferencesService>(prefs);
@@ -268,9 +272,16 @@ void main() {
     expect(adapter.resetCalls, 1);
 
     adapter.emitExternalBrightness(0.35);
-    await Future<void>.delayed(Duration.zero);
+    // Follow-system mode smooths toward the reported system brightness on a
+    // 16ms timer; a single microtask is not enough for the UI value to settle.
+    for (var i = 0; i < 80; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 16));
+      if ((brightnessController.uiBrightnessValue.value - 0.35).abs() < 0.005) {
+        break;
+      }
+    }
 
-    expect(brightnessController.uiBrightnessValue.value, 0.35);
+    expect(brightnessController.uiBrightnessValue.value, closeTo(0.35, 0.01));
     expect(adapter.setCalls.length, manualWriteCount);
 
     await brightnessController.shutdown();
