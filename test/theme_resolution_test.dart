@@ -5,9 +5,9 @@ import 'package:nyan_read/core/theme/theme_presets.dart';
 void main() {
   group('Theme Resolution Logic', () {
     test('Should find Correct Theme based on Background Color', () {
-      // Setup
-      const creamBg = Color(0xFFFDFCF8); // Cream Light Background
-      const sumiBg = Color(0xFF1C1B1A); // Sumi Dark Background
+      // Must match themePresets backgrounds (not reader canvas defaults).
+      final creamBg = themePresets[ThemePreset.creamLight]!.background;
+      final sumiBg = themePresets[ThemePreset.sumiDark]!.background;
 
       // Logic to test (mimicking what we will implement in ReaderMenu)
       NyanTheme? findTheme(Color bg) {
