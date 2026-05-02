@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 class TTSUI {
-  static bool _isVisible = false;
-
   static void showControls(BuildContext context) {
-    _isVisible = true;
     showModalBottomSheet(
       context: context,
       builder: (_) => Container(
@@ -17,8 +14,10 @@ class TTSUI {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(onPressed: () {}, icon: const Icon(Icons.skip_previous)),
-                IconButton(onPressed: () {}, icon: const Icon(Icons.play_arrow)),
+                IconButton(
+                    onPressed: () {}, icon: const Icon(Icons.skip_previous)),
+                IconButton(
+                    onPressed: () {}, icon: const Icon(Icons.play_arrow)),
                 IconButton(onPressed: () {}, icon: const Icon(Icons.skip_next)),
               ],
             ),
@@ -30,7 +29,6 @@ class TTSUI {
   }
 
   static void hideControls() {
-    _isVisible = false;
     debugPrint("TTSUI: Controls Hidden");
   }
 

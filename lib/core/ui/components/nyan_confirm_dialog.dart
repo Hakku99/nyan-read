@@ -74,11 +74,10 @@ class NyanConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final brandOlive = NyanOverlayStyle.brandOlive(context);
     final primaryText = context.nyanTheme.textPrimary.withValues(alpha: 0.94);
-    final secondaryText = context.nyanTheme.textSecondary.withValues(alpha: 0.82);
-    final resolvedIcon =
-        icon ??
+    final secondaryText =
+        context.nyanTheme.textSecondary.withValues(alpha: 0.82);
+    final resolvedIcon = icon ??
         switch (tone) {
           NyanConfirmTone.neutral => Icons.info_outline_rounded,
           NyanConfirmTone.warning => Icons.warning_amber_rounded,
@@ -97,7 +96,8 @@ class NyanConfirmDialog extends StatelessWidget {
       ),
       backgroundColor: Colors.transparent,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: NyanOverlayStyle.dialogMaxWidth),
+        constraints:
+            const BoxConstraints(maxWidth: NyanOverlayStyle.dialogMaxWidth),
         child: NyanOverlayPanel(
           radius: NyanOverlayStyle.dialogRadius,
           padding: const EdgeInsets.all(NyanOverlayStyle.dialogPadding),
@@ -113,7 +113,10 @@ class NyanConfirmDialog extends StatelessWidget {
                   _DialogBadge(
                     icon: resolvedIcon,
                     iconColor: NyanColors.confirmBadgeIcon,
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2),
+                    backgroundColor: Theme.of(context)
+                        .colorScheme
+                        .primaryContainer
+                        .withValues(alpha: 0.2),
                     borderColor: NyanColors.confirmBadgeBorder,
                   ),
                   const SizedBox(width: NyanSpacing.space12),

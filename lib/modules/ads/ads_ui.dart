@@ -4,16 +4,12 @@ import 'package:flutter/material.dart';
 import '../../core/ui/components/nyan_inline_ad_card.dart';
 
 class AdsUI {
-  static bool _isVisible = false;
-
   static const int bookshelfListInsertionIndex = 6;
   static const int bookshelfGridInsertionCount = 6;
   static const int minBooksForInlineShelfAd = bookshelfListInsertionIndex + 1;
 
-  static const String _sponsoredLabelZh =
-      '\u8d5e\u52a9\u63a8\u8350';
-  static const String _titleZh =
-      '\u53d1\u73b0\u66f4\u591a\u6545\u4e8b';
+  static const String _sponsoredLabelZh = '\u8d5e\u52a9\u63a8\u8350';
+  static const String _titleZh = '\u53d1\u73b0\u66f4\u591a\u6545\u4e8b';
   static const String _descriptionZh =
       '\u8fd9\u91cc\u53ef\u4ee5\u653e\u4e00\u6761\u4e0d\u6253\u6270\u9605\u8bfb\u8282\u594f\u7684\u8d5e\u52a9\u63a8\u8350\u3002';
 
@@ -37,7 +33,6 @@ class AdsUI {
         bookCount >= minBooksForInlineShelfAd;
     final isVisible = meetsPlacementRules && (adsEnabled || kDebugMode);
 
-    _isVisible = isVisible;
     return isVisible;
   }
 
@@ -45,7 +40,6 @@ class AdsUI {
     BuildContext context, {
     NyanInlineAdDensity density = NyanInlineAdDensity.regular,
   }) {
-    _isVisible = true;
     final isChinese = Localizations.localeOf(context).languageCode == 'zh';
 
     return NyanInlineAdCard(
@@ -57,7 +51,6 @@ class AdsUI {
   }
 
   static void hide() {
-    _isVisible = false;
     debugPrint('AdsUI: Hidden');
   }
 }

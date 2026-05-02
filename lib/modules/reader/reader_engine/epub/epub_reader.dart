@@ -225,7 +225,7 @@ class EpubReaderEngine implements ReaderEngine {
     final currentIndex = value != null
         ? _absoluteParagraphIndexFrom(value.position)
         : (_lastKnownProgress * maxIndex).round();
-    final targetIndex = (currentIndex + 1).clamp(0, maxIndex) as int;
+    final targetIndex = (currentIndex + 1).clamp(0, maxIndex);
     await seekToProgress(maxIndex == 0 ? 0.0 : targetIndex / maxIndex);
   }
 
@@ -237,12 +237,12 @@ class EpubReaderEngine implements ReaderEngine {
     final currentIndex = value != null
         ? _absoluteParagraphIndexFrom(value.position)
         : (_lastKnownProgress * maxIndex).round();
-    final targetIndex = (currentIndex - 1).clamp(0, maxIndex) as int;
+    final targetIndex = (currentIndex - 1).clamp(0, maxIndex);
     await seekToProgress(maxIndex == 0 ? 0.0 : targetIndex / maxIndex);
   }
+
   @override
   bool get hasBottomBar => false;
-
 
   void _handleCurrentValueChanged() {
     final cfi = _epubController.generateEpubCfi();

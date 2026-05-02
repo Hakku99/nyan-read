@@ -32,13 +32,10 @@ class NyanDialogOptionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final olive = theme.colorScheme.primary;
-    final tileColor = value
-        ? context.selectionSurface
-        : NyanColors.overlayRecessedSurface;
-    final borderColor = value
-        ? theme.colorScheme.primary
-        : NyanColors.overlayOptionBorder;
+    final tileColor =
+        value ? context.selectionSurface : NyanColors.overlayRecessedSurface;
+    final borderColor =
+        value ? theme.colorScheme.primary : NyanColors.overlayOptionBorder;
 
     return Material(
       color: Colors.transparent,
@@ -53,7 +50,8 @@ class NyanDialogOptionRow extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: tileColor,
-            borderRadius: BorderRadius.circular(NyanOverlayStyle.optionRowRadius),
+            borderRadius:
+                BorderRadius.circular(NyanOverlayStyle.optionRowRadius),
             border: Border.all(color: borderColor, width: 1),
           ),
           padding: const EdgeInsets.symmetric(
@@ -74,7 +72,8 @@ class NyanDialogOptionRow extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         height: 1.2,
-                        color: context.nyanTheme.textPrimary.withValues(alpha: 0.92),
+                        color: context.nyanTheme.textPrimary
+                            .withValues(alpha: 0.92),
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -87,7 +86,8 @@ class NyanDialogOptionRow extends StatelessWidget {
                           fontSize: 12.8,
                           fontWeight: FontWeight.w400,
                           height: 1.4,
-                          color: context.nyanTheme.textSecondary.withValues(alpha: 0.82),
+                          color: context.nyanTheme.textSecondary
+                              .withValues(alpha: 0.82),
                         ),
                       ),
                     ],
@@ -106,7 +106,8 @@ class NyanDialogOptionRow extends StatelessWidget {
   Widget _buildControl(BuildContext context, bool value) {
     switch (control) {
       case NyanDialogOptionControl.switchControl:
-        final palette = NyanOverlayStyle.tonePalette(context, NyanOverlayTone.success);
+        final palette =
+            NyanOverlayStyle.tonePalette(context, NyanOverlayTone.success);
         return Switch(
           value: value,
           onChanged: onChanged,
@@ -128,7 +129,8 @@ class NyanDialogOptionRow extends StatelessWidget {
             height: NyanOverlayStyle.checkboxSize,
             decoration: BoxDecoration(
               color: value ? checkedFill : Colors.transparent,
-              borderRadius: BorderRadius.circular(NyanOverlayStyle.checkboxRadius),
+              borderRadius:
+                  BorderRadius.circular(NyanOverlayStyle.checkboxRadius),
               border: Border.all(
                 color: value
                     ? olive.withValues(alpha: 0.94)

@@ -189,7 +189,8 @@ Uri? resolveTxtImageSourceUri({
     return parsed;
   }
 
-  if (book.sourceType != BookSourceType.filePath || book.sourceLocator.isEmpty) {
+  if (book.sourceType != BookSourceType.filePath ||
+      book.sourceLocator.isEmpty) {
     return null;
   }
 
@@ -296,7 +297,6 @@ class TxtReaderEngine
 
   List<String> _lines = [];
   bool _isLoading = true;
-  String? _error;
 
   ReaderConfig _config = const ReaderConfig(
     backgroundColor: Colors.white,
@@ -463,7 +463,8 @@ class TxtReaderEngine
           title: parsed.chapterTitles[i],
           index: i,
           // TXT chapter navigation jumps to the chapter's starting paragraph.
-          locator: ChapterLocator(chapterIndex: parsed.chapterParagraphIndexes[i]),
+          locator:
+              ChapterLocator(chapterIndex: parsed.chapterParagraphIndexes[i]),
         ),
         growable: false,
       );
@@ -560,7 +561,8 @@ class TxtReaderEngine
                           final progressPercent = (getProgress() ?? 0.0) * 100;
                           final page = getCurrentPageIndex() + 1;
                           final total = getPageCount();
-                          String chapterTitle = normalizeChapterHeadingForDisplay(
+                          String chapterTitle =
+                              normalizeChapterHeadingForDisplay(
                             _getCurrentChapterTitle(),
                           );
                           if (chapterTitle.isEmpty && _chapters.isNotEmpty) {
@@ -580,7 +582,8 @@ class TxtReaderEngine
                                     '${progressPercent.toInt()}%',
                                     textAlign: TextAlign.left,
                                     style: TextStyle(
-                                      color: config.textColor.withValues(alpha: 0.6),
+                                      color: config.textColor
+                                          .withValues(alpha: 0.6),
                                       fontSize: 10,
                                     ),
                                   ),
@@ -593,7 +596,8 @@ class TxtReaderEngine
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      color: config.textColor.withValues(alpha: 0.6),
+                                      color: config.textColor
+                                          .withValues(alpha: 0.6),
                                       fontSize: 10,
                                     ),
                                   ),
@@ -603,7 +607,8 @@ class TxtReaderEngine
                                     '$page / $total',
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
-                                      color: config.textColor.withValues(alpha: 0.6),
+                                      color: config.textColor
+                                          .withValues(alpha: 0.6),
                                       fontSize: 10,
                                     ),
                                   ),
@@ -699,7 +704,8 @@ class TxtReaderEngine
     required EdgeInsets padding,
     required double bottomMargin,
   }) {
-    final sourceUri = resolveTxtImageSourceUri(book: book, rawSrc: imageTag.src);
+    final sourceUri =
+        resolveTxtImageSourceUri(book: book, rawSrc: imageTag.src);
     final placeholderText =
         (imageTag.alt != null && imageTag.alt!.trim().isNotEmpty)
             ? imageTag.alt!.trim()

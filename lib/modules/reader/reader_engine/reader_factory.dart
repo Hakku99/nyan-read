@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import '../../../core/models/book.dart';
 import 'reader_engine.dart';
 import 'epub/epub_reader.dart';
