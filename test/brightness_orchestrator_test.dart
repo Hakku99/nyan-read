@@ -152,9 +152,9 @@ void main() {
 
     final earlyValue = orchestrator.state.uiBrightness;
     expect(earlyValue, greaterThan(0.30));
-    expect(earlyValue, lessThan(0.85));
+    expect(earlyValue, lessThan(0.50));
 
-    await Future<void>.delayed(const Duration(milliseconds: 320));
+    await Future<void>.delayed(const Duration(milliseconds: 1300));
     expect(orchestrator.state.uiBrightness, closeTo(0.85, 0.02));
 
     await orchestrator.shutdown();
