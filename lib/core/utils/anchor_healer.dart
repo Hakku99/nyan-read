@@ -28,8 +28,9 @@ class AnchorHealer {
     }
 
     if (candidateIndices.isEmpty) return null;
-    if (candidateIndices.length == 1)
+    if (candidateIndices.length == 1) {
       return candidateIndices.first; // 唯一孤岛，直接信赖
+    }
 
     // 3. 权重对齐仲裁机制
     // 如果 exact 在段落中出现多次，计算两侧指纹的相似度权重最高者。
@@ -70,10 +71,13 @@ class AnchorHealer {
     int minLen = target.length < actual.length ? target.length : actual.length;
     for (int i = 0; i < minLen; i++) {
       if (alignRight) {
-        if (target[target.length - 1 - i] == actual[actual.length - 1 - i])
+        if (target[target.length - 1 - i] == actual[actual.length - 1 - i]) {
           score++;
+        }
       } else {
-        if (target[i] == actual[i]) score++;
+        if (target[i] == actual[i]) {
+          score++;
+        }
       }
     }
     return score;

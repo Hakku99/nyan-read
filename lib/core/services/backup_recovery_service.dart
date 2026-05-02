@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -67,16 +66,17 @@ class BackupRecoveryService extends WidgetsBindingObserver {
           final shmFile = File('$mainDbPath-shm');
 
           mainDbFile.copySync(join(snapshotDir.path, 'nyan_read.db'));
-          if (walFile.existsSync())
+          if (walFile.existsSync()) {
             walFile.copySync(join(snapshotDir.path, 'nyan_read.db-wal'));
-          if (shmFile.existsSync())
+          }
+          if (shmFile.existsSync()) {
             shmFile.copySync(join(snapshotDir.path, 'nyan_read.db-shm'));
+          }
 
           debugPrint(
               '--- [Isolate] Cold backup written: ${snapshotDir.path} ---');
         } catch (e) {
-          debugPrint(
-              '--- [Isolate] Cold backup file copy failed: $e ---');
+          debugPrint('--- [Isolate] Cold backup file copy failed: $e ---');
         }
       });
 

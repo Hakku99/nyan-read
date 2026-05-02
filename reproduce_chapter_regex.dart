@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print — CLI scratch script (dart run reproduce_chapter_regex.dart)
+
 void main() {
   final lines = [
     "第1卷：第1章",

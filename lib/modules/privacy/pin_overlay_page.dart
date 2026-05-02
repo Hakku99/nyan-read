@@ -12,11 +12,11 @@ class PinOverlayPage extends StatefulWidget {
   final VoidCallback? onCancel;
 
   const PinOverlayPage({
-    Key? key,
+    super.key,
     required this.mode,
     this.onSuccess,
     this.onCancel,
-  }) : super(key: key);
+  });
 
   @override
   State<PinOverlayPage> createState() => _PinOverlayPageState();

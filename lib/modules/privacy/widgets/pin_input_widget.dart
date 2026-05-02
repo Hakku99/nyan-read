@@ -9,11 +9,11 @@ class PinInputWidget extends StatefulWidget {
   final VoidCallback? onError;
 
   const PinInputWidget({
-    Key? key,
+    super.key,
     required this.onPinComplete,
     this.isError = false,
     this.onError,
-  }) : super(key: key);
+  });
 
   @override
   State<PinInputWidget> createState() => _PinInputWidgetState();

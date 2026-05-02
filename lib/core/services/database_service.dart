@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+
 class DatabaseService {
   Database? _database;
 
@@ -54,10 +55,8 @@ class DatabaseService {
 
   Future<void> _ensureHighlightColumns(Database db) async {
     final columns = await db.rawQuery('PRAGMA table_info(highlights)');
-    final columnNames = columns
-        .map((row) => row['name'])
-        .whereType<String>()
-        .toSet();
+    final columnNames =
+        columns.map((row) => row['name']).whereType<String>().toSet();
 
     if (!columnNames.contains('pre_context')) {
       await db.execute(
@@ -75,10 +74,8 @@ class DatabaseService {
 
   Future<void> _ensureBookColumns(Database db) async {
     final columns = await db.rawQuery('PRAGMA table_info(books)');
-    final columnNames = columns
-        .map((row) => row['name'])
-        .whereType<String>()
-        .toSet();
+    final columnNames =
+        columns.map((row) => row['name']).whereType<String>().toSet();
 
     if (!columnNames.contains('content_signature')) {
       await db.execute('ALTER TABLE books ADD COLUMN content_signature TEXT');
@@ -93,8 +90,8 @@ class DatabaseService {
     }
   }
 
-
-  Future<void> _backfillBookStorageTypes(Database db, String appDocsPath) async {
+  Future<void> _backfillBookStorageTypes(
+      Database db, String appDocsPath) async {
     final rows = await db.query(
       'books',
       columns: ['id', 'file_path', 'storage_type', 'source_type'],
@@ -160,7 +157,8 @@ class DatabaseService {
             '--- [DatabaseService] Main database integrity check passed (ok) ---');
       }
     } catch (e) {
-      debugPrint('--- [DatabaseService] Database self-heal triggered. Recovery reason: $e ---');
+      debugPrint(
+          '--- [DatabaseService] Database self-heal triggered. Recovery reason: $e ---');
       await _restoreFromLatestBackup(mainDbPath);
     }
   }
@@ -414,11 +412,18 @@ class DatabaseService {
       orderBy: orderBy,
     );
   }
+
   Future<List<Map<String, dynamic>>> getBookImportEntries() async {
     final db = await database;
     return await db.query(
       'books',
-        columns: ['id', 'file_path', 'source_type', 'content_signature', 'storage_type'],
+      columns: [
+        'id',
+        'file_path',
+        'source_type',
+        'content_signature',
+        'storage_type'
+      ],
     );
   }
 
@@ -742,8 +747,7 @@ class DatabaseService {
       }
       if (localBookId == null) {
         final label = title ?? signature ?? '(unknown)';
-        debugPrint(
-            '--- [Restore] Skip book with no local match: "$label" ---');
+        debugPrint('--- [Restore] Skip book with no local match: "$label" ---');
         continue;
       }
 
@@ -758,14 +762,18 @@ class DatabaseService {
 
       // 3. Only update progress metadata; never rewrite id or file_path.
       final progressUpdate = <String, dynamic>{};
-      if (book['current_progress'] != null)
+      if (book['current_progress'] != null) {
         progressUpdate['current_progress'] = book['current_progress'];
-      if (book['last_position_type'] != null)
+      }
+      if (book['last_position_type'] != null) {
         progressUpdate['last_position_type'] = book['last_position_type'];
-      if (book['last_position_payload'] != null)
+      }
+      if (book['last_position_payload'] != null) {
         progressUpdate['last_position_payload'] = book['last_position_payload'];
-      if (book['last_read_at'] != null)
+      }
+      if (book['last_read_at'] != null) {
         progressUpdate['last_read_at'] = book['last_read_at'];
+      }
 
       if (progressUpdate.isNotEmpty) {
         batch.update('books', progressUpdate,
@@ -821,12 +829,3 @@ class _DbRestoreOutcome {
   _DbRestoreOutcome(this.logs);
   final List<String> logs;
 }
-
-
-
-
-
-
-
-
-

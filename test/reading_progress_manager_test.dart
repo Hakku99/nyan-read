@@ -8,8 +8,6 @@
 ///   - never throw or call dispose'd engine methods
 library;
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';

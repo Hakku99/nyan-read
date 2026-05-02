@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print — CLI scratch script (dart run test_regex.dart)
+
 void main() {
   final chapterPatterns = [
     RegExp(r'^第[零一二三四五六七八九十百千万\d]+[章回节话]', multiLine: false),

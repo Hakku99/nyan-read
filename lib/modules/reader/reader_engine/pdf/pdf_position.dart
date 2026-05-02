@@ -1,12 +1,12 @@
 import '../reader_engine.dart';
 
 class PdfReadingPosition extends ReadingPosition {
-  PdfReadingPosition({required int pageNumber, int? chapterIndex})
-      : super(
-          pageNumber: pageNumber,
-          chapterIndex: chapterIndex,
-        );
+  PdfReadingPosition({
+    required super.pageNumber,
+    super.chapterIndex,
+  });
 
+  @override
   int get pageNumber => super.pageNumber ?? 1;
 
   factory PdfReadingPosition.fromJson(String json) {

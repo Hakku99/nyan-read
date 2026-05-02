@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../../../core/services/mascot_manager.dart';
@@ -168,7 +167,8 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: errorSecondary.withValues(alpha: 0.1)),
+                  border:
+                      Border.all(color: errorSecondary.withValues(alpha: 0.1)),
                 ),
                 width: double.infinity,
                 child: SelectableText(
@@ -187,4 +187,3 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
     );
   }
 }
-

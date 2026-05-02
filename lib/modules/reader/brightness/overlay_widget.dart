@@ -4,15 +4,16 @@ import 'brightness_state.dart';
 
 class BrightnessOverlayWidget extends StatelessWidget {
   const BrightnessOverlayWidget({
-    Key? key,
+    super.key,
     required this.child,
     required this.stateListenable,
     required this.warmthListenable,
+
     /// [StackFit.expand] for full-screen reader body; [StackFit.passthrough]
     /// for bottom sheets so the stack sizes to [child] only (barrier taps work,
     /// height constraints like 92% max are preserved).
     this.stackFit = StackFit.expand,
-  }) : super(key: key);
+  });
 
   final Widget child;
   final ValueListenable<BrightnessState> stateListenable;
@@ -38,7 +39,8 @@ class BrightnessOverlayWidget extends StatelessWidget {
                         color: Colors.amber.withValues(alpha: warmth * 0.3),
                         foregroundDecoration: BoxDecoration(
                           backgroundBlendMode: BlendMode.multiply,
-                          color: Colors.orangeAccent.withValues(alpha: warmth * 0.2),
+                          color: Colors.orangeAccent
+                              .withValues(alpha: warmth * 0.2),
                         ),
                       ),
                     ),
@@ -47,7 +49,8 @@ class BrightnessOverlayWidget extends StatelessWidget {
                   Positioned.fill(
                     child: IgnorePointer(
                       child: Container(
-                        color: Colors.black.withValues(alpha: state.overlayOpacity),
+                        color: Colors.black
+                            .withValues(alpha: state.overlayOpacity),
                       ),
                     ),
                   ),
@@ -59,4 +62,3 @@ class BrightnessOverlayWidget extends StatelessWidget {
     );
   }
 }
-

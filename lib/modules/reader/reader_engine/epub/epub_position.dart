@@ -2,15 +2,12 @@ import '../reader_engine.dart';
 
 class EpubReadingPosition extends ReadingPosition {
   EpubReadingPosition({
-    required String cfi,
-    int? chapterIndex,
-    int? paragraphIndex,
-  }) : super(
-          cfi: cfi,
-          chapterIndex: chapterIndex,
-          paragraphIndex: paragraphIndex,
-        );
+    required super.cfi,
+    super.chapterIndex,
+    super.paragraphIndex,
+  });
 
+  @override
   String get cfi => super.cfi ?? '';
 
   factory EpubReadingPosition.fromJson(String json) {

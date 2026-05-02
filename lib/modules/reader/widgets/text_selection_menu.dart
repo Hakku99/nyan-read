@@ -12,14 +12,14 @@ class TextSelectionMenu extends StatelessWidget {
   final VoidCallback onDismiss;
 
   const TextSelectionMenu({
-    Key? key,
+    super.key,
     required this.selectedText,
     required this.position,
     required this.onHighlight,
     required this.onCopy,
     required this.onSearch,
     required this.onDismiss,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

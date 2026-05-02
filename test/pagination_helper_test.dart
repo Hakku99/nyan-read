@@ -30,6 +30,8 @@ void main() {
     // Roughly check if total pages * chars per page >= text length
     expect(totalPages * charsPerPage, greaterThanOrEqualTo(text.length));
 
-    print('Estimated Total Pages: $totalPages, Chars Per Page: $charsPerPage');
+    debugPrint(
+      'Estimated Total Pages: $totalPages, Chars Per Page: $charsPerPage',
+    );
   });
 }

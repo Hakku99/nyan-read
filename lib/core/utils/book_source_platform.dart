@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -59,5 +57,6 @@ class BookSourcePlatform {
     return tempPath;
   }
 
-  static bool get _isAndroid => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  static bool get _isAndroid =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 }
