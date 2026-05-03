@@ -398,6 +398,36 @@ abstract class AppLocalizations {
   /// **'Book Details'**
   String get bookDetails;
 
+  /// No description provided for @bookDetailsOverviewSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get bookDetailsOverviewSection;
+
+  /// No description provided for @bookDetailsSourceSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get bookDetailsSourceSection;
+
+  /// No description provided for @originalPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Original path'**
+  String get originalPath;
+
+  /// No description provided for @unknownAuthor.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown author'**
+  String get unknownAuthor;
+
+  /// No description provided for @readyToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to start'**
+  String get readyToStart;
+
   /// No description provided for @title.
   ///
   /// In en, this message translates to:
@@ -415,6 +445,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Format'**
   String get format;
+
+  /// No description provided for @bookFormatEpub.
+  ///
+  /// In en, this message translates to:
+  /// **'EPUB'**
+  String get bookFormatEpub;
+
+  /// No description provided for @bookFormatTxt.
+  ///
+  /// In en, this message translates to:
+  /// **'TXT'**
+  String get bookFormatTxt;
+
+  /// No description provided for @bookFormatPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF'**
+  String get bookFormatPdf;
 
   /// No description provided for @privacy.
   ///
@@ -451,6 +499,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last Read'**
   String get lastRead;
+
+  /// No description provided for @lastOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Last opened'**
+  String get lastOpened;
+
+  /// No description provided for @bookDetailsSourceSummaryDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved from Downloads'**
+  String get bookDetailsSourceSummaryDownloads;
+
+  /// No description provided for @bookDetailsSourceSummaryImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported file'**
+  String get bookDetailsSourceSummaryImported;
+
+  /// No description provided for @bookDetailsFullTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Full title'**
+  String get bookDetailsFullTitle;
 
   /// No description provided for @fileLocation.
   ///

@@ -27,4 +27,15 @@ class NyanShadows {
       ),
     ];
   }
+
+  /// Settings grouped cards — ultra-soft lift (was inlined as `_SettingsCard`).
+  static List<BoxShadow> settingsGrouped(Color shadowColor) {
+    return [
+      BoxShadow(
+        color: shadowColor.withValues(alpha: 0.014),
+        blurRadius: 10,
+        offset: const Offset(0, 2),
+      ),
+    ];
+  }
 }

@@ -161,6 +161,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bookDetails => '书籍详情';
 
   @override
+  String get bookDetailsOverviewSection => '概览';
+
+  @override
+  String get bookDetailsSourceSection => '来源';
+
+  @override
+  String get originalPath => '原始路径';
+
+  @override
+  String get unknownAuthor => '未署名';
+
+  @override
+  String get readyToStart => '准备开始';
+
+  @override
   String get title => '标题';
 
   @override
@@ -168,6 +183,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get format => '格式';
+
+  @override
+  String get bookFormatEpub => 'EPUB';
+
+  @override
+  String get bookFormatTxt => 'TXT';
+
+  @override
+  String get bookFormatPdf => 'PDF';
 
   @override
   String get privacy => '隐私';
@@ -186,6 +210,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get lastRead => '最后阅读';
+
+  @override
+  String get lastOpened => '上次打开';
+
+  @override
+  String get bookDetailsSourceSummaryDownloads => '存储于下载目录';
+
+  @override
+  String get bookDetailsSourceSummaryImported => '导入的文件';
+
+  @override
+  String get bookDetailsFullTitle => '完整书名';
 
   @override
   String get fileLocation => '文件位置';

@@ -186,7 +186,7 @@ packages:
     source: hosted
     version: "3.2.0"
   epubx:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: epubx
       sha256: "0ab9354efa177c4be52c46f857bc15bf83f83a92667fb673465c8f89fca26db3"
@@ -454,7 +454,7 @@ packages:
     source: hosted
     version: "4.1.2"
   image:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: image
       sha256: "8e9d133755c3e84c73288363e6343157c383a0c6c56fc51afcc5d4d7180306d6"

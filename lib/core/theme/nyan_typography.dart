@@ -7,6 +7,9 @@ class NyanTypography {
   static const String readingSansFontFamily = 'Noto Sans SC';
   static const String readingSerifFontFamily = 'Source Han Serif SC';
 
+  /// Generic platform monospace for locators and other technical strings.
+  static const String monoFontFamily = 'monospace';
+
   static const double display = 32;
   static const double title = 24;
   static const double section = 20;

@@ -1,5 +1,6 @@
 export 'nyan_action_sheet_row.dart';
 export 'nyan_book_card.dart';
+export 'nyan_book_logo_mark.dart';
 export 'nyan_book_grid_card.dart';
 export 'nyan_bookmark_card.dart';
 export 'nyan_bottom_sheet.dart';
@@ -19,6 +20,7 @@ export 'nyan_progress_dialog.dart';
 export 'nyan_recessed_icon_button.dart';
 export 'nyan_secure_entry_dialog.dart';
 export 'nyan_selection_sheet.dart';
+export 'nyan_section_header.dart';
 export 'nyan_selection_sheet_row.dart';
 export 'nyan_sheet_appearance.dart';
 export 'nyan_sheet_card.dart';

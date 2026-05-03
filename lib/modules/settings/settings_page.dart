@@ -13,8 +13,8 @@ import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/riverpod_providers.dart';
 import '../../core/services/service_locator.dart';
 import '../../core/theme/nyan_radius.dart';
+import '../../core/theme/nyan_shadows.dart';
 import '../../core/theme/nyan_spacing.dart';
-import '../../core/theme/nyan_typography.dart';
 import '../../core/theme/theme_presets.dart';
 import '../../core/ui/components/components.dart';
 import '../../core/utils/snackbar_utils.dart';
@@ -236,7 +236,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   MediaQuery.of(context).padding.bottom,
             ),
             children: [
-              _SectionHeader(title: loc.appearance),
+              NyanSectionHeader(title: loc.appearance),
               _SettingsCard(
                 children: [
                   _SelectionRow(
@@ -287,7 +287,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ],
               ),
               const SizedBox(height: _kSettingsSectionGap),
-              _SectionHeader(title: loc.readingSettings),
+              NyanSectionHeader(title: loc.readingSettings),
               ListenableBuilder(
                 listenable: Listenable.merge(
                   [readerPrefs, reminderService],
@@ -374,7 +374,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 },
               ),
               const SizedBox(height: _kSettingsSectionGap),
-              _SectionHeader(title: loc.dataManagement),
+              NyanSectionHeader(title: loc.dataManagement),
               _SettingsCard(
                 children: [
                   _ActionRow(
@@ -491,37 +491,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        _kSettingsHorizontalPadding,
-        0,
-        _kSettingsHorizontalPadding,
-        _kSettingsCardGap,
-      ),
-      child: Text(
-        title,
-        style: theme.textTheme.labelSmall?.copyWith(
-          fontSize: NyanTypography.meta,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.22,
-          color: theme.colorScheme.primary.withValues(
-            alpha: theme.brightness == Brightness.dark ? 0.9 : 0.9,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _SettingsCard extends StatelessWidget {
   const _SettingsCard({
     required this.children,
@@ -552,14 +521,15 @@ class _SettingsCard extends StatelessWidget {
         ),
         boxShadow: isDark
             ? const []
-            : [
-                BoxShadow(
-                  color:
-                      theme.shadowColor.withValues(alpha: shadowAlpha ?? 0.014),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+            : (shadowAlpha == null
+                ? NyanShadows.settingsGrouped(theme.shadowColor)
+                : [
+                    BoxShadow(
+                      color: theme.shadowColor.withValues(alpha: shadowAlpha),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(_kSettingsCardRadius),

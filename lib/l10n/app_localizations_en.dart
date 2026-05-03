@@ -164,6 +164,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookDetails => 'Book Details';
 
   @override
+  String get bookDetailsOverviewSection => 'Overview';
+
+  @override
+  String get bookDetailsSourceSection => 'Source';
+
+  @override
+  String get originalPath => 'Original path';
+
+  @override
+  String get unknownAuthor => 'Unknown author';
+
+  @override
+  String get readyToStart => 'Ready to start';
+
+  @override
   String get title => 'Title';
 
   @override
@@ -171,6 +186,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get format => 'Format';
+
+  @override
+  String get bookFormatEpub => 'EPUB';
+
+  @override
+  String get bookFormatTxt => 'TXT';
+
+  @override
+  String get bookFormatPdf => 'PDF';
 
   @override
   String get privacy => 'Privacy';
@@ -189,6 +213,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lastRead => 'Last Read';
+
+  @override
+  String get lastOpened => 'Last opened';
+
+  @override
+  String get bookDetailsSourceSummaryDownloads => 'Saved from Downloads';
+
+  @override
+  String get bookDetailsSourceSummaryImported => 'Imported file';
+
+  @override
+  String get bookDetailsFullTitle => 'Full title';
 
   @override
   String get fileLocation => 'File Location';

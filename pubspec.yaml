@@ -33,6 +33,9 @@ dependencies:
 
   # Reader Engines
   epub_view: ^3.2.0
+  # Align with epub_view / epubx; bookshelf EPUB cover extraction (isolate).
+  epubx: ^4.0.0
+  image: ^3.3.0
   pdfx: ^2.6.0
   internet_file: ^1.2.0
   scrollable_positioned_list: ^0.3.8

@@ -5,6 +5,7 @@ import '../../../core/theme/nyan_radius.dart';
 import '../../../core/theme/nyan_shelf_ui.dart';
 import '../../../core/theme/nyan_shadows.dart';
 import '../../../core/theme/nyan_spacing.dart';
+import '../../../core/ui/components/nyan_book_logo_mark.dart';
 import '../../../core/ui/nyan_theme_context.dart';
 import '../../../core/utils/datetime_utils.dart';
 
@@ -128,20 +129,7 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                     ),
                   ),
 
-                // Book icon container
-                Container(
-                  padding: const EdgeInsets.all(NyanSpacing.space8),
-                  decoration: BoxDecoration(
-                    color:
-                        theme.colorScheme.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(NyanRadius.small),
-                  ),
-                  child: Icon(
-                    Icons.menu_book_rounded,
-                    size: 24,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
+                const NyanBookLogoMark(iconSize: 24),
                 const SizedBox(width: NyanSpacing.space16),
 
                 // Book info: title row + status, then progress + percent
@@ -330,19 +318,9 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           const SizedBox(height: NyanSpacing.space16),
-                          // Book icon container
-                          Container(
-                            padding: const EdgeInsets.all(NyanSpacing.space8),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                              borderRadius:
-                                  BorderRadius.circular(NyanRadius.small),
-                            ),
-                            child: Icon(
-                              Icons.menu_book_rounded,
-                              size: 32,
-                              color: theme.colorScheme.primary,
-                            ),
+                          const NyanBookLogoMark(
+                            iconSize: 32,
+                            backgroundAlpha: 0.1,
                           ),
                           const SizedBox(height: NyanSpacing.space8),
                           // Title with gradient
