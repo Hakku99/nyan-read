@@ -39,11 +39,14 @@ class Book {
   final String sourceLocator;
   final String sourceType;
   final String format; // 'epub', 'txt', 'pdf'
+  final String? titleSortKey;
   final bool isPrivate;
   final int totalPages;
   final double currentProgress;
   final String? lastPositionType;
   final String? lastPositionPayload;
+  final int? lastReadAt;
+  final int? addedAt;
   final String? contentSignature;
   final String storageType;
 
@@ -55,11 +58,14 @@ class Book {
     String? sourceLocator,
     this.sourceType = BookSourceType.filePath,
     required this.format,
+    this.titleSortKey,
     this.isPrivate = false,
     this.totalPages = 0,
     this.currentProgress = 0.0,
     this.lastPositionType,
     this.lastPositionPayload,
+    this.lastReadAt,
+    this.addedAt,
     this.contentSignature,
     this.storageType = BookStorageType.externalPath,
   }) : sourceLocator = sourceLocator ?? filePath ?? '';
@@ -77,11 +83,14 @@ class Book {
       'file_path': sourceLocator,
       'source_type': sourceType,
       'format': format,
+      'title_sort_key': titleSortKey,
       'is_private': isPrivate ? 1 : 0,
       'total_pages': totalPages,
       'current_progress': currentProgress,
       'last_position_type': lastPositionType,
       'last_position_payload': lastPositionPayload,
+      'last_read_at': lastReadAt,
+      'added_at': addedAt,
       'content_signature': contentSignature,
       'storage_type': storageType,
     };
@@ -95,11 +104,14 @@ class Book {
       sourceLocator: map['file_path'],
       sourceType: BookSourceType.normalize(map['source_type'] as String?),
       format: map['format'],
+      titleSortKey: map['title_sort_key'] as String?,
       isPrivate: map['is_private'] == 1,
       totalPages: map['total_pages'] ?? 0,
       currentProgress: map['current_progress'] ?? 0.0,
       lastPositionType: map['last_position_type'],
       lastPositionPayload: map['last_position_payload'],
+      lastReadAt: map['last_read_at'] as int?,
+      addedAt: map['added_at'] as int?,
       contentSignature: map['content_signature'],
       storageType: BookStorageType.normalize(map['storage_type'] as String?),
     );

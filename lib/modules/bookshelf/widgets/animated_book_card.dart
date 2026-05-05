@@ -80,10 +80,12 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
     // Format last read time with relative labels
     final loc = AppLocalizations.of(context)!;
     String lastReadText = loc.neverRead;
-    if (widget.bookData['last_read_at'] != null) {
+    final lastReadAt =
+        widget.book.lastReadAt ?? (widget.bookData['last_read_at'] as int?);
+    if (lastReadAt != null) {
       final now = DateTime.now();
       lastReadText = DateTimeUtils.formatRelativeTimeFromMillis(
-        widget.bookData['last_read_at'] as int,
+        lastReadAt,
         now,
         loc,
       );

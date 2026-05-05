@@ -9,7 +9,9 @@
 library;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nyan_read/core/utils/title_sort_key.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:nyan_read/core/services/bookshelf_preferences_service.dart';
 
 // ---------------------------------------------------------------------------
 // Schema helpers – mirrors DatabaseService._onCreate and _ensureHotIndexes
@@ -41,6 +43,7 @@ Future<void> _createSchema(Database db) async {
       source_type TEXT NOT NULL DEFAULT 'file_path',
       cover_path TEXT,
       format TEXT NOT NULL,
+      title_sort_key TEXT,
       is_private INTEGER DEFAULT 0,
       total_pages INTEGER,
       current_progress REAL DEFAULT 0,
@@ -97,6 +100,8 @@ Future<void> _ensureHotIndexes(Database db) async {
       'CREATE INDEX IF NOT EXISTS idx_bookmarks_book ON bookmarks(book_id, page_index)');
   await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_books_privacy_last_read ON books(is_private, last_read_at)');
+  await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_books_privacy_added_at ON books(is_private, added_at)');
 }
 
 Map<String, dynamic> _bookRow(String id) => {
@@ -152,6 +157,7 @@ void main() {
       expect(names, contains('idx_highlights_book'));
       expect(names, contains('idx_bookmarks_book'));
       expect(names, contains('idx_books_privacy_last_read'));
+      expect(names, contains('idx_books_privacy_added_at'));
     });
 
     test('_ensureHotIndexes is idempotent (IF NOT EXISTS)', () async {
@@ -247,6 +253,97 @@ void main() {
       expect(highlights, isEmpty,
           reason:
               'REPLACE triggers CASCADE delete: this is why we switched to abort');
+    });
+
+    test('recency asc keeps unread books at the end', () async {
+      await db.insert('books', {
+        ..._bookRow('r-newer'),
+        'last_read_at': 300,
+        'added_at': 30,
+      });
+      await db.insert('books', {
+        ..._bookRow('r-older'),
+        'last_read_at': 100,
+        'added_at': 10,
+      });
+      await db.insert('books', {
+        ..._bookRow('r-unread'),
+        'last_read_at': null,
+        'added_at': 20,
+      });
+
+      final prefs = BookshelfPreferencesService();
+      await prefs.setSort(SortBy.recency, true);
+
+      final rows = await db.query(
+        'books',
+        where: 'is_private = 0',
+        orderBy: prefs.getOrderByClause(),
+      );
+      final ids = rows.map((row) => row['id'] as String).toList();
+
+      expect(ids, ['r-older', 'r-newer', 'r-unread']);
+    });
+
+    test('import date desc sorts by added_at with deterministic tie-break', () async {
+      await db.insert('books', {
+        ..._bookRow('i-older'),
+        'added_at': 10,
+      });
+      await db.insert('books', {
+        ..._bookRow('i-a'),
+        'added_at': 50,
+      });
+      await db.insert('books', {
+        ..._bookRow('i-b'),
+        'added_at': 50,
+      });
+      await db.insert('books', {
+        ..._bookRow('i-null'),
+        'added_at': null,
+      });
+
+      final prefs = BookshelfPreferencesService();
+      await prefs.setSort(SortBy.importDate, false);
+
+      final rows = await db.query(
+        'books',
+        where: 'is_private = 0',
+        orderBy: prefs.getOrderByClause(),
+      );
+      final ids = rows.map((row) => row['id'] as String).toList();
+
+      expect(ids, ['i-b', 'i-a', 'i-older', 'i-null']);
+    });
+
+    test('title asc follows chinese-friendly title_sort_key', () async {
+      await db.insert('books', {
+        ..._bookRow('zhang'),
+        'title': '张三',
+        'title_sort_key': buildTitleSortKey('张三'),
+      });
+      await db.insert('books', {
+        ..._bookRow('li'),
+        'title': '李四',
+        'title_sort_key': buildTitleSortKey('李四'),
+      });
+      await db.insert('books', {
+        ..._bookRow('wang'),
+        'title': '王五',
+        'title_sort_key': buildTitleSortKey('王五'),
+      });
+
+      final prefs = BookshelfPreferencesService();
+      await prefs.setSort(SortBy.title, true);
+
+      final rows = await db.query(
+        'books',
+        where: 'is_private = 0',
+        orderBy: prefs.getOrderByClause(),
+      );
+      final ids = rows.map((row) => row['id'] as String).toList();
+
+      expect(ids, ['li', 'wang', 'zhang']);
     });
   });
 }

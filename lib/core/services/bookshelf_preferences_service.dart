@@ -110,13 +110,23 @@ class BookshelfPreferencesService {
     final direction = _isAscending ? 'ASC' : 'DESC';
     switch (_sortBy) {
       case SortBy.recency:
-        // Sort by last read time, nulls last (never read books at the end)
-        return 'last_read_at $direction';
+        // Always keep unread books at the end, regardless of direction.
+        final addedDirection = _isAscending ? 'ASC' : 'DESC';
+        return 'last_read_at IS NULL ASC, '
+            'last_read_at $direction, '
+            'added_at IS NULL ASC, '
+            'added_at $addedDirection, '
+            'id $addedDirection';
       case SortBy.importDate:
-        return 'added_at $direction';
+        return 'added_at IS NULL ASC, added_at $direction, id $direction';
       case SortBy.title:
-        // Case-insensitive alphabetical sorting
-        return 'title COLLATE NOCASE $direction';
+        // Case-insensitive alphabetical sorting with deterministic tie-breakers.
+        return 'title_sort_key IS NULL ASC, '
+            'title_sort_key $direction, '
+            'title COLLATE NOCASE $direction, '
+            'added_at IS NULL ASC, '
+            'added_at DESC, '
+            'id DESC';
     }
   }
 }

@@ -26,6 +26,7 @@ import '../ads/ads_ui.dart';
 import '../../core/utils/book_import_fingerprint.dart';
 import '../../core/utils/book_source_platform.dart';
 import '../../core/utils/snackbar_utils.dart';
+import '../../core/utils/title_sort_key.dart';
 import 'book_details_page.dart';
 import 'widgets/import_book_sheet.dart';
 import 'widgets/bookshelf_shelf_toolbar.dart';
@@ -198,6 +199,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
         try {
           final fileName = importSource.displayName;
+          final addedAt = DateTime.now().millisecondsSinceEpoch;
           final normalizedSourceLocator =
               BookImportFingerprint.normalizeLocator(
             importSource.sourceType,
@@ -226,7 +228,10 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             sourceLocator: importSource.sourceLocator,
             sourceType: importSource.sourceType,
             format: path.extension(fileName).replaceAll('.', ''),
+            titleSortKey:
+                buildTitleSortKey(path.basenameWithoutExtension(fileName)),
             isPrivate: isPrivate,
+            addedAt: addedAt,
             contentSignature: contentSignature,
             storageType: BookStorageType.externalPath,
           );

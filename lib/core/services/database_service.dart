@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+import '../utils/title_sort_key.dart';
 
 class DatabaseService {
   Database? _database;
@@ -51,6 +52,8 @@ class DatabaseService {
         'CREATE INDEX IF NOT EXISTS idx_bookmarks_book ON bookmarks(book_id, page_index)');
     await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_books_privacy_last_read ON books(is_private, last_read_at)');
+    await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_books_privacy_added_at ON books(is_private, added_at)');
   }
 
   Future<void> _ensureHighlightColumns(Database db) async {
@@ -88,6 +91,45 @@ class DatabaseService {
       await db.execute(
           "ALTER TABLE books ADD COLUMN source_type TEXT DEFAULT 'file_path'");
     }
+    if (!columnNames.contains('title_sort_key')) {
+      await db.execute('ALTER TABLE books ADD COLUMN title_sort_key TEXT');
+    }
+    await _backfillMissingAddedAt(db);
+    await _backfillMissingTitleSortKeys(db);
+  }
+
+  Future<void> _backfillMissingAddedAt(Database db) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await db.rawUpdate(
+      'UPDATE books SET added_at = ? WHERE added_at IS NULL',
+      [now],
+    );
+  }
+
+  Future<void> _backfillMissingTitleSortKeys(Database db) async {
+    final rows = await db.query(
+      'books',
+      columns: ['id', 'title'],
+      where: 'title_sort_key IS NULL OR title_sort_key = ?',
+      whereArgs: [''],
+    );
+    if (rows.isEmpty) return;
+
+    final batch = db.batch();
+    for (final row in rows) {
+      final id = row['id'] as String?;
+      final title = row['title'] as String?;
+      if (id == null || title == null) {
+        continue;
+      }
+      batch.update(
+        'books',
+        {'title_sort_key': buildTitleSortKey(title)},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    }
+    await batch.commit(noResult: true);
   }
 
   Future<void> _backfillBookStorageTypes(
@@ -312,6 +354,8 @@ class DatabaseService {
           'CREATE INDEX IF NOT EXISTS idx_bookmarks_book ON bookmarks(book_id, page_index)');
       await db.execute(
           'CREATE INDEX IF NOT EXISTS idx_books_privacy_last_read ON books(is_private, last_read_at)');
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_books_privacy_added_at ON books(is_private, added_at)');
     }
   }
 
@@ -326,6 +370,7 @@ class DatabaseService {
         source_type TEXT NOT NULL DEFAULT 'file_path',
         cover_path TEXT,
         format TEXT NOT NULL,
+        title_sort_key TEXT,
         is_private INTEGER DEFAULT 0,
         total_pages INTEGER,
         current_progress REAL DEFAULT 0,
@@ -390,12 +435,18 @@ class DatabaseService {
 
   Future<void> insertBook(Map<String, dynamic> bookData) async {
     final db = await database;
+    final payload = Map<String, dynamic>.from(bookData);
+    payload['added_at'] ??= DateTime.now().millisecondsSinceEpoch;
+    final title = payload['title'] as String?;
+    if (title != null && title.isNotEmpty) {
+      payload['title_sort_key'] ??= buildTitleSortKey(title);
+    }
     // Deliberately NOT using ConflictAlgorithm.replace: REPLACE on a books
     // row fires the FK ON DELETE CASCADE path and silently deletes every
     // highlight and bookmark the user ever made for that book.  The import
     // pipeline already de-duplicates via BookImportFingerprint, so a real
     // duplicate here is a bug and we want it to be loud, not destructive.
-    await db.insert('books', bookData,
+    await db.insert('books', payload,
         conflictAlgorithm: ConflictAlgorithm.abort);
   }
 
@@ -474,9 +525,14 @@ class DatabaseService {
 
   Future<void> updateBook(String bookId, Map<String, dynamic> data) async {
     final db = await database;
+    final payload = Map<String, dynamic>.from(data);
+    final title = payload['title'] as String?;
+    if (title != null && title.isNotEmpty) {
+      payload['title_sort_key'] ??= buildTitleSortKey(title);
+    }
     await db.update(
       'books',
-      data,
+      payload,
       where: 'id = ?',
       whereArgs: [bookId],
     );
