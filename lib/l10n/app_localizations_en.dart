@@ -51,6 +51,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pageTurnModeDisabled => 'Page turning disabled';
 
   @override
+  String get pageTurnModeLeftRight => 'Left-right';
+
+  @override
+  String get pageTurnModeUpDown => 'Up-down';
+
+  @override
   String get pageTurnTap => 'Tap';
 
   @override
@@ -63,7 +69,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pageAnimation => 'Page Animation';
 
   @override
-  String get pageAnimationFade => 'Smooth fade transition';
+  String get pageAnimationFade => 'Directional fade transition';
 
   @override
   String get pageAnimationPaper => 'Subtle paper effect';
@@ -72,7 +78,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pageAnimationNone => 'No animation';
 
   @override
-  String get pageAnimFade => 'Fade';
+  String get pageAnimFade => 'Directional Fade';
 
   @override
   String get pageAnimPaper => 'Paper';

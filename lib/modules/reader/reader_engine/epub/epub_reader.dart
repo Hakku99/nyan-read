@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/models/book.dart';
+import '../../../../core/services/reader_preferences_service.dart';
 import '../../../../core/utils/book_source_access.dart';
 import '../reader_engine.dart';
 import 'epub_parse_helpers.dart';
@@ -35,6 +36,12 @@ class EpubReaderEngine implements ReaderEngine {
   String? _initialCfi;
   Completer<void>? _viewReadyCompleter;
   VoidCallback? _currentValueListener;
+  ReaderConfig _config = const ReaderConfig(
+    backgroundColor: Colors.white,
+    textColor: Colors.black,
+    fontSize: 18,
+    lineHeight: 1.5,
+  );
 
   EpubReaderEngine(this.book);
 
@@ -110,7 +117,9 @@ class EpubReaderEngine implements ReaderEngine {
   }
 
   @override
-  void setConfig(ReaderConfig config) {}
+  void setConfig(ReaderConfig config) {
+    _config = config;
+  }
 
   @override
   double? getProgress() {
@@ -135,6 +144,11 @@ class EpubReaderEngine implements ReaderEngine {
     await _waitForViewReady();
     final clamped = progress.clamp(0.0, 1.0);
     final targetIndex = (clamped * (_paragraphCount - 1)).round();
+    if (_config.pageTurnMode == PageTurnMode.leftRight) {
+      _epubController.jumpTo(index: targetIndex, alignment: 0);
+      _lastKnownProgress = clamped;
+      return;
+    }
     final scrollFuture = _epubController.scrollTo(
       index: targetIndex,
       duration: const Duration(milliseconds: 250),

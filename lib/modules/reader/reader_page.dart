@@ -32,6 +32,7 @@ import 'brightness/overlay_widget.dart';
 import 'widgets/brightness_hud_widget.dart';
 import 'widgets/chapter_list_widget.dart';
 import 'widgets/reader_overlay_tool_button.dart';
+import 'widgets/smooth_page_reader.dart';
 import 'widgets/reader_settings/reader_settings_common.dart';
 export 'controllers/reader_controller.dart';
 
@@ -57,6 +58,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   bool _showControls = false;
   Offset? _tapDownPosition;
   Offset? _panStartPosition;
+  Offset? _panLastPosition;
   bool _isPanning = false;
   static const double _swipeThreshold = 10.0;
   static const Duration _tapLogicDedupWindow = Duration(milliseconds: 350);
@@ -65,6 +67,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   DateTime? _lastPageTurnAt;
   bool _isPageTurning = false;
   Timer? _chapterSyncDebounce;
+  final GlobalKey<SmoothPageReaderState> _smoothPageReaderKey =
+      GlobalKey<SmoothPageReaderState>();
 
   @override
   void initState() {
@@ -250,8 +254,35 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                                 // repaint does not dirty
                                                 // the Scaffold.
                                                 child: RepaintBoundary(
-                                                  child: controller.engine
-                                                      .buildReader(context),
+                                                  child: readerPrefs.pageTurnMode ==
+                                                          PageTurnMode.leftRight
+                                                      ? SmoothPageReader(
+                                                          key: _smoothPageReaderKey,
+                                                          onPreviousTap: () {
+                                                            _triggerPageTurn(
+                                                              controller,
+                                                              forward: false,
+                                                              at: DateTime.now(),
+                                                            );
+                                                          },
+                                                          onNextTap: () {
+                                                            _triggerPageTurn(
+                                                              controller,
+                                                              forward: true,
+                                                              at: DateTime.now(),
+                                                            );
+                                                          },
+                                                          onCenterTap: () {
+                                                            _showReaderControls(
+                                                              context,
+                                                              controller,
+                                                            );
+                                                          },
+                                                          child: controller.engine
+                                                              .buildReader(context),
+                                                        )
+                                                      : controller.engine
+                                                          .buildReader(context),
                                                 ),
                                               ),
                                             ),
@@ -579,4 +610,34 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       onDelete: () => controller.deleteHighlight(highlight.id),
     );
   }
+
+  Future<void> _dispatchPageTurn(
+    ReaderController controller, {
+    required bool forward,
+  }) async {
+    if (controller.settingsManager.preferences.pageTurnMode ==
+        PageTurnMode.leftRight) {
+      final smoothState = _smoothPageReaderKey.currentState;
+      if (smoothState != null && !smoothState.isAnimating) {
+        await smoothState.playTurn(
+          forward: forward,
+          dispatchTurn: () async {
+            if (forward) {
+              await controller.nextPage();
+            } else {
+              await controller.previousPage();
+            }
+          },
+        );
+        return;
+      }
+    }
+
+    if (forward) {
+      await controller.nextPage();
+    } else {
+      await controller.previousPage();
+    }
+  }
+
 }

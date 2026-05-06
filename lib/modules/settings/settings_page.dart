@@ -296,34 +296,29 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   return _SettingsCard(
                     children: [
                       _SelectionRow(
-                        title: loc.pageAnimation,
-                        valueLabel: _getPageAnimationLabel(
-                          readerPrefs.pageAnimation,
+                        title: loc.pageTurnMode,
+                        valueLabel: _getPageTurnModeLabel(
+                          readerPrefs.pageTurnMode,
                           loc,
                         ),
                         onTap: () async {
-                          final animation =
-                              await showNyanSelectionSheet<PageAnimation>(
+                          final mode = await showNyanSelectionSheet<PageTurnMode>(
                             context: context,
-                            title: loc.pageAnimation,
-                            currentValue: readerPrefs.pageAnimation,
+                            title: loc.pageTurnMode,
+                            currentValue: readerPrefs.pageTurnMode,
                             options: [
                               NyanSelectionOption(
-                                value: PageAnimation.fade,
-                                label: loc.pageAnimFade,
+                                value: PageTurnMode.leftRight,
+                                label: loc.pageTurnModeLeftRight,
                               ),
                               NyanSelectionOption(
-                                value: PageAnimation.paper,
-                                label: loc.pageAnimPaper,
-                              ),
-                              NyanSelectionOption(
-                                value: PageAnimation.none,
-                                label: loc.pageAnimNone,
+                                value: PageTurnMode.upDown,
+                                label: loc.pageTurnModeUpDown,
                               ),
                             ],
                           );
-                          if (animation != null) {
-                            await readerPrefs.setPageAnimation(animation);
+                          if (mode != null) {
+                            await readerPrefs.setPageTurnMode(mode);
                           }
                         },
                       ),
@@ -470,14 +465,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  String _getPageAnimationLabel(PageAnimation animation, AppLocalizations loc) {
-    switch (animation) {
-      case PageAnimation.fade:
-        return loc.pageAnimFade;
-      case PageAnimation.paper:
-        return loc.pageAnimPaper;
-      case PageAnimation.none:
-        return loc.pageAnimNone;
+  String _getPageTurnModeLabel(PageTurnMode mode, AppLocalizations loc) {
+    switch (mode) {
+      case PageTurnMode.upDown:
+        return loc.pageTurnModeUpDown;
+      case PageTurnMode.leftRight:
+        return loc.pageTurnModeLeftRight;
     }
   }
 

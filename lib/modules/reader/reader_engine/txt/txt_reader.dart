@@ -9,6 +9,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../../core/models/book.dart';
 import '../../../../core/utils/chapter_heading_display.dart';
 import '../../../../core/models/highlight.dart';
+import '../../../../core/services/reader_preferences_service.dart';
 import '../../../../core/utils/book_source_access.dart';
 import '../../widgets/highlightable_text.dart';
 import '../reader_engine.dart';
@@ -924,11 +925,9 @@ class TxtReaderEngine
         if (targetLeading > (1.0 - ratio)) {
           final align = targetLeading / (1.0 - ratio);
           if (_itemScrollController.isAttached) {
-            await _itemScrollController.scrollTo(
+            await _goToIndex(
               index: first.index,
               alignment: align,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
             );
           }
           return;
@@ -942,11 +941,9 @@ class TxtReaderEngine
     }
 
     if (_itemScrollController.isAttached) {
-      await _itemScrollController.scrollTo(
+      await _goToIndex(
         index: targetIndex.clamp(0, _lines.length - 1),
         alignment: 0.0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
       );
     }
   }
@@ -975,11 +972,9 @@ class TxtReaderEngine
         if (targetLeading < 0.0) {
           final align = targetLeading / (1.0 - ratio);
           if (_itemScrollController.isAttached) {
-            await _itemScrollController.scrollTo(
+            await _goToIndex(
               index: first.index,
               alignment: align,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
             );
           }
           return;
@@ -990,13 +985,27 @@ class TxtReaderEngine
     final targetIndex = first.index;
 
     if (_itemScrollController.isAttached) {
-      await _itemScrollController.scrollTo(
+      await _goToIndex(
         index: targetIndex.clamp(0, _lines.length - 1),
         alignment: 1.0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
       );
     }
+  }
+
+  Future<void> _goToIndex({
+    required int index,
+    required double alignment,
+  }) async {
+    if (_config.pageTurnMode == PageTurnMode.leftRight) {
+      _itemScrollController.jumpTo(index: index, alignment: alignment);
+      return;
+    }
+    await _itemScrollController.scrollTo(
+      index: index,
+      alignment: alignment,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   Future<void> _recalculatePagination(Size size) async {

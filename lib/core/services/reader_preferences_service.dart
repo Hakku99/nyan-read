@@ -6,11 +6,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/nyan_colors.dart';
 import '../utils/layout_debouncer.dart';
 
-/// 翻页方式
+/// Page turn direction.
 enum PageTurnMode {
-  tap, // 点击翻页
-  swipe, // 滑动翻页
-  disabled, // 禁用翻页
+  upDown,
+  leftRight,
 }
 
 /// 翻页动画类型
@@ -55,7 +54,7 @@ class ReaderPreferencesService extends ChangeNotifier {
   SharedPreferences? _prefs;
 
   // 默认配置
-  PageTurnMode _pageTurnMode = PageTurnMode.swipe;
+  PageTurnMode _pageTurnMode = PageTurnMode.upDown;
   PageAnimation _pageAnimation = PageAnimation.fade;
 
   // Reader display settings
@@ -111,7 +110,7 @@ class ReaderPreferencesService extends ChangeNotifier {
   // 从持久化存储加载配置
   void _loadPreferences() {
     final turnModeIndex =
-        _prefs?.getInt('page_turn_mode') ?? PageTurnMode.swipe.index;
+        _prefs?.getInt('page_turn_mode') ?? PageTurnMode.upDown.index;
     final animationIndex =
         _prefs?.getInt('page_animation') ?? PageAnimation.fade.index;
 
@@ -228,7 +227,7 @@ class ReaderPreferencesService extends ChangeNotifier {
 
   // 重置为默认配置
   Future<void> resetToDefaults() async {
-    _pageTurnMode = PageTurnMode.swipe;
+    _pageTurnMode = PageTurnMode.upDown;
     _pageAnimation = PageAnimation.fade;
     _fontSize = 18.0;
     _lineHeight = 1.5;
@@ -244,7 +243,7 @@ class ReaderPreferencesService extends ChangeNotifier {
 
     final prefs = _prefs;
     if (prefs != null) {
-      await prefs.setInt('page_turn_mode', PageTurnMode.swipe.index);
+      await prefs.setInt('page_turn_mode', PageTurnMode.upDown.index);
       await prefs.setInt('page_animation', PageAnimation.fade.index);
       await prefs.setDouble('reader_font_size', 18.0);
       await prefs.setDouble('reader_line_height', 1.5);

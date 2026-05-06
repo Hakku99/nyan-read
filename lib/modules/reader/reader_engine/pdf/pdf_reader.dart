@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 
 import '../../../../core/models/book.dart';
+import '../../../../core/services/reader_preferences_service.dart';
 import '../../../../core/theme/theme_presets.dart';
 import '../../../../core/utils/book_source_access.dart';
 import '../reader_engine.dart';
@@ -28,6 +29,12 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
   // gate [getProgress] / [getCurrentPosition] so we don't hit the controller
   // before it has real page numbers.
   bool _isDocumentReady = false;
+  ReaderConfig _config = const ReaderConfig(
+    backgroundColor: Colors.white,
+    textColor: Colors.black,
+    fontSize: 18,
+    lineHeight: 1.5,
+  );
 
   PdfReaderEngine(this.book);
 
@@ -67,7 +74,9 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
   }
 
   @override
-  void setConfig(ReaderConfig config) {}
+  void setConfig(ReaderConfig config) {
+    _config = config;
+  }
 
   @override
   double? getProgress() {
@@ -192,6 +201,13 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
   @override
   Future<void> nextPage() async {
     if (!_isDocumentReady) return;
+    if (_config.pageTurnMode == PageTurnMode.leftRight) {
+      final pageCount = _pdfController.pagesCount;
+      if (pageCount == null || pageCount == 0) return;
+      final target = (_pdfController.page + 1).clamp(1, pageCount);
+      _pdfController.jumpToPage(target);
+      return;
+    }
     await _pdfController.nextPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.ease,
@@ -201,6 +217,13 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
   @override
   Future<void> previousPage() async {
     if (!_isDocumentReady) return;
+    if (_config.pageTurnMode == PageTurnMode.leftRight) {
+      final pageCount = _pdfController.pagesCount;
+      if (pageCount == null || pageCount == 0) return;
+      final target = (_pdfController.page - 1).clamp(1, pageCount);
+      _pdfController.jumpToPage(target);
+      return;
+    }
     await _pdfController.previousPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.ease,

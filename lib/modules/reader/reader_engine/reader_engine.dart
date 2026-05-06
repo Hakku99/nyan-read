@@ -120,7 +120,7 @@ class ReaderConfig {
     required this.textColor,
     required this.fontSize,
     required this.lineHeight,
-    this.pageTurnMode = PageTurnMode.swipe,
+    this.pageTurnMode = PageTurnMode.upDown,
     this.pageAnimation = PageAnimation.fade,
   });
 }

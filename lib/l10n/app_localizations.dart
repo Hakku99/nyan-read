@@ -182,6 +182,18 @@ abstract class AppLocalizations {
   /// **'Page turning disabled'**
   String get pageTurnModeDisabled;
 
+  /// No description provided for @pageTurnModeLeftRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Left-right'**
+  String get pageTurnModeLeftRight;
+
+  /// No description provided for @pageTurnModeUpDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Up-down'**
+  String get pageTurnModeUpDown;
+
   /// No description provided for @pageTurnTap.
   ///
   /// In en, this message translates to:
@@ -209,7 +221,7 @@ abstract class AppLocalizations {
   /// No description provided for @pageAnimationFade.
   ///
   /// In en, this message translates to:
-  /// **'Smooth fade transition'**
+  /// **'Directional fade transition'**
   String get pageAnimationFade;
 
   /// No description provided for @pageAnimationPaper.
@@ -227,7 +239,7 @@ abstract class AppLocalizations {
   /// No description provided for @pageAnimFade.
   ///
   /// In en, this message translates to:
-  /// **'Fade'**
+  /// **'Directional Fade'**
   String get pageAnimFade;
 
   /// No description provided for @pageAnimPaper.

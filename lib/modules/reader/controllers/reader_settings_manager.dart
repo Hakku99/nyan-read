@@ -12,6 +12,7 @@ class ReaderSettingsManager {
     required this.onSettingsChanged,
     required this.preferences,
   }) {
+    preferences.addListener(_handlePreferencesChanged);
     _loadPreferences();
   }
 
@@ -35,6 +36,14 @@ class ReaderSettingsManager {
     _lineHeight = preferences.lineHeight;
     _backgroundColor = preferences.backgroundColor;
     _updateEngineConfig();
+  }
+
+  void _handlePreferencesChanged() {
+    _fontSize = preferences.fontSize;
+    _lineHeight = preferences.lineHeight;
+    _backgroundColor = preferences.backgroundColor;
+    _updateEngineConfig();
+    onSettingsChanged();
   }
 
   void _updateEngineConfig() {
@@ -90,5 +99,7 @@ class ReaderSettingsManager {
     }
   }
 
-  Future<void> dispose() async {}
+  Future<void> dispose() async {
+    preferences.removeListener(_handlePreferencesChanged);
+  }
 }

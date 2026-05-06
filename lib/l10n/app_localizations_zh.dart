@@ -51,6 +51,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pageTurnModeDisabled => '禁用翻页';
 
   @override
+  String get pageTurnModeLeftRight => '左右翻页';
+
+  @override
+  String get pageTurnModeUpDown => '上下翻页';
+
+  @override
   String get pageTurnTap => '点击';
 
   @override
@@ -63,7 +69,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pageAnimation => '翻页动画';
 
   @override
-  String get pageAnimationFade => '平滑淡入淡出';
+  String get pageAnimationFade => '方向性淡入过渡';
 
   @override
   String get pageAnimationPaper => '仿真纸张效果';
@@ -72,7 +78,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pageAnimationNone => '无动画';
 
   @override
-  String get pageAnimFade => '淡入淡出';
+  String get pageAnimFade => '方向淡入';
 
   @override
   String get pageAnimPaper => '仿真';
