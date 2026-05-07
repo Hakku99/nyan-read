@@ -7,12 +7,16 @@ import '../../../core/services/reader_preferences_service.dart';
 
 class ReadingPosition {
   final int? paragraphIndex;
+  final double? paragraphLeadingEdge;
+  final double? paragraphTrailingEdge;
   final int? pageNumber;
   final String? cfi;
   final int? chapterIndex;
 
   const ReadingPosition({
     this.paragraphIndex,
+    this.paragraphLeadingEdge,
+    this.paragraphTrailingEdge,
     this.pageNumber,
     this.cfi,
     this.chapterIndex,
@@ -24,6 +28,8 @@ class ReadingPosition {
       paragraphIndex: type == 'txt'
           ? (map['paragraphIndex'] as int? ?? 0)
           : map['paragraphIndex'] as int?,
+      paragraphLeadingEdge: (map['paragraphLeadingEdge'] as num?)?.toDouble(),
+      paragraphTrailingEdge: (map['paragraphTrailingEdge'] as num?)?.toDouble(),
       pageNumber: type == 'pdf'
           ? (map['pageNumber'] as int? ?? 1)
           : map['pageNumber'] as int?,
@@ -41,6 +47,12 @@ class ReadingPosition {
     final map = <String, dynamic>{};
     if (paragraphIndex != null) {
       map['paragraphIndex'] = paragraphIndex;
+    }
+    if (paragraphLeadingEdge != null) {
+      map['paragraphLeadingEdge'] = paragraphLeadingEdge;
+    }
+    if (paragraphTrailingEdge != null) {
+      map['paragraphTrailingEdge'] = paragraphTrailingEdge;
     }
     if (pageNumber != null) {
       map['pageNumber'] = pageNumber;

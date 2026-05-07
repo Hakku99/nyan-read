@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/models/book.dart';
+import 'package:nyan_read/core/services/reader_preferences_service.dart';
 import 'package:nyan_read/modules/reader/reader_engine/reader_engine.dart';
 import 'package:nyan_read/modules/reader/reader_engine/txt/txt_position.dart';
 import 'package:nyan_read/modules/reader/reader_engine/txt/txt_reader.dart';
@@ -156,6 +157,150 @@ void main() {
 
       expect(engine.getPageCount(), isNot(portraitPageCount));
       expect(landscapePosition.paragraphIndex, inInclusiveRange(75, 85));
+    });
+
+    testWidgets('next then previous restores exact viewport anchor',
+        (tester) async {
+      await _pumpReader(tester, engine, const Size(320, 640));
+      engine.setConfig(const ReaderConfig(
+        backgroundColor: Colors.white,
+        textColor: Colors.black,
+        fontSize: 16,
+        lineHeight: 1.4,
+        pageTurnMode: PageTurnMode.leftRight,
+      ));
+      await engine.goToPosition(TxtReadingPosition(paragraphIndex: 64));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+
+      final start = engine.getCurrentPosition() as TxtReadingPosition;
+      await engine.nextPage();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+      await engine.previousPage();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+
+      final restored = engine.getCurrentPosition() as TxtReadingPosition;
+      expect(restored.paragraphIndex, start.paragraphIndex);
+      expect(
+        (restored.paragraphLeadingEdge ?? 0) - (start.paragraphLeadingEdge ?? 0),
+        closeTo(0, 0.08),
+      );
+    });
+
+    testWidgets('restores oversized paragraph anchor from serialized position',
+        (tester) async {
+      engine.dispose();
+      final oversizedFile = File('${tempDir.path}/oversized_anchor.txt');
+      final oversizedContent = [
+        'CHAPTER ONE',
+        'very long paragraph ' * 1500,
+        'tail line',
+      ].join('\n');
+      await oversizedFile.writeAsString(oversizedContent);
+
+      engine = TxtReaderEngine(
+        Book(
+          id: 'txt-oversized-book',
+          title: 'Oversized anchor',
+          author: 'Tester',
+          filePath: oversizedFile.path,
+          format: 'txt',
+        ),
+      );
+      await engine.initialize();
+      engine.setConfig(const ReaderConfig(
+        backgroundColor: Colors.white,
+        textColor: Colors.black,
+        fontSize: 20,
+        lineHeight: 1.7,
+        pageTurnMode: PageTurnMode.leftRight,
+      ));
+
+      await _pumpReader(tester, engine, const Size(320, 640));
+      await engine.goToPosition(TxtReadingPosition(paragraphIndex: 1));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+      await engine.nextPage();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+
+      final saved = engine.getCurrentPosition() as TxtReadingPosition;
+      await engine.goToPosition(TxtReadingPosition(paragraphIndex: 0));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+      await engine.goToPosition(saved);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+
+      final restored = engine.getCurrentPosition() as TxtReadingPosition;
+      expect(restored.paragraphIndex, saved.paragraphIndex);
+      expect(
+        (restored.paragraphLeadingEdge ?? 0) - (saved.paragraphLeadingEdge ?? 0),
+        closeTo(0, 0.10),
+      );
+    });
+
+    testWidgets('updown previousPage moves near one viewport distance',
+        (tester) async {
+      await _pumpReader(tester, engine, const Size(320, 640));
+      engine.setConfig(const ReaderConfig(
+        backgroundColor: Colors.white,
+        textColor: Colors.black,
+        fontSize: 16,
+        lineHeight: 1.4,
+        pageTurnMode: PageTurnMode.upDown,
+      ));
+
+      await engine.goToPosition(TxtReadingPosition(paragraphIndex: 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      final start = engine.getCurrentPosition() as TxtReadingPosition;
+
+      await engine.previousPage();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 320));
+      final moved = engine.getCurrentPosition() as TxtReadingPosition;
+
+      final delta = start.paragraphIndex - moved.paragraphIndex;
+      expect(delta, greaterThanOrEqualTo(8));
+    });
+
+    testWidgets('updown previous and next keep symmetric page distance',
+        (tester) async {
+      await _pumpReader(tester, engine, const Size(320, 640));
+      engine.setConfig(const ReaderConfig(
+        backgroundColor: Colors.white,
+        textColor: Colors.black,
+        fontSize: 16,
+        lineHeight: 1.4,
+        pageTurnMode: PageTurnMode.upDown,
+      ));
+
+      await engine.goToPosition(TxtReadingPosition(paragraphIndex: 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      final base = engine.getCurrentPosition() as TxtReadingPosition;
+
+      await engine.nextPage();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 320));
+      final afterNext = engine.getCurrentPosition() as TxtReadingPosition;
+      final forwardDelta = afterNext.paragraphIndex - base.paragraphIndex;
+
+      await engine.goToPosition(TxtReadingPosition(paragraphIndex: 80));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      await engine.previousPage();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 320));
+      final afterPrevious = engine.getCurrentPosition() as TxtReadingPosition;
+      final backwardDelta = base.paragraphIndex - afterPrevious.paragraphIndex;
+
+      expect(forwardDelta, greaterThanOrEqualTo(8));
+      expect(backwardDelta, greaterThanOrEqualTo(8));
+      expect((forwardDelta - backwardDelta).abs(), lessThanOrEqualTo(4));
     });
   });
 }

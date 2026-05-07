@@ -327,6 +327,8 @@ class TxtReaderEngine
   final Set<_PaginationLayoutKey> _inFlightPaginationKeys =
       <_PaginationLayoutKey>{};
   final ValueNotifier<int> _pageInfoNotifier = ValueNotifier(0);
+  final List<_ViewportAnchor> _backwardAnchorStack = <_ViewportAnchor>[];
+  final List<_ViewportAnchor> _forwardAnchorStack = <_ViewportAnchor>[];
 
   List<ReaderChapter> _chapters = const [];
 
@@ -410,6 +412,32 @@ class TxtReaderEngine
     }
   }
 
+  _ViewportAnchor? _currentViewportAnchor() {
+    if (_lines.isEmpty) return null;
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return null;
+
+    final visible = positions
+        .where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1.0)
+        .toList();
+    final pool = visible.isNotEmpty
+        ? visible
+        : positions.where((p) => p.itemLeadingEdge > -0.5).toList();
+    if (pool.isEmpty) return null;
+
+    var topmost = pool.first;
+    for (final p in pool) {
+      if (p.itemLeadingEdge < topmost.itemLeadingEdge) {
+        topmost = p;
+      }
+    }
+    return _ViewportAnchor(
+      index: topmost.index.clamp(0, _lines.length - 1),
+      leadingEdge: topmost.itemLeadingEdge,
+      trailingEdge: topmost.itemTrailingEdge,
+    );
+  }
+
   /// Paragraph index used for chapter title, page estimate, progress, and
   /// [getCurrentPosition] — must match the bottom bar (`_getCurrentChapterTitle`).
   ///
@@ -420,29 +448,8 @@ class TxtReaderEngine
   /// headings at the top (off-by-one chapter in bar / TOC).
   int _viewportAnchorParagraphIndex() {
     if (_lines.isEmpty) return 0;
-
-    final positions = _itemPositionsListener.itemPositions.value;
-    if (positions.isEmpty) {
-      return _initialIndex.clamp(0, _lines.length - 1);
-    }
-
-    final visible = positions
-        .where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1.0)
-        .toList();
-    final pool = visible.isNotEmpty
-        ? visible
-        : positions.where((p) => p.itemLeadingEdge > -0.5).toList();
-    if (pool.isEmpty) {
-      return _initialIndex.clamp(0, _lines.length - 1);
-    }
-
-    var topmost = pool.first;
-    for (final p in pool) {
-      if (p.itemLeadingEdge < topmost.itemLeadingEdge) {
-        topmost = p;
-      }
-    }
-    return topmost.index.clamp(0, _lines.length - 1);
+    return _currentViewportAnchor()?.index ??
+        _initialIndex.clamp(0, _lines.length - 1);
   }
 
   @override
@@ -498,7 +505,10 @@ class TxtReaderEngine
     if (_lines.isEmpty) return 0.0;
     final pos = getCurrentPosition();
     if (pos?.paragraphIndex != null) {
-      return pos!.paragraphIndex! / _lines.length;
+      if (_lines.length == 1) {
+        return 1.0;
+      }
+      return pos!.paragraphIndex! / (_lines.length - 1);
     }
     return 0.0;
   }
@@ -824,14 +834,16 @@ class TxtReaderEngine
     }
 
     if (_itemScrollController.isAttached) {
-      _itemScrollController.jumpTo(
+      await _goToParagraphPosition(
         index: paragraphIndex,
-        alignment: 0.0,
+        paragraphLeadingEdge: position.paragraphLeadingEdge,
+        paragraphTrailingEdge: position.paragraphTrailingEdge,
       );
     } else {
       _initialIndex = paragraphIndex;
       _hasRestoredPosition = false;
     }
+    _clearTurnHistory();
   }
 
   @override
@@ -853,11 +865,17 @@ class TxtReaderEngine
     } else {
       _initialIndex = index;
     }
+    _clearTurnHistory();
   }
 
   @override
   ReadingPosition? getCurrentPosition() {
-    return TxtReadingPosition(paragraphIndex: _viewportAnchorParagraphIndex());
+    final anchor = _currentViewportAnchor();
+    return TxtReadingPosition(
+      paragraphIndex: anchor?.index ?? _viewportAnchorParagraphIndex(),
+      paragraphLeadingEdge: anchor?.leadingEdge,
+      paragraphTrailingEdge: anchor?.trailingEdge,
+    );
   }
 
   @override
@@ -903,6 +921,15 @@ class TxtReaderEngine
 
   @override
   Future<void> nextPage() async {
+    final currentAnchor = _currentViewportAnchor();
+    if (currentAnchor != null) {
+      _backwardAnchorStack.add(currentAnchor);
+      if (_backwardAnchorStack.length > 48) {
+        _backwardAnchorStack.removeAt(0);
+      }
+    }
+    _forwardAnchorStack.clear();
+
     final positions = _itemPositionsListener.itemPositions.value.toList()
       ..sort((a, b) => a.index.compareTo(b.index));
 
@@ -911,45 +938,22 @@ class TxtReaderEngine
       return;
     }
 
-    final first = positions.first;
-    final last = positions.last;
-
-    if (first.index == last.index) {
-      final leading = first.itemLeadingEdge;
-      final trailing = first.itemTrailingEdge;
-      final ratio = trailing - leading;
-
-      if (ratio > 1.0 && trailing > 1.0) {
-        final targetLeading = leading - 0.9;
-
-        if (targetLeading > (1.0 - ratio)) {
-          final align = targetLeading / (1.0 - ratio);
-          if (_itemScrollController.isAttached) {
-            await _goToIndex(
-              index: first.index,
-              alignment: align,
-            );
-          }
-          return;
-        }
-      }
+    if (await _tryTurnInsideOversizedParagraph(positions, forward: true)) {
+      return;
     }
-
-    var targetIndex = last.index;
-    if (targetIndex == first.index && positions.length > 1) {
-      targetIndex++;
-    }
-
-    if (_itemScrollController.isAttached) {
-      await _goToIndex(
-        index: targetIndex.clamp(0, _lines.length - 1),
-        alignment: 0.0,
-      );
-    }
+    await _goToViewportDistanceTarget(positions, forward: true);
   }
 
   @override
   Future<void> previousPage() async {
+    final currentAnchor = _currentViewportAnchor();
+    if (currentAnchor != null && _backwardAnchorStack.isNotEmpty) {
+      final anchor = _backwardAnchorStack.removeLast();
+      _forwardAnchorStack.add(currentAnchor);
+      await _restoreAnchor(anchor);
+      return;
+    }
+
     final positions = _itemPositionsListener.itemPositions.value.toList()
       ..sort((a, b) => a.index.compareTo(b.index));
 
@@ -958,38 +962,131 @@ class TxtReaderEngine
       return;
     }
 
+    if (await _tryTurnInsideOversizedParagraph(positions, forward: false)) {
+      return;
+    }
+
+    await _goToViewportDistanceTarget(positions, forward: false);
+  }
+
+  Future<bool> _tryTurnInsideOversizedParagraph(
+    List<ItemPosition> positions, {
+    required bool forward,
+  }) async {
+    if (!_itemScrollController.isAttached || positions.isEmpty) {
+      return false;
+    }
     final first = positions.first;
     final last = positions.last;
-
-    if (first.index == last.index) {
-      final leading = first.itemLeadingEdge;
-      final trailing = first.itemTrailingEdge;
-      final ratio = trailing - leading;
-
-      if (ratio > 1.0 && leading < 0.0) {
-        final targetLeading = leading + 0.9;
-
-        if (targetLeading < 0.0) {
-          final align = targetLeading / (1.0 - ratio);
-          if (_itemScrollController.isAttached) {
-            await _goToIndex(
-              index: first.index,
-              alignment: align,
-            );
-          }
-          return;
-        }
-      }
+    if (first.index != last.index) {
+      return false;
     }
 
-    final targetIndex = first.index;
-
-    if (_itemScrollController.isAttached) {
-      await _goToIndex(
-        index: targetIndex.clamp(0, _lines.length - 1),
-        alignment: 1.0,
-      );
+    const viewportStep = 0.92;
+    final leading = first.itemLeadingEdge;
+    final trailing = first.itemTrailingEdge;
+    final ratio = trailing - leading;
+    if (ratio <= 1.0) {
+      return false;
     }
+
+    final minLeading = 1.0 - ratio;
+    final maxLeading = 0.0;
+    final signedStep = forward ? -viewportStep : viewportStep;
+    final targetLeading = (leading + signedStep).clamp(minLeading, maxLeading);
+
+    if ((targetLeading - leading).abs() < 0.0001) {
+      return false;
+    }
+
+    final denominator = 1.0 - ratio;
+    if (denominator.abs() < 0.0001) {
+      return false;
+    }
+
+    final align = (targetLeading / denominator).clamp(0.0, 1.0);
+    await _goToIndex(
+      index: first.index,
+      alignment: align,
+    );
+    return true;
+  }
+
+  Future<void> _goToViewportDistanceTarget(
+    List<ItemPosition> positions, {
+    required bool forward,
+  }) async {
+    if (!_itemScrollController.isAttached || positions.isEmpty) {
+      return;
+    }
+
+    final visible = positions
+        .where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1.0)
+        .toList();
+    final pool = visible.isNotEmpty ? visible : positions;
+    if (pool.isEmpty) {
+      return;
+    }
+
+    final firstVisible = pool.first;
+    final lastVisible = pool.last;
+    final targetIndex = forward ? lastVisible.index : firstVisible.index;
+    final targetAlignment = forward ? 0.0 : 1.0;
+
+    // Geometry-based fallback is more stable than index-distance fallback
+    // for mixed-height rows: next aligns the bottom anchor to top, previous
+    // aligns the top anchor to bottom (near one viewport in either direction).
+    await _goToIndex(
+      index: targetIndex,
+      alignment: targetAlignment,
+    );
+  }
+
+  void _clearTurnHistory() {
+    _backwardAnchorStack.clear();
+    _forwardAnchorStack.clear();
+  }
+
+  Future<void> _restoreAnchor(_ViewportAnchor anchor) async {
+    if (!_itemScrollController.isAttached) return;
+    final alignment = _alignmentFromEdges(
+      leadingEdge: anchor.leadingEdge,
+      trailingEdge: anchor.trailingEdge,
+    );
+    await _goToIndex(
+      index: anchor.index,
+      alignment: alignment ?? 0.0,
+    );
+  }
+
+  Future<void> _goToParagraphPosition({
+    required int index,
+    double? paragraphLeadingEdge,
+    double? paragraphTrailingEdge,
+  }) async {
+    final clampedIndex = index.clamp(0, _lines.length - 1);
+    final alignment = (paragraphLeadingEdge != null && paragraphTrailingEdge != null)
+        ? _alignmentFromEdges(
+            leadingEdge: paragraphLeadingEdge,
+            trailingEdge: paragraphTrailingEdge,
+          )
+        : null;
+    await _goToIndex(
+      index: clampedIndex,
+      alignment: alignment ?? 0.0,
+    );
+  }
+
+  double? _alignmentFromEdges({
+    required double leadingEdge,
+    required double trailingEdge,
+  }) {
+    final ratio = trailingEdge - leadingEdge;
+    final denominator = 1.0 - ratio;
+    if (denominator.abs() < 0.0001) {
+      return null;
+    }
+    return (leadingEdge / denominator).clamp(0.0, 1.0);
   }
 
   Future<void> _goToIndex({
@@ -1142,4 +1239,16 @@ class _PaginationLayoutKey {
         'orientation: $orientation'
         ')';
   }
+}
+
+class _ViewportAnchor {
+  const _ViewportAnchor({
+    required this.index,
+    required this.leadingEdge,
+    required this.trailingEdge,
+  });
+
+  final int index;
+  final double leadingEdge;
+  final double trailingEdge;
 }

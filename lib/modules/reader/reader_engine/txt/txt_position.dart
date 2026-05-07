@@ -3,6 +3,8 @@ import '../reader_engine.dart';
 class TxtReadingPosition extends ReadingPosition {
   TxtReadingPosition({
     required super.paragraphIndex,
+    super.paragraphLeadingEdge,
+    super.paragraphTrailingEdge,
     super.chapterIndex,
   });
 
@@ -13,6 +15,8 @@ class TxtReadingPosition extends ReadingPosition {
     final position = ReadingPosition.fromJson('txt', json);
     return TxtReadingPosition(
       paragraphIndex: position.paragraphIndex ?? 0,
+      paragraphLeadingEdge: position.paragraphLeadingEdge,
+      paragraphTrailingEdge: position.paragraphTrailingEdge,
       chapterIndex: position.chapterIndex,
     );
   }

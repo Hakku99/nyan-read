@@ -119,6 +119,8 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
 
     final ratioY = localY / height;
     if (ratioY < 0.40) {
+      // Up/down mode expects top-tap and bottom-tap to move by symmetric
+      // viewport distance; engine-level logic enforces that invariant.
       _triggerPageTurn(c, forward: false, at: now);
     } else if (ratioY > 0.60) {
       _triggerPageTurn(c, forward: true, at: now);

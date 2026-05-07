@@ -39,6 +39,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   BrightnessController? _brightnessControllerRef;
   bool _isDisposed = false;
   int _renderEpoch = 0;
+  Future<void> _pageTurnQueue = Future<void>.value();
 
   ReaderController(
     this.book, {
@@ -191,19 +192,25 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> previousPage() async {
-    await engine.previousPage();
-    progressManager.refreshFromEngine();
-    await metaManager.syncCurrentChapterFromPosition(
-      progressManager.currentPosition,
-    );
+    await _enqueuePageTurn(engine.previousPage);
   }
 
   Future<void> nextPage() async {
-    await engine.nextPage();
-    progressManager.refreshFromEngine();
-    await metaManager.syncCurrentChapterFromPosition(
-      progressManager.currentPosition,
-    );
+    await _enqueuePageTurn(engine.nextPage);
+  }
+
+  Future<void> _enqueuePageTurn(Future<void> Function() turnAction) async {
+    _pageTurnQueue = _pageTurnQueue.then((_) async {
+      await turnAction();
+      await Future<void>.value();
+      progressManager.refreshFromEngine();
+      await metaManager.syncCurrentChapterFromPosition(
+        progressManager.currentPosition,
+      );
+    }).catchError((error, stackTrace) {
+      debugPrint('Page turn pipeline error: $error');
+    });
+    await _pageTurnQueue;
   }
 
   Future<bool> addBookmark() => metaManager.addBookmark();
