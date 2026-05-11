@@ -319,11 +319,11 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done.
 
 - [ ] Add chapter parsing fast prefilter and simplify risky regex paths.
 - [ ] Add parse guards for pathological lines (length/timeout strategy in isolate).
-- [ ] Implement large-TXT memory mitigation plan (chunked/lazy read baseline).
+- [x] Implement large-TXT memory mitigation plan (chunked/lazy read baseline).
 - [ ] Add `BrightnessState` equality/dedup and trim redundant notifier churn.
 - [ ] Smooth manual/follow-system transition animation and resume restore behavior.
-- [ ] Add page-turn in-flight timeout recovery to prevent stuck lock state.
-- [ ] Resolve gesture conflict order between highlight, tap-turn, pan-turn, and edge gestures.
+- [x] Add page-turn in-flight timeout recovery to prevent stuck lock state.
+- [x] Resolve gesture conflict order between highlight, tap-turn, pan-turn, and edge gestures.
 
 ### Phase P2 — Performance Hardening / Tech Debt
 
