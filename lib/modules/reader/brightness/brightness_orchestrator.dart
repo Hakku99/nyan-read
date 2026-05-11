@@ -31,10 +31,18 @@ class BrightnessOrchestrator extends ChangeNotifier
   bool _isApplyingBrightness = false;
   double? _queuedManualTarget;
   double? _ignoredSystemBrightness;
+  // Saved before backgrounding so the resume ramp can target the correct
+  // manual value even after uiBrightness was overwritten with the restored
+  // system brightness.
+  double? _pausedManualBrightnessTarget;
   Timer? _followSystemAnimationTimer;
   double? _followSystemAnimationTarget;
   double? _followAnimationStartValue;
   Stopwatch? _followAnimationStopwatch;
+  Timer? _resumeRampTimer;
+  double? _resumeRampStartValue;
+  double? _resumeRampTarget;
+  Stopwatch? _resumeRampStopwatch;
   static const Duration _followSystemAnimationTick = Duration(milliseconds: 16);
   static const Duration _followSystemAnimationDuration =
       Duration(milliseconds: 1200);
@@ -78,6 +86,7 @@ class BrightnessOrchestrator extends ChangeNotifier
   void previewBrightness(double brightness) {
     if (_isDisposed) return;
     _stopFollowSystemAnimation();
+    _stopResumeRamp();
     final normalizedBrightness = _normalize(brightness);
     _setState(_state.copyWith(
       mode: BrightnessMode.manual,
@@ -89,6 +98,7 @@ class BrightnessOrchestrator extends ChangeNotifier
   Future<void> commitBrightness([double? brightness]) async {
     if (_isDisposed) return;
     _stopFollowSystemAnimation();
+    _stopResumeRamp();
     final normalizedBrightness =
         _normalize(brightness ?? _state.clampedUiBrightness);
     _setState(_state.copyWith(
@@ -147,6 +157,9 @@ class BrightnessOrchestrator extends ChangeNotifier
     _setState(_state.copyWith(
       lastObservedSystemBrightness: originalBrightness,
       lastAppliedSystemBrightness: null,
+      // Track the visible brightness so uiBrightness reflects what the user
+      // actually sees while the app is backgrounded.
+      uiBrightness: originalBrightness,
     ));
   }
 
@@ -167,6 +180,7 @@ class BrightnessOrchestrator extends ChangeNotifier
     if (_isShuttingDown) return;
     _isShuttingDown = true;
     _stopFollowSystemAnimation();
+    _stopResumeRamp();
     await _systemBrightnessSubscription?.cancel();
     _systemBrightnessSubscription = null;
     WidgetsBinding.instance.removeObserver(this);
@@ -182,12 +196,34 @@ class BrightnessOrchestrator extends ChangeNotifier
 
   Future<void> _handleBackgrounding() async {
     if (_state.followSystem) return;
+    // Save the manual target before restoreOriginalBrightness() overwrites
+    // uiBrightness with the system restore value.
+    _pausedManualBrightnessTarget = _state.clampedUiBrightness;
     await restoreOriginalBrightness();
   }
 
   Future<void> _handleResume() async {
     if (_state.followSystem) return;
-    await _applyManualBrightness(force: true);
+    final target = _pausedManualBrightnessTarget ?? _state.targetSystemBrightness;
+    _pausedManualBrightnessTarget = null;
+
+    // Apply the target system brightness immediately so the hardware responds
+    // without waiting for the UI ramp to complete.
+    _ignoredSystemBrightness = target;
+    await _safeSetSystemBrightness(target);
+    _setState(_state.copyWith(
+      lastObservedSystemBrightness: target,
+      lastAppliedSystemBrightness: target,
+    ));
+
+    final current = _state.clampedUiBrightness;
+    if ((current - target).abs() < _followSystemSnapEpsilon) {
+      _setState(_state.copyWith(uiBrightness: target));
+      return;
+    }
+    // Ramp uiBrightness from the restored value back to target to give the
+    // slider and overlay a smooth visual transition.
+    _startResumeRamp(from: current, to: target);
   }
 
   void _handleSystemBrightnessChange(double systemBrightness) {
@@ -399,6 +435,57 @@ class BrightnessOrchestrator extends ChangeNotifier
     _followSystemAnimationTarget = null;
     _followAnimationStartValue = null;
     _followAnimationStopwatch = null;
+  }
+
+  void _startResumeRamp({required double from, required double to}) {
+    _stopResumeRamp();
+    _resumeRampStartValue = from;
+    _resumeRampTarget = to;
+    _resumeRampStopwatch = Stopwatch()..start();
+    _resumeRampTimer = Timer.periodic(
+      _followSystemAnimationTick,
+      (_) => _tickResumeRamp(),
+    );
+  }
+
+  void _tickResumeRamp() {
+    if (_isDisposed || _state.followSystem) {
+      _stopResumeRamp();
+      return;
+    }
+    final start = _resumeRampStartValue;
+    final target = _resumeRampTarget;
+    final stopwatch = _resumeRampStopwatch;
+    if (start == null || target == null || stopwatch == null) {
+      _stopResumeRamp();
+      return;
+    }
+
+    final totalUs = _followSystemAnimationDuration.inMicroseconds;
+    final rawT = totalUs > 0
+        ? (stopwatch.elapsedMicroseconds / totalUs).clamp(0.0, 1.0)
+        : 1.0;
+
+    if (rawT >= 1.0) {
+      _stopResumeRamp();
+      _setState(_state.copyWith(uiBrightness: target), forceNotify: true);
+      return;
+    }
+
+    final curved = Curves.easeInOut.transform(rawT);
+    final next = lerpDouble(start, target, curved)!;
+    _setState(
+      _state.copyWith(uiBrightness: _normalize(next)),
+      forceNotify: true,
+    );
+  }
+
+  void _stopResumeRamp() {
+    _resumeRampTimer?.cancel();
+    _resumeRampTimer = null;
+    _resumeRampStartValue = null;
+    _resumeRampTarget = null;
+    _resumeRampStopwatch = null;
   }
 }
 
