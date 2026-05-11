@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/models/book.dart';
@@ -117,11 +119,14 @@ class ContentMetaManager {
       }
 
       // 3. Slow-Path閿涙nchorHealer 閹兼粍鏅?
-      final newStart = AnchorHealer.findHealedOffset(
-        paragraphText,
-        h.preContext,
-        h.selectedText,
-        h.postContext,
+      // Offload to isolate to keep string matching off UI thread.
+      final newStart = await Isolate.run(
+        () => AnchorHealer.findHealedOffset(
+          paragraphText,
+          h.preContext,
+          h.selectedText,
+          h.postContext,
+        ),
       );
 
       if (newStart != null) {

@@ -160,4 +160,40 @@ void main() {
     await orchestrator.shutdown();
     await adapter.close();
   });
+
+  test('resume brightness transitions smoothly without abrupt flash',
+      () async {
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    await prefs.setBrightness(0.75);
+
+    final adapter = FakeSystemBrightnessAdapter(currentValue: 0.50);
+    final orchestrator = BrightnessOrchestrator(
+      repository: BrightnessRepository(prefs),
+      systemAdapter: adapter,
+    );
+
+    await orchestrator.initialize();
+    expect(orchestrator.state.uiBrightness, closeTo(0.75, 0.001));
+
+    // Simulate pause: restores system brightness
+    orchestrator.didChangeAppLifecycleState(AppLifecycleState.paused);
+    await Future<void>.delayed(Duration.zero);
+    expect(orchestrator.state.uiBrightness, closeTo(0.50, 0.001));
+
+    // Simulate resume: should transition back smoothly, not flash
+    orchestrator.didChangeAppLifecycleState(AppLifecycleState.resumed);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    // Early in transition, should be between restored and target
+    final midTransition = orchestrator.state.uiBrightness;
+    expect(midTransition, greaterThan(0.50));
+    expect(midTransition, lessThan(0.75));
+
+    // Wait for completion
+    await Future<void>.delayed(const Duration(milliseconds: 1000));
+    expect(orchestrator.state.uiBrightness, closeTo(0.75, 0.02));
+
+    await orchestrator.shutdown();
+    await adapter.close();
+  });
 }

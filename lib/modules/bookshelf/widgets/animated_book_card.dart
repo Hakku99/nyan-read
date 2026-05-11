@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../../core/models/book.dart';
@@ -67,6 +69,15 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
 
   void _handleTapCancel() {
     _scaleController.reverse();
+  }
+
+  bool _isSourceAvailable() {
+    if (widget.book.sourceLocator.isEmpty) return false;
+    try {
+      return File(widget.book.sourceLocator).existsSync();
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
@@ -143,17 +154,41 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Text(
-                              widget.book.title,
-                              style: TextStyle(
-                                fontSize: 14,
-                                height: 1.28,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.15,
-                                color: theme.textTheme.bodyLarge?.color,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    widget.book.title,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      height: 1.28,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.15,
+                                      color: theme.textTheme.bodyLarge?.color,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: Tooltip(
+                                    message: _isSourceAvailable()
+                                        ? 'Source file available'
+                                        : 'Source file missing',
+                                    child: Icon(
+                                      _isSourceAvailable()
+                                          ? Icons.check_circle
+                                          : Icons.warning_amber,
+                                      size: 14,
+                                      color: _isSourceAvailable()
+                                          ? theme.colorScheme.secondary
+                                          : Colors.amber[700],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           if (!widget.isSelectionMode &&
@@ -280,6 +315,15 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
     _scaleController.reverse();
   }
 
+  bool _isSourceAvailable() {
+    if (widget.book.sourceLocator.isEmpty) return false;
+    try {
+      return File(widget.book.sourceLocator).existsSync();
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -370,6 +414,25 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+            // Source availability indicator
+            Positioned(
+              bottom: NyanSpacing.space8,
+              right: NyanSpacing.space8,
+              child: Tooltip(
+                message: _isSourceAvailable()
+                    ? 'Source file available'
+                    : 'Source file missing',
+                child: Icon(
+                  _isSourceAvailable()
+                      ? Icons.check_circle
+                      : Icons.warning_amber,
+                  size: 18,
+                  color: _isSourceAvailable()
+                      ? Colors.green[600]
+                      : Colors.amber[600],
                 ),
               ),
             ),
