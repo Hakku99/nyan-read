@@ -309,10 +309,10 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done.
 
 ### Phase P0 — Must-Fix Foundation
 
-- [ ] Replace cold backup implementation with SQLite-consistent snapshot strategy.
-- [ ] Add integration test: backup during active progress writes.
-- [ ] Harden restore fallback path (rename/copy-delete/retry) with platform-safe branches.
-- [ ] Refactor TXT pagination estimator to include text scale and actual paragraph spacing model.
+- [x] Replace cold backup implementation with SQLite-consistent snapshot strategy.
+- [x] Add integration test: backup during active progress writes.
+- [x] Harden restore fallback path (rename/copy-delete/retry) with platform-safe branches.
+- [x] Refactor TXT pagination estimator to include text scale and actual paragraph spacing model.
 - [ ] Add deterministic page-position invariant tests (seek -> prev/next -> reopen consistency).
 
 ### Phase P1 — Stability and UX

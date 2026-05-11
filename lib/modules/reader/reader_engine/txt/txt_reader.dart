@@ -22,6 +22,9 @@ typedef PaginationEstimateCalculator = Future<List<int>> Function({
   required double maxWidth,
   required double maxHeight,
   required EdgeInsets padding,
+  // Nullable optional so existing closures / mocks can omit them safely.
+  TextScaler? textScaler,
+  double? paragraphBottomMargin,
   int? totalTextLength,
 });
 
@@ -536,7 +539,8 @@ class TxtReaderEngine
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        _recalculatePagination(constraints.biggest);
+        _recalculatePagination(
+            constraints.biggest, MediaQuery.textScalerOf(context));
 
         return Stack(
           children: [
@@ -1105,8 +1109,19 @@ class TxtReaderEngine
     );
   }
 
-  Future<void> _recalculatePagination(Size size) async {
+  Future<void> _recalculatePagination(
+      Size size, TextScaler textScaler) async {
     if (_paginationSample.isEmpty || _totalTextLength == 0) return;
+
+    // Inter-paragraph spacing added by _buildList to every list item.
+    final double paragraphBottomMargin = _config.fontSize * 0.6;
+
+    // Collapse TextScaler to a plain double so the key comparison is a
+    // simple double == double check.  TextScaler instances produced by
+    // different widget-build cycles are not always identical objects even
+    // when they represent the same scale factor; using the double avoids
+    // spurious key mismatches that would discard freshly-computed results.
+    final double textScaleFactor = textScaler.scale(1.0);
 
     final paginationKey = _PaginationLayoutKey(
       viewportSize: size,
@@ -1116,6 +1131,8 @@ class TxtReaderEngine
       orientation: size.width >= size.height
           ? Orientation.landscape
           : Orientation.portrait,
+      textScaleFactor: textScaleFactor,
+      paragraphBottomMargin: paragraphBottomMargin,
     );
     if (_lastPaginationKey == paginationKey && _isPaginationCalculated) return;
     if (_inFlightPaginationKeys.contains(paginationKey)) return;
@@ -1143,6 +1160,8 @@ class TxtReaderEngine
         maxWidth: size.width,
         maxHeight: size.height,
         padding: _paginationPadding,
+        textScaler: textScaler,
+        paragraphBottomMargin: paragraphBottomMargin,
         totalTextLength: _totalTextLength,
       );
 
@@ -1201,6 +1220,8 @@ class _PaginationLayoutKey {
     required this.lineHeight,
     required this.padding,
     required this.orientation,
+    required this.textScaleFactor,
+    required this.paragraphBottomMargin,
   });
 
   final Size viewportSize;
@@ -1208,6 +1229,14 @@ class _PaginationLayoutKey {
   final double lineHeight;
   final EdgeInsets padding;
   final Orientation orientation;
+  /// Scalar extracted from MediaQuery via `textScaler.scale(1.0)`.  Stored
+  /// as a plain double to avoid relying on TextScaler object equality across
+  /// widget rebuilds (different TextScaler instances for the same factor
+  /// have reliable == only via their internal double comparison, but widget
+  /// build cycles may produce instances whose equality is not stable).
+  final double textScaleFactor;
+  /// Inter-paragraph spacing used by the list renderer (`fontSize * 0.6`).
+  final double paragraphBottomMargin;
 
   @override
   bool operator ==(Object other) {
@@ -1217,7 +1246,9 @@ class _PaginationLayoutKey {
         other.fontSize == fontSize &&
         other.lineHeight == lineHeight &&
         other.padding == padding &&
-        other.orientation == orientation;
+        other.orientation == orientation &&
+        other.textScaleFactor == textScaleFactor &&
+        other.paragraphBottomMargin == paragraphBottomMargin;
   }
 
   @override
@@ -1227,6 +1258,8 @@ class _PaginationLayoutKey {
         lineHeight,
         padding,
         orientation,
+        textScaleFactor,
+        paragraphBottomMargin,
       );
 
   @override
@@ -1236,7 +1269,9 @@ class _PaginationLayoutKey {
         'fontSize: $fontSize, '
         'lineHeight: $lineHeight, '
         'padding: $padding, '
-        'orientation: $orientation'
+        'orientation: $orientation, '
+        'textScaleFactor: $textScaleFactor, '
+        'paragraphBottomMargin: $paragraphBottomMargin'
         ')';
   }
 }

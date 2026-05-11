@@ -172,6 +172,35 @@ class DatabaseService {
     await batch.commit(noResult: true);
   }
 
+  // -------------------------------------------------------------------------
+  // Backup helpers — called by BackupRecoveryService
+  // -------------------------------------------------------------------------
+
+  /// Returns `true` when the main SQLite file already exists on disk.
+  /// Used by BackupRecoveryService to skip backup before any book has been
+  /// opened (the lazy DB initialiser would otherwise create an empty file just
+  /// to back it up, wasting I/O on pause).
+  Future<bool> isDatabaseFilePresent() async {
+    final dbPath = await getDatabasesPath();
+    return File(join(dbPath, 'nyan_read.db')).existsSync();
+  }
+
+  /// Creates a self-consistent checkpoint copy of the main database at
+  /// [destPath] using SQLite's built-in `VACUUM INTO` command (3.27+).
+  ///
+  /// Unlike raw triad copies (`.db` + `.db-wal` + `.db-shm`), the output
+  /// file is fully checkpointed — all WAL pages are incorporated — so it
+  /// can be restored without sidecar files.  Safe to call while the database
+  /// is open and being written to: SQLite holds a shared read lock for the
+  /// duration and serializes concurrent writers.
+  Future<void> backupViaVacuumInto(String destPath) async {
+    final db = await database;
+    // Forward slashes are accepted on all platforms by SQLite; this avoids
+    // backslash-in-string-literal edge cases on Windows dev builds.
+    final safePath = destPath.replaceAll('\\', '/').replaceAll("'", "''");
+    await db.execute("VACUUM INTO '$safePath'");
+  }
+
   Future<void> _checkAndHealDatabase(String mainDbPath) async {
     final file = File(mainDbPath);
     if (!file.existsSync()) return;
@@ -231,11 +260,19 @@ class DatabaseService {
     }
   }
 
-  /// Top-level-ish helper for [Isolate.run]. Runs the rename-archive-then
-  /// copy-from-snapshot restore in the helper isolate. Returns a DTO
-  /// instead of calling [debugPrint] directly so the output still shows up
-  /// on the main isolate's logger. Static so Dart can send the closure
-  /// handle across isolates without capturing this.
+  /// Isolate worker for [_restoreFromLatestBackup]. Discovers the best
+  /// available backup snapshot and copies it over the corrupted main DB.
+  ///
+  /// Understands two snapshot formats so it can restore from either:
+  ///   • New format (VACUUM INTO): a flat `.db` file directly inside the
+  ///     `backups/` directory (e.g. `backups/nyan_read_<ms>.db`).
+  ///   • Legacy format (raw triad copy): a subdirectory named
+  ///     `snapshot_<timestamp>/` that contains `nyan_read.db`.
+  ///
+  /// Always picks the newest snapshot by `modified` timestamp, regardless
+  /// of format.  The corrupted main file is archived as
+  /// `<path>_corrupted_<ms>.bak`; existing `-wal`/`-shm` sidecars are
+  /// deleted so SQLite opens the restored DB cleanly.
   static _DbRestoreOutcome _runRestoreFromBackupInIsolate({
     required String mainDbPath,
     required String backupDirPath,
@@ -249,52 +286,142 @@ class DatabaseService {
         return _DbRestoreOutcome(logs);
       }
 
-      final snapshotDirs = backupDir.listSync().whereType<Directory>().toList();
-      // Newest snapshot first.
-      snapshotDirs.sort(
-        (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
-      );
+      // Collect candidates from both snapshot formats.
+      final candidates = <_BackupCandidate>[];
+      for (final entry in backupDir.listSync()) {
+        // New format: flat .db file produced by VACUUM INTO.
+        if (entry is File && entry.path.endsWith('.db')) {
+          candidates.add(_BackupCandidate(
+            file: entry,
+            modified: entry.statSync().modified,
+          ));
+        }
+        // Legacy format: subdirectory containing nyan_read.db (raw triad copy).
+        // Use the inner file's mtime rather than the directory mtime so that
+        // the comparison is consistent with the flat-file strategy and the
+        // timestamp can be controlled in tests via File.setLastModifiedSync.
+        if (entry is Directory) {
+          final legacyDb = File(join(entry.path, 'nyan_read.db'));
+          if (legacyDb.existsSync()) {
+            candidates.add(_BackupCandidate(
+              file: legacyDb,
+              modified: legacyDb.statSync().modified,
+            ));
+          }
+        }
+      }
 
-      if (snapshotDirs.isEmpty) {
+      if (candidates.isEmpty) {
         logs.add(
-            '--- [DatabaseService] Self-heal aborted: no cold-backup snapshots found ---');
+            '--- [DatabaseService] Self-heal aborted: no backup snapshots found ---');
         return _DbRestoreOutcome(logs);
       }
 
-      final latestBackupDir = snapshotDirs.first;
-      logs.add(
-          '--- [DatabaseService] Captured latest cold backup ${latestBackupDir.path}, restoring main database snapshot ---');
+      // Newest snapshot wins regardless of format.
+      candidates.sort((a, b) => b.modified.compareTo(a.modified));
 
-      // Two-step restore: archive the corrupted main files first, then
-      // replace with the latest backup set. The -wal / -shm sidecars are
-      // torn down first because sqlite refuses to touch a main DB whose
-      // WAL header does not match.
+      // Archive the corrupted main file before overwriting it.
+      // Use rename → copy+delete → delete fallback chain because renameSync
+      // can fail on Windows (cross-drive, locked file) and on mobile
+      // (cross-filesystem).  If none work, copySync below will clobber the
+      // destination on most platforms anyway.
       final corruptFile = File(mainDbPath);
       final ts = DateTime.now().millisecondsSinceEpoch;
       if (corruptFile.existsSync()) {
-        corruptFile.renameSync('${mainDbPath}_corrupted_$ts.bak');
+        _archiveOrDelete(corruptFile, '${mainDbPath}_corrupted_$ts.bak', logs);
       }
 
-      final oldWal = File('$mainDbPath-wal');
-      final oldShm = File('$mainDbPath-shm');
-      if (oldWal.existsSync()) oldWal.deleteSync();
-      if (oldShm.existsSync()) oldShm.deleteSync();
+      // Remove -wal/-shm sidecars (best-effort).  A stale WAL from the
+      // corrupted DB could be applied on top of the restored file and
+      // re-corrupt it, so deletion is important.  If it fails we warn and
+      // proceed; copySync will at least give us a clean main file.
+      for (final sidecarPath in ['$mainDbPath-wal', '$mainDbPath-shm']) {
+        _deleteIgnoringErrors(File(sidecarPath), logs);
+      }
 
-      final backupDb = File(join(latestBackupDir.path, 'nyan_read.db'));
-      final backupWal = File(join(latestBackupDir.path, 'nyan_read.db-wal'));
-      final backupShm = File(join(latestBackupDir.path, 'nyan_read.db-shm'));
+      // Try backup candidates in newest-first order.  If a candidate's file
+      // is empty or unreadable (indicates a bad backup), move on to the next
+      // so a single corrupt snapshot doesn't block recovery entirely.
+      var restored = false;
+      for (final candidate in candidates) {
+        logs.add(
+            '--- [DatabaseService] Attempting restore from: ${candidate.file.path} ---');
+        try {
+          candidate.file.copySync(mainDbPath);
+          final restoredSize = File(mainDbPath).lengthSync();
+          if (restoredSize == 0) {
+            // Zero-byte file indicates the backup itself is unusable.
+            throw Exception('Restored file is empty (${candidate.file.path})');
+          }
+          logs.add(
+              '--- [DatabaseService] Restore succeeded ($restoredSize bytes) ---');
+          restored = true;
+          break;
+        } catch (e) {
+          logs.add(
+              '--- [DatabaseService] Copy failed from ${candidate.file.path}: $e; trying next candidate ---');
+          // Remove any partial write so the next attempt starts clean.
+          _deleteIgnoringErrors(File(mainDbPath), logs);
+        }
+      }
 
-      if (backupDb.existsSync()) backupDb.copySync(mainDbPath);
-      if (backupWal.existsSync()) backupWal.copySync('$mainDbPath-wal');
-      if (backupShm.existsSync()) backupShm.copySync('$mainDbPath-shm');
-
-      logs.add(
-          '--- [DatabaseService] Cold backup restore completed successfully ---');
+      if (!restored) {
+        logs.add(
+            '--- [DatabaseService] All backup candidates exhausted; restore failed ---');
+      }
     } catch (e, stack) {
       logs.add(
-          '--- [DatabaseService] Cold backup restore failed in isolate: $e\n$stack ---');
+          '--- [DatabaseService] Backup restore failed in isolate: $e\n$stack ---');
     }
     return _DbRestoreOutcome(logs);
+  }
+
+  /// Archives [file] to [archivePath] using rename, falling back to
+  /// copy+delete, then bare delete as a last resort.  Logs outcomes.
+  ///
+  /// If the file cannot be archived at all, the subsequent `copySync` call
+  /// will clobber the destination on most platforms (POSIX semantics), so
+  /// the restore still has a chance to succeed.
+  static void _archiveOrDelete(
+      File file, String archivePath, List<String> logs) {
+    // 1. Atomic rename (preferred).
+    try {
+      file.renameSync(archivePath);
+      return;
+    } catch (_) {
+      // Cross-drive on Windows or cross-mount-point on POSIX can fail here.
+    }
+    // 2. Copy then delete (works across filesystems).
+    try {
+      file.copySync(archivePath);
+      file.deleteSync();
+      return;
+    } catch (_) {
+      // If copy also fails (e.g. read error on the corrupt file) fall through.
+    }
+    // 3. Bare delete (no archive preserved).
+    try {
+      file.deleteSync();
+      logs.add(
+          '--- [DatabaseService] Corrupted DB archived only by deletion (no .bak written) ---');
+    } catch (e) {
+      logs.add(
+          '--- [DatabaseService] Warning: could not archive or delete corrupted DB: $e ---');
+      // The subsequent copySync may still clobber the file on POSIX; on
+      // Windows the copy will fail instead — that error surfaces in the
+      // retry loop above.
+    }
+  }
+
+  /// Deletes [file] if it exists, logging a warning (not an error) if
+  /// deletion fails.  Used for best-effort WAL/SHM sidecar cleanup.
+  static void _deleteIgnoringErrors(File file, List<String> logs) {
+    try {
+      if (file.existsSync()) file.deleteSync();
+    } catch (e) {
+      logs.add(
+          '--- [DatabaseService] Warning: could not delete ${file.path}: $e ---');
+    }
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -884,4 +1011,13 @@ class DatabaseService {
 class _DbRestoreOutcome {
   _DbRestoreOutcome(this.logs);
   final List<String> logs;
+}
+
+/// Lightweight record used inside [_runRestoreFromBackupInIsolate] to
+/// represent a backup candidate from either the new flat-file or legacy
+/// triad-directory format.  Never crosses an isolate boundary.
+class _BackupCandidate {
+  const _BackupCandidate({required this.file, required this.modified});
+  final File file;
+  final DateTime modified;
 }

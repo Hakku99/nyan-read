@@ -116,6 +116,8 @@ void main() {
           required double maxWidth,
           required double maxHeight,
           required EdgeInsets padding,
+          TextScaler? textScaler,
+          double? paragraphBottomMargin,
           int? totalTextLength,
         }) {
           calculationCount++;

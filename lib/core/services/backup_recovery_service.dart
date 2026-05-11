@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
@@ -29,68 +30,58 @@ class BackupRecoveryService extends WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
       debugPrint(
-          '--- [BackupRecoveryService] App paused: triggering silent cold backup ---');
-      _performColdBackup();
+          '--- [BackupRecoveryService] App paused: triggering consistent snapshot backup ---');
+      // Intentional fire-and-forget: didChangeAppLifecycleState is a void
+      // callback; the OS gives a brief pause window and we cannot await here.
+      unawaited(_performColdBackup());
     }
   }
 
-  /// Mechanism A: silent cold backup + rolling sandbox.
+  /// Mechanism A: silent SQLite-consistent backup using `VACUUM INTO`.
+  ///
+  /// Unlike the previous raw triad copy (.db + .db-wal + .db-shm), SQLite's
+  /// `VACUUM INTO` atomically incorporates all WAL pages and writes a single,
+  /// fully-checkpointed output file.  The backup requires no sidecar files to
+  /// be valid and is safe to produce while the database is open and writing.
   Future<void> _performColdBackup() async {
     try {
-      final dbPath = await getDatabasesPath();
-      final mainDbPath = join(dbPath, 'nyan_read.db');
-      final backupDir = Directory(join(dbPath, 'backups'));
+      final dbService = getIt<DatabaseService>();
 
-      if (!File(mainDbPath).existsSync()) {
+      // Skip backup when the DB file has never been created (first launch
+      // before any book is opened).  Calling `database` here would create
+      // an empty schema file, which is wasteful on a pause event.
+      if (!await dbService.isDatabaseFilePresent()) {
         debugPrint(
-            '--- [BackupRecoveryService] Main database missing; skipping cold backup ---');
+            '--- [BackupRecoveryService] No DB file present; skipping backup ---');
         return;
       }
 
+      final dbPath = await getDatabasesPath();
+      final backupDir = Directory(join(dbPath, 'backups'));
       if (!backupDir.existsSync()) {
         backupDir.createSync(recursive: true);
       }
 
-      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-      final snapshotDir =
-          Directory(join(backupDir.path, 'snapshot_$timestamp'));
-      snapshotDir.createSync(recursive: true);
+      // Millisecond epoch in the filename guarantees uniqueness even if two
+      // pause events fire within the same second (e.g. rapid foreground/
+      // background toggles during development).
+      final snapshotPath = join(
+          backupDir.path, 'nyan_read_${DateTime.now().millisecondsSinceEpoch}.db');
 
-      // Offload the copy (main DB + -wal + -shm, all three are required for
-      // a consistent snapshot) to an isolate so the UI never stalls on sync
-      // file I/O during lifecycle pauses.
-      await Isolate.run(() {
-        try {
-          final mainDbFile = File(mainDbPath);
-          final walFile = File('$mainDbPath-wal');
-          final shmFile = File('$mainDbPath-shm');
-
-          mainDbFile.copySync(join(snapshotDir.path, 'nyan_read.db'));
-          if (walFile.existsSync()) {
-            walFile.copySync(join(snapshotDir.path, 'nyan_read.db-wal'));
-          }
-          if (shmFile.existsSync()) {
-            shmFile.copySync(join(snapshotDir.path, 'nyan_read.db-shm'));
-          }
-
-          debugPrint(
-              '--- [Isolate] Cold backup written: ${snapshotDir.path} ---');
-        } catch (e) {
-          debugPrint('--- [Isolate] Cold backup file copy failed: $e ---');
-        }
-      });
+      await dbService.backupViaVacuumInto(snapshotPath);
+      debugPrint(
+          '--- [BackupRecoveryService] Consistent snapshot written: $snapshotPath ---');
 
       await _cleanupOldBackups(backupDir);
     } catch (e, stack) {
       debugPrint(
-          '--- [BackupRecoveryService] _performColdBackup raised fatal error: $e\n$stack ---');
+          '--- [BackupRecoveryService] _performColdBackup raised: $e\n$stack ---');
     }
   }
 
-  /// Offloads the directory scan + sync deletes to a helper isolate so the
-  /// boot / lifecycle pause path never blocks the UI thread with file-system
-  /// work. Only primitive strings cross the isolate boundary; logs are
-  /// collected and replayed on the main isolate.  (Phase 2 / P0-7.)
+  /// Offloads directory scan and file deletions to a helper isolate.
+  /// Only primitive strings cross the isolate boundary; logs are collected
+  /// and replayed on the main isolate via debugPrint.
   Future<void> _cleanupOldBackups(Directory backupDir) async {
     try {
       final logs = await Isolate.run(
@@ -105,6 +96,13 @@ class BackupRecoveryService extends WidgetsBindingObserver {
     }
   }
 
+  /// Isolate worker: prune excess backups and remove legacy snapshot dirs.
+  ///
+  /// New-format backups are flat `.db` files (from `VACUUM INTO`); we keep
+  /// the newest [maxBackups] of those.  Legacy snapshot directories from the
+  /// old raw-triad-copy strategy are removed unconditionally as a one-time
+  /// migration step — by the time cleanup runs, a fresh `VACUUM INTO`
+  /// snapshot has already been written, so no backup coverage is lost.
   static List<String> _runCleanupOldBackupsInIsolate(
       String backupDirPath, int maxBackups) {
     final logs = <String>[];
@@ -112,22 +110,37 @@ class BackupRecoveryService extends WidgetsBindingObserver {
       final backupDir = Directory(backupDirPath);
       if (!backupDir.existsSync()) return logs;
 
-      final dirs = backupDir.listSync().whereType<Directory>().toList();
-      // Newest first.
-      dirs.sort(
-        (a, b) => b.statSync().modified.compareTo(a.statSync().modified),
-      );
+      // 1. Prune new-format flat .db files; keep the newest N.
+      final flatFiles = backupDir
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.db'))
+          .toList()
+        ..sort(
+            (a, b) => b.statSync().modified.compareTo(a.statSync().modified));
 
-      if (dirs.length > maxBackups) {
-        for (var i = maxBackups; i < dirs.length; i++) {
-          try {
-            dirs[i].deleteSync(recursive: true);
-            logs.add(
-                '--- [BackupRecoveryService] Deleted stale cold backup: ${dirs[i].path} ---');
-          } catch (e) {
-            logs.add(
-                '--- [BackupRecoveryService] Failed to delete stale cold backup: $e ---');
-          }
+      for (var i = maxBackups; i < flatFiles.length; i++) {
+        try {
+          flatFiles[i].deleteSync();
+          logs.add(
+              '--- [BackupRecoveryService] Deleted stale snapshot: ${flatFiles[i].path} ---');
+        } catch (e) {
+          logs.add(
+              '--- [BackupRecoveryService] Failed to delete stale snapshot: $e ---');
+        }
+      }
+
+      // 2. Remove any legacy snapshot_<timestamp>/ triad directories left
+      //    over from the old raw-copy strategy.  A successful VACUUM INTO
+      //    snapshot has been written before cleanup runs, so this is safe.
+      for (final entry in backupDir.listSync().whereType<Directory>()) {
+        try {
+          entry.deleteSync(recursive: true);
+          logs.add(
+              '--- [BackupRecoveryService] Removed legacy triad dir: ${entry.path} ---');
+        } catch (e) {
+          logs.add(
+              '--- [BackupRecoveryService] Failed to remove legacy triad dir: $e ---');
         }
       }
     } catch (e) {
