@@ -317,11 +317,11 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done.
 
 ### Phase P1 — Stability and UX
 
-- [ ] Add chapter parsing fast prefilter and simplify risky regex paths.
-- [ ] Add parse guards for pathological lines (length/timeout strategy in isolate).
+- [x] Add chapter parsing fast prefilter and simplify risky regex paths.
+- [x] Add parse guards for pathological lines (length/timeout strategy in isolate).
 - [x] Implement large-TXT memory mitigation plan (chunked/lazy read baseline).
-- [ ] Add `BrightnessState` equality/dedup and trim redundant notifier churn.
-- [ ] Smooth manual/follow-system transition animation and resume restore behavior.
+- [x] Add `BrightnessState` equality/dedup and trim redundant notifier churn.
+- [x] Smooth manual/follow-system transition animation and resume restore behavior.
 - [x] Add page-turn in-flight timeout recovery to prevent stuck lock state.
 - [x] Resolve gesture conflict order between highlight, tap-turn, pan-turn, and edge gestures.
 
