@@ -111,13 +111,25 @@ class BrightnessOrchestrator extends ChangeNotifier
     }
 
     final currentSystemBrightness = await _safeCurrentBrightness();
-    _stopFollowSystemAnimation();
+
+    // Transition to follow-system mode with animation to the current system
+    // brightness if we were in manual mode.  Avoids an abrupt "flash" when
+    // switching modes.
     _setState(_state.copyWith(
       mode: BrightnessMode.followSystem,
-      uiBrightness: currentSystemBrightness,
       lastObservedSystemBrightness: currentSystemBrightness,
       lastAppliedSystemBrightness: null,
     ));
+
+    if (wasManual) {
+      // Animate to the target system brightness instead of snapping.
+      _setFollowSystemBrightnessTarget(currentSystemBrightness);
+    } else {
+      // Already in follow-system, just ensure sync.
+      _setState(_state.copyWith(
+        uiBrightness: currentSystemBrightness,
+      ));
+    }
   }
 
   Future<void> restoreOriginalBrightness() async {
