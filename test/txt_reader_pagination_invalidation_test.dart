@@ -253,6 +253,9 @@ void main() {
     });
 
     testWidgets('updown previousPage moves near one viewport distance',
+        // Windows: upDown page-turn operations await a layout Completer that
+        // requires a pump cycle — same deadlock as the oversized-anchor test.
+        skip: Platform.isWindows,
         (tester) async {
       await _pumpReader(tester, engine, const Size(320, 640));
       engine.setConfig(const ReaderConfig(
@@ -278,6 +281,7 @@ void main() {
     });
 
     testWidgets('updown previous and next keep symmetric page distance',
+        skip: Platform.isWindows,
         (tester) async {
       await _pumpReader(tester, engine, const Size(320, 640));
       engine.setConfig(const ReaderConfig(
