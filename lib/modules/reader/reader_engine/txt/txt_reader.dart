@@ -89,9 +89,14 @@ _TxtParseResult _parseTxtInIsolate(Uint8List bytes) {
 
   final titles = <String>[];
   final indexes = <int>[];
+  const int maxChapterLineLength = 500;
   for (int i = 0; i < lines.length; i++) {
     final line = lines[i].trim();
     if (line.isEmpty) continue;
+
+    // Skip pathological lines to prevent regex backtracking.  Chapter headings
+    // are never this long.
+    if (line.length > maxChapterLineLength) continue;
 
     var isChapter = _looksLikeChapterHeadingStatic(line);
     if (!isChapter && _isStandaloneNumericHeadingStatic(line)) {
@@ -274,6 +279,11 @@ Iterable<String> _chapterHeadingCandidatesStatic(String line) sync* {
 }
 
 bool _looksLikeChapterHeadingStatic(String line) {
+  final trimmed = line.trim();
+  // Fast prefilter: reject obviously non-chapter lines before expensive work.
+  if (trimmed.isEmpty || trimmed.length > 80) return false;
+  if (!_hasChapterMarkerStatic(trimmed)) return false;
+
   for (final candidate in _chapterHeadingCandidatesStatic(line)) {
     if (candidate.isEmpty || candidate.length > 80) continue;
     if (_looksLikeNarrativeLineStatic(candidate)) continue;
@@ -286,6 +296,21 @@ bool _looksLikeChapterHeadingStatic(String line) {
     }
   }
   return false;
+}
+
+bool _hasChapterMarkerStatic(String line) {
+  // Fast checks for lines that look like chapters: contain digits, CJK
+  // characters, or English chapter keywords.  Helps skip obviously non-chapter
+  // lines (narrative content) before running expensive regex patterns.
+  return RegExp(
+    r'(?:\d+|'
+    r'[IVXLCDMivxlcdm]+|'
+    r'[一-鿿]|'
+    r'(?:chapter|chap|volume|vol|book|part|prologue|epilogue|'
+    r'interlude|side.?story|extra|appendix|preface|序|序言|前言|終章|'
+    r'後記|番外|外伝|幕間|間章|短編|特典))',
+    caseSensitive: false,
+  ).hasMatch(line);
 }
 
 bool _isStandaloneNumericHeadingStatic(String line) {
