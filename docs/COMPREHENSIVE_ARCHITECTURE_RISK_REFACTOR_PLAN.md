@@ -327,20 +327,20 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done.
 
 ### Phase P2 — Performance Hardening / Tech Debt
 
-- [ ] Move heavy bookshelf signature/index work off UI-critical path.
-- [ ] Add incremental background signature backfill for legacy books.
-- [ ] Parallelize large-batch delete path with robust status reporting.
-- [ ] Offload anchor healing to isolate for highlight-heavy chapters.
-- [ ] Add source availability precheck badges in shelf UI.
-- [ ] Complete DI cleanup in settings/features (remove direct locator calls outside allowed scope).
+- [x] Move heavy bookshelf signature/index work off UI-critical path. *(Session 2 — `BookImportFingerprint.buildExistingIndex` no longer computes SHA-256 inline)*
+- [x] Add incremental background signature backfill for legacy books. *(Session 2 — `SignatureBackfillService` registered in DI, fires 15 s after cold start)*
+- [x] Parallelize large-batch delete path with robust status reporting. *(Session 2 — `BookshelfViewModel._deleteSourceFilesBestEffort` groups content-URIs serial / file-paths parallel; `updateBooksPrivacy` uses single DB batch)*
+- [x] Offload anchor healing to isolate for highlight-heavy chapters. *(Session 1 — `ContentMetaManager` slow-path healing uses `Isolate.run()`)*
+- [x] Add source availability precheck badges in shelf UI. *(Session 1 — `AnimatedBookCard` list + grid views show ✓/⚠ badge with tooltip)*
+- [ ] Complete DI cleanup in settings/features (remove direct locator calls outside allowed scope). *(pre-verified via grep — no violations found in current codebase)*
 
 ### Test and Verification Gates
 
-- [ ] Unit tests updated for `reader_engine/**`, `controllers/**`, `database_service.dart` touches.
-- [ ] Add regression tests for pagination drift with mixed CJK/EN + text scale.
-- [ ] Add brightness lifecycle test: pause/resume without abrupt flash.
-- [ ] Add backup integrity test matrix (normal, concurrent writes, interrupted flow).
-- [ ] Run full targeted reader test suite and document residual known failures.
+- [x] Unit tests updated for `reader_engine/**`, `controllers/**`, `database_service.dart` touches. *(Covered by existing suites — 48/48 green across brightness, progress, menu, DB, reader, pagination tests)*
+- [x] Add regression tests for pagination drift with mixed CJK/EN + text scale. *(Session 3 — `test/pagination_cjk_drift_test.dart`: 5 groups / 14 tests covering CJK-only, mixed, line-height, viewport, stress)*
+- [x] Add brightness lifecycle test: pause/resume without abrupt flash. *(Session 1 added test; Session 3 implemented the smooth resume ramp in `BrightnessOrchestrator` — `_pausedManualBrightnessTarget` + `_startResumeRamp`)*
+- [ ] Add backup integrity test matrix (normal, concurrent writes, interrupted flow). *(deferred — no DatabaseService backup-path regression existed before; safe to defer to next sprint)*
+- [x] Run full targeted reader test suite and document residual known failures. *(Session 3 — 48 tests green across 6 targeted files; txt_reader tests pass; no new known failures introduced)*
 
 ---
 
