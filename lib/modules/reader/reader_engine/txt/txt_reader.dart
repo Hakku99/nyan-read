@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:fast_gbk/fast_gbk.dart';
 import 'package:flutter/foundation.dart';
@@ -44,7 +45,9 @@ const int _kPaginationSampleSize = 4000;
 /// main isolate.
 class _TxtParseResult {
   _TxtParseResult({
-    required this.lines,
+    required this.rawUtf8,
+    required this.lineRanges,
+    required this.lineCount,
     required this.paragraphOffsets,
     required this.totalTextLength,
     required this.paginationSample,
@@ -52,7 +55,16 @@ class _TxtParseResult {
     required this.chapterParagraphIndexes,
   });
 
-  final List<String> lines;
+  // Raw UTF-8 bytes of the book content (re-encoded from whatever the source
+  // encoding was).  Storing UTF-8 rather than decoded Dart strings cuts
+  // session memory roughly in half for ASCII/Latin content (UTF-16 in Dart is
+  // 2 bytes/char; UTF-8 is 1 byte/char for ASCII).  CJK content is comparable
+  // in size.  Lines are decoded on-demand in itemBuilder.
+  final Uint8List rawUtf8;
+  // Interleaved (start, end) byte offsets into rawUtf8, one pair per line.
+  // Length == lineCount * 2.
+  final List<int> lineRanges;
+  final int lineCount;
   final List<int> paragraphOffsets;
   final int totalTextLength;
   final String paginationSample;
@@ -95,8 +107,25 @@ _TxtParseResult _parseTxtInIsolate(Uint8List bytes) {
     }
   }
 
+  // Re-encode the decoded content as UTF-8 and build a byte-range index so
+  // the engine can store 1× the file size in memory rather than 2× (Dart
+  // strings are UTF-16 internally; for ASCII-heavy content this halves the
+  // steady-state heap cost while the parse isolate is active only briefly).
+  final builder = BytesBuilder(copy: false);
+  final lineRanges = List<int>.filled(lines.length * 2, 0);
+  for (int i = 0; i < lines.length; i++) {
+    final encoded = utf8.encode(lines[i]);
+    final start = builder.length;
+    builder.add(encoded);
+    lineRanges[i * 2] = start;
+    lineRanges[i * 2 + 1] = builder.length;
+  }
+  final rawUtf8 = builder.takeBytes();
+
   return _TxtParseResult(
-    lines: lines,
+    rawUtf8: rawUtf8,
+    lineRanges: lineRanges,
+    lineCount: lines.length,
     paragraphOffsets: offsets,
     totalTextLength: totalLength,
     paginationSample: paginationSample,
@@ -295,11 +324,22 @@ class TxtReaderEngine
   );
 
   final Book book;
+  String _getLine(int index) {
+    final start = _lineRanges[index * 2];
+    final end = _lineRanges[index * 2 + 1];
+    return utf8.decode(_rawUtf8.sublist(start, end), allowMalformed: true);
+  }
+
   final ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
 
-  List<String> _lines = [];
+  // Raw UTF-8 bytes of the full book content, plus a byte-range index for
+  // on-demand per-line decoding.  This replaces the old List<String> _lines
+  // field and roughly halves steady-state heap usage for large ASCII books.
+  Uint8List _rawUtf8 = Uint8List(0);
+  List<int> _lineRanges = const [];
+  int _lineCount = 0;
   bool _isLoading = true;
 
   ReaderConfig _config = const ReaderConfig(
@@ -416,7 +456,7 @@ class TxtReaderEngine
   }
 
   _ViewportAnchor? _currentViewportAnchor() {
-    if (_lines.isEmpty) return null;
+    if (_lineCount == 0) return null;
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return null;
 
@@ -435,7 +475,7 @@ class TxtReaderEngine
       }
     }
     return _ViewportAnchor(
-      index: topmost.index.clamp(0, _lines.length - 1),
+      index: topmost.index.clamp(0, _lineCount - 1),
       leadingEdge: topmost.itemLeadingEdge,
       trailingEdge: topmost.itemTrailingEdge,
     );
@@ -450,9 +490,9 @@ class TxtReaderEngine
   /// chapter still visible near the bottom while the user was already reading
   /// headings at the top (off-by-one chapter in bar / TOC).
   int _viewportAnchorParagraphIndex() {
-    if (_lines.isEmpty) return 0;
+    if (_lineCount == 0) return 0;
     return _currentViewportAnchor()?.index ??
-        _initialIndex.clamp(0, _lines.length - 1);
+        _initialIndex.clamp(0, _lineCount - 1);
   }
 
   @override
@@ -464,7 +504,9 @@ class TxtReaderEngine
       // and everything else ran on the UI isolate, which could lock the
       // main thread for seconds on 20MB+ novels.
       final parsed = await compute(_parseTxtInIsolate, bytes);
-      _lines = parsed.lines;
+      _rawUtf8 = parsed.rawUtf8;
+      _lineRanges = parsed.lineRanges;
+      _lineCount = parsed.lineCount;
       _paragraphOffsets = parsed.paragraphOffsets;
       _totalTextLength = parsed.totalTextLength;
       _paginationSample = parsed.paginationSample;
@@ -493,8 +535,8 @@ class TxtReaderEngine
 
   @override
   String? getParagraphText(int paragraphIndex) {
-    if (paragraphIndex < 0 || paragraphIndex >= _lines.length) return null;
-    return _lines[paragraphIndex].trim();
+    if (paragraphIndex < 0 || paragraphIndex >= _lineCount) return null;
+    return _getLine(paragraphIndex).trim();
   }
 
   @override
@@ -505,13 +547,13 @@ class TxtReaderEngine
 
   @override
   double? getProgress() {
-    if (_lines.isEmpty) return 0.0;
+    if (_lineCount == 0) return 0.0;
     final pos = getCurrentPosition();
     if (pos?.paragraphIndex != null) {
-      if (_lines.length == 1) {
+      if (_lineCount == 1) {
         return 1.0;
       }
-      return pos!.paragraphIndex! / (_lines.length - 1);
+      return pos!.paragraphIndex! / (_lineCount - 1);
     }
     return 0.0;
   }
@@ -533,7 +575,7 @@ class TxtReaderEngine
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_lines.isEmpty) {
+    if (_lineCount == 0) {
       return const Center(child: Text('No content loaded'));
     }
 
@@ -655,19 +697,19 @@ class TxtReaderEngine
     }
 
     return ScrollablePositionedList.builder(
-      itemCount: _lines.length,
+      itemCount: _lineCount,
       itemScrollController: _itemScrollController,
       itemPositionsListener: _itemPositionsListener,
       initialScrollIndex: _initialIndex,
       itemBuilder: (context, index) {
-        final line = _lines[index].trim();
+        final line = _getLine(index).trim();
         EdgeInsets itemPadding = const EdgeInsets.symmetric(horizontal: 24.0);
 
         if (index == 0) {
           itemPadding = itemPadding.copyWith(top: 16.0);
         }
 
-        if (index == _lines.length - 1) {
+        if (index == _lineCount - 1) {
           itemPadding = itemPadding.copyWith(bottom: 120.0);
         }
 
@@ -861,8 +903,8 @@ class TxtReaderEngine
 
   @override
   Future<void> seekToProgress(double progress) async {
-    if (_lines.isEmpty) return;
-    final index = (progress * (_lines.length - 1)).round();
+    if (_lineCount == 0) return;
+    final index = (progress * (_lineCount - 1)).round();
 
     if (_itemScrollController.isAttached) {
       _itemScrollController.jumpTo(index: index);
@@ -886,8 +928,8 @@ class TxtReaderEngine
   Future<String?> getSnippet() async {
     final pos = getCurrentPosition();
     final paragraphIndex = pos?.paragraphIndex;
-    if (paragraphIndex != null && paragraphIndex < _lines.length) {
-      return _lines[paragraphIndex].trim();
+    if (paragraphIndex != null && paragraphIndex < _lineCount) {
+      return _getLine(paragraphIndex).trim();
     }
     return null;
   }
@@ -895,8 +937,8 @@ class TxtReaderEngine
   @override
   Future<String?> getTextAtPosition(ReadingPosition position) async {
     final paragraphIndex = position.paragraphIndex;
-    if (paragraphIndex != null && paragraphIndex < _lines.length) {
-      return _lines[paragraphIndex].trim();
+    if (paragraphIndex != null && paragraphIndex < _lineCount) {
+      return _getLine(paragraphIndex).trim();
     }
     return null;
   }
@@ -938,7 +980,7 @@ class TxtReaderEngine
       ..sort((a, b) => a.index.compareTo(b.index));
 
     if (positions.isEmpty) {
-      _initialIndex = (_initialIndex + 20).clamp(0, _lines.length - 1);
+      _initialIndex = (_initialIndex + 20).clamp(0, _lineCount - 1);
       return;
     }
 
@@ -962,7 +1004,7 @@ class TxtReaderEngine
       ..sort((a, b) => a.index.compareTo(b.index));
 
     if (positions.isEmpty) {
-      _initialIndex = (_initialIndex - 20).clamp(0, _lines.length - 1);
+      _initialIndex = (_initialIndex - 20).clamp(0, _lineCount - 1);
       return;
     }
 
@@ -1068,7 +1110,7 @@ class TxtReaderEngine
     double? paragraphLeadingEdge,
     double? paragraphTrailingEdge,
   }) async {
-    final clampedIndex = index.clamp(0, _lines.length - 1);
+    final clampedIndex = index.clamp(0, _lineCount - 1);
     final alignment = (paragraphLeadingEdge != null && paragraphTrailingEdge != null)
         ? _alignmentFromEdges(
             leadingEdge: paragraphLeadingEdge,

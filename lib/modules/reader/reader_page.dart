@@ -60,12 +60,21 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   Offset? _panStartPosition;
   Offset? _panLastPosition;
   bool _isPanning = false;
-  static const double _swipeThreshold = 10.0;
+  // Raised from 10 → 20 px: reduces false-positives from micro-jitter and
+  // the first pixels of a text-selection drag.
+  static const double _swipeThreshold = 20.0;
+  // Minimum swipe velocity (px/s) OR delta (px) required to commit a page
+  // turn from a pan gesture.  Slow drags that don't exceed either threshold
+  // are suppressed so text-selection long-press-drags don't turn pages.
+  static const double _swipeMinVelocity = 200.0;
+  static const double _swipeMinDelta = 60.0;
   static const Duration _tapLogicDedupWindow = Duration(milliseconds: 350);
   static const Duration _pageTurnMinInterval = Duration(milliseconds: 220);
   DateTime? _lastTapLogicAt;
   DateTime? _lastPageTurnAt;
   bool _isPageTurning = false;
+  Timer? _pageTurnLockTimer;
+  static const Duration _pageTurnLockTimeout = Duration(seconds: 3);
   Timer? _chapterSyncDebounce;
   final GlobalKey<SmoothPageReaderState> _smoothPageReaderKey =
       GlobalKey<SmoothPageReaderState>();
@@ -87,6 +96,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
   @override
   void dispose() {
+    _pageTurnLockTimer?.cancel();
     _chapterSyncDebounce?.cancel();
     _boundController = null;
     unawaited(_brightnessController.shutdown());

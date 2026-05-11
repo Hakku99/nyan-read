@@ -143,23 +143,40 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     final velocity = details.velocity.pixelsPerSecond;
 
     if (mode == PageTurnMode.leftRight) {
-      final isMostlyHorizontal = delta.dx.abs() > delta.dy.abs();
+      final isMostlyHorizontal = delta.dx.abs() > delta.dy.abs() * 1.5;
       if (!isMostlyHorizontal) return;
-      final dx = velocity.dx.abs() > 50 ? velocity.dx : delta.dx;
-      if (dx < 0) {
+      final vx = velocity.dx.abs();
+      final dx = delta.dx.abs();
+      // Require either fast velocity or a deliberate large delta; slow drags
+      // (e.g. text-selection) are suppressed.
+      if (vx < _ReaderPageState._swipeMinVelocity &&
+          dx < _ReaderPageState._swipeMinDelta) {
+        return;
+      }
+      final signedDx = vx >= _ReaderPageState._swipeMinVelocity
+          ? velocity.dx
+          : delta.dx;
+      if (signedDx < 0) {
         _triggerPageTurn(controller, forward: true, at: now);
-      } else if (dx > 0) {
+      } else if (signedDx > 0) {
         _triggerPageTurn(controller, forward: false, at: now);
       }
       return;
     }
 
-    final isMostlyVertical = delta.dy.abs() > delta.dx.abs();
+    final isMostlyVertical = delta.dy.abs() > delta.dx.abs() * 1.5;
     if (!isMostlyVertical) return;
-    final dy = velocity.dy.abs() > 50 ? velocity.dy : delta.dy;
-    if (dy < 0) {
+    final vy = velocity.dy.abs();
+    final dy = delta.dy.abs();
+    if (vy < _ReaderPageState._swipeMinVelocity &&
+        dy < _ReaderPageState._swipeMinDelta) {
+      return;
+    }
+    final signedDy =
+        vy >= _ReaderPageState._swipeMinVelocity ? velocity.dy : delta.dy;
+    if (signedDy < 0) {
       _triggerPageTurn(controller, forward: true, at: now);
-    } else if (dy > 0) {
+    } else if (signedDy > 0) {
       _triggerPageTurn(controller, forward: false, at: now);
     }
   }
@@ -187,11 +204,19 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     _lastPageTurnAt = at;
     _isPageTurning = true;
 
+    // Safety net: if the async turn path hangs, release the lock after a
+    // fixed timeout so future taps are not permanently silenced.
+    _pageTurnLockTimer?.cancel();
+    _pageTurnLockTimer = Timer(_ReaderPageState._pageTurnLockTimeout, () {
+      if (mounted) _isPageTurning = false;
+    });
+
     final turnFuture = _dispatchPageTurn(
       controller,
       forward: forward,
     );
     unawaited(turnFuture.whenComplete(() {
+      _pageTurnLockTimer?.cancel();
       if (!mounted) return;
       _isPageTurning = false;
     }));
