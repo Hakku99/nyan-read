@@ -905,7 +905,7 @@ class TxtReaderEngine
     }
 
     if (_itemScrollController.isAttached) {
-      await _goToParagraphPosition(
+      _goToParagraphPosition(
         index: paragraphIndex,
         paragraphLeadingEdge: position.paragraphLeadingEdge,
         paragraphTrailingEdge: position.paragraphTrailingEdge,
@@ -1130,11 +1130,11 @@ class TxtReaderEngine
     );
   }
 
-  Future<void> _goToParagraphPosition({
+  void _goToParagraphPosition({
     required int index,
     double? paragraphLeadingEdge,
     double? paragraphTrailingEdge,
-  }) async {
+  }) {
     final clampedIndex = index.clamp(0, _lineCount - 1);
     final alignment = (paragraphLeadingEdge != null && paragraphTrailingEdge != null)
         ? _alignmentFromEdges(
@@ -1142,7 +1142,9 @@ class TxtReaderEngine
             trailingEdge: paragraphTrailingEdge,
           )
         : null;
-    await _goToIndex(
+    // jumpTo for programmatic position restore; scrollTo (animated) is
+    // reserved for user-initiated page turns via nextPage/previousPage.
+    _itemScrollController.jumpTo(
       index: clampedIndex,
       alignment: alignment ?? 0.0,
     );

@@ -56,7 +56,8 @@ void main() {
 
       await _pumpReader(tester, engine1, const Size(320, 640));
       await engine1.goToPosition(TxtReadingPosition(paragraphIndex: 75));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
 
       final position1 = engine1.getCurrentPosition() as TxtReadingPosition;
       final serialized1 = position1.toJson();
@@ -74,7 +75,8 @@ void main() {
 
       await _pumpReader(tester, engine2, const Size(320, 640));
       await engine2.goToPosition(TxtReadingPosition.fromJson(serialized1));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
 
       final position2 = engine2.getCurrentPosition() as TxtReadingPosition;
       final serialized2 = position2.toJson();
@@ -106,15 +108,18 @@ void main() {
 
       await _pumpReader(tester, engine1, const Size(320, 640));
       await engine1.goToPosition(TxtReadingPosition(paragraphIndex: 50));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
 
       // Navigate next
       await engine1.nextPage();
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
 
       // Navigate back to previous
       await engine1.previousPage();
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
       final afterPrevious = engine1.getCurrentPosition() as TxtReadingPosition;
 
       // Save the after-previous position
@@ -134,7 +139,8 @@ void main() {
 
       await _pumpReader(tester, engine2, const Size(320, 640));
       await engine2.goToPosition(TxtReadingPosition.fromJson(serialized));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
 
       final restoredDirectly = engine2.getCurrentPosition() as TxtReadingPosition;
 
@@ -178,7 +184,8 @@ void main() {
           );
         }
 
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
         final position = engine.getCurrentPosition() as TxtReadingPosition;
         final serialized = position.toJson();
 
@@ -209,7 +216,8 @@ void main() {
 
       await _pumpReader(tester, engine1, const Size(320, 640));
       await engine1.goToPosition(TxtReadingPosition(paragraphIndex: 120));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
 
       final position1 = engine1.getCurrentPosition() as TxtReadingPosition;
       final serialized1 = position1.toJson();
@@ -227,7 +235,8 @@ void main() {
 
       await _pumpReader(tester, engine2, const Size(320, 640));
       await engine2.goToPosition(TxtReadingPosition.fromJson(serialized1));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
 
       final position2 = engine2.getCurrentPosition() as TxtReadingPosition;
 
@@ -259,7 +268,8 @@ void main() {
 
       await _pumpReader(tester, engine1, const Size(320, 640));
       await engine1.goToPosition(TxtReadingPosition(paragraphIndex: 65));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
 
       final position1 = engine1.getCurrentPosition() as TxtReadingPosition;
       final serialized1 = position1.toJson();
@@ -277,7 +287,8 @@ void main() {
 
       await _pumpReader(tester, engine2, const Size(320, 640));
       await engine2.goToPosition(TxtReadingPosition.fromJson(serialized1));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
 
       final position2 = engine2.getCurrentPosition() as TxtReadingPosition;
 
@@ -305,7 +316,8 @@ void main() {
 
       await _pumpReader(tester, engine1, const Size(320, 640));
       await engine1.goToPosition(targetPosition);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
 
       final positionDirect = engine1.getCurrentPosition() as TxtReadingPosition;
       final serializedDirect = positionDirect.toJson();
@@ -324,18 +336,21 @@ void main() {
 
       await _pumpReader(tester, engine2, const Size(320, 640));
       await engine2.goToPosition(TxtReadingPosition(paragraphIndex: 50));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
 
       // Navigate forward several times
       for (int i = 0; i < 5; i++) {
         await engine2.nextPage();
         await tester.pump(const Duration(milliseconds: 100));
       }
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
 
       // Go back to the target
       await engine2.goToPosition(targetPosition);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
 
       final positionNavigated = engine2.getCurrentPosition() as TxtReadingPosition;
       final serializedNavigated = positionNavigated.toJson();
