@@ -72,6 +72,28 @@ class BrightnessState {
               : lastAppliedSystemBrightness as double?,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is BrightnessState &&
+        other.mode == mode &&
+        other.uiBrightness == uiBrightness &&
+        other.hardwareFloor == hardwareFloor &&
+        other.originalSystemBrightness == originalSystemBrightness &&
+        other.lastObservedSystemBrightness == lastObservedSystemBrightness &&
+        other.lastAppliedSystemBrightness == lastAppliedSystemBrightness;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        mode,
+        uiBrightness,
+        hardwareFloor,
+        originalSystemBrightness,
+        lastObservedSystemBrightness,
+        lastAppliedSystemBrightness,
+      );
 }
 
 const Object _unset = Object();

@@ -150,7 +150,8 @@ void main() {
         (tester) async {
       await _pumpReader(tester, engine, const Size(320, 640));
       await engine.goToPosition(TxtReadingPosition(paragraphIndex: 80));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
       final portraitPageCount = engine.getPageCount();
 
       await _pumpReader(tester, engine, const Size(640, 320));

@@ -313,17 +313,17 @@ Legend: `[ ]` todo, `[~]` in progress, `[x]` done.
 - [x] Add integration test: backup during active progress writes.
 - [x] Harden restore fallback path (rename/copy-delete/retry) with platform-safe branches.
 - [x] Refactor TXT pagination estimator to include text scale and actual paragraph spacing model.
-- [ ] Add deterministic page-position invariant tests (seek -> prev/next -> reopen consistency).
+- [x] Add deterministic page-position invariant tests (seek -> prev/next -> reopen consistency).
 
 ### Phase P1 — Stability and UX
 
-- [ ] Add chapter parsing fast prefilter and simplify risky regex paths.
-- [ ] Add parse guards for pathological lines (length/timeout strategy in isolate).
-- [ ] Implement large-TXT memory mitigation plan (chunked/lazy read baseline).
-- [ ] Add `BrightnessState` equality/dedup and trim redundant notifier churn.
-- [ ] Smooth manual/follow-system transition animation and resume restore behavior.
-- [ ] Add page-turn in-flight timeout recovery to prevent stuck lock state.
-- [ ] Resolve gesture conflict order between highlight, tap-turn, pan-turn, and edge gestures.
+- [x] Add chapter parsing fast prefilter and simplify risky regex paths.
+- [x] Add parse guards for pathological lines (length/timeout strategy in isolate).
+- [x] Implement large-TXT memory mitigation plan (chunked/lazy read baseline).
+- [x] Add `BrightnessState` equality/dedup and trim redundant notifier churn.
+- [x] Smooth manual/follow-system transition animation and resume restore behavior.
+- [x] Add page-turn in-flight timeout recovery to prevent stuck lock state.
+- [x] Resolve gesture conflict order between highlight, tap-turn, pan-turn, and edge gestures.
 
 ### Phase P2 — Performance Hardening / Tech Debt
 

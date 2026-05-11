@@ -33,8 +33,11 @@ class BrightnessController extends ChangeNotifier {
   Future<void> setWarmth(double value) async {
     await _orchestrator.setWarmth(value);
     if (_isDisposed) return;
-    warmthValue.value = _normalize(value);
-    notifyListeners();
+    final normalized = _normalize(value);
+    if (warmthValue.value != normalized) {
+      warmthValue.value = normalized;
+      notifyListeners();
+    }
   }
 
   Future<void> toggleFollowSystem() async {
@@ -126,6 +129,7 @@ class BrightnessController extends ChangeNotifier {
   }
 
   void _showHud() {
+    if (isAdjusting.value) return;
     isAdjusting.value = true;
     _hudHideTimer?.cancel();
     notifyListeners();
@@ -135,6 +139,7 @@ class BrightnessController extends ChangeNotifier {
     _hudHideTimer?.cancel();
     _hudHideTimer = Timer(const Duration(milliseconds: 800), () {
       if (_isDisposed) return;
+      if (!isAdjusting.value) return;
       isAdjusting.value = false;
       notifyListeners();
     });
@@ -146,10 +151,18 @@ class BrightnessController extends ChangeNotifier {
   }
 
   void _syncLocalState(BrightnessState nextState) {
-    _stateNotifier.value = nextState;
-    uiBrightnessValue.value = nextState.clampedUiBrightness;
-    warmthValue.value = _orchestrator.warmth;
-    notifyListeners();
+    final stateChanged = _stateNotifier.value != nextState;
+    final brightnessChanged =
+        uiBrightnessValue.value != nextState.clampedUiBrightness;
+    final warmthChanged = warmthValue.value != _orchestrator.warmth;
+
+    if (stateChanged) _stateNotifier.value = nextState;
+    if (brightnessChanged) uiBrightnessValue.value = nextState.clampedUiBrightness;
+    if (warmthChanged) warmthValue.value = _orchestrator.warmth;
+
+    if (stateChanged || brightnessChanged || warmthChanged) {
+      notifyListeners();
+    }
   }
 
   double _normalize(double value) => value.clamp(0.0, 1.0).toDouble();
