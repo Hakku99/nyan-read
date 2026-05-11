@@ -9,6 +9,7 @@ import '../theme/theme_manager.dart';
 import 'language_manager.dart';
 import 'backup_recovery_service.dart';
 import 'reading_reminder_service.dart';
+import 'signature_backfill_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -88,11 +89,19 @@ Future<void> setupServiceLocator() async {
 
   final backupService = getIt<BackupRecoveryService>();
 
+  // Register SignatureBackfillService with constructor injection via get_it.
+  getIt.registerSingleton<SignatureBackfillService>(
+    SignatureBackfillService(getIt<DatabaseService>()),
+  );
+
   // 🛡️ 错峰出行：启动全局沙盒清道夫 (Fire-and-Forget)
   // 延迟 5 秒，避开核心的 SQLite 初始化与首屏渲染 I/O 抢夺
   Future.delayed(const Duration(seconds: 5), () {
     backupService.runCacheScavenger();
   });
+
+  // Background signature backfill: fires 15s after startup to avoid cold-start I/O racing.
+  getIt<SignatureBackfillService>().scheduleBackfill();
 
   debugPrint('--- [DI] 105. 同步服务装载完毕！ ---');
 }

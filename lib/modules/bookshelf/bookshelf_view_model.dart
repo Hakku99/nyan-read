@@ -180,51 +180,61 @@ class BookshelfViewModel extends ChangeNotifier {
   }
 
   Future<void> _deleteSourceFilesBestEffort(List<String> locators) async {
+    // content:// URIs must be deleted serially — platform channel is not
+    // concurrency-safe across simultaneous calls.
+    final contentUris = <String>[];
+    final fsPaths = <String>[];
+
     for (final rawLocator in locators) {
       final locator = rawLocator.trim();
-      if (locator.isEmpty) {
-        continue;
+      if (locator.isEmpty) continue;
+      if (locator.toLowerCase().startsWith('content://')) {
+        contentUris.add(locator);
+      } else {
+        fsPaths.add(locator);
       }
+    }
 
-      final lower = locator.toLowerCase();
-      if (lower.startsWith('content://')) {
-        final deleted =
-            await BookSourcePlatform.deletePersistedUriDocument(locator);
-        if (!deleted) {
-          debugPrint(
-            'Failed to delete content Uri (unsupported provider or no '
-            'persistable delete permission): $locator',
-          );
-        }
-        continue;
-      }
-
-      try {
-        var fsPath = locator;
-        if (lower.startsWith('file://')) {
-          fsPath = Uri.parse(locator).toFilePath();
-        }
-        fsPath = path.normalize(fsPath);
-        final file = File(fsPath);
-        if (await file.exists()) {
-          await file.delete();
-        }
-      } catch (e, stackTrace) {
+    // Serial deletion of content:// URIs (platform channel constraint).
+    for (final locator in contentUris) {
+      final deleted =
+          await BookSourcePlatform.deletePersistedUriDocument(locator);
+      if (!deleted) {
         debugPrint(
-          'Failed to delete source file: $locator\n$e\n$stackTrace',
+          'Failed to delete content Uri (unsupported provider or no '
+          'persistable delete permission): $locator',
         );
       }
     }
+
+    // Parallel deletion of filesystem paths.
+    await Future.wait(
+      fsPaths.map((locator) async {
+        try {
+          var fsPath = locator;
+          if (locator.toLowerCase().startsWith('file://')) {
+            fsPath = Uri.parse(locator).toFilePath();
+          }
+          fsPath = path.normalize(fsPath);
+          final file = File(fsPath);
+          if (await file.exists()) {
+            await file.delete();
+          }
+        } catch (e, stackTrace) {
+          debugPrint(
+            'Failed to delete source file: $locator\n$e\n$stackTrace',
+          );
+        }
+      }),
+    );
   }
 
-  /// Moves selected books between public and private shelf
+  /// Moves selected books between public and private shelf using a single batch.
   Future<void> moveSelectedBooks(bool toPrivate) async {
     if (_selectedBookIds.isEmpty) return;
 
     try {
-      for (final id in _selectedBookIds) {
-        await _db.updateBook(id, {'is_private': toPrivate ? 1 : 0});
-      }
+      await _db.updateBooksPrivacy(_selectedBookIds.toList(), toPrivate);
 
       _selectedBookIds.clear();
       _isSelectionMode = false;

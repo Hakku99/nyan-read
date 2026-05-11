@@ -675,6 +675,24 @@ class DatabaseService {
     );
   }
 
+  /// Batch-updates privacy flag for many books in a single transaction.
+  Future<void> updateBooksPrivacy(List<String> bookIds, bool isPrivate) async {
+    if (bookIds.isEmpty) return;
+    final db = await database;
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final id in bookIds) {
+        batch.update(
+          'books',
+          {'is_private': isPrivate ? 1 : 0},
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
   // --- Bookmarks CRUD ---
 
   Future<void> insertBookmark(Map<String, dynamic> bookmarkData) async {

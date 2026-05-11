@@ -5,6 +5,7 @@ import 'package:nyan_read/l10n/app_localizations.dart';
 
 import 'core/services/backup_recovery_service.dart';
 import 'core/services/riverpod_providers.dart';
+import 'core/services/signature_backfill_service.dart';
 
 import 'core/services/service_locator.dart';
 import 'core/router/app_router.dart';
@@ -59,6 +60,9 @@ class _NyanAppState extends ConsumerState<NyanApp> with WidgetsBindingObserver {
   void dispose() {
     if (getIt.isRegistered<BackupRecoveryService>()) {
       getIt<BackupRecoveryService>().dispose();
+    }
+    if (getIt.isRegistered<SignatureBackfillService>()) {
+      getIt<SignatureBackfillService>().dispose();
     }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();

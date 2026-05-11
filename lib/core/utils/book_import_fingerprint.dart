@@ -23,9 +23,16 @@ class BookImportDedupIndex {
 class BookImportFingerprint {
   static const int _sampleBytes = 64 * 1024;
 
+  /// Builds a dedup index for the import flow.
+  ///
+  /// When [computeMissing] is false (the default), only rows that already have a
+  /// stored `content_signature` are indexed — avoiding per-file SHA-256 I/O on
+  /// the UI-critical import path. Legacy books without a signature are picked up
+  /// by [SignatureBackfillService] in the background.
   static Future<BookImportDedupIndex> buildExistingIndex(
-    DatabaseService db,
-  ) async {
+    DatabaseService db, {
+    bool computeMissing = false,
+  }) async {
     final rows = await db.getBookImportEntries();
     final signatures = <String>{};
     final normalizedLocators = <String>{};
@@ -47,6 +54,9 @@ class BookImportFingerprint {
         continue;
       }
 
+      if (!computeMissing) continue;
+
+      // Slow path: compute and backfill inline (only used by SignatureBackfillService).
       final computedSignature = await computeForSource(
         sourceType: sourceType,
         sourceLocator: sourceLocator,
@@ -64,6 +74,18 @@ class BookImportFingerprint {
       signatures: signatures,
       normalizedLocators: normalizedLocators,
     );
+  }
+
+  /// Returns books that are missing a content signature, for background backfill.
+  static Future<List<Map<String, dynamic>>> fetchLegacyBooksNeedingSignature(
+    DatabaseService db,
+  ) async {
+    final rows = await db.getBookImportEntries();
+    return rows.where((row) {
+      final sig = row['content_signature'] as String?;
+      final loc = row['file_path'] as String?;
+      return (sig == null || sig.isEmpty) && (loc != null && loc.isNotEmpty);
+    }).toList();
   }
 
   static Future<String?> computeForSource({
