@@ -73,6 +73,8 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
 
   bool _isSourceAvailable() {
     if (widget.book.sourceLocator.isEmpty) return false;
+    // Android content URIs are always available if they're in the database
+    if (widget.book.isAndroidContentUri) return true;
     try {
       return File(widget.book.sourceLocator).existsSync();
     } catch (_) {
@@ -170,24 +172,19 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: Tooltip(
-                                    message: _isSourceAvailable()
-                                        ? 'Source file available'
-                                        : 'Source file missing',
-                                    child: Icon(
-                                      _isSourceAvailable()
-                                          ? Icons.check_circle
-                                          : Icons.warning_amber,
-                                      size: 14,
-                                      color: _isSourceAvailable()
-                                          ? theme.colorScheme.secondary
-                                          : Colors.amber[700],
+                                if (!_isSourceAvailable())
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: Tooltip(
+                                      message: 'Source file missing',
+                                      child: Icon(
+                                        Icons.warning_amber,
+                                        size: 14,
+                                        color: Colors.amber[700],
+                                      ),
                                     ),
                                   ),
-                                ),
                               ],
                             ),
                           ),
@@ -317,6 +314,8 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
 
   bool _isSourceAvailable() {
     if (widget.book.sourceLocator.isEmpty) return false;
+    // Android content URIs are always available if they're in the database
+    if (widget.book.isAndroidContentUri) return true;
     try {
       return File(widget.book.sourceLocator).existsSync();
     } catch (_) {
@@ -417,25 +416,20 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                 ),
               ),
             ),
-            // Source availability indicator
-            Positioned(
-              bottom: NyanSpacing.space8,
-              right: NyanSpacing.space8,
-              child: Tooltip(
-                message: _isSourceAvailable()
-                    ? 'Source file available'
-                    : 'Source file missing',
-                child: Icon(
-                  _isSourceAvailable()
-                      ? Icons.check_circle
-                      : Icons.warning_amber,
-                  size: 18,
-                  color: _isSourceAvailable()
-                      ? Colors.green[600]
-                      : Colors.amber[600],
+            // Source availability warning (only show if missing)
+            if (!_isSourceAvailable())
+              Positioned(
+                bottom: NyanSpacing.space8,
+                right: NyanSpacing.space8,
+                child: Tooltip(
+                  message: 'Source file missing',
+                  child: Icon(
+                    Icons.warning_amber,
+                    size: 18,
+                    color: Colors.amber[600],
+                  ),
                 ),
               ),
-            ),
             // Selection indicator
             if (widget.isSelectionMode)
               Positioned(
