@@ -242,10 +242,6 @@ class _NyanSecureEntryDialogState extends State<NyanSecureEntryDialog> {
                         label: widget.confirmLabel,
                         expanded: true,
                         onPressed: _isSubmitting ? null : _handleConfirm,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: NyanSpacing.space16,
-                          vertical: NyanSpacing.space12,
-                        ),
                         icon: _isSubmitting
                             ? SizedBox(
                                 width: 16,

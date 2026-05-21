@@ -16,6 +16,18 @@ class NyanTypography {
   static const double body = 16;
   static const double meta = 13;
 
+  /// Interactive control label sizes — Claude Design system exception
+  /// (see AGENTS.md §4.2.5). These three values are reserved for
+  /// [NyanPrimaryButton] labels only and MUST NOT appear in body copy,
+  /// headings, or any other surface. The standard (md) size reuses [body].
+  ///
+  /// Source: `nyan-read-design-system/project/ui_kits/nyan_read_app/components.jsx`
+  ///   compact (sm)     → 14pt
+  ///   standard (md)    → 16pt (alias: NyanTypography.body)
+  ///   comfortable (lg) → 17pt
+  static const double buttonCompact = 14;
+  static const double buttonComfortable = 17;
+
   static TextTheme textTheme({
     required Color textMain,
     required Color textSecondary,

@@ -418,9 +418,7 @@ class BookDetailsPage extends StatelessWidget {
                               ? () => _openReader(context)
                               : null,
                           expanded: true,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: NyanSpacing.space4,
-                          ),
+                          size: NyanPrimaryButtonSize.comfortable,
                         ),
                         if (hasAvailability && !isAvailable) ...[
                           const SizedBox(height: NyanSpacing.space12),

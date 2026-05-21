@@ -191,12 +191,7 @@ class NyanContinueReadingCard extends StatelessWidget {
               NyanPrimaryButton(
                 label: buttonLabel,
                 onPressed: onContinue,
-                padding: EdgeInsets.symmetric(
-                  horizontal: compact
-                      ? NyanSpacing.space12
-                      : NyanSpacing.space20,
-                  vertical: NyanSpacing.space8,
-                ),
+                size: NyanPrimaryButtonSize.compact,
               ),
             ],
           ),
@@ -247,10 +242,7 @@ class NyanContinueReadingCard extends StatelessWidget {
         NyanPrimaryButton(
           label: buttonLabel,
           onPressed: onContinue,
-          padding: const EdgeInsets.symmetric(
-            horizontal: NyanSpacing.space12,
-            vertical: NyanSpacing.space4,
-          ),
+          size: NyanPrimaryButtonSize.compact,
         ),
         if (onToggleCollapse != null) ...[
           const SizedBox(width: NyanSpacing.space4),

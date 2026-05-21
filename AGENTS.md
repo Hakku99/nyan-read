@@ -275,6 +275,8 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 
 **MUST NOT**：使用 `10`、`14`、`18`、`22` 等非 8 的倍数（`4 / 12 / 20` 是唯一例外，已在常量表中）。
 
+> **例外 — 交互控件内部间隙（Claude Design 系统对齐，2026-05）**：`NyanPrimaryButton` 的图标↔文字间隙固定为 **6pt**（来源：`components.jsx` 设计 spec）。此例外**仅限**控件内部 icon-label 配对（按钮、Pill 等），**MUST NOT** 用于卡片、列表、页面层级的布局间距。
+
 #### 4.2.4 阴影 — `lib/core/theme/nyan_shadows.dart`
 
 - `NyanShadows.lightCard(shadowColor)` — 12px blur + 6px blur 双层，4%/2% alpha。用于**悬浮卡片**（如 Bookshelf 书卡 hover）。
@@ -288,6 +290,8 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 - 阅读正文可选 serif：`NyanTypography.readingSerifFontFamily` = `Source Han Serif SC`
 - 字号阶梯（**仅允许**以下 5 档）：`display 32` / `title 24` / `section 20` / `body 16` / `meta 13`
 - **字重仅允许**：`FontWeight.w400`（Regular，正文）/ `FontWeight.w500`（Medium，按钮/标签）/ `FontWeight.w600`（SemiBold，标题/数值）。**MUST NOT** 使用 `w100–w300` 或 `w700–w900`。
+
+> **例外 — 交互控件标签字号（Claude Design 系统对齐，2026-05）**：`NyanPrimaryButton` 的 label 文字按 size 变体使用 **14 / 16 / 17pt**（compact / standard / comfortable，来源：`components.jsx` 设计 spec）。这三个值是控件标签**专属**——**MUST NOT** 出现在正文、标题或任何其它表面。常量定义见 `NyanTypography.buttonCompact` / `NyanTypography.buttonComfortable`（body 16 复用 `NyanTypography.body`）。
 
 > ⚠️ **已知 tech-debt（见 §6 Phase 0）**：当前 `pubspec.yaml` 未注册 `Noto Sans SC` / `Source Han Serif SC` 为本地资源，`google_fonts` 包虽已引入但全仓无 import。`NyanTypography` 里的 `fontFamily: 'Noto Sans SC'` 实际在运行时**回落到平台 CJK 默认字体**（Android Noto Sans CJK / iOS 苹方）。serif 阅读模式在当前版本**不生效**。AI 在生成涉及 serif 阅读的改动前，MUST 先提醒用户这个限制。修复方案：在 Phase 0 中通过 `google_fonts.GoogleFonts.notoSansSc()` 动态加载，或把字体文件放到 `assets/fonts/` 并在 `pubspec.yaml` 的 `flutter.fonts` 段注册。
 
