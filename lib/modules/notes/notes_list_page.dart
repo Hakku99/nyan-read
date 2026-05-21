@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../core/models/highlight.dart';
@@ -257,7 +258,7 @@ class _NotesListPageState extends State<NotesListPage> {
                   height: NyanSpacing.minTapTarget,
                   child: IconButton(
                     onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(Icons.arrow_back_rounded),
+                    icon: const Icon(NyanIcons.back),
                     tooltip:
                         MaterialLocalizations.of(context).backButtonTooltip,
                     padding: EdgeInsets.zero,
@@ -315,7 +316,7 @@ class _NotesListPageState extends State<NotesListPage> {
           ),
           child: Center(
             child: Icon(
-              Icons.edit_note_rounded,
+              NyanIcons.editNote,
               size: NyanSpacing.space32 + NyanSpacing.space8,
               color: nyanTheme.primary.withValues(alpha: isDark ? 0.82 : 0.78),
             ),
@@ -440,7 +441,7 @@ class _NotesListPageState extends State<NotesListPage> {
               borderRadius: BorderRadius.circular(NyanRadius.input),
             ),
             child: Icon(
-              Icons.edit_note_rounded,
+              NyanIcons.editNote,
               size: 15,
               color: nyanTheme.primary.withValues(alpha: isDark ? 0.88 : 0.84),
             ),
@@ -565,7 +566,7 @@ class _NotesListPageState extends State<NotesListPage> {
                   ),
                   const SizedBox(width: 3),
                   Icon(
-                    Icons.delete_outline_rounded,
+                    NyanIcons.delete,
                     size: 20,
                     color: nyanTheme.errorPrimaryTextColor.withValues(
                       alpha: isDark ? 0.92 : 0.72,

@@ -4,6 +4,7 @@ import '../../theme/nyan_colors.dart';
 import '../../theme/nyan_spacing.dart';
 import '../nyan_theme_context.dart';
 import 'nyan_overlay_style.dart';
+import '../nyan_icons.dart';
 
 enum NyanDialogOptionControl { checkbox, switchControl }
 
@@ -140,7 +141,7 @@ class NyanDialogOptionRow extends StatelessWidget {
             ),
             child: value
                 ? Icon(
-                    Icons.done_rounded,
+                    NyanIcons.check,
                     size: 16,
                     color: olive,
                   )

@@ -34,6 +34,7 @@ import 'widgets/chapter_list_widget.dart';
 import 'widgets/reader_overlay_tool_button.dart';
 import 'widgets/smooth_page_reader.dart';
 import 'widgets/reader_settings/reader_settings_common.dart';
+import '../../core/ui/nyan_icons.dart';
 export 'controllers/reader_controller.dart';
 
 part 'reader_page_overlay.dart';

@@ -4,6 +4,7 @@ import '../../theme/nyan_colors.dart';
 import '../../theme/nyan_spacing.dart';
 import '../nyan_theme_context.dart';
 import 'nyan_overlay_style.dart';
+import '../nyan_icons.dart';
 
 enum NyanConfirmTone { neutral, warning, danger }
 
@@ -79,9 +80,9 @@ class NyanConfirmDialog extends StatelessWidget {
         context.nyanTheme.textSecondary.withValues(alpha: 0.82);
     final resolvedIcon = icon ??
         switch (tone) {
-          NyanConfirmTone.neutral => Icons.info_outline_rounded,
-          NyanConfirmTone.warning => Icons.warning_amber_rounded,
-          NyanConfirmTone.danger => Icons.delete_outline_rounded,
+          NyanConfirmTone.neutral => NyanIcons.info,
+          NyanConfirmTone.warning => NyanIcons.warning,
+          NyanConfirmTone.danger => NyanIcons.delete,
         };
     final normalizedTitle = _normalizedTitle(title, tone);
     final cancelSurface = Color.alphaBlend(

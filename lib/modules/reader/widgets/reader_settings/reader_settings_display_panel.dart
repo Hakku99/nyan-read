@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../../../core/theme/nyan_colors.dart';
@@ -60,7 +61,7 @@ class ReaderSettingsDisplayPanel extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ReaderSettingsSliderTile(
-                        icon: Icons.wb_sunny_rounded,
+                        icon: NyanIcons.sun,
                         iconColor: nyanTheme.primaryDeep,
                         title: loc.readerBrightness,
                         subtitle: loc.readerBrightnessHint,
@@ -103,7 +104,7 @@ class ReaderSettingsDisplayPanel extends StatelessWidget {
                         Row(
                           children: [
                             Icon(
-                              Icons.phone_android_rounded,
+                              NyanIcons.phone,
                               size: 14,
                               color: theme.colorScheme.primary
                                   .withValues(alpha: 0.75),
@@ -131,7 +132,7 @@ class ReaderSettingsDisplayPanel extends StatelessWidget {
                 height: denseLayout ? NyanSpacing.space8 : NyanSpacing.space16,
               ),
               ReaderSettingsSliderTile(
-                icon: Icons.thermostat_rounded,
+                icon: NyanIcons.thermostat,
                 iconColor: NyanColors.highlightOrange,
                 title: loc.readerWarmth,
                 subtitle: loc.readerWarmthHint,

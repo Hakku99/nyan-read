@@ -4,6 +4,7 @@ import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
 import 'nyan_info_card.dart';
 import 'nyan_primary_button.dart';
+import '../nyan_icons.dart';
 
 class NyanSecureFieldConfig {
   const NyanSecureFieldConfig({
@@ -27,7 +28,7 @@ Future<bool?> showNyanSecureEntryDialog(
   required String confirmLabel,
   required String cancelLabel,
   required Future<String?> Function(List<String> values) onConfirm,
-  IconData icon = Icons.lock_outline_rounded,
+  IconData icon = NyanIcons.lock,
   bool barrierDismissible = true,
 }) {
   return showDialog<bool>(
@@ -55,7 +56,7 @@ class NyanSecureEntryDialog extends StatefulWidget {
     required this.cancelLabel,
     required this.onConfirm,
     this.description,
-    this.icon = Icons.lock_outline_rounded,
+    this.icon = NyanIcons.lock,
   });
 
   final String title;
@@ -328,7 +329,7 @@ class _SecureTextField extends StatelessWidget {
         suffixIcon: IconButton(
           onPressed: onToggleVisibility,
           icon: Icon(
-            obscureText ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+            obscureText ? NyanIcons.visibilityOff : NyanIcons.visibility,
             size: 20,
           ),
           color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.76),

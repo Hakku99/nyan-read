@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../../../core/services/mascot_manager.dart';
@@ -117,7 +118,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
             children: [
               TextButton.icon(
                 onPressed: widget.onBack,
-                icon: Icon(Icons.arrow_back, color: errorSecondary),
+                icon: Icon(NyanIcons.back, color: errorSecondary),
                 label: Text(loc.backToBookshelf,
                     style: TextStyle(color: errorSecondary)),
               ),
@@ -130,7 +131,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
                     foregroundColor: errorPrimary,
                     elevation: 0,
                   ),
-                  icon: const Icon(Icons.refresh),
+                  icon: const Icon(NyanIcons.refresh),
                   label: Text(loc.retry),
                 ),
               ],
@@ -139,7 +140,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
           const SizedBox(height: 16),
           TextButton.icon(
             onPressed: _reportError,
-            icon: Icon(Icons.bug_report, color: errorSecondary),
+            icon: Icon(NyanIcons.bug, color: errorSecondary),
             label: Text(loc.reportToDeveloper,
                 style: TextStyle(color: errorSecondary)),
           ),

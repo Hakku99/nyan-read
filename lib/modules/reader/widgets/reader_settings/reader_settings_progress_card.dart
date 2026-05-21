@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/nyan_radius.dart';
 import '../../../../core/theme/nyan_spacing.dart';
 import '../../../../core/ui/components/nyan_sheet_card.dart';
+import '../../../../core/ui/nyan_icons.dart';
 import '../reader_overlay_tool_button.dart';
 import 'reader_settings_common.dart';
 
@@ -114,19 +115,19 @@ class ReaderSettingsProgressCard extends StatelessWidget {
               if (showChapterNavigation) ...[
                 if (isQuickSurface)
                   _QuickArrowIconButton(
-                    icon: Icons.chevron_left_rounded,
+                    icon: NyanIcons.chevronLeft,
                     onTap: onPreviousChapter,
                     tooltip: 'Previous chapter',
                   )
                 else if (useOverlayStyleButtons)
                   ReaderOverlayToolButton(
-                    icon: Icons.chevron_left_rounded,
+                    icon: NyanIcons.chevronLeft,
                     onTap: onPreviousChapter,
                     tooltip: 'Previous chapter',
                   )
                 else
                   ReaderSettingsIconButton(
-                    icon: Icons.chevron_left_rounded,
+                    icon: NyanIcons.chevronLeft,
                     onTap: onPreviousChapter,
                     tooltip: 'Previous chapter',
                   ),
@@ -150,19 +151,19 @@ class ReaderSettingsProgressCard extends StatelessWidget {
                 SizedBox(width: quickNavGap),
                 if (isQuickSurface)
                   _QuickArrowIconButton(
-                    icon: Icons.chevron_right_rounded,
+                    icon: NyanIcons.chevronRight,
                     onTap: onNextChapter,
                     tooltip: 'Next chapter',
                   )
                 else if (useOverlayStyleButtons)
                   ReaderOverlayToolButton(
-                    icon: Icons.chevron_right_rounded,
+                    icon: NyanIcons.chevronRight,
                     onTap: onNextChapter,
                     tooltip: 'Next chapter',
                   )
                 else
                   ReaderSettingsIconButton(
-                    icon: Icons.chevron_right_rounded,
+                    icon: NyanIcons.chevronRight,
                     onTap: onNextChapter,
                     tooltip: 'Next chapter',
                   ),

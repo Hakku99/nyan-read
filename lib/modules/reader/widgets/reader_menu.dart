@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../../core/theme/nyan_radius.dart';
@@ -320,7 +321,7 @@ Future<void> _confirmResetAllFromHeader(
     confirmLabel: loc.readerResetAllConfirmAction,
     cancelLabel: loc.cancel,
     tone: NyanConfirmTone.warning,
-    icon: Icons.restart_alt_rounded,
+    icon: NyanIcons.restart,
   );
   if (confirmed == true && context.mounted) {
     await onResetAll();
@@ -424,13 +425,13 @@ class ReaderLayerModeToggle extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           ReaderLayerModeToggleCell(
-            icon: Icons.dashboard_customize_rounded,
+            icon: NyanIcons.dashboard,
             selected: quickSelected,
             tooltip: quickTooltip,
             onTap: onTapQuick,
           ),
           ReaderLayerModeToggleCell(
-            icon: Icons.tune_rounded,
+            icon: NyanIcons.tune,
             selected: !quickSelected,
             tooltip: fullTooltip,
             onTap: onTapFull,
@@ -523,7 +524,7 @@ class _ReaderSettingsResetSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.refresh_rounded,
+                  NyanIcons.refresh,
                   size: 18,
                   color: theme.colorScheme.primary.withValues(alpha: 0.88),
                 ),
@@ -600,7 +601,7 @@ class _ReaderSettingsActionsRow extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.restart_alt_rounded,
+                    NyanIcons.restart,
                     size: 18,
                     color: theme.colorScheme.primary.withValues(alpha: 0.88),
                   ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../../../core/theme/app_radius.dart';
@@ -244,7 +245,7 @@ class _ThemeCard extends StatelessWidget {
                         radius: 10,
                         backgroundColor: theme.colorScheme.primary,
                         child: Icon(
-                          Icons.check_rounded,
+                          NyanIcons.checkFilled,
                           size: 14,
                           color: theme.colorScheme.onPrimary,
                         ),

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../../core/models/book.dart';
 import '../../../core/theme/nyan_radius.dart';
@@ -179,7 +180,7 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                                     child: Tooltip(
                                       message: 'Source file missing',
                                       child: Icon(
-                                        Icons.warning_amber,
+                                        NyanIcons.warning,
                                         size: 14,
                                         color: Colors.amber[700],
                                       ),
@@ -424,7 +425,7 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                 child: Tooltip(
                   message: 'Source file missing',
                   child: Icon(
-                    Icons.warning_amber,
+                    NyanIcons.warning,
                     size: 18,
                     color: Colors.amber[600],
                   ),
@@ -446,7 +447,7 @@ class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
                   child: Padding(
                     padding: const EdgeInsets.all(NyanSpacing.space4),
                     child: widget.isSelected
-                        ? const Icon(Icons.check, size: 16, color: Colors.white)
+                        ? const Icon(NyanIcons.check, size: 16, color: Colors.white)
                         : const SizedBox(width: 16, height: 16),
                   ),
                 ),

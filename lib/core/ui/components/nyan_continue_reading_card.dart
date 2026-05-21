@@ -5,6 +5,7 @@ import '../../theme/nyan_shelf_ui.dart';
 import '../../theme/nyan_spacing.dart';
 import 'nyan_info_card.dart';
 import 'nyan_primary_button.dart';
+import '../nyan_icons.dart';
 
 class NyanContinueReadingCard extends StatelessWidget {
   final Book book;
@@ -275,7 +276,7 @@ class NyanContinueReadingCard extends StatelessWidget {
       onPressed: onToggleCollapse,
       tooltip: expanded ? m.expandedIconTapHint : m.collapsedIconTapHint,
       icon: Icon(
-        expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+        expanded ? NyanIcons.chevronUp : NyanIcons.chevronDown,
         size: NyanSpacing.space20,
       ),
       constraints: BoxConstraints(

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/modules/reader/widgets/reader_menu.dart';
 import 'package:nyan_read/core/ui/components/nyan_confirm_dialog.dart';
 import 'package:nyan_read/core/ui/components/nyan_overlay_style.dart';
@@ -384,10 +385,10 @@ void main() {
     expect(find.text(loc.readingSettings), findsWidgets);
     expect(find.text('Reset Display'), findsOneWidget);
     expect(find.text(loc.readerResetAll), findsOneWidget);
-    expect(find.byIcon(Icons.restart_alt_rounded), findsOneWidget);
+    expect(find.byIcon(NyanIcons.restart), findsOneWidget);
     expect(find.text(loc.readerResetCurrentTabHint), findsNothing);
-    expect(find.byIcon(Icons.wb_sunny_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.brightness_auto_rounded), findsOneWidget);
+    expect(find.byIcon(NyanIcons.sun), findsOneWidget);
+    expect(find.byIcon(NyanIcons.brightnessAuto), findsOneWidget);
     expect(find.byKey(const Key('reader-menu-display-panel')), findsOneWidget);
     expect(find.byKey(const Key('reader-menu-tool-dock')), findsNothing);
     expect(find.text(loc.fontSize), findsNothing);
@@ -721,10 +722,10 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.brightness_auto_rounded), findsOneWidget);
+    expect(find.byIcon(NyanIcons.brightnessAuto), findsOneWidget);
     await tester.tap(find.text('Auto'));
     await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.brightness_auto_outlined), findsOneWidget);
+    expect(find.byIcon(NyanIcons.brightnessAuto), findsOneWidget);
   });
 
   testWidgets('ReaderMenu keeps reset visible on common phone heights',

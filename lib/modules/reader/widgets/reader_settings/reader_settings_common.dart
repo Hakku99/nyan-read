@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/theme/nyan_radius.dart';
+import '../../../../core/ui/nyan_icons.dart';
 import '../../../../core/theme/nyan_spacing.dart';
 import '../../../../core/ui/components/nyan_overlay_style.dart';
 
@@ -324,8 +325,8 @@ class ReaderAutoBrightnessChip extends StatelessWidget {
               children: [
                 Icon(
                   isActive
-                      ? Icons.brightness_auto_rounded
-                      : Icons.brightness_auto_outlined,
+                      ? NyanIcons.brightnessAuto
+                      : NyanIcons.brightnessAuto,
                   size: 18,
                   color: isActive
                       ? theme.colorScheme.primary
@@ -491,7 +492,7 @@ class ReaderSettingsValueCell extends StatelessWidget {
                 onPressed: onRemove,
                 tooltip: decreaseTooltip,
                 icon: Icon(
-                  Icons.remove_rounded,
+                  NyanIcons.remove,
                   size: 20,
                   color: theme.colorScheme.primary,
                 ),
@@ -518,7 +519,7 @@ class ReaderSettingsValueCell extends StatelessWidget {
                 onPressed: onAdd,
                 tooltip: increaseTooltip,
                 icon: Icon(
-                  Icons.add_rounded,
+                  NyanIcons.add,
                   size: 20,
                   color: theme.colorScheme.primary,
                 ),
@@ -539,7 +540,7 @@ class ReaderSettingsValueCell extends StatelessWidget {
             children: [
               Expanded(
                 child: ReaderSettingsIconButton(
-                  icon: Icons.remove_rounded,
+                  icon: NyanIcons.remove,
                   onTap: onRemove,
                   tooltip: decreaseTooltip,
                 ),
@@ -547,7 +548,7 @@ class ReaderSettingsValueCell extends StatelessWidget {
               const SizedBox(width: NyanSpacing.space8),
               Expanded(
                 child: ReaderSettingsIconButton(
-                  icon: Icons.add_rounded,
+                  icon: NyanIcons.add,
                   onTap: onAdd,
                   tooltip: increaseTooltip,
                 ),

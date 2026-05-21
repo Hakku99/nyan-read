@@ -6,6 +6,7 @@ import '../../theme/nyan_shelf_ui.dart';
 import '../../theme/nyan_shadows.dart';
 import '../../theme/nyan_spacing.dart';
 import '../nyan_theme_context.dart';
+import '../nyan_icons.dart';
 
 class NyanBookGridCard extends StatelessWidget {
   final Book book;
@@ -67,7 +68,7 @@ class NyanBookGridCard extends StatelessWidget {
                               BorderRadius.circular(NyanRadius.small),
                         ),
                         child: Icon(
-                          Icons.menu_book_rounded,
+                          NyanIcons.book,
                           size: 26,
                           color: theme.colorScheme.primary,
                         ),
@@ -125,7 +126,7 @@ class NyanBookGridCard extends StatelessWidget {
                   padding: const EdgeInsets.all(NyanSpacing.space4),
                   child: isSelected
                       ? Icon(
-                          Icons.check,
+                          NyanIcons.check,
                           size: NyanSpacing.space16,
                           color: theme.colorScheme.onPrimary,
                         )

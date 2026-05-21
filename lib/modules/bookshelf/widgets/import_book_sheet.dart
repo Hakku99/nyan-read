@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../../core/theme/nyan_radius.dart';
@@ -40,7 +41,7 @@ class ImportBookSheet extends StatelessWidget {
               children: [
                 NyanListRow(
                   leading: const _SheetLeadingIcon(
-                    icon: Icons.insert_drive_file_rounded,
+                    icon: NyanIcons.file,
                   ),
                   title: loc.importFiles,
                   subtitle: loc.importFilesSubtitle,
@@ -49,7 +50,7 @@ class ImportBookSheet extends StatelessWidget {
                     vertical: NyanSpacing.space12,
                   ),
                   trailing: Icon(
-                    Icons.chevron_right_rounded,
+                    NyanIcons.chevronRight,
                     size: NyanSpacing.space20,
                     color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.72),
                   ),
@@ -72,7 +73,7 @@ class ImportBookSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const _SheetLeadingIcon(
-                        icon: Icons.menu_book_rounded,
+                        icon: NyanIcons.book,
                       ),
                       const SizedBox(width: NyanSpacing.space12),
                       Expanded(
@@ -140,7 +141,7 @@ class _ShelfBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.collections_bookmark_rounded,
+            NyanIcons.bookCollection,
             size: NyanSpacing.space16,
             color: theme.colorScheme.primary,
           ),

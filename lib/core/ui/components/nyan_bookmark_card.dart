@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
 import '../nyan_theme_context.dart';
+import '../nyan_icons.dart';
 
 class NyanBookmarkCard extends StatelessWidget {
   static const double _leadingSlotWidth = 12;
@@ -161,7 +162,7 @@ class _BookmarkMetaLine extends StatelessWidget {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Icon(
-              Icons.bookmark_rounded,
+              NyanIcons.bookmark,
               size: 12,
               color: nyanTheme.primary.withValues(alpha: isDark ? 0.76 : 0.7),
             ),

@@ -6,6 +6,7 @@ import '../../theme/nyan_spacing.dart';
 import '../../theme/nyan_typography.dart';
 import 'nyan_info_card.dart';
 import 'nyan_overlay_style.dart';
+import '../nyan_icons.dart';
 
 enum NyanInlineAdDensity { regular, compact }
 
@@ -53,7 +54,7 @@ class NyanInlineAdCard extends StatelessWidget {
             ),
             child: leading ??
                 Icon(
-                  Icons.auto_stories_outlined,
+                  NyanIcons.book,
                   size: isCompact ? NyanSpacing.space16 : NyanSpacing.space20,
                   color: nyanTheme.primary,
                 ),
@@ -101,7 +102,7 @@ class NyanInlineAdCard extends StatelessWidget {
           if (onTap != null) ...[
             const SizedBox(width: NyanSpacing.space8),
             Icon(
-              Icons.chevron_right_rounded,
+              NyanIcons.chevronRight,
               size: NyanSpacing.space20,
               color: nyanTheme.textSecondary,
             ),

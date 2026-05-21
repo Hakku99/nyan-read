@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 
 /// Minimalist 4-digit PIN input widget
 /// Features a dot matrix display and numeric keypad
@@ -151,7 +152,7 @@ class _PinInputWidgetState extends State<PinInputWidget>
           return const SizedBox(width: 80, height: 80);
         } else if (number == -1) {
           return _buildKeypadButton(
-            child: const Icon(Icons.backspace_outlined, color: Colors.white),
+            child: const Icon(NyanIcons.backspace, color: Colors.white),
             onPressed: _onDeletePressed,
           );
         } else {

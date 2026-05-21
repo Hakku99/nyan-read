@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../core/services/feature_manager.dart';
@@ -398,7 +399,7 @@ class _AdminHintRow extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            Icons.info_outline_rounded,
+            NyanIcons.info,
             size: 18,
             color: nyan.primaryDeep,
           ),

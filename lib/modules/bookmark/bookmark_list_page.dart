@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../core/services/database_service.dart';
@@ -154,7 +155,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
                 height: NyanSpacing.minTapTarget,
                 child: IconButton(
                   onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.arrow_back_rounded),
+                  icon: const Icon(NyanIcons.back),
                   tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                   padding: EdgeInsets.zero,
                 ),
@@ -209,7 +210,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
           ),
           child: Center(
             child: Icon(
-              Icons.bookmark_border_rounded,
+              NyanIcons.bookmark,
               size: NyanSpacing.space32 + NyanSpacing.space8,
               color: nyanTheme.primary.withValues(alpha: isDark ? 0.82 : 0.78),
             ),
@@ -327,7 +328,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
               borderRadius: BorderRadius.circular(NyanRadius.input),
             ),
             child: Icon(
-              Icons.bookmark_added_rounded,
+              NyanIcons.bookmarks,
               size: 16,
               color: nyanTheme.primary.withValues(alpha: 0.84),
             ),
@@ -444,7 +445,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
                   ),
                   const SizedBox(width: NyanSpacing.space4),
                   Icon(
-                    Icons.delete_outline_rounded,
+                    NyanIcons.delete,
                     size: 22,
                     color: nyanTheme.errorPrimaryTextColor.withValues(
                       alpha: isDark ? 0.84 : 0.7,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 
 enum MascotType {
   typeA, // Pink, Cute, Natural
@@ -57,20 +58,20 @@ class _MascotWidget extends StatelessWidget {
 
     if (color != null) {
       effectiveColor = color!;
-      icon = (type == MascotType.typeA) ? Icons.pets : Icons.nightlight_round;
+      icon = (type == MascotType.typeA) ? NyanIcons.pets : NyanIcons.nightlight;
     } else {
       // Use theme primary color instead of hardcoded colors
       effectiveColor = theme.colorScheme.primary;
-      icon = (type == MascotType.typeA) ? Icons.pets : Icons.nightlight_round;
+      icon = (type == MascotType.typeA) ? NyanIcons.pets : NyanIcons.nightlight;
     }
 
     // Scene specific tweaks
     if (scene == MascotScene.emptyShelf) {
-      icon = Icons.inbox;
+      icon = NyanIcons.inbox;
     } else if (scene == MascotScene.readingReminder) {
-      icon = Icons.access_alarm;
+      icon = NyanIcons.alarm;
     } else if (scene == MascotScene.error) {
-      icon = Icons.error_outline;
+      icon = NyanIcons.error;
     }
 
     return Container(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
 import '../nyan_theme_context.dart';
+import '../nyan_icons.dart';
 
 class NyanHighlightCard extends StatelessWidget {
   final String label;
@@ -154,7 +155,7 @@ class NyanHighlightCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.edit_note_rounded,
+                      NyanIcons.editNote,
                       size: 14,
                       color: nyanTheme.textSecondary.withValues(
                         alpha: isDark ? 0.78 : 0.58,

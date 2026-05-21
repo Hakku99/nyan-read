@@ -6,6 +6,7 @@ import 'package:nyan_read/core/theme/nyan_radius.dart';
 import 'package:nyan_read/core/theme/nyan_spacing.dart';
 import 'package:nyan_read/core/theme/theme_presets.dart';
 import 'package:nyan_read/core/ui/components/nyan_overlay_style.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/core/utils/chapter_heading_display.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -221,7 +222,7 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
               child: FloatingActionButton.extended(
                 heroTag: 'toc-jump-current',
                 onPressed: () => _jumpToCurrentChapter(animated: true),
-                icon: const Icon(Icons.my_location_rounded, size: 18),
+                icon: const Icon(NyanIcons.myLocation, size: 18),
                 label: Text(
                   loc.jumpToCurrentChapter,
                   maxLines: 1,
@@ -416,7 +417,7 @@ class _BookHeaderCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(NyanRadius.input),
               ),
               alignment: Alignment.center,
-              child: Icon(Icons.menu_book_rounded,
+              child: Icon(NyanIcons.book,
                   color: nyanTheme.primary, size: 19),
             ),
             const SizedBox(width: NyanSpacing.space12),
@@ -464,7 +465,7 @@ class _EmptyChapterState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.menu_book_outlined,
+              NyanIcons.book,
               size: 42,
               color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
             ),
@@ -566,7 +567,7 @@ class ChapterListItem extends StatelessWidget {
                 ),
                 if (isCurrent)
                   Icon(
-                    Icons.play_arrow_rounded,
+                    NyanIcons.play,
                     color: nyanTheme.primary,
                     size: 21,
                   ),

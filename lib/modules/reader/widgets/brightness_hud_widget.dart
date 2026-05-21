@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import '../../../core/ui/components/nyan_overlay_style.dart';
 import '../../../l10n/app_localizations.dart';
 import '../controllers/brightness_controller.dart';
@@ -263,7 +264,7 @@ class _BrightnessTrack extends StatelessWidget {
     return Row(
       children: [
         Icon(
-          Icons.dark_mode_outlined,
+          NyanIcons.darkMode,
           size: 16,
           color: cs.onSurface.withValues(alpha: 0.58),
         ),
@@ -332,7 +333,7 @@ class _BrightnessTrack extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Icon(
-          Icons.light_mode_rounded,
+          NyanIcons.lightMode,
           size: 16,
           color: cs.onSurface.withValues(alpha: 0.58),
         ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/nyan_spacing.dart';
 import '../ui/components/components.dart';
 import '../ui/nyan_app_keys.dart';
+import '../ui/nyan_icons.dart';
 
 enum NyanSnackTone { info, success, error }
 
@@ -38,17 +39,17 @@ class SnackBarUtils {
 
     switch (tone) {
       case NyanSnackTone.success:
-        icon = Icons.done_rounded;
+        icon = NyanIcons.check;
         noticeTone = NyanFloatingNoticeTone.success;
         duration = const Duration(milliseconds: 1900);
         break;
       case NyanSnackTone.error:
-        icon = Icons.error_rounded;
+        icon = NyanIcons.error;
         noticeTone = NyanFloatingNoticeTone.error;
         duration = const Duration(milliseconds: 2600);
         break;
       case NyanSnackTone.info:
-        icon = Icons.info_rounded;
+        icon = NyanIcons.info;
         noticeTone = NyanFloatingNoticeTone.info;
         duration = const Duration(milliseconds: 1900);
         break;

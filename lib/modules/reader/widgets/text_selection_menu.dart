@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import '../../../core/models/highlight.dart';
 
 /// Popup menu for text selection actions
@@ -37,7 +38,7 @@ class TextSelectionMenu extends StatelessWidget {
           children: [
             // Copy button
             _ActionButton(
-              icon: Icons.copy,
+              icon: NyanIcons.copy,
               label: 'Copy',
               onTap: () {
                 Clipboard.setData(ClipboardData(text: selectedText));
@@ -48,7 +49,7 @@ class TextSelectionMenu extends StatelessWidget {
 
             // Search button
             _ActionButton(
-              icon: Icons.search,
+              icon: NyanIcons.search,
               label: 'Search',
               onTap: onSearch,
             ),

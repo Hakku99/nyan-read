@@ -18,6 +18,7 @@ import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/theme_presets.dart';
 import '../../core/ui/components/components.dart';
 import '../../core/utils/snackbar_utils.dart';
+import '../../core/ui/nyan_icons.dart';
 
 const double _kSettingsCardRadius = NyanRadius.input;
 const double _kSettingsHorizontalPadding = NyanSpacing.space16;
@@ -84,7 +85,7 @@ Future<void> _showExportActionsSheet(
         child: NyanSheetCard(
           children: [
             NyanActionSheetRow(
-              icon: Icons.download_rounded,
+              icon: NyanIcons.download,
               title: loc.saveToDevice,
               subtitle: loc.saveToDeviceSubtitle,
               onTap: () async {
@@ -101,7 +102,7 @@ Future<void> _showExportActionsSheet(
             ),
             const NyanSheetDivider(),
             NyanActionSheetRow(
-              icon: Icons.share_rounded,
+              icon: NyanIcons.share,
               title: loc.shareVia,
               subtitle: loc.shareViaSubtitle,
               onTap: () async {
@@ -373,14 +374,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               _SettingsCard(
                 children: [
                   _ActionRow(
-                    icon: Icons.save_alt_rounded,
+                    icon: NyanIcons.download,
                     title: loc.exportData,
                     subtitle: loc.exportDataSubtitle,
                     onTap: () => _handleExportData(context),
                   ),
                   const _SettingsDivider(),
                   _ActionRow(
-                    icon: Icons.upload_file_rounded,
+                    icon: NyanIcons.upload,
                     title: loc.importData,
                     subtitle: loc.importDataSubtitle,
                     onTap: () => _handleImportData(context),
@@ -420,7 +421,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               _SettingsCard(
                 children: [
                   _ActionRow(
-                    icon: Icons.admin_panel_settings_rounded,
+                    icon: NyanIcons.adminPanel,
                     iconColor: Theme.of(context).textTheme.bodySmall?.color,
                     title: loc.adminPanel,
                     onTap: () => context.push('/admin'),
@@ -442,7 +443,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   shadowAlpha: theme.brightness == Brightness.dark ? 0 : 0.024,
                   children: [
                     _ActionRow(
-                      icon: Icons.auto_awesome_rounded,
+                      icon: NyanIcons.sparkle,
                       iconColor: Theme.of(context).colorScheme.primary,
                       iconBackgroundAlpha:
                           theme.brightness == Brightness.dark ? 0.2 : 0.14,
@@ -620,7 +621,7 @@ class _SelectionRow extends StatelessWidget {
                   ),
                   const SizedBox(width: NyanSpacing.space4),
                   Icon(
-                    Icons.keyboard_arrow_down_rounded,
+                    NyanIcons.chevronDown,
                     size: 18,
                     color: theme.textTheme.bodySmall?.color?.withValues(
                       alpha: chevronColorAlpha,
@@ -819,7 +820,7 @@ class _ActionRow extends StatelessWidget {
             ),
             const SizedBox(width: NyanSpacing.space12),
             Icon(
-              Icons.chevron_right_rounded,
+              NyanIcons.chevronRight,
               size: 20,
               color: chevronColor ??
                   theme.textTheme.bodySmall?.color?.withValues(alpha: 0.56),

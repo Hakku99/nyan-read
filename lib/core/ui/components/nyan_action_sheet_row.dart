@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
 import 'nyan_sheet_appearance.dart';
+import '../nyan_icons.dart';
 
 class NyanActionSheetRow extends StatelessWidget {
   const NyanActionSheetRow({
@@ -68,7 +69,7 @@ class NyanActionSheetRow extends StatelessWidget {
             if (showChevron) ...[
               const SizedBox(width: NyanSpacing.space12),
               Icon(
-                Icons.chevron_right_rounded,
+                NyanIcons.chevronRight,
                 size: 18,
                 color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.44),
               ),

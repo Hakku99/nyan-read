@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import '../../../core/services/pin_service.dart';
 import 'widgets/pin_input_widget.dart';
 
@@ -155,7 +156,7 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
                 top: 16,
                 right: 16,
                 child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
+                  icon: const Icon(NyanIcons.close, color: Colors.white),
                   onPressed: () {
                     widget.onCancel?.call();
                     Navigator.of(context).pop(false);

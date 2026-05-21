@@ -18,6 +18,7 @@ import '../../core/ui/components/nyan_primary_button.dart';
 import '../../core/ui/components/nyan_recessed_icon_button.dart';
 import '../../core/ui/components/nyan_section_header.dart';
 import '../../core/ui/nyan_theme_context.dart';
+import '../../core/ui/nyan_icons.dart';
 import '../../core/utils/book_source_access.dart';
 import '../../core/utils/snackbar_utils.dart';
 import 'epub_cover_extractor.dart';
@@ -213,7 +214,7 @@ class BookDetailsPage extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: NyanRecessedIconButton(
-                  icon: Icons.arrow_back_rounded,
+                  icon: NyanIcons.back,
                   tooltip:
                       MaterialLocalizations.of(context).backButtonTooltip,
                   onPressed: () => context.pop(),
@@ -356,7 +357,7 @@ class BookDetailsPage extends StatelessWidget {
                               ? Row(
                                   children: [
                                     Icon(
-                                      Icons.bookmark_outline_rounded,
+                                      NyanIcons.bookmark,
                                       size: NyanSpacing.space16,
                                       color: nyanTheme.textMuted,
                                     ),
@@ -443,7 +444,7 @@ class BookDetailsPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             _IconBubble(
-                              icon: Icons.folder_open_rounded,
+                              icon: NyanIcons.folderOpen,
                               tint: nyanTheme.primary,
                             ),
                             const SizedBox(width: NyanSpacing.space12),
@@ -493,7 +494,7 @@ class BookDetailsPage extends StatelessWidget {
                                   );
                                 },
                                 icon: Icon(
-                                  Icons.copy_rounded,
+                                  NyanIcons.copy,
                                   size: NyanSpacing.space20,
                                   color: nyanTheme.textSecondary,
                                 ),
@@ -817,7 +818,7 @@ class _UnavailableNotice extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(
-              Icons.info_outline_rounded,
+              NyanIcons.info,
               size: NyanSpacing.space16,
               color: nyanTheme.errorPrimaryTextColor,
             ),

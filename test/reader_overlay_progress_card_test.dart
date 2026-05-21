@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/modules/reader/widgets/reader_settings/reader_settings_progress_card.dart';
 
 void main() {
@@ -23,8 +24,8 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Icons.chevron_left_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+    expect(find.byIcon(NyanIcons.chevronLeft), findsOneWidget);
+    expect(find.byIcon(NyanIcons.chevronRight), findsOneWidget);
     expect(find.byType(Slider), findsOneWidget);
   });
 

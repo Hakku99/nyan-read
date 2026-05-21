@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/nyan_spacing.dart';
 import 'nyan_sheet_appearance.dart';
+import '../nyan_icons.dart';
 
 class NyanSelectionSheetRow<T> extends StatelessWidget {
   const NyanSelectionSheetRow({
@@ -82,7 +83,7 @@ class NyanSelectionSheetRow<T> extends StatelessWidget {
                   curve: Curves.easeOutCubic,
                   opacity: isSelected ? 1 : 0,
                   child: Icon(
-                    Icons.check_rounded,
+                    NyanIcons.check,
                     size: 20,
                     color: theme.colorScheme.primary.withValues(
                       alpha: isDark ? 0.96 : 0.88,

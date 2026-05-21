@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../../core/models/highlight.dart';
@@ -405,7 +406,7 @@ class _SelectedColorBadge extends StatelessWidget {
         width: 24,
         height: 24,
         child: Icon(
-          Icons.edit_note_rounded,
+          NyanIcons.editNote,
           size: 12,
           color: iconColor,
         ),
@@ -559,7 +560,7 @@ class _HighlightColorSwatch extends StatelessWidget {
                   ),
                   child: isSelected
                       ? Icon(
-                          Icons.check_rounded,
+                          NyanIcons.checkFilled,
                           size: 10,
                           color: creamSurface.withValues(alpha: 0.98),
                         )
@@ -632,7 +633,7 @@ class _HighlightPreviewCard extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(top: 1),
               child: Icon(
-                Icons.format_quote_rounded,
+                NyanIcons.quote,
                 size: 15,
                 color: quoteColor.withValues(alpha: 0.88),
               ),
@@ -823,7 +824,7 @@ class _DeleteIconButton extends StatelessWidget {
                 ),
                 child: Center(
                   child: Icon(
-                    Icons.delete_outline_rounded,
+                    NyanIcons.delete,
                     size: 13,
                     color: color.withValues(alpha: 0.86),
                   ),

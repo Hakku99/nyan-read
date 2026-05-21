@@ -31,28 +31,28 @@ class _ReaderQuickToolRow extends StatelessWidget {
     final actions = <Widget>[
       if (showChapterNavigation)
         ReaderOverlayToolButton(
-          icon: Icons.toc_rounded,
+          icon: NyanIcons.tableOfContents,
           onTap: onOpenChapters,
           transparentBackground: true,
         ),
       ReaderOverlayToolButton(
-        icon: Icons.bookmark_add_outlined,
+        icon: NyanIcons.bookmark,
         onTap: onAddBookmark,
         transparentBackground: true,
       ),
       ReaderOverlayToolButton(
-        icon: Icons.bookmarks_rounded,
+        icon: NyanIcons.bookmarks,
         onTap: onOpenBookmarks,
         transparentBackground: true,
       ),
       if (showNotes)
         ReaderOverlayToolButton(
-          icon: Icons.edit_note_rounded,
+          icon: NyanIcons.editNote,
           onTap: onOpenNotes,
           transparentBackground: true,
         ),
       ReaderOverlayToolButton(
-        icon: Icons.brightness_6_outlined,
+        icon: NyanIcons.brightness,
         onTap: onToggleEdgeBrightnessGesture,
         isAccent: edgeBrightnessGestureEnabled,
         transparentBackground: true,
@@ -61,7 +61,7 @@ class _ReaderQuickToolRow extends StatelessWidget {
             : loc.readerEdgeBrightnessOff,
       ),
       ReaderOverlayToolButton(
-        icon: Icons.tune_rounded,
+        icon: NyanIcons.tune,
         onTap: onOpenSettings,
         isAccent: true,
         transparentBackground: true,
@@ -115,7 +115,7 @@ class _QuickEdgeBrightnessRemark extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            Icons.brightness_6_outlined,
+            NyanIcons.brightness,
             size: 14,
             color: theme.colorScheme.primary.withValues(alpha: 0.56),
           ),

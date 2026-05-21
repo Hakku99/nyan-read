@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
+import '../nyan_icons.dart';
 
 /// Open-book glyph used on shelf list/grid tiles — soft primary wash + matcha icon.
 ///
@@ -30,7 +31,7 @@ class NyanBookLogoMark extends StatelessWidget {
         borderRadius: BorderRadius.circular(NyanRadius.small),
       ),
       child: Icon(
-        Icons.menu_book_rounded,
+        NyanIcons.book,
         size: iconSize,
         color: primary,
       ),

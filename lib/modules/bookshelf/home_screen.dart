@@ -23,6 +23,7 @@ import '../../modules/privacy/privacy_lock_service.dart';
 import 'package:go_router/go_router.dart';
 import '../settings/settings_page.dart';
 import '../ads/ads_ui.dart';
+import '../../core/ui/nyan_icons.dart';
 import '../../core/utils/book_import_fingerprint.dart';
 import '../../core/utils/book_source_platform.dart';
 import '../../core/utils/snackbar_utils.dart';
@@ -101,7 +102,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       confirmLabel: loc.remove,
       cancelLabel: loc.cancel,
       tone: NyanConfirmTone.danger,
-      icon: Icons.delete_outline_rounded,
+      icon: NyanIcons.delete,
       extraContent: StatefulBuilder(
         builder: (dialogContext, setDialogState) {
           return NyanDialogOptionRow(
@@ -537,7 +538,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             leading: Padding(
               padding: const EdgeInsets.only(left: NyanSpacing.space8),
               child: buildToolbarButton(
-                icon: Icons.close_rounded,
+                icon: NyanIcons.close,
                 tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                 onPressed: () => vm.toggleSelectionMode(active: false),
               ),
@@ -555,7 +556,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             actions: [
               if (selectedCount == 1)
                 buildToolbarButton(
-                  icon: Icons.info_outline_rounded,
+                  icon: NyanIcons.info,
                   tooltip: AppLocalizations.of(context)!.viewDetails,
                   onPressed: () async {
                     final bookId = vm.selectedBookIds.first;
@@ -579,8 +580,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               if (selectedCount > 0 && featureManager.isPro)
                 buildToolbarButton(
                   icon: showPrivacyTab
-                      ? Icons.lock_open_rounded
-                      : Icons.lock_rounded,
+                      ? NyanIcons.lockOpen
+                      : NyanIcons.lock,
                   tooltip: showPrivacyTab
                       ? AppLocalizations.of(context)!.moveToPublic
                       : AppLocalizations.of(context)!.moveToPrivate,
@@ -588,7 +589,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                       _moveSelectedBooks(this.context, !showPrivacyTab),
                 ),
               buildToolbarButton(
-                icon: Icons.delete_outline_rounded,
+                icon: NyanIcons.delete,
                 tooltip: AppLocalizations.of(context)!.delete,
                 onPressed: () => _deleteSelectedBooks(this.context),
               ),
@@ -603,7 +604,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                       currentTotal > 0 && selectedCount >= currentTotal;
 
                   return buildToolbarButton(
-                    icon: allSelected ? Icons.deselect : Icons.select_all,
+                    icon: allSelected ? NyanIcons.deselect : NyanIcons.selectAll,
                     tooltip: allSelected ? loc.deselectAll : loc.selectAll,
                     onPressed: () => vm.selectAll(isPrivateTab),
                   );
@@ -690,7 +691,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                 actions: [
                   NyanRecessedIconButton(
                     tooltip: loc.settingsTitle,
-                    icon: Icons.settings_outlined,
+                    icon: NyanIcons.settings,
                     onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const SettingsPage()),
@@ -739,7 +740,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                   builder: (context) {
                     final isGridView = _prefs.viewMode == ViewMode.grid;
                     return NyanRecessedIconButton(
-                      icon: isGridView ? Icons.view_list : Icons.grid_view,
+                      icon: isGridView ? NyanIcons.viewList : NyanIcons.viewGrid,
                       tooltip: isGridView ? loc.listView : loc.gridView,
                       onPressed: () async {
                         await _prefs.setViewMode(
@@ -751,15 +752,15 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                   },
                 ),
                 NyanRecessedIconButton(
-                  icon: Icons.sort,
+                  icon: NyanIcons.sort,
                   tooltip: loc.sortBy,
                   onPressed: () => _showSortMenu(context),
                 ),
                 if (featureManager.isPro)
                   NyanRecessedIconButton(
                     icon: featureManager.isPrivateShelfUnlocked
-                        ? Icons.lock_open
-                        : Icons.lock,
+                        ? NyanIcons.lockOpen
+                        : NyanIcons.lock,
                     tooltip: featureManager.isPrivateShelfUnlocked
                         ? loc.lockPrivacyShelf
                         : loc.unlockPrivacyShelf,
@@ -843,7 +844,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(NyanRadius.card),
                         ),
-                        child: const Icon(Icons.add),
+                        child: const Icon(NyanIcons.add),
                       ),
                     );
                   },
