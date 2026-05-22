@@ -298,7 +298,9 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 ### 4.3 组件样式底线（MUST）
 
 - **Bottom Sheet**：顶部圆角 `NyanRadius.sheet`（28pt），顶部 12pt 留白内含 40×4pt 抓手（`textMuted` 色），**无外阴影**（靠 `BrightnessOverlayWidget` 的软暗化自然区分层级）。
-- **Tab / Segmented Control**：外层容器 `surfaceMuted` 填充 + `NyanRadius.small`（14pt）圆角，选中胶囊 = `primaryDeep` 实心 + 白米色文字；**禁止**下划线、滑动指示器位移动画超过 150ms。
+- **Tab / Segmented Control**：外层容器 `NyanRadius.card`（20pt）圆角 + 4pt 内边距，内部滑动指示器 `NyanRadius.input`（16pt）——同心圆角嵌套（concentric corners）；选中胶囊 = `primary` 实心（emphasis 样式）或 `primary @ 18%`（subtle 样式）+ 相应文字色；**禁止**下划线；滑动指示器动画固定 **240ms ease-out-cubic**（来源：Claude Design `segmented-tab.html`）。
+
+  > **修订说明（2026-05 Claude Design 对齐）**：原文误记外层圆角为 `NyanRadius.small`（14pt）、动画上限为 150ms；实际代码与设计规范均为 20pt（`NyanRadius.card`）外层 / 16pt（`NyanRadius.input`）内层 / 240ms 动画，此处更正。
 - **Pill 按钮（分段按钮，如 低/中/高、紧凑/标准/舒展）**：`StadiumBorder`；未选 = `surface` 底 + `divider` 描边 + `textPrimary` 文字；选中 = **仅换描边色为 `primaryDeep` + 文字换 `primaryDeep`**，**不填充**（这是本项目独有的克制风格，和 Material 的"填充 chip"截然不同）。
 - **Slider**：轨道高 3–4pt 用 `surfaceMuted`，已填充段用 `primaryDeep`（亮度）或 `highlightOrange`（暖色温），thumb 10–12pt 实心同色，**无光晕、无阴影、无放大**。
 - **Card**：圆角 `NyanRadius.card`（20pt），`surface` 底，`divider` 描边；**默认无阴影**；仅在书架 hover / 次级浮层必要时使用 `NyanShadows.subtle`。
