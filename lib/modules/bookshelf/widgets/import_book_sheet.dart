@@ -40,20 +40,10 @@ class ImportBookSheet extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 NyanListRow(
-                  leading: const _SheetLeadingIcon(
-                    icon: NyanIcons.file,
-                  ),
+                  leadingIcon: NyanIcons.file,
                   title: loc.importFiles,
                   subtitle: loc.importFilesSubtitle,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: NyanSpacing.space16,
-                    vertical: NyanSpacing.space12,
-                  ),
-                  trailing: Icon(
-                    NyanIcons.chevronRight,
-                    size: NyanSpacing.space20,
-                    color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.72),
-                  ),
+                  showChevron: true,
                   onTap: onImportFiles,
                 ),
                 Divider(
