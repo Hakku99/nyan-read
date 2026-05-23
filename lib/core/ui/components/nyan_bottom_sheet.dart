@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
+import '../../theme/theme_presets.dart';
 class NyanBottomSheet extends StatelessWidget {
   final String? title;
   final String? description;
@@ -30,6 +31,7 @@ class NyanBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final nyan = resolveNyanTheme(theme);
     return SafeArea(
       top: false,
       child: Container(
@@ -57,8 +59,11 @@ class NyanBottomSheet extends StatelessWidget {
                   width: 40,
                   height: NyanSpacing.space4,
                   decoration: BoxDecoration(
-                    color: handleColor ?? theme.dividerColor,
-                    borderRadius: BorderRadius.circular(NyanRadius.small),
+                    // Spec: `text-muted` token (not divider).
+                    color: handleColor ?? nyan.textMuted,
+                    // Spec: `border-radius: 999px` — pill ends.
+                    // height/2 = space4/2 = 2pt gives perfect semicircles.
+                    borderRadius: BorderRadius.circular(NyanSpacing.space4 / 2),
                   ),
                 ),
               ),

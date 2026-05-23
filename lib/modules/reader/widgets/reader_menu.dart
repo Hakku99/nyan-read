@@ -6,6 +6,7 @@ import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../../core/theme/nyan_radius.dart';
 import '../../../core/theme/nyan_spacing.dart';
+import '../../../core/theme/theme_presets.dart';
 import '../../../core/ui/components/nyan_confirm_dialog.dart';
 import '../../../core/ui/components/nyan_overlay_style.dart';
 import '../../bookshelf/widgets/segmented_tab_control.dart';
@@ -70,6 +71,7 @@ class _ReaderMenuState extends State<ReaderMenu> {
     final capabilities = controller.capabilities;
     final loc = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final nyan = resolveNyanTheme(theme);
     final sections = _buildSections(capabilities);
     if (!sections.contains(_selectedSection)) {
       _selectedSection = sections.first;
@@ -145,9 +147,11 @@ class _ReaderMenuState extends State<ReaderMenu> {
                             width: 40,
                             height: NyanSpacing.space4,
                             decoration: BoxDecoration(
-                              color: theme.dividerColor.withValues(alpha: 0.44),
-                              borderRadius:
-                                  BorderRadius.circular(NyanRadius.small),
+                              // Spec: text-muted token; pill ends (height/2).
+                              color: nyan.textMuted,
+                              borderRadius: BorderRadius.circular(
+                                NyanSpacing.space4 / 2,
+                              ),
                             ),
                           ),
                         ),
