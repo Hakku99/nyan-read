@@ -13,12 +13,10 @@ import '../../core/services/riverpod_providers.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
 import '../../core/models/book.dart';
 import '../../core/services/mascot_manager.dart';
-import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_shelf_ui.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
 import '../../core/ui/components/components.dart';
-import '../../core/ui/nyan_theme_context.dart';
 import '../../modules/privacy/privacy_lock_service.dart';
 import 'package:go_router/go_router.dart';
 import '../settings/settings_page.dart';
@@ -825,26 +823,15 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               ? null
               : Builder(
                   builder: (context) {
-                    final nyan = context.nyanTheme;
                     final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
                     return Padding(
                       padding: EdgeInsets.only(
                         right: NyanSpacing.space4,
                         bottom: NyanSpacing.space8 + safeBottom,
                       ),
-                      child: FloatingActionButton(
+                      child: NyanFAB(
                         onPressed: () => _showImportMenu(context),
-                        backgroundColor: nyan.fabBackground,
-                        foregroundColor: nyan.fabForeground,
-                        elevation: 2,
-                        highlightElevation: 4,
-                        hoverElevation: 3,
-                        focusElevation: 3,
-                        disabledElevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(NyanRadius.card),
-                        ),
-                        child: const Icon(NyanIcons.add),
+                        icon: NyanIcons.add,
                       ),
                     );
                   },
