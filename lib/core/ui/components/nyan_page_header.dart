@@ -55,6 +55,7 @@ class NyanPageHeader extends StatelessWidget {
                         fontSize: NyanTypography.title,
                         fontWeight: FontWeight.w600,
                         letterSpacing: -0.15,
+                        color: nyanTheme.textPrimary,
                       )
                       .merge(titleStyle),
                 ),
