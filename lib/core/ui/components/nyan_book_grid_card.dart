@@ -53,7 +53,13 @@ class NyanBookGridCard extends StatelessWidget {
             child: Align(
               alignment: Alignment.center,
               child: Padding(
-                padding: const EdgeInsets.all(NyanSpacing.space8),
+                // 12 pt uniform padding per spec; shrinks to 11 pt when
+                // selected so the 2 px border doesn't compress inner content.
+                padding: EdgeInsets.all(
+                  isSelected
+                      ? NyanShelfUi.gridCardSelectedPadding
+                      : NyanShelfUi.gridCardPadding,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -75,16 +81,24 @@ class NyanBookGridCard extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: NyanShelfUi.gridCardBlockGap),
-                    Text(
-                      book.title,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        height: 1.28,
-                        color: theme.textTheme.bodyLarge?.color,
+                    // Fixed 2-line height reserve: 2 × (12.5 × 1.28) = 32 pt.
+                    // Keeps icon-top and progress-top aligned across every card
+                    // in the row regardless of title length.
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minHeight: NyanShelfUi.gridCardTitleMinHeight,
+                      ),
+                      child: Text(
+                        book.title,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          height: 1.28,
+                          color: theme.textTheme.bodyLarge?.color,
+                        ),
                       ),
                     ),
                     SizedBox(height: NyanShelfUi.gridCardBlockGap),
