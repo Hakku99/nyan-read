@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Nyan Read — Peek mark (mono)">
+  
+  <g fill="#5A6644">
+    
+    <path d="M 36 36 L 43 19 L 51 38 Z"></path>
+    <path d="M 69 38 L 77 19 L 84 36 Z"></path>
+    
+    <ellipse cx="60" cy="46" rx="22" ry="17"></ellipse>
+    
+    <rect x="28" y="64" width="64" height="38" rx="5"></rect>
+  </g>
+  
+  <g stroke="#F6F3EA" stroke-width="2.4" stroke-linecap="round" fill="none">
+    <path d="M 49 45 q 3 3 6 0"></path>
+    <path d="M 65 45 q 3 3 6 0"></path>
+    
+    <path d="M 58 53 q 2 2 4 0"></path>
+    
+    <line x1="60" y1="68" x2="60" y2="98"></line>
+  </g>
+</svg>

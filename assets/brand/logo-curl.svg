@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Nyan Read — Curl glyph">
+  
+  <g fill="#5A6644">
+    
+    <path d="&#xA;      M 38 28&#xA;      C 52 22, 78 24, 88 42&#xA;      C 96 58, 94 78, 78 88&#xA;      C 64 96, 46 94, 38 84&#xA;      C 32 76, 32 64, 40 60&#xA;      C 48 56, 60 60, 60 70&#xA;      C 60 78, 54 82, 48 80&#xA;    " fill="none" stroke="#5A6644" stroke-width="10" stroke-linecap="round"></path>
+    
+    <path d="M 36 30 L 40 14 L 50 24 Z"></path>
+  </g>
+  
+  <circle cx="76" cy="40" r="3" fill="#F6F3EA"></circle>
+  <circle cx="76" cy="40" r="5" fill="none" stroke="#5A6644" stroke-width="1"></circle>
+</svg>

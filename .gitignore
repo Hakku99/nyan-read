@@ -18,6 +18,11 @@ migrate_working_dir/
 .claude/
 
 # =========================
+# Design system handoff (extracted from zip; not source of truth)
+# =========================
+.tmp-design-handoff/
+
+# =========================
 # IntelliJ / Android Studio
 # =========================
 *.iml

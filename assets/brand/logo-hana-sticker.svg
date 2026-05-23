@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
+  
+  <defs>
+    <clipPath id="nyan-inner-clip">
+      <rect x="40" y="40" width="420" height="420" rx="36"></rect>
+    </clipPath>
+  </defs>
+
+  
+  <rect x="0" y="0" width="500" height="500" rx="56" fill="#F6F3EA"></rect>
+
+  
+  <g clip-path="url(#nyan-inner-clip)">
+    <rect x="40" y="40" width="420" height="420" fill="#FFFDF8"></rect>
+    <polygon points="250,460 40,460 40,40 130,40" fill="#D7C5E8"></polygon>
+    <polygon points="250,460 130,40 220,40" fill="#E8A0BF"></polygon>
+    <polygon points="250,460 220,40 280,40" fill="#FFFDF8"></polygon>
+    <polygon points="250,460 280,40 370,40" fill="#E8A0BF"></polygon>
+    <polygon points="250,460 370,40 460,40 460,460" fill="#A8D18D"></polygon>
+    <polygon points="380,40 460,40 460,135" fill="#F2E58A"></polygon>
+    <polygon points="40,360 40,460 140,460" fill="#9EC5E8"></polygon>
+  </g>
+
+  
+  <g>
+    <path d="M 335,395 Q 388,388 388,348 Q 388,308 355,305" fill="none" stroke="#5A6644" stroke-width="20" stroke-linecap="round"></path>
+    <path d="M 370,318 Q 376,318 380,322" stroke="#FFFDF8" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.85"></path>
+    <path d="M 380,348 Q 386,348 388,352" stroke="#FFFDF8" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.85"></path>
+    <path d="M 366,376 Q 372,378 376,380" stroke="#FFFDF8" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.85"></path>
+
+    <path d="M 195,440 C 188,328 210,288 270,288 C 330,288 352,328 345,440 Z" fill="#5A6644"></path>
+
+    <path d="M 218,304 L 228,266 L 248,308 Z" fill="#5A6644"></path>
+    <path d="M 292,308 L 312,266 L 322,304 Z" fill="#5A6644"></path>
+    <path d="M 226,300 L 232,280 L 242,302 Z" fill="#E8A0BF" opacity="0.85"></path>
+    <path d="M 298,302 L 308,280 L 314,300 Z" fill="#E8A0BF" opacity="0.85"></path>
+
+    <path d="M 252,320 Q 258,308 264,320 Q 270,308 276,320 Q 282,308 288,320" fill="none" stroke="#6E7A55" stroke-width="2.5" stroke-linecap="round" opacity="0.55"></path>
+
+    <path d="M 238,350 Q 246,344 254,350" fill="none" stroke="#FFFDF8" stroke-width="3.5" stroke-linecap="round"></path>
+    <path d="M 286,350 Q 294,344 302,350" fill="none" stroke="#FFFDF8" stroke-width="3.5" stroke-linecap="round"></path>
+
+    <ellipse cx="232" cy="370" rx="11" ry="5" fill="#E8A0BF" opacity="0.75"></ellipse>
+    <ellipse cx="308" cy="370" rx="11" ry="5" fill="#E8A0BF" opacity="0.75"></ellipse>
+
+    <path d="M 266,362 L 274,362 L 270,367 Z" fill="#FFFDF8"></path>
+    <path d="M 270,367 Q 266,373 263,371 M 270,367 Q 274,373 277,371" fill="none" stroke="#FFFDF8" stroke-width="2" stroke-linecap="round"></path>
+
+    <g stroke="#FFFDF8" stroke-width="1.6" stroke-linecap="round" opacity="0.8">
+      <line x1="215" y1="370" x2="232" y2="368"></line>
+      <line x1="215" y1="378" x2="232" y2="376"></line>
+      <line x1="308" y1="368" x2="325" y2="370"></line>
+      <line x1="308" y1="376" x2="325" y2="378"></line>
+    </g>
+
+    <path d="M 210,395 Q 270,388 330,395" fill="none" stroke="#6E7A55" stroke-width="2.5" stroke-linecap="round" opacity="0.5"></path>
+    <path d="M 215,418 Q 270,412 325,418" fill="none" stroke="#6E7A55" stroke-width="2.5" stroke-linecap="round" opacity="0.4"></path>
+
+    <path d="M 213,420 Q 270,408 327,420 L 327,455 Q 270,447 213,455 Z" fill="#FFFDF8" stroke="#5A6644" stroke-width="2.4" stroke-linejoin="round"></path>
+    <path d="M 270,412 L 270,450" stroke="#5A6644" stroke-width="2" stroke-linecap="round" opacity="0.9"></path>
+    <g stroke="#5A6644" stroke-width="1.4" stroke-linecap="round" opacity="0.45">
+      <line x1="222" y1="428" x2="262" y2="426"></line>
+      <line x1="222" y1="436" x2="260" y2="434"></line>
+      <line x1="222" y1="444" x2="256" y2="442"></line>
+      <line x1="278" y1="426" x2="318" y2="428"></line>
+      <line x1="280" y1="434" x2="318" y2="436"></line>
+      <line x1="284" y1="442" x2="318" y2="444"></line>
+    </g>
+
+    <ellipse cx="212" cy="438" rx="13" ry="9" fill="#5A6644"></ellipse>
+    <ellipse cx="328" cy="438" rx="13" ry="9" fill="#5A6644"></ellipse>
+  </g>
+</svg>

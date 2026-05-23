@@ -74,6 +74,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/brand/
 
   # 本地字体注册（见 assets/fonts/README.md 获取 .ttf / .otf 文件）。
   # 若对应字体文件缺失，Flutter 会在启动时打印 warning 并回落到平台 CJK 默认字体；

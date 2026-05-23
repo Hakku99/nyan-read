@@ -293,7 +293,7 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 
 > **例外 — 交互控件标签字号（Claude Design 系统对齐，2026-05）**：`NyanPrimaryButton` 的 label 文字按 size 变体使用 **14 / 16 / 17pt**（compact / standard / comfortable，来源：`components.jsx` 设计 spec）。这三个值是控件标签**专属**——**MUST NOT** 出现在正文、标题或任何其它表面。常量定义见 `NyanTypography.buttonCompact` / `NyanTypography.buttonComfortable`（body 16 复用 `NyanTypography.body`）。
 
-> ⚠️ **已知 tech-debt（见 §6 Phase 0）**：当前 `pubspec.yaml` 未注册 `Noto Sans SC` / `Source Han Serif SC` 为本地资源，`google_fonts` 包虽已引入但全仓无 import。`NyanTypography` 里的 `fontFamily: 'Noto Sans SC'` 实际在运行时**回落到平台 CJK 默认字体**（Android Noto Sans CJK / iOS 苹方）。serif 阅读模式在当前版本**不生效**。AI 在生成涉及 serif 阅读的改动前，MUST 先提醒用户这个限制。修复方案：在 Phase 0 中通过 `google_fonts.GoogleFonts.notoSansSc()` 动态加载，或把字体文件放到 `assets/fonts/` 并在 `pubspec.yaml` 的 `flutter.fonts` 段注册。
+> ✅ **字体已注册（§6 Phase 0 已完成）**：`pubspec.yaml` 的 `flutter.fonts` 段已声明 `Noto Sans SC`（400/500/600）+ `Source Han Serif SC`（400/600）；字体文件存放于 `assets/fonts/`，**未纳入 Git**（体积原因）。开发者需按 `assets/fonts/README.md` 说明手动放置字体文件。缺少字体时 Flutter 打印 warning 并回落平台字体，不影响编译；但 serif 阅读模式仅在字体文件就位后生效。
 
 ### 4.3 组件样式底线（MUST）
 
@@ -334,6 +334,25 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 7. **字重/字体族**：`FontWeight` 是否只在 `w400 / w500 / w600` 三档？`fontFamily` 是否来自 `NyanTypography`？
 
 **回答全部满足才提交代码。**
+
+### 4.6 品牌资产（Brand Assets）
+
+设计系统交付包（`nyan-read-design-system-handoff.zip`，2026-05 版本）是本项目 UI 的最高优先级视觉参考。所有品牌 SVG 标志已存放于 `assets/brand/`，并在 `pubspec.yaml` 的 `flutter.assets` 中以目录形式注册。
+
+| 文件 | 用途 |
+|---|---|
+| `assets/brand/logo-peek.svg` | 猫咪探头版（彩色），用于 About / 欢迎页 |
+| `assets/brand/logo-peek-mono.svg` | 猫咪探头版（单色），用于深色背景叠加 |
+| `assets/brand/logo-line.svg` | 线稿横排版，用于 Splash / 宣传素材 |
+| `assets/brand/logo-line-compact.svg` | 线稿横排紧凑版，用于小尺寸场合 |
+| `assets/brand/logo-curl.svg` | 猫爪卷角版，用于空状态装饰 |
+| `assets/brand/logo-hana-sticker.svg` | 花朵贴纸版，用于节日 / 限定场景 |
+
+**MUST NOT**：在上述 6 个 SVG 以外自行绘制或引入其他插画 / 贡献图；Nyan 猫 logo 是**全项目唯一允许的自定义插画**。
+
+**MUST**：在 Widget 中引用品牌图时使用 `flutter_svg` 的 `SvgPicture.asset('assets/brand/...')` 或等效方式，不得将 SVG 手动内联为 `CustomPainter`。
+
+> **设计系统交付包说明**：`nyan-read-design-system-handoff.zip` 包含完整的 HTML/CSS 原型（`ui_kits/nyan_read_app/index.html`）、CSS token 文件（`colors_and_type.css`）、JSX 组件库（`components.jsx`）及各屏幕 JSX 文件。当 UI 规范与本文件有冲突时，**交付包优先**——交付包是从维护者的设计意图直接生成的，本文件是对其的文字摘要，摘要落后于源文件。
 
 ---
 

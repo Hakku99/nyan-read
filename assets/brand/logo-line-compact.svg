@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  
+  <path d="M 20 86 C 6 76, 6 42, 22 28 L 28 18 Q 36 4, 46 26 Q 60 30, 74 26 Q 84 4, 92 18 L 98 28 C 114 42, 114 76, 100 86 Q 60 100, 20 86 Z" fill="#B5C29A" stroke="#3F3A34" stroke-width="3" stroke-linejoin="round"></path>
+  
+  <path d="M 34 28 Q 40 18, 48 30 Z" fill="#FFFDF8"></path>
+  <path d="M 72 30 Q 80 18, 86 28 Z" fill="#FFFDF8"></path>
+  
+  <circle cx="44" cy="58" r="4" fill="#3F3A34"></circle>
+  <circle cx="76" cy="58" r="4" fill="#3F3A34"></circle>
+  <circle cx="45.2" cy="56.5" r="1.1" fill="#FFFDF8"></circle>
+  <circle cx="77.2" cy="56.5" r="1.1" fill="#FFFDF8"></circle>
+  
+  <path d="M 56 70 L 64 70 L 60 74 Z" fill="#3F3A34"></path>
+  
+  <path d="M 54 76 Q 60 80, 66 76" fill="none" stroke="#3F3A34" stroke-width="2" stroke-linecap="round"></path>
+  
+  <g stroke="#FFFDF8" stroke-width="1.6" stroke-linecap="round">
+    <line x1="12" y1="60" x2="32" y2="62"></line>
+    <line x1="12" y1="68" x2="32" y2="68"></line>
+    <line x1="88" y1="62" x2="108" y2="60"></line>
+    <line x1="88" y1="68" x2="108" y2="68"></line>
+  </g>
+</svg>
