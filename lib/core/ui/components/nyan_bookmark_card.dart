@@ -39,7 +39,7 @@ class NyanBookmarkCard extends StatelessWidget {
         ? const <BoxShadow>[]
         : [
             BoxShadow(
-              color: theme.shadowColor.withValues(alpha: 0.025),
+              color: nyanTheme.textPrimary.withValues(alpha: 0.025),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -177,7 +177,7 @@ class _BookmarkMetaLine extends StatelessWidget {
               alpha: isDark ? 0.7 : 0.62,
             ),
             fontWeight: FontWeight.w500,
-            height: 1.05,
+            height: 1.1,
           ),
         ),
       ],
