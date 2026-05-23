@@ -6,6 +6,7 @@ import '../../theme/nyan_spacing.dart';
 import 'nyan_info_card.dart';
 import 'nyan_primary_button.dart';
 import '../nyan_icons.dart';
+import '../nyan_theme_context.dart';
 
 class NyanContinueReadingCard extends StatelessWidget {
   final Book book;
@@ -121,7 +122,7 @@ class NyanContinueReadingCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
                         height: 1.2,
-                        color: theme.colorScheme.onSurface.withValues(
+                        color: context.nyanTheme.textPrimary.withValues(
                           alpha: 0.62,
                         ),
                       ),
@@ -163,7 +164,7 @@ class NyanContinueReadingCard extends StatelessWidget {
                           height: 1.2,
                           fontWeight: FontWeight.w400,
                           letterSpacing: 0.1,
-                          color: theme.colorScheme.onSurface.withValues(
+                          color: context.nyanTheme.textPrimary.withValues(
                             alpha: 0.62,
                           ),
                         ),
@@ -176,10 +177,10 @@ class NyanContinueReadingCard extends StatelessWidget {
                         child: LinearProgressIndicator(
                           value: progress,
                           minHeight: NyanShelfUi.progressBarHeight,
-                          backgroundColor:
-                              theme.colorScheme.primary.withValues(alpha: 0.2),
+                          backgroundColor: context.nyanTheme.primary
+                              .withValues(alpha: 0.2),
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.colorScheme.primary,
+                            context.nyanTheme.primary,
                           ),
                         ),
                       ),
@@ -229,7 +230,7 @@ class NyanContinueReadingCard extends StatelessWidget {
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontSize: 11,
                   height: 1.2,
-                  color: theme.colorScheme.onSurface.withValues(
+                  color: context.nyanTheme.textPrimary.withValues(
                     alpha: 0.62,
                   ),
                   fontWeight: FontWeight.w400,
@@ -262,7 +263,6 @@ class NyanContinueReadingCard extends StatelessWidget {
     bool compact = false,
     bool dense = false,
   }) {
-    final theme = Theme.of(context);
     final m = MaterialLocalizations.of(context);
     return IconButton(
       onPressed: onToggleCollapse,
@@ -281,7 +281,7 @@ class NyanContinueReadingCard extends StatelessWidget {
             : (compact ? NyanSpacing.space4 : NyanSpacing.space8),
       ),
       style: IconButton.styleFrom(
-        foregroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+        foregroundColor: context.nyanTheme.textPrimary.withValues(alpha: 0.55),
         backgroundColor: Colors.transparent,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
