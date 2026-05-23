@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/nyan_spacing.dart';
 import '../../theme/nyan_typography.dart';
+import '../nyan_theme_context.dart';
 
 /// Olive section title above grouped cards — same vocabulary as
 /// [SettingsPage] (`_SectionHeader`). Uses [FontWeight.w600] per AGENTS.md
@@ -24,16 +25,16 @@ class NyanSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accent = theme.colorScheme.primary.withValues(
-      alpha: theme.brightness == Brightness.dark ? 0.9 : 0.9,
-    );
+    final nyan = context.nyanTheme;
+    final accent = nyan.primary.withValues(alpha: 0.9);
 
     final titleWidget = Text(
       title,
-      style: theme.textTheme.labelSmall?.copyWith(
+      style: TextStyle(
+        fontFamily: NyanTypography.uiFontFamily,
         fontSize: NyanTypography.meta,
         fontWeight: FontWeight.w600,
+        height: 1.3,
         letterSpacing: 0.22,
         color: accent,
       ),
@@ -56,7 +57,7 @@ class NyanSectionHeader extends StatelessWidget {
                   width: 4,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.7),
+                    color: nyan.primary.withValues(alpha: 0.63),
                     shape: BoxShape.circle,
                   ),
                 ),
