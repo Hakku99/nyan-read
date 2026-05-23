@@ -52,7 +52,8 @@ class NyanInfoCard extends StatelessWidget {
         ? (isDark ? 0.2 : 0.16)
         : (isDark ? 0.24 : 0.3);
 
-    final List<BoxShadow> shadows = isDark
+    final bool isMuted = tone == NyanInfoCardTone.muted;
+    final List<BoxShadow> shadows = (isDark || isMuted)
         ? const []
         : (isGrouped
             ? NyanShadows.settingsGrouped(theme.shadowColor)
@@ -64,7 +65,7 @@ class NyanInfoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius),
         boxShadow: shadows,
         border: Border.all(
-          color: theme.dividerColor.withValues(alpha: borderAlpha),
+          color: nyanTheme.divider.withValues(alpha: borderAlpha),
           width: borderWidth,
         ),
       ),
