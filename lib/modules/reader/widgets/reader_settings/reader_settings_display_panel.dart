@@ -85,7 +85,7 @@ class ReaderSettingsDisplayPanel extends StatelessWidget {
                                   onChanged: brightnessController.setFromSlider,
                                   onChangeEnd:
                                       brightnessController.commitFromSlider,
-                                  activeColor: nyanTheme.primary,
+                                  activeColor: nyanTheme.primaryDeep,
                                   inactiveColor: theme.dividerColor
                                       .withValues(alpha: 0.24),
                                   enabled: !follow,

@@ -38,7 +38,7 @@ class ReaderSettingsSlider extends StatefulWidget {
     this.enabled = true,
     this.dragLabelAbove = false,
     this.dragLabelBelowGap,
-    this.overlayRadius = 16,
+    this.overlayRadius = 0,
     this.horizontalStretch = 0,
     this.edgeToEdgeTrack = false,
   });
@@ -77,8 +77,8 @@ class _ReaderSettingsSliderState extends State<ReaderSettingsSlider> {
 
     final slider = SliderTheme(
       data: SliderTheme.of(context).copyWith(
-        trackHeight: 5,
-        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+        trackHeight: 4,
+        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
         overlayShape: RoundSliderOverlayShape(overlayRadius: widget.overlayRadius),
         trackShape: widget.edgeToEdgeTrack
             ? const _EdgeToEdgeRoundedSliderTrackShape()
@@ -101,7 +101,7 @@ class _ReaderSettingsSliderState extends State<ReaderSettingsSlider> {
         onChangeEnd: effective != null
             ? (value) {
                 setState(() => _isDragging = false);
-                HapticFeedback.selectionClick();
+                HapticFeedback.lightImpact();
                 widget.onChangeEnd?.call(value);
               }
             : null,
