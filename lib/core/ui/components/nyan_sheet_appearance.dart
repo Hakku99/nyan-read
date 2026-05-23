@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/nyan_spacing.dart';
+import '../../theme/theme_presets.dart';
 
 class NyanSheetAppearance {
   const NyanSheetAppearance._();
@@ -19,14 +20,17 @@ class NyanSheetAppearance {
     );
   }
 
+  /// Spec (`list-row.html`): `font:400 13px/1.3 text-secondary`.
   static TextStyle? compactDescriptionStyle(ThemeData theme) {
+    final nyan = resolveNyanTheme(theme);
     return theme.textTheme.bodySmall?.copyWith(
-      color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.68),
-      height: 1.28,
+      color: nyan.textSecondary,
+      height: 1.3,
     );
   }
 
+  /// Spec (`bottom-sheet.html`): grab handle uses `text-muted` token.
   static Color compactHandleColor(ThemeData theme) {
-    return theme.dividerColor.withValues(alpha: 0.44);
+    return resolveNyanTheme(theme).textMuted;
   }
 }

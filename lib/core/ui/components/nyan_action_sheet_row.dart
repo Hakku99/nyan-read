@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
+import '../../theme/theme_presets.dart';
 import 'nyan_sheet_appearance.dart';
 import '../nyan_icons.dart';
 
@@ -24,6 +25,7 @@ class NyanActionSheetRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final nyan = resolveNyanTheme(theme);
 
     return InkWell(
       onTap: onTap,
@@ -54,8 +56,11 @@ class NyanActionSheetRow extends StatelessWidget {
                 children: [
                   Text(
                     title,
+                    // Spec (list-row.html): font:600 16px/1.2.
                     style: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      height: 1.2,
                     ),
                   ),
                   const SizedBox(height: NyanSpacing.space4),
@@ -71,7 +76,8 @@ class NyanActionSheetRow extends StatelessWidget {
               Icon(
                 NyanIcons.chevronRight,
                 size: 18,
-                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.44),
+                // Spec: text-secondary @ 44% opacity.
+                color: nyan.textSecondary.withValues(alpha: 0.44),
               ),
             ],
           ],
