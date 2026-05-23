@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
 import '../nyan_icons.dart';
+import '../nyan_theme_context.dart';
 
 /// Open-book glyph used on shelf list/grid tiles — soft primary wash + matcha icon.
 ///
@@ -21,8 +22,7 @@ class NyanBookLogoMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primary = theme.colorScheme.primary;
+    final primary = context.nyanTheme.primary;
 
     return Container(
       padding: padding,
