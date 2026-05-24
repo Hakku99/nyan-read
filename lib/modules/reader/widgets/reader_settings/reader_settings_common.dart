@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/theme/nyan_radius.dart';
+import '../../../../core/theme/nyan_typography.dart';
 import '../../../../core/ui/nyan_icons.dart';
 import '../../../../core/theme/nyan_spacing.dart';
 import '../../../../core/ui/components/nyan_overlay_style.dart';
@@ -125,7 +126,7 @@ class _ReaderSettingsSliderState extends State<ReaderSettingsSlider> {
 
     final labelStyle = theme.textTheme.labelSmall?.copyWith(
       fontSize: 10,
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w600,
       color: (widget.activeColor ?? theme.colorScheme.primary)
           .withValues(alpha: 0.82),
     );
@@ -229,7 +230,7 @@ class ReaderSettingsIconButton extends StatelessWidget {
           ),
           child: Icon(
             icon,
-            size: 22,
+            size: 20,
             color: theme.colorScheme.primary,
           ),
         ),
@@ -337,7 +338,7 @@ class ReaderAutoBrightnessChip extends StatelessWidget {
                   label,
                   style: theme.textTheme.labelSmall?.copyWith(
                     fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: isActive
                         ? theme.colorScheme.primary
                         : theme.textTheme.bodySmall?.color
@@ -394,7 +395,7 @@ class ReaderSettingsSliderTile extends StatelessWidget {
                         Text(
                           title,
                           style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                             height: 1.2,
                           ),
                         ),
@@ -461,7 +462,7 @@ class ReaderSettingsValueCell extends StatelessWidget {
         Text(
           label,
           style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             height: 1.2,
           ),
         ),
@@ -502,8 +503,8 @@ class ReaderSettingsValueCell extends StatelessWidget {
                   value,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 17,
+                    fontWeight: FontWeight.w500,
+                    fontSize: NyanTypography.body,
                   ),
                 ),
               ),
@@ -531,8 +532,8 @@ class ReaderSettingsValueCell extends StatelessWidget {
             value,
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              fontSize: NyanTypography.section,
             ),
           ),
           const SizedBox(height: NyanSpacing.space12),

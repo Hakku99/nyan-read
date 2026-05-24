@@ -7,6 +7,7 @@ import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../../../core/theme/nyan_colors.dart';
 import '../../../../core/theme/nyan_radius.dart';
 import '../../../../core/theme/nyan_spacing.dart';
+import '../../../../core/ui/components/nyan_pill_button.dart';
 import '../../../../core/ui/components/nyan_sheet_card.dart';
 import '../../../../core/ui/nyan_theme_context.dart';
 import '../../controllers/brightness_controller.dart';
@@ -146,7 +147,7 @@ class ReaderSettingsDisplayPanel extends StatelessWidget {
                         Text(
                           _warmthTierLabel(loc, w),
                           style: theme.textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: theme.colorScheme.primary
                                 .withValues(alpha: 0.85),
                           ),
@@ -155,7 +156,7 @@ class ReaderSettingsDisplayPanel extends StatelessWidget {
                         Text(
                           '${(w * 100).round()}%',
                           style: theme.textTheme.labelMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: theme.textTheme.bodySmall?.color
                                 ?.withValues(alpha: 0.75),
                           ),
@@ -203,6 +204,10 @@ class ReaderSettingsDisplayPanel extends StatelessWidget {
   }
 }
 
+/// Spec `ReaderSettingsSheet.jsx` warmth knob: 3 pill buttons (Low/Medium/High)
+/// using the project signature [NyanPillButton] (outline-on-select, no fill).
+/// Replaces the previous custom `_WarmthPresetChip` which used a filled style
+/// with [FontWeight.w700] — a token violation per AGENTS.md §4.2.
 class _WarmthPresetRow extends StatelessWidget {
   const _WarmthPresetRow({
     required this.lowLabel,
@@ -222,7 +227,6 @@ class _WarmthPresetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final labels = [lowLabel, mediumLabel, highLabel];
 
     return ValueListenableBuilder<double>(
@@ -234,76 +238,16 @@ class _WarmthPresetRow extends StatelessWidget {
             for (var i = 0; i < 3; i++) ...[
               if (i > 0) const SizedBox(width: NyanSpacing.space8),
               Expanded(
-                child: _WarmthPresetChip(
+                child: NyanPillButton(
                   label: labels[i],
                   selected: (w - _presets[i]).abs() < 0.06,
-                  onTap: () => onSelect(_presets[i]),
-                  color: theme.colorScheme.primary,
+                  onPressed: () => onSelect(_presets[i]),
                 ),
               ),
             ],
           ],
         );
       },
-    );
-  }
-}
-
-class _WarmthPresetChip extends StatelessWidget {
-  const _WarmthPresetChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    required this.color,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: kReaderPillBorderRadius,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: kReaderDensePresetPadding,
-          constraints: const BoxConstraints(
-            minHeight: kReaderDensePresetMinHeight,
-          ),
-          decoration: BoxDecoration(
-            color: selected
-                ? color.withValues(alpha: 0.12)
-                : theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.35),
-            borderRadius: kReaderPillBorderRadius,
-            border: Border.all(
-              color: selected
-                  ? color.withValues(alpha: 0.45)
-                  : theme.dividerColor.withValues(alpha: 0.14),
-              width: selected ? 1.1 : 0.72,
-            ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: selected
-                  ? color
-                  : theme.textTheme.bodySmall?.color?.withValues(alpha: 0.85),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../../../core/theme/nyan_radius.dart';
 import '../../../../core/theme/nyan_spacing.dart';
+import '../../../../core/ui/components/nyan_pill_button.dart';
 import '../../../../core/ui/components/nyan_sheet_card.dart';
 import 'reader_settings_common.dart';
 
@@ -107,18 +108,14 @@ class ReaderSettingsTextPanel extends StatelessWidget {
                   for (var i = 0; i < presetRows.length; i++) ...[
                     if (i > 0) const SizedBox(width: NyanSpacing.space8),
                     Expanded(
-                      child: SizedBox(
-                        height: kReaderDensePresetMinHeight,
-                        child: _TypographyPresetChip(
-                          label: presetRows[i].$1,
-                          selected: _TypographyPreset.matches(
-                            fs,
-                            lh,
-                            presetRows[i].$2,
-                          ),
-                          onTap: () => _applyPreset(presetRows[i].$2),
-                          color: theme.colorScheme.primary,
+                      child: NyanPillButton(
+                        label: presetRows[i].$1,
+                        selected: _TypographyPreset.matches(
+                          fs,
+                          lh,
+                          presetRows[i].$2,
                         ),
+                        onPressed: () => _applyPreset(presetRows[i].$2),
                       ),
                     ),
                   ],
@@ -146,7 +143,7 @@ class ReaderSettingsTextPanel extends StatelessWidget {
                   title: Text(
                     loc.readerTypographyFineTune,
                     style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       height: 1.2,
                     ),
                   ),
@@ -214,63 +211,6 @@ class _TypographyPreset {
   }
 }
 
-class _TypographyPresetChip extends StatelessWidget {
-  const _TypographyPresetChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    required this.color,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: kReaderPillBorderRadius,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          width: double.infinity,
-          height: double.infinity,
-          padding: kReaderDensePresetPadding,
-          decoration: BoxDecoration(
-            color: selected
-                ? color.withValues(alpha: 0.12)
-                : theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.35),
-            borderRadius: kReaderPillBorderRadius,
-            border: Border.all(
-              color: selected
-                  ? color.withValues(alpha: 0.42)
-                  : theme.dividerColor.withValues(alpha: 0.14),
-              width: selected ? 1.0 : 0.72,
-            ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              fontSize: 11,
-              height: 1.15,
-              color: selected
-                  ? color
-                  : theme.textTheme.bodySmall?.color?.withValues(alpha: 0.88),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+// _TypographyPresetChip removed — typography presets now use the project
+// signature [NyanPillButton] (outline-on-select, no fill), matching the spec
+// `ReaderSettingsSheet.jsx` and aligning with the warmth preset row.

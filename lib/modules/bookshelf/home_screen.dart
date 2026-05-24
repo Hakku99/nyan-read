@@ -687,6 +687,42 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                 title: loc.appTitle,
                 subtitle: loc.enjoyReading,
                 actions: [
+                  // View-mode toggle
+                  Builder(
+                    builder: (context) {
+                      final isGridView = _prefs.viewMode == ViewMode.grid;
+                      return NyanRecessedIconButton(
+                        icon: isGridView
+                            ? NyanIcons.viewList
+                            : NyanIcons.viewGrid,
+                        tooltip: isGridView ? loc.listView : loc.gridView,
+                        onPressed: () async {
+                          await _prefs.setViewMode(
+                            isGridView ? ViewMode.list : ViewMode.grid,
+                          );
+                          setState(() {});
+                        },
+                      );
+                    },
+                  ),
+                  // Sort
+                  NyanRecessedIconButton(
+                    icon: NyanIcons.sort,
+                    tooltip: loc.sortBy,
+                    onPressed: () => _showSortMenu(context),
+                  ),
+                  // Privacy lock (Pro only)
+                  if (featureManager.isPro)
+                    NyanRecessedIconButton(
+                      icon: featureManager.isPrivateShelfUnlocked
+                          ? NyanIcons.lockOpen
+                          : NyanIcons.lock,
+                      tooltip: featureManager.isPrivateShelfUnlocked
+                          ? loc.lockPrivacyShelf
+                          : loc.unlockPrivacyShelf,
+                      onPressed: () => _handlePrivacyLock(context),
+                    ),
+                  // Settings
                   NyanRecessedIconButton(
                     tooltip: loc.settingsTitle,
                     icon: NyanIcons.settings,
@@ -707,16 +743,20 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           ),
         if (showHeaderSections && continueReadingBook != null)
           SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildContinueReadingSection(
-                  context,
-                  continueReadingBook,
-                  useCompactContinueReading,
-                ),
-                const SizedBox(height: NyanShelfUi.sectionGapAfterShelfChrome),
-              ],
+            child: Padding(
+              // 4pt side inset keeps the hero card slightly inset from the
+              // grid edge; 14pt bottom gap matches the grid row rhythm.
+              padding: const EdgeInsets.fromLTRB(
+                NyanSpacing.space4,
+                0,
+                NyanSpacing.space4,
+                NyanShelfUi.sectionGapAfterShelfChrome,
+              ),
+              child: _buildContinueReadingSection(
+                context,
+                continueReadingBook,
+                useCompactContinueReading,
+              ),
             ),
           ),
         SliverPersistentHeader(
@@ -733,38 +773,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                 _tabController.animateTo(index);
                 setState(() {});
               },
-              toolbarActions: [
-                Builder(
-                  builder: (context) {
-                    final isGridView = _prefs.viewMode == ViewMode.grid;
-                    return NyanRecessedIconButton(
-                      icon: isGridView ? NyanIcons.viewList : NyanIcons.viewGrid,
-                      tooltip: isGridView ? loc.listView : loc.gridView,
-                      onPressed: () async {
-                        await _prefs.setViewMode(
-                          isGridView ? ViewMode.list : ViewMode.grid,
-                        );
-                        setState(() {});
-                      },
-                    );
-                  },
-                ),
-                NyanRecessedIconButton(
-                  icon: NyanIcons.sort,
-                  tooltip: loc.sortBy,
-                  onPressed: () => _showSortMenu(context),
-                ),
-                if (featureManager.isPro)
-                  NyanRecessedIconButton(
-                    icon: featureManager.isPrivateShelfUnlocked
-                        ? NyanIcons.lockOpen
-                        : NyanIcons.lock,
-                    tooltip: featureManager.isPrivateShelfUnlocked
-                        ? loc.lockPrivacyShelf
-                        : loc.unlockPrivacyShelf,
-                    onPressed: () => _handlePrivacyLock(context),
-                  ),
-              ],
             ),
           ),
         ),
@@ -914,13 +922,17 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     final topPad = NyanShelfUi.sectionGapAfterShelfChrome;
     final bottomPad = _shelfScrollBottomPadding(context);
 
+    // 4pt horizontal inset keeps grid cards slightly inset from the scroll
+    // edge, matching the continue-reading card side padding in the spec.
+    const double gridSideInset = NyanSpacing.space4;
+
     if (!showInlineAd) {
       return [
         SliverPadding(
           padding: EdgeInsets.fromLTRB(
-            0,
+            gridSideInset,
             topPad,
-            0,
+            gridSideInset,
             bottomPad,
           ),
           sliver: SliverGrid(
@@ -940,7 +952,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
     return [
       SliverPadding(
-        padding: EdgeInsets.only(top: topPad),
+        padding: EdgeInsets.fromLTRB(gridSideInset, topPad, gridSideInset, 0),
         sliver: SliverGrid(
           gridDelegate: _bookshelfGridDelegate(),
           delegate: SliverChildBuilderDelegate(
@@ -963,7 +975,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       ),
       if (trailingBooks.isNotEmpty)
         SliverPadding(
-          padding: EdgeInsets.only(bottom: bottomPad),
+          padding: EdgeInsets.fromLTRB(gridSideInset, 0, gridSideInset, bottomPad),
           sliver: SliverGrid(
             gridDelegate: _bookshelfGridDelegate(),
             delegate: SliverChildBuilderDelegate(
@@ -1018,13 +1030,16 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     final topPad = NyanShelfUi.sectionGapAfterShelfChrome;
     final bottomPad = _shelfScrollBottomPadding(context);
 
+    // 4pt horizontal inset mirrors the grid and continue-reading card side padding.
+    const double listSideInset = NyanSpacing.space4;
+
     if (!showInlineAd) {
       return [
         SliverPadding(
           padding: EdgeInsets.fromLTRB(
-            0,
+            listSideInset,
             topPad,
-            0,
+            listSideInset,
             bottomPad,
           ),
           sliver: SliverList(
@@ -1042,9 +1057,9 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     return [
       SliverPadding(
         padding: EdgeInsets.fromLTRB(
-          0,
+          listSideInset,
           topPad,
-          0,
+          listSideInset,
           bottomPad,
         ),
         sliver: SliverList(

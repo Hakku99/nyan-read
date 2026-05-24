@@ -606,6 +606,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tableOfContents => 'Table of Contents';
 
   @override
+  String readerSettingsProgressHint(Object pct) {
+    return 'Reading progress $pct%';
+  }
+
+  @override
+  String get readerDockChapters => 'Chapters';
+
+  @override
   String get jumpToCurrentChapter => 'Jump to current chapter';
 
   @override

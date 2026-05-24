@@ -71,7 +71,11 @@ class NyanEmptyState extends StatelessWidget {
     return Align(
       alignment: alignment,
       child: Padding(
-        padding: padding ?? const EdgeInsets.all(NyanSpacing.space24),
+        padding: padding ??
+            const EdgeInsets.symmetric(
+              vertical: NyanSpacing.space32,
+              horizontal: NyanSpacing.space24,
+            ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

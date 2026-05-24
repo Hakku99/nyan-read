@@ -1202,6 +1202,18 @@ abstract class AppLocalizations {
   /// **'Table of Contents'**
   String get tableOfContents;
 
+  /// Meta text shown on the right of the Reader Settings sheet header. {pct} is replaced with the rounded reading-progress percentage.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading progress {pct}%'**
+  String readerSettingsProgressHint(Object pct);
+
+  /// Short label for the Chapters tile in the reader bottom dock (must fit alongside 3 other tiles in a narrow strip).
+  ///
+  /// In en, this message translates to:
+  /// **'Chapters'**
+  String get readerDockChapters;
+
   /// No description provided for @jumpToCurrentChapter.
   ///
   /// In en, this message translates to:

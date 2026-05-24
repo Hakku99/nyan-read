@@ -239,6 +239,8 @@
   "readerResetAllConfirmMessage": "将恢复字体、行距、主题、暖色温与亮度的默认设置。",
   "readerResetAllConfirmAction": "全部重置",
   "tableOfContents": "目录",
+  "readerSettingsProgressHint": "阅读进度 {pct}%",
+  "readerDockChapters": "目录",
   "jumpToCurrentChapter": "定位当前章节",
   "chapterListProgressLabel": "已读 {current} / {total} 章",
   "@chapterListProgressLabel": {

@@ -29,7 +29,7 @@ class NyanSectionHeader extends StatelessWidget {
     final accent = nyan.primary.withValues(alpha: 0.9);
 
     final titleWidget = Text(
-      title,
+      title.toUpperCase(),
       style: TextStyle(
         fontFamily: NyanTypography.uiFontFamily,
         fontSize: NyanTypography.meta,

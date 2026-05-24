@@ -18,7 +18,8 @@ abstract final class NyanShelfUi {
   static const double gridChildAspectRatio = 1.0;
 
   /// Vertical gap between list-mode book cards (bottom margin per tile).
-  static const double listTileSpacing = 14;
+  /// Spec uses 12px gap for list vs 14px for grid — intentional asymmetry.
+  static const double listTileSpacing = 12;
 
   /// Equal gaps between grid card blocks: icon — title — progress.
   static const double gridCardBlockGap = NyanSpacing.space8;

@@ -53,14 +53,22 @@ class NyanPillButton extends StatelessWidget {
                   Icon(icon, size: 16, color: textColor),
                   const SizedBox(width: 6),
                 ],
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: NyanTypography.uiFontFamily,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    height: 1.0,
-                    color: textColor,
+                // [Flexible] so the pill gracefully degrades when placed
+                // inside a constrained Expanded slot (e.g. 3-pill preset rows
+                // on narrow phones). Without this the inner Row overflows.
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                    style: TextStyle(
+                      fontFamily: NyanTypography.uiFontFamily,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      height: 1.0,
+                      color: textColor,
+                    ),
                   ),
                 ),
               ],

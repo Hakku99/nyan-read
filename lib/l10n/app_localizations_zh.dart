@@ -576,6 +576,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tableOfContents => '目录';
 
   @override
+  String readerSettingsProgressHint(Object pct) {
+    return '阅读进度 $pct%';
+  }
+
+  @override
+  String get readerDockChapters => '目录';
+
+  @override
   String get jumpToCurrentChapter => '定位当前章节';
 
   @override

@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/nyan_radius.dart';
+import '../../theme/nyan_shadows.dart';
 import '../nyan_theme_context.dart';
 
 /// Container for a stack of [NyanListRow] / [NyanActionSheetRow] children
 /// with hairline `divider`-coloured separators between items.
 ///
-/// Per design: no Material [Divider] widget — separators are 1px Containers
-/// using the `divider` token. Outer is a [NyanRadius.card] rounded panel on
-/// the [surface] colour, hairline-bordered.
+/// Per design spec: outer radius is [NyanRadius.input] (16pt), border is
+/// 0.72px @ 16% alpha, separators are indented 64pt from the leading edge
+/// (aligns with icon slot), and the card carries a [NyanShadows.settingsGrouped]
+/// lift. Shadow is placed on an outer [DecoratedBox] so [Clip.antiAlias] on the
+/// inner container does not clip it.
 class NyanRowGroup extends StatelessWidget {
   const NyanRowGroup({
     super.key,
@@ -27,34 +30,45 @@ class NyanRowGroup extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final separatorColor = nyan.divider.withValues(alpha: 0.6);
+    final separatorColor = nyan.divider.withValues(alpha: 0.5);
+    final borderRadius = BorderRadius.circular(NyanRadius.input);
 
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
       rows.add(children[i]);
       if (i != children.length - 1) {
-        rows.add(Container(
-          height: 1,
-          color: separatorColor,
+        rows.add(Row(
+          children: [
+            const SizedBox(width: 64),
+            Expanded(
+              child: Container(height: 1, color: separatorColor),
+            ),
+          ],
         ));
       }
     }
 
-    return Container(
-      padding: padding,
-      clipBehavior: Clip.antiAlias,
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: nyan.surface,
-        borderRadius: BorderRadius.circular(NyanRadius.card),
-        border: Border.all(
-          color: nyan.divider.withValues(alpha: 0.3),
-          width: 0.5,
-        ),
+        borderRadius: borderRadius,
+        boxShadow: NyanShadows.settingsGrouped(nyan.textPrimary),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: rows,
+      child: Container(
+        padding: padding,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: nyan.surface,
+          borderRadius: borderRadius,
+          border: Border.all(
+            color: nyan.divider.withValues(alpha: 0.16),
+            width: 0.72,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: rows,
+        ),
       ),
     );
   }

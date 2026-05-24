@@ -1,5 +1,4 @@
 import 'dart:async' show unawaited;
-import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -12,39 +11,25 @@ import '../../core/models/book.dart';
 import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
-import '../../core/ui/components/nyan_book_logo_mark.dart';
-import '../../core/ui/components/nyan_info_card.dart';
+import '../../core/ui/components/nyan_list_row.dart';
+import '../../core/ui/components/nyan_page_header.dart';
 import '../../core/ui/components/nyan_primary_button.dart';
 import '../../core/ui/components/nyan_recessed_icon_button.dart';
+import '../../core/ui/components/nyan_row_group.dart';
 import '../../core/ui/components/nyan_section_header.dart';
-import '../../core/ui/nyan_theme_context.dart';
 import '../../core/ui/nyan_icons.dart';
+import '../../core/ui/nyan_theme_context.dart';
 import '../../core/utils/book_source_access.dart';
 import '../../core/utils/snackbar_utils.dart';
-import 'epub_cover_extractor.dart';
 import '../../l10n/app_localizations.dart';
+import 'epub_cover_extractor.dart';
 
-/// Same rhythm as [SettingsPage] list gaps.
+/// Rhythm between page sections — matches [SettingsPage] list gaps.
 const double _kBookDetailsSectionGap = NyanSpacing.space24;
 
-/// Matches settings `_SettingsCard` row insets (horizontal 16 / vertical 12).
-const EdgeInsets _kBookDetailsCardPadding = EdgeInsets.fromLTRB(
-  NyanSpacing.space16,
-  NyanSpacing.space12,
-  NyanSpacing.space16,
-  NyanSpacing.space12,
-);
-
-/// Logical px bounds shared by EPUB thumbnail and placeholder (~trim ratio).
-const double _kCoverSlotWidth = 55;
-const double _kCoverSlotHeight = 74;
-
-/// Outer square allocated inside hero slot for the logo chip (green tile fills this).
-const double _kLogoChipToSlotFactor = 0.8;
-
-/// Source-row folder bubble edge (`minTapTarget` minus one spacing step).
-const double _kIconBubbleExtent =
-    NyanSpacing.minTapTarget - NyanSpacing.space8;
+/// Hero cover dimensions per BookDetailsScreen.jsx spec (120×156 px).
+const double _kCoverSlotWidth = 120;
+const double _kCoverSlotHeight = 156;
 
 String _friendlySourceSummary(String locator, AppLocalizations loc) {
   final t = locator.trim();
@@ -151,15 +136,13 @@ class BookDetailsPage extends StatelessWidget {
     if (normalized == null || normalized.isEmpty) {
       return false;
     }
-
     final lower = normalized.toLowerCase();
-    return lower != 'unknown' && normalized != '\u672a\u77e5';
+    return lower != 'unknown' && normalized != '未知';
   }
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
     final nyanTheme = context.nyanTheme;
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
 
@@ -193,335 +176,209 @@ class BookDetailsPage extends StatelessWidget {
         final bottomInset = MediaQuery.paddingOf(context).bottom;
         final friendlySource =
             _friendlySourceSummary(book.sourceLocator, loc);
-        final progressRightLine = !hasLastReadAt
-            ? loc.neverRead
-            : displayPercent == 0
-                ? '${loc.lastOpened} $lastReadAt'
-                : '${loc.lastRead} $lastReadAt';
-        final progressSemanticsLabel = !hasLastReadAt
-            ? '${loc.readingProgress} $displayPercent%. ${loc.neverRead}'
-            : displayPercent == 0
-                ? '${loc.readingProgress} $displayPercent%. ${loc.lastOpened} $lastReadAt'
-                : '${loc.readingProgress} $displayPercent%. ${loc.lastRead} $lastReadAt';
 
         return Scaffold(
-          appBar: AppBar(
-            leadingWidth: NyanSpacing.minTapTarget + NyanSpacing.space12,
-            titleSpacing: NyanSpacing.space4,
-            centerTitle: false,
-            leading: Padding(
-              padding: const EdgeInsets.only(left: NyanSpacing.space8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: NyanRecessedIconButton(
-                  icon: NyanIcons.back,
-                  tooltip:
-                      MaterialLocalizations.of(context).backButtonTooltip,
-                  onPressed: () => context.pop(),
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Pinned header — stays above the scroll view so it does not
+              // vanish when the user scrolls down into the detail rows.
+              SafeArea(
+                bottom: false,
+                child: NyanPageHeader(
+                  title: loc.bookDetails,
+                  leading: NyanRecessedIconButton(
+                    icon: NyanIcons.back,
+                    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                    onPressed: () => context.pop(),
+                  ),
+                  actions: [
+                    NyanRecessedIconButton(
+                      icon: NyanIcons.moreHorizontal,
+                      // More-actions menu is deferred; placeholder preserves
+                      // the header footprint for future implementation.
+                      tooltip: '',
+                      onPressed: null,
+                    ),
+                  ],
                 ),
               ),
-            ),
-            title: Text(
-              loc.bookDetails,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                height: 1.1,
-              ),
-            ),
-          ),
-          body: SafeArea(
-            top: false,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                NyanSpacing.space16,
-                NyanSpacing.space16,
-                NyanSpacing.space16,
-                NyanSpacing.space24 + bottomInset,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  NyanSectionHeader(title: loc.bookDetailsOverviewSection),
-                  NyanInfoCard(
-                    variant: NyanInfoCardVariant.grouped,
-                    tone: NyanInfoCardTone.surface,
-                    padding: _kBookDetailsCardPadding,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _BookHeroCover(
-                              book: book,
-                              isSourceAvailable: isAvailable,
-                            ),
-                            const SizedBox(width: NyanSpacing.space8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  InkWell(
-                                    onTap: () => _showFullTitleBottomSheet(
-                                      context,
-                                      book.title,
-                                      loc,
-                                    ),
-                                    borderRadius: BorderRadius.circular(
-                                      NyanRadius.small,
-                                    ),
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        book.title,
-                                        maxLines: 3,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: theme.textTheme.bodyLarge
-                                            ?.copyWith(
-                                          fontSize: NyanTypography.body,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: -0.1,
-                                          height: 1.4,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: NyanSpacing.space4),
-                                  Text(
-                                    author ?? loc.unknownAuthor,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      fontSize: NyanTypography.meta,
-                                      color: author != null
-                                          ? nyanTheme.textSecondary
-                                          : nyanTheme.textMuted,
-                                      height: 1.3,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    NyanSpacing.space16,
+                    0,
+                    NyanSpacing.space16,
+                    NyanSpacing.space24 + bottomInset,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // ── Hero ─────────────────────────────────────────────
+                      Center(
+                        child: _BookHeroCover(
+                          book: book,
+                          isSourceAvailable: isAvailable,
                         ),
-                        if (hasAddedAt && addedAtShort != null) ...[
-                          const SizedBox(height: NyanSpacing.space8),
-                          Text(
-                            '${loc.added} $addedAtShort',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontSize: NyanTypography.meta,
-                              color: nyanTheme.textMuted,
-                              height: 1.3,
+                      ),
+                      const SizedBox(height: NyanSpacing.space12),
+                      // Title — tap to reveal full text in a bottom sheet.
+                      GestureDetector(
+                        onTap: () => _showFullTitleBottomSheet(
+                          context,
+                          book.title,
+                          loc,
+                        ),
+                        child: Text(
+                          book.title,
+                          textAlign: TextAlign.center,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: NyanTypography.uiFontFamily,
+                            fontSize: NyanTypography.section,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.1,
+                            height: 1.35,
+                            color: nyanTheme.textPrimary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: NyanSpacing.space4),
+                      Text(
+                        author ?? loc.unknownAuthor,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: NyanTypography.uiFontFamily,
+                          fontSize: NyanTypography.meta,
+                          fontWeight: FontWeight.w400,
+                          height: 1.3,
+                          color: author != null
+                              ? nyanTheme.textSecondary
+                              : nyanTheme.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: NyanSpacing.space12),
+                      // CTA row: primary action + share icon button side-by-side.
+                      Row(
+                        children: [
+                          Expanded(
+                            child: NyanPrimaryButton(
+                              label: displayPercent > 0
+                                  ? loc.continueReading
+                                  : loc.startReading,
+                              onPressed: isAvailable
+                                  ? () => _openReader(context)
+                                  : null,
+                              expanded: true,
+                              size: NyanPrimaryButtonSize.comfortable,
                             ),
+                          ),
+                          const SizedBox(width: NyanSpacing.space8),
+                          _HeroShareButton(book: book),
+                        ],
+                      ),
+                      if (hasAvailability && !isAvailable) ...[
+                        const SizedBox(height: NyanSpacing.space12),
+                        _UnavailableNotice(
+                          message: BookSourceAccess.unavailableMessage,
+                        ),
+                      ],
+                      const SizedBox(height: _kBookDetailsSectionGap),
+
+                      // ── Overview ──────────────────────────────────────────
+                      NyanSectionHeader(
+                        title: loc.bookDetailsOverviewSection,
+                        withLeadingDot: true,
+                      ),
+                      NyanRowGroup(
+                        children: [
+                          _DetailRow(label: loc.title, value: book.title),
+                          _DetailRow(
+                            label: loc.author,
+                            value: author ?? loc.unknownAuthor,
+                          ),
+                          _DetailRow(
+                            label: loc.format,
+                            value: _formatLabel(book.format, loc),
+                          ),
+                          _DetailRow(
+                            label: loc.privacy,
+                            value: book.isPrivate
+                                ? loc.privateShelf
+                                : loc.publicShelf,
+                          ),
+                          _DetailRow(
+                            label: loc.readingProgress,
+                            value: '$displayPercent%',
+                          ),
+                          if (addedAtShort != null)
+                            _DetailRow(label: loc.added, value: addedAtShort),
+                        ],
+                      ),
+                      const SizedBox(height: _kBookDetailsSectionGap),
+
+                      // ── Source ────────────────────────────────────────────
+                      NyanSectionHeader(
+                        title: loc.bookDetailsSourceSection,
+                        withLeadingDot: true,
+                      ),
+                      NyanRowGroup(
+                        children: [
+                          NyanListRow(
+                            leadingIcon: NyanIcons.folderOpen,
+                            title: loc.originalPath,
+                            // fileNotFound surfaces the error as subtitle text;
+                            // the _UnavailableNotice in the hero is the primary indicator.
+                            subtitle: hasAvailability && !isAvailable
+                                ? loc.fileNotFound
+                                : friendlySource,
+                          ),
+                          NyanListRow(
+                            leadingIcon: NyanIcons.copy,
+                            title: loc.copyPath,
+                            onTap: () {
+                              unawaited(
+                                Clipboard.setData(
+                                  ClipboardData(text: book.sourceLocator),
+                                ),
+                              );
+                              SnackBarUtils.show(context, loc.filePathCopied);
+                            },
+                          ),
+                          NyanListRow(
+                            leadingIcon: NyanIcons.clock,
+                            title: loc.lastOpened,
+                            subtitle: lastReadAt ?? loc.neverRead,
                           ),
                         ],
-                        const SizedBox(height: NyanSpacing.space12),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: NyanSpacing.space12,
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  loc.format,
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    fontSize: NyanTypography.body,
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.25,
-                                    color: nyanTheme.textPrimary,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                _formatLabel(book.format, loc),
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontSize: NyanTypography.meta,
-                                  fontWeight: FontWeight.w500,
-                                  height: 1.25,
-                                  color: nyanTheme.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: NyanSpacing.space12),
-                        Semantics(
-                          label: progressSemanticsLabel,
-                          child: displayPercent == 0 && !hasLastReadAt
-                              ? Row(
-                                  children: [
-                                    Icon(
-                                      NyanIcons.bookmark,
-                                      size: NyanSpacing.space16,
-                                      color: nyanTheme.textMuted,
-                                    ),
-                                    const SizedBox(width: NyanSpacing.space8),
-                                    Expanded(
-                                      child: Text(
-                                        '${loc.neverRead} ${loc.readyToStart}',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style:
-                                            theme.textTheme.bodySmall?.copyWith(
-                                          fontSize: NyanTypography.meta,
-                                          color: nyanTheme.textMuted,
-                                          height: 1.3,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      '$displayPercent%',
-                                      style:
-                                          theme.textTheme.bodySmall?.copyWith(
-                                        fontSize: NyanTypography.meta,
-                                        fontWeight: FontWeight.w500,
-                                        height: 1.3,
-                                        color: nyanTheme.textSecondary,
-                                      ),
-                                    ),
-                                    const SizedBox(width: NyanSpacing.space8),
-                                    Expanded(
-                                      child: Text(
-                                        progressRightLine,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.right,
-                                        style:
-                                            theme.textTheme.bodySmall?.copyWith(
-                                          fontSize: NyanTypography.meta,
-                                          fontWeight: FontWeight.w400,
-                                          color: nyanTheme.textMuted,
-                                          height: 1.3,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                        ),
-                        const SizedBox(height: NyanSpacing.space12),
-                        NyanPrimaryButton(
-                          label: displayPercent > 0
-                              ? loc.continueReading
-                              : loc.startReading,
-                          onPressed: isAvailable
-                              ? () => _openReader(context)
-                              : null,
-                          expanded: true,
-                          size: NyanPrimaryButtonSize.comfortable,
-                        ),
-                        if (hasAvailability && !isAvailable) ...[
-                          const SizedBox(height: NyanSpacing.space12),
-                          _UnavailableNotice(
-                            message: BookSourceAccess.unavailableMessage,
+                      ),
+                      const SizedBox(height: _kBookDetailsSectionGap),
+
+                      // ── Highlights & Notes ────────────────────────────────
+                      NyanSectionHeader(
+                        title: loc.highlightsAndNotes,
+                        withLeadingDot: true,
+                      ),
+                      NyanRowGroup(
+                        children: [
+                          NyanListRow(
+                            leadingIcon: NyanIcons.bookmark,
+                            title: loc.highlightsAndNotes,
+                            subtitle: loc.noHighlightsYet,
+                            showChevron: true,
+                            // TODO(#highlight-detail): navigate to per-book highlights list.
+                            onTap: null,
                           ),
                         ],
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: _kBookDetailsSectionGap),
-                  NyanSectionHeader(title: loc.bookDetailsSourceSection),
-                  NyanInfoCard(
-                    variant: NyanInfoCardVariant.grouped,
-                    tone: NyanInfoCardTone.surface,
-                    padding: _kBookDetailsCardPadding,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            _IconBubble(
-                              icon: NyanIcons.folderOpen,
-                              tint: nyanTheme.primary,
-                            ),
-                            const SizedBox(width: NyanSpacing.space12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    loc.originalPath,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontSize: NyanTypography.body,
-                                      fontWeight: FontWeight.w600,
-                                      height: 1.25,
-                                      color: nyanTheme.textPrimary,
-                                    ),
-                                  ),
-                                  if (hasAvailability && !isAvailable) ...[
-                                    const SizedBox(height: NyanSpacing.space4),
-                                    Text(
-                                      loc.fileNotFound,
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                        color:
-                                            nyanTheme.errorPrimaryTextColor,
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            SizedBox(
-                              width: NyanSpacing.minTapTarget,
-                              height: NyanSpacing.minTapTarget,
-                              child: IconButton(
-                                onPressed: () {
-                                  // Clipboard completes independently; snackbar
-                                  // does not depend on success (Android/iOS OK).
-                                  unawaited(
-                                    Clipboard.setData(
-                                      ClipboardData(text: book.sourceLocator),
-                                    ),
-                                  );
-                                  SnackBarUtils.show(
-                                    context,
-                                    loc.filePathCopied,
-                                  );
-                                },
-                                icon: Icon(
-                                  NyanIcons.copy,
-                                  size: NyanSpacing.space20,
-                                  color: nyanTheme.textSecondary,
-                                ),
-                                tooltip: loc.copyPath,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: NyanSpacing.space8),
-                        if (book.sourceLocator.trim().isEmpty)
-                          Text(
-                            friendlySource,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontSize: NyanTypography.meta,
-                              height: 1.35,
-                              color: nyanTheme.textSecondary,
-                            ),
-                          )
-                        else
-                          _SourceLocatorPanel(
-                            locator: book.sourceLocator,
-                            friendlyLine: friendlySource,
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         );
       },
@@ -529,74 +386,106 @@ class BookDetailsPage extends StatelessWidget {
   }
 }
 
-/// Friendly summary + full technical path (always visible, for copy/audit).
-class _SourceLocatorPanel extends StatelessWidget {
-  const _SourceLocatorPanel({
-    required this.locator,
-    required this.friendlyLine,
-  });
+// ── Private layout widgets ──────────────────────────────────────────────────
 
-  final String locator;
-  final String friendlyLine;
+/// Label–value row for the Overview section.
+///
+/// Mirrors the spec's `DetailRow` component (BookDetailsScreen.jsx):
+/// label `500/13/textSecondary` left, value `500/14/textPrimary` right.
+/// The 14pt value size is a spec-literal for this component — it sits between
+/// [NyanTypography.meta] (13) and [NyanTypography.body] (16) and is intentional.
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final nyan = context.nyanTheme;
-    final isDark = theme.brightness == Brightness.dark;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          friendlyLine,
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontSize: NyanTypography.meta,
-            height: 1.35,
-            color: nyan.textPrimary,
-          ),
-        ),
-        const SizedBox(height: NyanSpacing.space8),
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Color.alphaBlend(
-              nyan.background.withValues(
-                alpha: isDark ? 0.48 : 0.38,
-              ),
-              theme.cardColor,
-            ),
-            borderRadius: BorderRadius.circular(NyanRadius.input),
-            border: Border.all(
-              color: theme.dividerColor.withValues(
-                alpha: isDark ? 0.14 : 0.10,
-              ),
-              width: 0.5,
-            ),
-          ),
-          padding: const EdgeInsets.all(NyanSpacing.space12),
-          child: SelectableText(
-            locator,
-            strutStyle: const StrutStyle(
-              forceStrutHeight: true,
-              height: 1.2,
-              leading: 0,
-            ),
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontFamily: NyanTypography.monoFontFamily,
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: NyanSpacing.space16,
+        vertical: NyanSpacing.space12,
+      ),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: NyanTypography.uiFontFamily,
               fontSize: NyanTypography.meta,
+              fontWeight: FontWeight.w500,
               height: 1.2,
               color: nyan.textSecondary,
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: NyanSpacing.space12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: NyanTypography.uiFontFamily,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                height: 1.2,
+                color: nyan.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-/// Hero cover: EPUBs load a real cover in a worker isolate; other formats and
-/// failures use [NyanBookLogoMark] like shelf tiles.
+/// Small share icon button beside the hero CTA.
+///
+/// Spec: 44×44, `surface` background, `divider` border, [NyanRadius.input] corners.
+/// Share action is deferred pending export/share implementation.
+class _HeroShareButton extends StatelessWidget {
+  const _HeroShareButton({required this.book});
+
+  final Book book;
+
+  @override
+  Widget build(BuildContext context) {
+    final nyan = context.nyanTheme;
+
+    return Material(
+      color: nyan.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(NyanRadius.input),
+        side: BorderSide(color: nyan.divider),
+      ),
+      child: InkWell(
+        // TODO(#share): implement book share / export.
+        onTap: null,
+        customBorder: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NyanRadius.input),
+        ),
+        child: SizedBox(
+          width: NyanSpacing.minTapTarget,
+          height: NyanSpacing.minTapTarget,
+          child: Icon(
+            NyanIcons.share,
+            size: NyanSpacing.space20,
+            color: nyan.textPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Cover widgets ───────────────────────────────────────────────────────────
+
+/// Hero cover: EPUBs load a real bitmap in a worker isolate; other formats
+/// and failures fall back to [_BookCoverPlaceholder].
 class _BookHeroCover extends StatefulWidget {
   final Book book;
   final bool isSourceAvailable;
@@ -632,7 +521,8 @@ class _BookHeroCoverState extends State<_BookHeroCover> {
     if (!widget.isSourceAvailable) return null;
     if (widget.book.format.toLowerCase() != 'epub') return null;
     try {
-      // Whole file read is simplest path for cover decode; huge EPUBs cost RAM.
+      // Full-file read is the simplest cover-decode path; large EPUBs cost RAM
+      // but the cover fetch happens once per open and the bytes are not retained.
       final bytes = await BookSourceAccess.readBytes(widget.book);
       return extractEpubCoverAsJpeg(bytes);
     } catch (e) {
@@ -643,8 +533,8 @@ class _BookHeroCoverState extends State<_BookHeroCover> {
 
   @override
   Widget build(BuildContext context) {
-    final wantsEpubCover =
-        widget.isSourceAvailable && widget.book.format.toLowerCase() == 'epub';
+    final wantsEpubCover = widget.isSourceAvailable &&
+        widget.book.format.toLowerCase() == 'epub';
 
     if (!wantsEpubCover) {
       return _placeholder();
@@ -671,8 +561,10 @@ class _BookHeroCoverState extends State<_BookHeroCover> {
   Widget _placeholder() => _BookCoverPlaceholder(title: widget.book.title);
 }
 
-/// Fallback when there is no EPUB bitmap: same [NyanBookLogoMark] chrome as shelf,
-/// with a tighter glyph so the green tile can stay hero-sized without crowding.
+/// Full-slot placeholder when no EPUB bitmap is available.
+///
+/// Spec (BookDetailsScreen.jsx): the 120×156 cover slot itself is the
+/// `primary@12%` tinted tile — not a chip nested inside a transparent box.
 class _BookCoverPlaceholder extends StatelessWidget {
   final String title;
 
@@ -680,27 +572,27 @@ class _BookCoverPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chipExtent = math.min(_kCoverSlotWidth, _kCoverSlotHeight) *
-        _kLogoChipToSlotFactor;
-    // Green tile stays `chipExtent`; larger inset shrinks only the glyph.
-    const logoPadding = NyanSpacing.space8;
-    final iconSize = chipExtent - 2 * logoPadding;
+    final nyan = context.nyanTheme;
 
     return Semantics(
       label: title,
-      child: SizedBox(
+      child: Container(
         width: _kCoverSlotWidth,
         height: _kCoverSlotHeight,
+        decoration: BoxDecoration(
+          color: nyan.primary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(NyanRadius.card),
+          border: Border.all(
+            // Spec: 0.5px border at 30% divider alpha.
+            color: nyan.divider.withValues(alpha: 0.30),
+            width: 0.5,
+          ),
+        ),
         child: Center(
-          child: SizedBox(
-            width: chipExtent,
-            height: chipExtent,
-            child: Center(
-              child: NyanBookLogoMark(
-                iconSize: iconSize,
-                padding: const EdgeInsets.all(logoPadding),
-              ),
-            ),
+          child: Icon(
+            NyanIcons.book,
+            size: 48,
+            color: nyan.primary,
           ),
         ),
       ),
@@ -727,11 +619,11 @@ class _BookCoverMemoryImage extends StatelessWidget {
       width: _kCoverSlotWidth,
       height: _kCoverSlotHeight,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(NyanRadius.input),
+        borderRadius: BorderRadius.circular(NyanRadius.card),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: nyanTheme.surfaceMuted,
-            borderRadius: BorderRadius.circular(NyanRadius.input),
+            borderRadius: BorderRadius.circular(NyanRadius.card),
             border: Border.all(
               color: theme.dividerColor.withValues(
                 alpha: isDark ? 0.24 : 0.32,
@@ -756,40 +648,7 @@ class _BookCoverMemoryImage extends StatelessWidget {
   }
 }
 
-class _IconBubble extends StatelessWidget {
-  final IconData icon;
-  final Color tint;
-
-  const _IconBubble({
-    required this.icon,
-    required this.tint,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final nyanTheme = context.nyanTheme;
-    final brightness = Theme.of(context).brightness;
-
-    final bubbleColor = Color.alphaBlend(
-      tint.withValues(alpha: brightness == Brightness.dark ? 0.18 : 0.16),
-      nyanTheme.surface,
-    );
-
-    return SizedBox(
-      width: _kIconBubbleExtent,
-      height: _kIconBubbleExtent,
-      child: DecoratedBox(
-        decoration: ShapeDecoration(
-          color: bubbleColor,
-          shape: const StadiumBorder(),
-        ),
-        child: Center(
-          child: Icon(icon, size: NyanSpacing.space20, color: tint),
-        ),
-      ),
-    );
-  }
-}
+// ── Utility widgets ─────────────────────────────────────────────────────────
 
 class _UnavailableNotice extends StatelessWidget {
   final String message;

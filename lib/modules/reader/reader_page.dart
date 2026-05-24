@@ -9,19 +9,17 @@ import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/riverpod_providers.dart';
 import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_spacing.dart';
-import '../../core/utils/snackbar_utils.dart';
+import '../../core/theme/nyan_typography.dart';
 import '../bookmark/bookmark_list_page.dart';
-import '../notes/notes_list_page.dart';
 import 'reader_engine/reader_engine.dart';
 import 'widgets/reader_error_view.dart';
 import 'widgets/highlight_note_dialog.dart';
 import 'widgets/reader_menu.dart';
 import 'dart:async';
 import '../../core/ui/components/nyan_overlay_style.dart';
-import '../../core/ui/components/nyan_sheet_card.dart';
 import '../../l10n/app_localizations.dart';
 import 'widgets/reader_chapter_summary.dart';
-import 'widgets/reader_settings/reader_settings_progress_card.dart';
+import 'widgets/reader_settings/reader_settings_display_panel.dart';
 import 'brightness/brightness_orchestrator.dart';
 import 'brightness/brightness_repository.dart';
 import 'brightness/system_brightness_adapter.dart';
@@ -31,9 +29,7 @@ import 'controllers/reader_controller_provider.dart';
 import 'brightness/overlay_widget.dart';
 import 'widgets/brightness_hud_widget.dart';
 import 'widgets/chapter_list_widget.dart';
-import 'widgets/reader_overlay_tool_button.dart';
 import 'widgets/smooth_page_reader.dart';
-import 'widgets/reader_settings/reader_settings_common.dart';
 import '../../core/ui/nyan_icons.dart';
 export 'controllers/reader_controller.dart';
 
@@ -393,7 +389,37 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                               ),
                             ),
 
-                          // 4. Brightness HUD Overlay
+                          // 4. P4 bottom overlay — sticky strip with
+                          // 4-tile dock. Sits in the Stack so it lives within
+                          // the same brightness-overlay-affected region as the
+                          // reader engine. IgnorePointer wrapper inside the
+                          // widget makes it pass-through when hidden.
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: _ReaderBottomOverlay(
+                              visible: _showControls,
+                              controller: controller,
+                              onOpenChapters: () => _handleOverlayTile(
+                                () => _openChapterList(context, controller),
+                              ),
+                              onOpenBookmarks: () => _handleOverlayTile(
+                                () => _openBookmarksPage(context, controller),
+                              ),
+                              onOpenBrightness: () => _handleOverlayTile(
+                                () => _openReaderBrightness(
+                                  context,
+                                  controller,
+                                ),
+                              ),
+                              onOpenSettings: () => _handleOverlayTile(
+                                () => _openReaderSettings(context, controller),
+                              ),
+                            ),
+                          ),
+
+                          // 5. Brightness HUD Overlay
                           // Injected just below overlays and gesture catchers
                           BrightnessHudWidget(
                               controller: _brightnessController),
@@ -410,55 +436,61 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     );
   }
 
+  /// P4: the bottom overlay is now a sticky strip rather than a modal sheet.
+  /// Tapping the reader center toggles [_showControls]; the overlay widget
+  /// renders inside the existing Stack and animates itself in/out.
   Future<void> _showQuickActionsBottomSheet(
     BuildContext context,
     ReaderController controller,
   ) async {
-    if (_showControls) return;
-    _setControlsVisible(true);
-    await controller.syncChapterAfterScroll();
-    if (!mounted || !context.mounted) {
+    if (_showControls) {
       _setControlsVisible(false);
       return;
     }
+    _setControlsVisible(true);
+    // Keep the chapter sync we always did before showing the overlay so the
+    // chapter label is fresh when the dock appears.
+    await controller.syncChapterAfterScroll();
+    if (!mounted) return;
+  }
 
-    await showModalBottomSheet<void>(
+  /// Tile-press handler: dismiss the overlay strip first (so its slide-out
+  /// can run in parallel with the child sheet's slide-in), then fire the
+  /// destination action. Each [_open*] helper itself calls [_setControlsVisible]
+  /// internally but we set it eagerly to avoid a frame where both layers are
+  /// visible.
+  void _handleOverlayTile(VoidCallback action) {
+    _setControlsVisible(false);
+    action();
+  }
+
+  /// Brightness tile destination — slim modal sheet with the brightness +
+  /// warmth + auto-brightness controls reused from the full reader menu.
+  Future<void> _openReaderBrightness(
+    BuildContext context,
+    ReaderController controller,
+  ) async {
+    if (!context.mounted) return;
+    await _showReaderBrightnessSheet(
       context: context,
-      isScrollControlled: true,
-      isDismissible: true,
-      enableDrag: true,
-      backgroundColor:
-          Theme.of(context).colorScheme.surface.withValues(alpha: 0),
-      barrierColor: NyanOverlayStyle.modalBarrierColor(context),
-      builder: (sheetContext) {
-        return _ReaderQuickActionsSheet(
-          controller: controller,
-          readerPreferences: ref.read(readerPreferencesRpProvider),
-          scaffoldKey: readerPageScaffoldKey,
-          onOpenChapters: () {
-            Navigator.of(sheetContext).pop();
-            unawaited(_openChapterList(context, controller));
-          },
-          onAddBookmark: () {
-            Navigator.of(sheetContext).pop();
-            unawaited(_addBookmarkFromOverlay(context, controller));
-          },
-          onOpenBookmarks: () {
-            Navigator.of(sheetContext).pop();
-            unawaited(_openBookmarksPage(context, controller));
-          },
-          onOpenNotes: () {
-            Navigator.of(sheetContext).pop();
-            unawaited(_openNotesPage(context, controller));
-          },
-          brightnessController: _brightnessController,
-        );
-      },
+      brightnessController: _brightnessController,
+      readerController: controller,
     );
+  }
 
-    if (mounted) {
-      _setControlsVisible(false);
-    }
+  /// Settings tile destination — opens the full [ReaderMenu] as a standalone
+  /// modal bottom sheet. Replaces the old in-sheet Quick/Full toggle path.
+  Future<void> _openReaderSettings(
+    BuildContext context,
+    ReaderController controller,
+  ) async {
+    if (!context.mounted) return;
+    await _showReaderSettingsSheet(
+      context: context,
+      readerController: controller,
+      brightnessController: _brightnessController,
+      scaffoldKey: readerPageScaffoldKey,
+    );
   }
 
   Future<void> _openChapterList(
@@ -528,26 +560,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     );
   }
 
-  Future<void> _addBookmarkFromOverlay(
-    BuildContext context,
-    ReaderController controller,
-  ) async {
-    final added = await controller.addBookmark();
-    if (!added) {
-      return;
-    }
-
-    if (!mounted) {
-      return;
-    }
-    if (!context.mounted) {
-      return;
-    }
-
-    _setControlsVisible(false);
-    SnackBarUtils.show(context, 'Bookmark Added!');
-  }
-
   Future<void> _openBookmarksPage(
     BuildContext context,
     ReaderController controller,
@@ -564,37 +576,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     );
     if (result != null && result is Map<String, dynamic>) {
       await controller.handleBookmarkSelection(result);
-    }
-  }
-
-  Future<void> _openNotesPage(
-    BuildContext context,
-    ReaderController controller,
-  ) async {
-    _setControlsVisible(false);
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => NotesListPage(
-          bookId: controller.book.id,
-          bookTitle: controller.book.title,
-          onJumpToHighlight: (_) {},
-        ),
-      ),
-    );
-
-    await controller.loadHighlights();
-
-    if (result != null && result is Highlight) {
-      final selectedHighlight =
-          await controller.handleHighlightSelection(result);
-      if (context.mounted && selectedHighlight != null) {
-        _showHighlightNoteDialog(
-          context,
-          controller,
-          selectedHighlight,
-        );
-      }
     }
   }
 

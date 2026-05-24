@@ -8,9 +8,8 @@ import '../../../core/theme/nyan_radius.dart';
 import '../../../core/theme/nyan_shelf_ui.dart';
 import '../../../core/theme/nyan_shadows.dart';
 import '../../../core/theme/nyan_spacing.dart';
-import '../../../core/ui/components/nyan_book_logo_mark.dart';
+import '../../../core/theme/nyan_typography.dart';
 import '../../../core/ui/nyan_theme_context.dart';
-import '../../../core/utils/datetime_utils.dart';
 
 /// Animated book card for list view mode
 class AnimatedBookCardList extends StatefulWidget {
@@ -86,27 +85,18 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final nyan = context.nyanTheme;
 
-    // Calculate progress percentage
     final progress = widget.book.currentProgress.clamp(0.0, 1.0);
-    final progressPercent = (progress * 100).toStringAsFixed(0);
-
-    // Format last read time with relative labels
     final loc = AppLocalizations.of(context)!;
-    String lastReadText = loc.neverRead;
-    final lastReadAt =
-        widget.book.lastReadAt ?? (widget.bookData['last_read_at'] as int?);
-    if (lastReadAt != null) {
-      final now = DateTime.now();
-      lastReadText = DateTimeUtils.formatRelativeTimeFromMillis(
-        lastReadAt,
-        now,
-        loc,
-      );
-    } else if (progress > 0) {
-      // Progress is already shown on the row below; avoid "Never read" + percent mismatch.
-      lastReadText = '';
-    }
+
+    // Meta line: "Author · FORMAT" — mirrors spec `{b.author} · {b.format}`.
+    final author = widget.book.author.trim().isEmpty ||
+            widget.book.author.trim().toLowerCase() == 'unknown'
+        ? loc.unknownAuthor
+        : widget.book.author;
+    final format = widget.book.format.toUpperCase();
+    final metaText = '$author · $format';
 
     return ScaleTransition(
       scale: _scaleAnimation,
@@ -120,9 +110,7 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                 : theme.colorScheme.outline.withValues(alpha: 0.12),
             width: widget.isSelected ? 2 : 1,
           ),
-          color: widget.isSelected
-              ? context.selectionSurface
-              : theme.cardColor,
+          color: widget.isSelected ? context.selectionSurface : theme.cardColor,
           boxShadow: NyanShadows.subtle(theme.shadowColor),
         ),
         child: GestureDetector(
@@ -133,9 +121,14 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
           onTapUp: _handleTapUp,
           onTapCancel: _handleTapCancel,
           child: Padding(
-            padding: const EdgeInsets.all(NyanSpacing.space12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: NyanSpacing.space12,
+            ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // Selection checkbox (only in selection mode)
                 if (widget.isSelectionMode)
                   Padding(
                     padding: const EdgeInsets.only(right: NyanSpacing.space12),
@@ -145,109 +138,102 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                     ),
                   ),
 
-                const NyanBookLogoMark(iconSize: 24),
-                const SizedBox(width: NyanSpacing.space16),
+                // Icon badge: primary @ 12% background, radius-small, 22pt book icon
+                Container(
+                  padding: const EdgeInsets.all(NyanSpacing.space8),
+                  decoration: BoxDecoration(
+                    color: nyan.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(NyanRadius.small),
+                  ),
+                  child: Icon(
+                    NyanIcons.book,
+                    size: 22,
+                    color: nyan.primary,
+                  ),
+                ),
+                const SizedBox(width: NyanSpacing.space12),
 
-                // Book info: title row + status, then progress + percent
+                // Text + progress column
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Title row — source-missing warning badge sits inline
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Expanded(
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    widget.book.title,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      height: 1.28,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.15,
-                                      color: theme.textTheme.bodyLarge?.color,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                if (!_isSourceAvailable())
-                                  SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: Tooltip(
-                                      message: 'Source file missing',
-                                      child: Icon(
-                                        NyanIcons.warning,
-                                        size: 14,
-                                        color: Colors.amber[700],
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          if (!widget.isSelectionMode &&
-                              lastReadText.isNotEmpty) ...[
-                            const SizedBox(width: NyanSpacing.space8),
-                            Text(
-                              lastReadText,
-                              textAlign: TextAlign.end,
+                            child: Text(
+                              widget.book.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 12,
-                                height: 1.2,
-                                fontWeight: FontWeight.w500,
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.5),
+                                fontFamily: NyanTypography.uiFontFamily,
+                                fontSize: 15,
+                                height: 1.3,
+                                fontWeight: FontWeight.w600,
+                                color: nyan.textPrimary,
                               ),
                             ),
-                          ],
+                          ),
+                          if (!_isSourceAvailable())
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: NyanSpacing.space4,
+                              ),
+                              child: Tooltip(
+                                message: 'Source file missing',
+                                child: Icon(
+                                  NyanIcons.warning,
+                                  size: 14,
+                                  color: Colors.amber[700],
+                                ),
+                              ),
+                            ),
                         ],
                       ),
+                      const SizedBox(height: 2),
+                      // Meta: "Author · FORMAT"
+                      Text(
+                        metaText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: NyanTypography.uiFontFamily,
+                          fontSize: NyanTypography.meta,
+                          height: 1.3,
+                          fontWeight: FontWeight.w400,
+                          color: nyan.textSecondary,
+                        ),
+                      ),
                       const SizedBox(height: NyanSpacing.space8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                NyanShelfUi.progressBarHeight / 2,
-                              ),
-                              child: TweenAnimationBuilder<double>(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeOutCubic,
-                                tween: Tween<double>(begin: 0, end: progress),
-                                builder: (context, value, _) {
-                                  return LinearProgressIndicator(
-                                    value: value,
-                                    minHeight: NyanShelfUi.progressBarHeight,
-                                    backgroundColor: theme.colorScheme.primary
-                                        .withValues(alpha: 0.18),
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      theme.colorScheme.primary,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
+                      // Progress bar: 70% width, 5pt height, spec radius 999
+                      FractionallySizedBox(
+                        widthFactor: 0.7,
+                        alignment: Alignment.centerLeft,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(999),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: NyanShelfUi.progressBarHeight,
+                            backgroundColor: nyan.primary.withValues(alpha: 0.18),
+                            valueColor: AlwaysStoppedAnimation<Color>(nyan.primary),
                           ),
-                          const SizedBox(width: NyanSpacing.space8),
-                          Text(
-                            '$progressPercent%',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.58),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
                 ),
+
+                // Trailing chevron (hidden in selection mode; checkbox takes that role)
+                if (!widget.isSelectionMode) ...[
+                  const SizedBox(width: NyanSpacing.space8),
+                  Icon(
+                    NyanIcons.chevronRight,
+                    size: 18,
+                    color: nyan.textSecondary.withValues(alpha: 0.44),
+                  ),
+                ],
               ],
             ),
           ),
@@ -257,204 +243,5 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
   }
 }
 
-/// Animated book card for grid view mode
-class AnimatedBookCardGrid extends StatefulWidget {
-  final Book book;
-  final bool isSelected;
-  final bool isSelectionMode;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
-
-  const AnimatedBookCardGrid({
-    super.key,
-    required this.book,
-    required this.isSelected,
-    required this.isSelectionMode,
-    required this.onTap,
-    required this.onLongPress,
-  });
-
-  @override
-  State<AnimatedBookCardGrid> createState() => _AnimatedBookCardGridState();
-}
-
-class _AnimatedBookCardGridState extends State<AnimatedBookCardGrid>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _scaleController;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _scaleController = AnimationController(
-      duration: const Duration(milliseconds: 180),
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeOutCubic),
-    );
-  }
-
-  @override
-  void dispose() {
-    _scaleController.dispose();
-    super.dispose();
-  }
-
-  void _handleTapDown(TapDownDetails details) {
-    _scaleController.forward();
-  }
-
-  void _handleTapUp(TapUpDetails details) {
-    _scaleController.reverse();
-  }
-
-  void _handleTapCancel() {
-    _scaleController.reverse();
-  }
-
-  bool _isSourceAvailable() {
-    if (widget.book.sourceLocator.isEmpty) return false;
-    // Android content URIs are always available if they're in the database
-    if (widget.book.isAndroidContentUri) return true;
-    try {
-      return File(widget.book.sourceLocator).existsSync();
-    } catch (_) {
-      return false;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onTap,
-        onLongPress: widget.onLongPress,
-        onTapDown: _handleTapDown,
-        onTapUp: _handleTapUp,
-        onTapCancel: _handleTapCancel,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(NyanRadius.input),
-                border: Border.all(
-                  color: widget.isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.outline.withValues(alpha: 0.1),
-                  width: widget.isSelected ? 3 : 1,
-                ),
-                color: widget.isSelected
-                    ? context.selectionSurface
-                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                boxShadow: NyanShadows.subtle(theme.shadowColor),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(NyanRadius.input),
-                child: Stack(
-                  children: [
-                    // Main content
-                    Positioned.fill(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: NyanSpacing.space16),
-                          const NyanBookLogoMark(
-                            iconSize: 32,
-                            backgroundAlpha: 0.1,
-                          ),
-                          const SizedBox(height: NyanSpacing.space8),
-                          // Title with gradient
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: NyanSpacing.space4,
-                            ),
-                            child: Text(
-                              widget.book.title,
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.2,
-                                color: theme.textTheme.bodyLarge?.color,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Bottom gradient for title readability
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      height: 60,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.topCenter,
-                            colors: [
-                              theme.cardColor.withValues(alpha: 0.9),
-                              theme.cardColor.withValues(alpha: 0.0),
-                            ],
-                          ),
-                          borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(NyanRadius.input),
-                            bottomRight: Radius.circular(NyanRadius.input),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Source availability warning (only show if missing)
-            if (!_isSourceAvailable())
-              Positioned(
-                bottom: NyanSpacing.space8,
-                right: NyanSpacing.space8,
-                child: Tooltip(
-                  message: 'Source file missing',
-                  child: Icon(
-                    NyanIcons.warning,
-                    size: 18,
-                    color: Colors.amber[600],
-                  ),
-                ),
-              ),
-            // Selection indicator
-            if (widget.isSelectionMode)
-              Positioned(
-                top: NyanSpacing.space8,
-                right: NyanSpacing.space8,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: widget.isSelected
-                        ? theme.colorScheme.primary
-                        : Colors.grey.withValues(alpha: 0.5),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(NyanSpacing.space4),
-                    child: widget.isSelected
-                        ? const Icon(NyanIcons.check, size: 16, color: Colors.white)
-                        : const SizedBox(width: 16, height: 16),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// Grid view uses NyanBookGridCard (lib/core/ui/components/nyan_book_grid_card.dart)
+// directly — no animated wrapper needed for grid.

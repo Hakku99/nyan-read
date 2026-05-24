@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,6 +7,7 @@ import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../../core/theme/nyan_radius.dart';
 import '../../../core/theme/nyan_spacing.dart';
+import '../../../core/theme/nyan_typography.dart';
 import '../../../core/theme/theme_presets.dart';
 import '../../../core/ui/components/nyan_confirm_dialog.dart';
 import '../../../core/ui/components/nyan_overlay_style.dart';
@@ -26,7 +28,6 @@ class ReaderMenu extends StatefulWidget {
     required this.scaffoldKey,
     required this.brightnessController,
     this.scrollController,
-    this.onBackToQuickPanel,
     this.showSheetChrome = true,
     this.showHeader = true,
     this.bottomInsetOverride,
@@ -36,10 +37,6 @@ class ReaderMenu extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
   final BrightnessController brightnessController;
   final ScrollController? scrollController;
-
-  /// When set (e.g. L2 opened on top of L1), shows a back control that pops
-  /// this sheet and returns to the quick panel.
-  final VoidCallback? onBackToQuickPanel;
   final bool showSheetChrome;
   final bool showHeader;
   final double? bottomInsetOverride;
@@ -158,10 +155,8 @@ class _ReaderMenuState extends State<ReaderMenu> {
                         SizedBox(height: sectionGap),
                         _ReaderMenuHeader(
                           title: loc.readingSettings,
-                          quickModeTooltip: loc.readerMenuBackToQuick,
-                          fullModeTooltip: loc.readingSettings,
-                          onOpenQuickMode: widget.onBackToQuickPanel,
-                          onBackToQuickPanel: widget.onBackToQuickPanel,
+                          progressListenable:
+                              controller.progressListenable,
                         ),
                         SizedBox(height: headerBottomGap),
                       ],
@@ -332,164 +327,69 @@ Future<void> _confirmResetAllFromHeader(
   }
 }
 
+/// Sheet header per Claude Design spec (`ReaderSettingsSheet.jsx`): title on
+/// the left, "Reading progress {N}%" meta on the right. The old Quick / Full
+/// layer toggle was removed in P4 once the bottom-overlay layer system went
+/// away — there is no longer a parallel "quick" panel to bounce back to.
 class _ReaderMenuHeader extends StatelessWidget {
   const _ReaderMenuHeader({
     required this.title,
-    required this.quickModeTooltip,
-    required this.fullModeTooltip,
-    required this.onOpenQuickMode,
-    this.onBackToQuickPanel,
+    required this.progressListenable,
   });
 
   final String title;
-  final String quickModeTooltip;
-  final String fullModeTooltip;
-  final VoidCallback? onOpenQuickMode;
-  final VoidCallback? onBackToQuickPanel;
+  final ValueListenable<double> progressListenable;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final titleStyle = theme.textTheme.titleSmall?.copyWith(
-      fontWeight: FontWeight.w600,
-      fontSize: 16,
-      letterSpacing: -0.08,
-      height: 1.2,
-      color: theme.colorScheme.onSurface.withValues(alpha: 0.92),
-    );
+    final nyan = resolveNyanTheme(theme);
+    final loc = AppLocalizations.of(context)!;
 
-    return SizedBox(
-      height: NyanSpacing.minTapTarget,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: NyanSpacing.space4),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: NyanSpacing.space4 / 2),
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: titleStyle,
-                ),
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: NyanTypography.uiFontFamily,
+                // Spec: 18pt section-title weight, slightly heavier than the
+                // section header treatment used elsewhere on the sheet.
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.1,
+                height: 1.2,
+                color: nyan.textPrimary,
               ),
             ),
           ),
           const SizedBox(width: NyanSpacing.space8),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(NyanRadius.input),
-              border: Border.all(
-                color: theme.dividerColor.withValues(alpha: 0.16),
-                width: 0.8,
-              ),
-            ),
-            child: ReaderLayerModeToggle(
-              quickSelected: onBackToQuickPanel == null,
-              quickTooltip: quickModeTooltip,
-              fullTooltip: fullModeTooltip,
-              onTapQuick: onOpenQuickMode == null
-                  ? null
-                  : () {
-                      HapticFeedback.lightImpact();
-                      onOpenQuickMode!();
-                    },
-            ),
+          ValueListenableBuilder<double>(
+            valueListenable: progressListenable,
+            builder: (context, progress, _) {
+              final pct = (progress.clamp(0.0, 1.0) * 100).round();
+              return Text(
+                loc.readerSettingsProgressHint(pct),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: NyanTypography.uiFontFamily,
+                  fontSize: NyanTypography.meta,
+                  fontWeight: FontWeight.w400,
+                  height: 1.35,
+                  color: nyan.textSecondary,
+                ),
+              );
+            },
           ),
         ],
       ),
     );
-  }
-}
-
-class ReaderLayerModeToggle extends StatelessWidget {
-  const ReaderLayerModeToggle({
-    super.key,
-    required this.quickSelected,
-    required this.quickTooltip,
-    required this.fullTooltip,
-    this.onTapQuick,
-    this.onTapFull,
-  });
-
-  final bool quickSelected;
-  final String? quickTooltip;
-  final String? fullTooltip;
-  final VoidCallback? onTapQuick;
-  final VoidCallback? onTapFull;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(NyanRadius.input),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ReaderLayerModeToggleCell(
-            icon: NyanIcons.dashboard,
-            selected: quickSelected,
-            tooltip: quickTooltip,
-            onTap: onTapQuick,
-          ),
-          ReaderLayerModeToggleCell(
-            icon: NyanIcons.tune,
-            selected: !quickSelected,
-            tooltip: fullTooltip,
-            onTap: onTapFull,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class ReaderLayerModeToggleCell extends StatelessWidget {
-  const ReaderLayerModeToggleCell({
-    super.key,
-    required this.icon,
-    required this.selected,
-    required this.tooltip,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final bool selected;
-  final String? tooltip;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final button = InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(NyanRadius.input),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        width: NyanSpacing.minTapTarget,
-        height: NyanSpacing.minTapTarget,
-        decoration: BoxDecoration(
-          color: selected
-              ? theme.colorScheme.primary.withValues(alpha: 0.14)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(NyanRadius.input),
-        ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: selected
-              ? theme.colorScheme.primary.withValues(alpha: 0.9)
-              : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-        ),
-      ),
-    );
-    if (tooltip == null || tooltip!.isEmpty) {
-      return button;
-    }
-    return Tooltip(message: tooltip!, child: button);
   }
 }
 

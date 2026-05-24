@@ -39,16 +39,15 @@ class NyanContinueReadingCard extends StatelessWidget {
         book.author.trim().toLowerCase() != 'unknown';
     final EdgeInsetsGeometry cardPadding;
     if (collapsed) {
-      cardPadding = EdgeInsets.symmetric(
-        horizontal: compact ? NyanSpacing.space8 : NyanSpacing.space12,
-        vertical: NyanSpacing.space8,
+      cardPadding = EdgeInsets.all(
+        compact ? NyanSpacing.space8 : NyanSpacing.space12,
       );
     } else if (compact) {
       cardPadding = const EdgeInsets.all(NyanSpacing.space8);
     } else {
       cardPadding = const EdgeInsets.symmetric(
         horizontal: NyanSpacing.space16,
-        vertical: NyanSpacing.space12,
+        vertical: NyanSpacing.space16,
       );
     }
 

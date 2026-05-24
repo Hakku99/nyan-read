@@ -77,7 +77,14 @@ class NyanPageHeader extends StatelessWidget {
           ),
           if (actions != null && actions!.isNotEmpty) ...[
             const SizedBox(width: NyanSpacing.space12),
-            Row(children: actions!),
+            Row(
+              children: [
+                for (int i = 0; i < actions!.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 4),
+                  actions![i],
+                ],
+              ],
+            ),
           ],
         ],
       ),

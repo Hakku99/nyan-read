@@ -7,6 +7,7 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/nyan_colors.dart';
 import '../../../../core/theme/nyan_radius.dart';
 import '../../../../core/theme/nyan_spacing.dart';
+import '../../../../core/theme/nyan_typography.dart';
 import '../../../../core/ui/components/nyan_sheet_card.dart';
 
 Color _themeLabelColor({
@@ -93,7 +94,9 @@ class ReaderSettingsThemePanel extends StatelessWidget {
               crossAxisCount: 2,
               crossAxisSpacing: NyanSpacing.space12,
               mainAxisSpacing: NyanSpacing.space12,
-              mainAxisExtent: 66,
+              // Spec ReaderSettingsSheet.jsx: theme card height 80pt with the
+              // "Aa 永" sample inside the preview area.
+              mainAxisExtent: 80,
             ),
             itemBuilder: (context, index) {
               final option = options[index];
@@ -142,9 +145,18 @@ class _ThemeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final darkPage = option.background.computeLuminance() < 0.35;
-    final linePrimary = darkPage ? 0.34 : 0.16;
-    final lineSecondary = darkPage ? 0.26 : 0.12;
+
+    // Per Claude Design spec (`ReaderSettingsSheet.jsx`): the card uses the
+    // theme's preview colour as its own background, with the name in the
+    // theme's ink colour top-left, an "Aa 永" sample (serif) bottom-left,
+    // and a 22pt check circle top-right when selected. The check uses
+    // [Icons.check_rounded] with the [primary] colour for the circle so the
+    // selection cue reads regardless of card luminance.
+    final labelColor = _themeLabelColor(
+      theme: theme,
+      preview: option.preview,
+      isSelected: isSelected,
+    );
 
     return Semantics(
       button: true,
@@ -157,7 +169,7 @@ class _ThemeCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.medium),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(NyanSpacing.space12),
             decoration: BoxDecoration(
               color: option.preview,
               borderRadius: BorderRadius.circular(AppRadius.medium),
@@ -173,85 +185,59 @@ class _ThemeCard extends StatelessWidget {
               border: Border.all(
                 color: isSelected
                     ? theme.colorScheme.primary
-                    : theme.dividerColor.withValues(alpha: 0.16),
-                width: isSelected ? 1.2 : 0.72,
+                    : option.ink.withValues(alpha: 0.16),
+                width: isSelected ? 2 : 1,
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Stack(
               children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: option.background,
-                      borderRadius: BorderRadius.circular(NyanRadius.small),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      option.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: NyanTypography.uiFontFamily,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                        color: labelColor,
+                      ),
                     ),
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              height: 2,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color:
-                                    option.ink.withValues(alpha: linePrimary),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: Container(
-                                height: 2,
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: option.ink
-                                      .withValues(alpha: lineSecondary),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                    Text(
+                      'Aa 永',
+                      style: TextStyle(
+                        fontFamily: NyanTypography.readingSerifFontFamily,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        height: 1.0,
+                        color: option.ink.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+                if (isSelected)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        NyanIcons.checkFilled,
+                        size: 14,
+                        color: theme.colorScheme.onPrimary,
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        option.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          height: 1.1,
-                          color: _themeLabelColor(
-                            theme: theme,
-                            preview: option.preview,
-                            isSelected: isSelected,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (isSelected)
-                      CircleAvatar(
-                        radius: 10,
-                        backgroundColor: theme.colorScheme.primary,
-                        child: Icon(
-                          NyanIcons.checkFilled,
-                          size: 14,
-                          color: theme.colorScheme.onPrimary,
-                        ),
-                      ),
-                  ],
-                ),
               ],
             ),
           ),
