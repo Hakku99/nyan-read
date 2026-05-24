@@ -293,7 +293,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteFilesOnRemoveSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'This will also delete the original files from your device.'**
+  /// **'Original files will also be removed from your device.'**
   String get deleteFilesOnRemoveSubtitle;
 
   /// No description provided for @lockPrivateShelf.
@@ -317,7 +317,7 @@ abstract class AppLocalizations {
   /// No description provided for @adsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Show Ads (Free Version)'**
+  /// **'Shown in the free version'**
   String get adsSubtitle;
 
   /// No description provided for @upgradeToPro.
@@ -325,6 +325,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Upgrade to Pro'**
   String get upgradeToPro;
+
+  /// No description provided for @upgradeToProSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Privacy Shelf and more'**
+  String get upgradeToProSubtitle;
+
+  /// No description provided for @pro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get pro;
+
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// No description provided for @lockPrivacyShelfSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide until next unlock'**
+  String get lockPrivacyShelfSubtitle;
 
   /// No description provided for @adminPanel.
   ///
@@ -425,7 +449,7 @@ abstract class AppLocalizations {
   /// No description provided for @originalPath.
   ///
   /// In en, this message translates to:
-  /// **'Original path'**
+  /// **'Original Path'**
   String get originalPath;
 
   /// No description provided for @unknownAuthor.
@@ -515,7 +539,7 @@ abstract class AppLocalizations {
   /// No description provided for @lastOpened.
   ///
   /// In en, this message translates to:
-  /// **'Last opened'**
+  /// **'Last Opened'**
   String get lastOpened;
 
   /// No description provided for @bookDetailsSourceSummaryDownloads.
@@ -533,7 +557,7 @@ abstract class AppLocalizations {
   /// No description provided for @bookDetailsFullTitle.
   ///
   /// In en, this message translates to:
-  /// **'Full title'**
+  /// **'Full Title'**
   String get bookDetailsFullTitle;
 
   /// No description provided for @fileLocation.
@@ -557,7 +581,7 @@ abstract class AppLocalizations {
   /// No description provided for @copyPath.
   ///
   /// In en, this message translates to:
-  /// **'Copy path'**
+  /// **'Copy Path'**
   String get copyPath;
 
   /// No description provided for @filePathCopied.
@@ -641,7 +665,7 @@ abstract class AppLocalizations {
   /// No description provided for @editNote.
   ///
   /// In en, this message translates to:
-  /// **'Edit note'**
+  /// **'Edit Note'**
   String get editNote;
 
   /// No description provided for @addNoteHint.
@@ -653,7 +677,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteNote.
   ///
   /// In en, this message translates to:
-  /// **'Delete note'**
+  /// **'Delete Note'**
   String get deleteNote;
 
   /// No description provided for @delete.
@@ -725,7 +749,7 @@ abstract class AppLocalizations {
   /// No description provided for @enjoyReading.
   ///
   /// In en, this message translates to:
-  /// **'Enjoy reading time'**
+  /// **'Enjoy your reading'**
   String get enjoyReading;
 
   /// No description provided for @listView.
@@ -1421,7 +1445,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorParseFailed.
   ///
   /// In en, this message translates to:
-  /// **'The pages are stuck together.\nFailed to parse file, it might be corrupted.'**
+  /// **'The pages are stuck together.\nThis file may be corrupted or incomplete.'**
   String get errorParseFailed;
 
   /// No description provided for @errorUnknown.

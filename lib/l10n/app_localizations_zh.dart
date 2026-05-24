@@ -125,6 +125,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get upgradeToPro => '升级到专业版';
 
   @override
+  String get upgradeToProSubtitle => '解锁私密书架等专业功能';
+
+  @override
+  String get pro => '专业版';
+
+  @override
+  String get about => '关于';
+
+  @override
+  String get lockPrivacyShelfSubtitle => '隐藏直到下次解锁';
+
+  @override
   String get adminPanel => '管理面板';
 
   @override

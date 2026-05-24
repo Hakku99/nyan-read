@@ -173,15 +173,6 @@ class _ThemeCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: option.preview,
               borderRadius: BorderRadius.circular(AppRadius.medium),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ]
-                  : null,
               border: Border.all(
                 color: isSelected
                     ? theme.colorScheme.primary

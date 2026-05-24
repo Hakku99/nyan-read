@@ -108,7 +108,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteFilesOnRemoveSubtitle =>
-      'This will also delete the original files from your device.';
+      'Original files will also be removed from your device.';
 
   @override
   String get lockPrivateShelf => 'Lock Private Shelf';
@@ -120,10 +120,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ads => 'Ads';
 
   @override
-  String get adsSubtitle => 'Show Ads (Free Version)';
+  String get adsSubtitle => 'Shown in the free version';
 
   @override
   String get upgradeToPro => 'Upgrade to Pro';
+
+  @override
+  String get upgradeToProSubtitle => 'Unlock Privacy Shelf and more';
+
+  @override
+  String get pro => 'Pro';
+
+  @override
+  String get about => 'About';
+
+  @override
+  String get lockPrivacyShelfSubtitle => 'Hide until next unlock';
 
   @override
   String get adminPanel => 'Admin Panel';
@@ -176,7 +188,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookDetailsSourceSection => 'Source';
 
   @override
-  String get originalPath => 'Original path';
+  String get originalPath => 'Original Path';
 
   @override
   String get unknownAuthor => 'Unknown author';
@@ -221,7 +233,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lastRead => 'Last Read';
 
   @override
-  String get lastOpened => 'Last opened';
+  String get lastOpened => 'Last Opened';
 
   @override
   String get bookDetailsSourceSummaryDownloads => 'Saved from Downloads';
@@ -230,7 +242,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookDetailsSourceSummaryImported => 'Imported file';
 
   @override
-  String get bookDetailsFullTitle => 'Full title';
+  String get bookDetailsFullTitle => 'Full Title';
 
   @override
   String get fileLocation => 'File Location';
@@ -242,7 +254,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueReading => 'Continue Reading';
 
   @override
-  String get copyPath => 'Copy path';
+  String get copyPath => 'Copy Path';
 
   @override
   String get filePathCopied => 'File path copied to clipboard';
@@ -286,13 +298,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addNote => 'Add Note';
 
   @override
-  String get editNote => 'Edit note';
+  String get editNote => 'Edit Note';
 
   @override
   String get addNoteHint => 'Add a note...';
 
   @override
-  String get deleteNote => 'Delete note';
+  String get deleteNote => 'Delete Note';
 
   @override
   String get delete => 'Delete';
@@ -328,7 +340,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Nyan Read ฅ^•ﻌ•^ฅ';
 
   @override
-  String get enjoyReading => 'Enjoy reading time';
+  String get enjoyReading => 'Enjoy your reading';
 
   @override
   String get listView => 'List View';
@@ -750,7 +762,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorParseFailed =>
-      'The pages are stuck together.\nFailed to parse file, it might be corrupted.';
+      'The pages are stuck together.\nThis file may be corrupted or incomplete.';
 
   @override
   String get errorUnknown =>

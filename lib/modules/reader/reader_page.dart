@@ -321,7 +321,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                                                   ? 0.42
                                                                   : 0.5),
                                                       fontWeight:
-                                                          FontWeight.bold,
+                                                          FontWeight.w600,
                                                     ),
                                                   ),
                                                 ),

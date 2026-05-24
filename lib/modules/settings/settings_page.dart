@@ -12,24 +12,20 @@ import '../../core/services/bookshelf_preferences_service.dart';
 import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/riverpod_providers.dart';
 import '../../core/services/service_locator.dart';
-import '../../core/theme/nyan_radius.dart';
-import '../../core/theme/nyan_shadows.dart';
 import '../../core/theme/nyan_spacing.dart';
+import '../../core/theme/nyan_typography.dart';
 import '../../core/theme/theme_presets.dart';
 import '../../core/ui/components/components.dart';
-import '../../core/utils/snackbar_utils.dart';
 import '../../core/ui/nyan_icons.dart';
+import '../../core/ui/nyan_theme_context.dart';
+import '../../core/utils/snackbar_utils.dart';
 
-const double _kSettingsCardRadius = NyanRadius.input;
 const double _kSettingsHorizontalPadding = NyanSpacing.space16;
 const double _kSettingsSectionGap = NyanSpacing.space24;
-const double _kSettingsCardGap = NyanSpacing.space12;
-const double _kSettingsRowVerticalPadding = NyanSpacing.space12;
-const double _kSettingsSubRowIndent = NyanSpacing.space16;
-const double _kSettingsSheetContentGap = 21;
-const double _kSettingsSheetOuterPadding = _kSettingsSheetContentGap;
-const double _kSettingsSheetBottomPadding = NyanSpacing.space16;
-const double _kSettingsSheetHeaderGap = NyanSpacing.space12;
+
+/// Hardcoded until package_info_plus is added to pubspec.yaml.
+/// TODO(#package-info): replace with PackageInfo.fromPlatform() build string.
+const String _kAppVersion = 'v1.0.0';
 
 void _showSettingsLoadingDialog(
   BuildContext context, {
@@ -74,14 +70,14 @@ Future<void> _showExportActionsSheet(
         descriptionStyle: NyanSheetAppearance.compactDescriptionStyle(theme),
         handleColor: NyanSheetAppearance.compactHandleColor(theme),
         contentPadding: EdgeInsets.only(
-          left: _kSettingsSheetOuterPadding,
-          right: _kSettingsSheetOuterPadding,
+          left: _kSettingsHorizontalPadding,
+          right: _kSettingsHorizontalPadding,
           top: NyanSpacing.space12,
-          bottom: _kSettingsSheetBottomPadding +
+          bottom: NyanSpacing.space16 +
               MediaQuery.of(sheetContext).padding.bottom,
         ),
         titleTopSpacing: NyanSpacing.space8,
-        titleChildSpacing: _kSettingsSheetHeaderGap,
+        titleChildSpacing: NyanSpacing.space12,
         child: NyanSheetCard(
           children: [
             NyanActionSheetRow(
@@ -138,7 +134,6 @@ Future<void> _handleExportData(BuildContext context) async {
     if (context.mounted) {
       _closeSettingsDialog(context);
     }
-
     if (!context.mounted) return;
     await _showExportActionsSheet(context, exportFilePath);
   } catch (e) {
@@ -213,252 +208,284 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         reminderService,
       ]),
       builder: (context, _) {
-        final theme = Theme.of(context);
         final loc = AppLocalizations.of(context)!;
+        final bottomInset = MediaQuery.paddingOf(context).bottom;
+
+        // Show "Pro" section only when there is something actionable in it.
+        final showProSection =
+            !featureManager.isPro || featureManager.privacyShelfEnabled;
+
         return Scaffold(
-          appBar: AppBar(
-            leadingWidth: NyanSpacing.minTapTarget + NyanSpacing.space12,
-            titleSpacing: NyanSpacing.space4,
-            centerTitle: false,
-            title: Text(
-              loc.settingsTitle,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                height: 1.1,
-              ),
-            ),
-          ),
-          body: ListView(
-            padding: EdgeInsets.fromLTRB(
-              _kSettingsHorizontalPadding,
-              _kSettingsHorizontalPadding,
-              _kSettingsHorizontalPadding,
-              _kSettingsHorizontalPadding +
-                  MediaQuery.of(context).padding.bottom,
-            ),
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              NyanSectionHeader(title: loc.appearance),
-              _SettingsCard(
-                children: [
-                  _SelectionRow(
-                    title: loc.themePreset,
-                    valueLabel: _getThemeName(themeManager.currentPreset, loc),
-                    onTap: () async {
-                      final preset = await showNyanSelectionSheet<ThemePreset>(
-                        context: context,
-                        title: loc.themePreset,
-                        currentValue: themeManager.currentPreset,
-                        options: themePresets.values
-                            .map(
-                              (theme) => NyanSelectionOption(
-                                value: theme.preset,
-                                label: _getThemeName(theme.preset, loc),
-                              ),
-                            )
-                            .toList(),
-                      );
-                      if (preset != null) {
-                        await themeManager.setPreset(preset);
-                      }
-                    },
+              // Pinned header — stays fixed while the list scrolls.
+              SafeArea(
+                bottom: false,
+                child: NyanPageHeader(
+                  title: loc.settingsTitle,
+                  leading: NyanRecessedIconButton(
+                    icon: NyanIcons.back,
+                    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                    onPressed: () => context.pop(),
                   ),
-                  const _SettingsDivider(),
-                  _SelectionRow(
-                    title: loc.language,
-                    valueLabel: languageManager.locale.languageCode == 'zh'
-                        ? '\u4E2D\u6587'
-                        : 'English',
-                    onTap: () async {
-                      final locale = await showNyanSelectionSheet<Locale>(
-                        context: context,
-                        title: loc.language,
-                        currentValue: languageManager.locale,
-                        options: const [
-                          NyanSelectionOption(
-                              value: Locale('zh'), label: '\u4E2D\u6587'),
-                          NyanSelectionOption(
-                              value: Locale('en'), label: 'English'),
-                        ],
-                      );
-                      if (locale != null) {
-                        await languageManager.setLocale(locale);
-                      }
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: _kSettingsSectionGap),
-              NyanSectionHeader(title: loc.readingSettings),
-              ListenableBuilder(
-                listenable: Listenable.merge(
-                  [readerPrefs, reminderService],
                 ),
-                builder: (context, child) {
-                  return _SettingsCard(
-                    children: [
-                      _SelectionRow(
-                        title: loc.pageTurnMode,
-                        valueLabel: _getPageTurnModeLabel(
-                          readerPrefs.pageTurnMode,
-                          loc,
-                        ),
-                        onTap: () async {
-                          final mode = await showNyanSelectionSheet<PageTurnMode>(
-                            context: context,
-                            title: loc.pageTurnMode,
-                            currentValue: readerPrefs.pageTurnMode,
-                            options: [
-                              NyanSelectionOption(
-                                value: PageTurnMode.leftRight,
-                                label: loc.pageTurnModeLeftRight,
-                              ),
-                              NyanSelectionOption(
-                                value: PageTurnMode.upDown,
-                                label: loc.pageTurnModeUpDown,
-                              ),
-                            ],
-                          );
-                          if (mode != null) {
-                            await readerPrefs.setPageTurnMode(mode);
-                          }
-                        },
-                      ),
-                      const _SettingsDivider(),
-                      _SwitchRow(
-                        title: loc.readingReminder,
-                        subtitle: loc.readingReminderSubtitle,
-                        value: reminderService.isEnabled,
-                        onChanged: (value) {
-                          reminderService.setEnabled(value);
-                        },
-                      ),
-                      if (reminderService.isEnabled) ...[
-                        const _SettingsDivider(),
-                        _SelectionRow(
-                          title: loc.reminderInterval,
-                          valueLabel: loc
-                              .reminderMinutes(reminderService.intervalMinutes),
-                          inset: true,
+              ),
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    _kSettingsHorizontalPadding,
+                    0,
+                    _kSettingsHorizontalPadding,
+                    _kSettingsHorizontalPadding + bottomInset,
+                  ),
+                  children: [
+                    // ── Appearance ───────────────────────────────────────
+                    NyanSectionHeader(title: loc.appearance),
+                    NyanRowGroup(
+                      children: [
+                        NyanListRow(
+                          leadingIcon: NyanIcons.palette,
+                          title: loc.themePreset,
+                          subtitle: _getThemeName(
+                            themeManager.currentPreset,
+                            loc,
+                          ),
+                          showChevron: true,
                           onTap: () async {
-                            final interval = await showNyanSelectionSheet<int>(
+                            final preset =
+                                await showNyanSelectionSheet<ThemePreset>(
                               context: context,
-                              title: loc.reminderInterval,
-                              currentValue: reminderService.intervalMinutes,
-                              options: [
+                              title: loc.themePreset,
+                              currentValue: themeManager.currentPreset,
+                              options: themePresets.values
+                                  .map(
+                                    (t) => NyanSelectionOption(
+                                      value: t.preset,
+                                      label: _getThemeName(t.preset, loc),
+                                    ),
+                                  )
+                                  .toList(),
+                            );
+                            if (preset != null) {
+                              await themeManager.setPreset(preset);
+                            }
+                          },
+                        ),
+                        NyanListRow(
+                          leadingIcon: NyanIcons.language,
+                          title: loc.language,
+                          subtitle: languageManager.locale.languageCode == 'zh'
+                              ? '中文'
+                              : 'English',
+                          showChevron: true,
+                          onTap: () async {
+                            final locale =
+                                await showNyanSelectionSheet<Locale>(
+                              context: context,
+                              title: loc.language,
+                              currentValue: languageManager.locale,
+                              options: const [
                                 NyanSelectionOption(
-                                  value: 30,
-                                  label: loc.reminderMinutes(30),
+                                  value: Locale('zh'),
+                                  label: '中文',
                                 ),
                                 NyanSelectionOption(
-                                  value: 60,
-                                  label: loc.reminderMinutes(60),
-                                ),
-                                NyanSelectionOption(
-                                  value: 90,
-                                  label: loc.reminderMinutes(90),
+                                  value: Locale('en'),
+                                  label: 'English',
                                 ),
                               ],
                             );
-                            if (interval != null) {
-                              reminderService.setIntervalMinutes(interval);
+                            if (locale != null) {
+                              await languageManager.setLocale(locale);
                             }
                           },
                         ),
                       ],
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: _kSettingsSectionGap),
-              NyanSectionHeader(title: loc.dataManagement),
-              _SettingsCard(
-                children: [
-                  _ActionRow(
-                    icon: NyanIcons.download,
-                    title: loc.exportData,
-                    subtitle: loc.exportDataSubtitle,
-                    onTap: () => _handleExportData(context),
-                  ),
-                  const _SettingsDivider(),
-                  _ActionRow(
-                    icon: NyanIcons.upload,
-                    title: loc.importData,
-                    subtitle: loc.importDataSubtitle,
-                    onTap: () => _handleImportData(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: _kSettingsCardGap),
-              StatefulBuilder(
-                builder: (context, setLocalState) {
-                  final bookshelfPrefs = getIt<BookshelfPreferencesService>();
-                  final theme = Theme.of(context);
-                  final isDark = theme.brightness == Brightness.dark;
-                  final cautionSubtitleColor =
-                      theme.colorScheme.error.withValues(
-                    alpha: isDark ? 0.72 : 0.66,
-                  );
-
-                  return _SettingsCard(
-                    children: [
-                      _SwitchRow(
-                        title: loc.deleteFilesOnRemove,
-                        subtitle: loc.deleteFilesOnRemoveSubtitle,
-                        subtitleColor: cautionSubtitleColor.withValues(
-                          alpha: isDark ? 0.88 : 0.8,
-                        ),
-                        value: bookshelfPrefs.deleteFilesOnRemove,
-                        onChanged: (value) async {
-                          await bookshelfPrefs.setDeleteFilesOnRemove(value);
-                          setLocalState(() {});
-                        },
-                      ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: _kSettingsCardGap),
-              _SettingsCard(
-                children: [
-                  _ActionRow(
-                    icon: NyanIcons.adminPanel,
-                    iconColor: Theme.of(context).textTheme.bodySmall?.color,
-                    title: loc.adminPanel,
-                    onTap: () => context.push('/admin'),
-                  ),
-                ],
-              ),
-              if (!featureManager.isPro) ...[
-                const SizedBox(height: _kSettingsCardGap),
-                _SettingsCard(
-                  backgroundColor: Color.alphaBlend(
-                    theme.colorScheme.primary.withValues(
-                      alpha: theme.brightness == Brightness.dark ? 0.11 : 0.045,
                     ),
-                    theme.cardColor,
-                  ),
-                  borderColor: theme.colorScheme.primary.withValues(
-                    alpha: theme.brightness == Brightness.dark ? 0.2 : 0.12,
-                  ),
-                  shadowAlpha: theme.brightness == Brightness.dark ? 0 : 0.024,
-                  children: [
-                    _ActionRow(
-                      icon: NyanIcons.sparkle,
-                      iconColor: Theme.of(context).colorScheme.primary,
-                      iconBackgroundAlpha:
-                          theme.brightness == Brightness.dark ? 0.2 : 0.14,
-                      titleColor: theme.textTheme.bodyLarge?.color
-                          ?.withValues(alpha: 0.94),
-                      chevronColor:
-                          theme.colorScheme.primary.withValues(alpha: 0.58),
-                      title: loc.upgradeToPro,
-                      onTap: () {
-                        // TODO: Implement upgrade flow
+                    const SizedBox(height: _kSettingsSectionGap),
+
+                    // ── Reading ──────────────────────────────────────────
+                    NyanSectionHeader(title: loc.readingSettings),
+                    ListenableBuilder(
+                      listenable: Listenable.merge(
+                        [readerPrefs, reminderService],
+                      ),
+                      builder: (context, _) {
+                        return NyanRowGroup(
+                          children: [
+                            NyanListRow(
+                              leadingIcon: NyanIcons.book,
+                              title: loc.pageTurnMode,
+                              subtitle: _getPageTurnModeLabel(
+                                readerPrefs.pageTurnMode,
+                                loc,
+                              ),
+                              showChevron: true,
+                              onTap: () async {
+                                final mode =
+                                    await showNyanSelectionSheet<PageTurnMode>(
+                                  context: context,
+                                  title: loc.pageTurnMode,
+                                  currentValue: readerPrefs.pageTurnMode,
+                                  options: [
+                                    NyanSelectionOption(
+                                      value: PageTurnMode.leftRight,
+                                      label: loc.pageTurnModeLeftRight,
+                                    ),
+                                    NyanSelectionOption(
+                                      value: PageTurnMode.upDown,
+                                      label: loc.pageTurnModeUpDown,
+                                    ),
+                                  ],
+                                );
+                                if (mode != null) {
+                                  await readerPrefs.setPageTurnMode(mode);
+                                }
+                              },
+                            ),
+                            NyanListRow(
+                              leadingIcon: NyanIcons.alarm,
+                              title: loc.readingReminder,
+                              subtitle: loc.readingReminderSubtitle,
+                              trailing: NyanSwitch(
+                                value: reminderService.isEnabled,
+                                onChanged: (value) {
+                                  reminderService.setEnabled(value);
+                                },
+                              ),
+                            ),
+                            if (reminderService.isEnabled)
+                              NyanListRow(
+                                title: loc.reminderInterval,
+                                subtitle: loc.reminderMinutes(
+                                  reminderService.intervalMinutes,
+                                ),
+                                // Sub-row indented under Reading Reminder —
+                                // no icon chip, reduced left padding.
+                                contentPadding: const EdgeInsets.fromLTRB(
+                                  NyanSpacing.space16 + NyanSpacing.space16,
+                                  NyanSpacing.space12,
+                                  NyanSpacing.space16,
+                                  NyanSpacing.space12,
+                                ),
+                                showChevron: true,
+                                onTap: () async {
+                                  final interval =
+                                      await showNyanSelectionSheet<int>(
+                                    context: context,
+                                    title: loc.reminderInterval,
+                                    currentValue:
+                                        reminderService.intervalMinutes,
+                                    options: [
+                                      NyanSelectionOption(
+                                        value: 30,
+                                        label: loc.reminderMinutes(30),
+                                      ),
+                                      NyanSelectionOption(
+                                        value: 60,
+                                        label: loc.reminderMinutes(60),
+                                      ),
+                                      NyanSelectionOption(
+                                        value: 90,
+                                        label: loc.reminderMinutes(90),
+                                      ),
+                                    ],
+                                  );
+                                  if (interval != null) {
+                                    reminderService.setIntervalMinutes(
+                                      interval,
+                                    );
+                                  }
+                                },
+                              ),
+                            StatefulBuilder(
+                              builder: (context, setLocalState) {
+                                final bookshelfPrefs =
+                                    getIt<BookshelfPreferencesService>();
+                                return NyanListRow(
+                                  leadingIcon: NyanIcons.delete,
+                                  title: loc.deleteFilesOnRemove,
+                                  subtitle: loc.deleteFilesOnRemoveSubtitle,
+                                  trailing: NyanSwitch(
+                                    value: bookshelfPrefs.deleteFilesOnRemove,
+                                    onChanged: (value) async {
+                                      await bookshelfPrefs
+                                          .setDeleteFilesOnRemove(value);
+                                      setLocalState(() {});
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        );
                       },
                     ),
+                    const SizedBox(height: _kSettingsSectionGap),
+
+                    // ── Data Management ──────────────────────────────────
+                    NyanSectionHeader(title: loc.dataManagement),
+                    NyanRowGroup(
+                      children: [
+                        NyanListRow(
+                          leadingIcon: NyanIcons.shareIos,
+                          title: loc.exportData,
+                          subtitle: loc.exportDataSubtitle,
+                          showChevron: true,
+                          onTap: () => _handleExportData(context),
+                        ),
+                        NyanListRow(
+                          leadingIcon: NyanIcons.cloudDownload,
+                          title: loc.importData,
+                          subtitle: loc.importDataSubtitle,
+                          showChevron: true,
+                          onTap: () => _handleImportData(context),
+                        ),
+                        NyanListRow(
+                          leadingIcon: NyanIcons.adminPanel,
+                          title: loc.adminPanel,
+                          showChevron: true,
+                          onTap: () => context.push('/admin'),
+                        ),
+                      ],
+                    ),
+
+                    // ── Pro ──────────────────────────────────────────────
+                    if (showProSection) ...[
+                      const SizedBox(height: _kSettingsSectionGap),
+                      NyanSectionHeader(title: loc.pro),
+                      NyanRowGroup(
+                        children: [
+                          if (featureManager.privacyShelfEnabled)
+                            NyanListRow(
+                              leadingIcon: NyanIcons.lockOpen,
+                              title: loc.lockPrivacyShelf,
+                              subtitle: loc.lockPrivacyShelfSubtitle,
+                              showChevron: true,
+                              onTap: () => context.push('/admin'),
+                            ),
+                          if (!featureManager.isPro)
+                            NyanListRow(
+                              leadingIcon: NyanIcons.sparkle,
+                              title: loc.upgradeToPro,
+                              subtitle: loc.upgradeToProSubtitle,
+                              showChevron: true,
+                              onTap: () {
+                                // TODO(#upgrade): implement upgrade flow.
+                              },
+                            ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: _kSettingsSectionGap),
+
+                    // ── About ────────────────────────────────────────────
+                    NyanSectionHeader(title: loc.about),
+                    _AboutCard(),
                   ],
                 ),
-              ],
+              ),
             ],
           ),
         );
@@ -485,348 +512,60 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 }
 
-class _SettingsCard extends StatelessWidget {
-  const _SettingsCard({
-    required this.children,
-    this.backgroundColor,
-    this.borderColor,
-    this.shadowAlpha,
-  });
-
-  final List<Widget> children;
-  final Color? backgroundColor;
-  final Color? borderColor;
-  final double? shadowAlpha;
-
+/// About card — app identity block per SettingsScreen.jsx spec.
+///
+/// Uses [NyanBookLogoMark] as a stand-in until flutter_svg is added to
+/// pubspec.yaml, at which point this should render:
+///   SvgPicture.asset('assets/brand/logo-peek.svg', width: 56, height: 56)
+class _AboutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final resolvedBorderColor = borderColor ??
-        theme.dividerColor.withValues(alpha: isDark ? 0.2 : 0.16);
+    final nyan = context.nyanTheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: backgroundColor ?? theme.cardColor,
-        borderRadius: BorderRadius.circular(_kSettingsCardRadius),
-        border: Border.all(
-          color: resolvedBorderColor,
-          width: 0.72,
-        ),
-        boxShadow: isDark
-            ? const []
-            : (shadowAlpha == null
-                ? NyanShadows.settingsGrouped(theme.shadowColor)
-                : [
-                    BoxShadow(
-                      color: theme.shadowColor.withValues(alpha: shadowAlpha),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(_kSettingsCardRadius),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: children,
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsDivider extends StatelessWidget {
-  const _SettingsDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      thickness: 0.55,
-      color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-    );
-  }
-}
-
-class _SelectionRow extends StatelessWidget {
-  const _SelectionRow({
-    required this.title,
-    required this.valueLabel,
-    required this.onTap,
-    this.inset = false,
-  });
-
-  final String title;
-  final String valueLabel;
-  final VoidCallback onTap;
-  final bool inset;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final titleColor = theme.textTheme.bodyLarge?.color;
-    final valueColorAlpha = inset ? 0.5 : 0.58;
-    final chevronColorAlpha = inset ? 0.3 : 0.38;
-
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          _kSettingsHorizontalPadding + (inset ? _kSettingsSubRowIndent : 0),
-          _kSettingsRowVerticalPadding,
-          _kSettingsHorizontalPadding,
-          _kSettingsRowVerticalPadding,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: (inset
-                            ? theme.textTheme.bodyMedium
-                            : theme.textTheme.bodyLarge)
-                        ?.copyWith(
-                      fontWeight: inset ? FontWeight.w500 : FontWeight.w600,
-                      color: titleColor?.withValues(
-                        alpha: inset ? 0.82 : 1,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: NyanSpacing.space12),
-            ConstrainedBox(
-              constraints: const BoxConstraints(
-                minHeight: NyanSpacing.minTapTarget,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    valueLabel,
-                    style: (inset
-                            ? theme.textTheme.bodyMedium
-                            : theme.textTheme.bodyLarge)
-                        ?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: titleColor?.withValues(
-                        alpha: valueColorAlpha,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: NyanSpacing.space4),
-                  Icon(
-                    NyanIcons.chevronDown,
-                    size: 18,
-                    color: theme.textTheme.bodySmall?.color?.withValues(
-                      alpha: chevronColorAlpha,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SwitchRow extends StatelessWidget {
-  const _SwitchRow({
-    required this.title,
-    required this.value,
-    required this.onChanged,
-    this.subtitle,
-    this.subtitleColor,
-  });
-
-  final String title;
-  final String? subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  final Color? subtitleColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        _kSettingsHorizontalPadding,
-        _kSettingsRowVerticalPadding,
-        _kSettingsHorizontalPadding,
-        _kSettingsRowVerticalPadding,
+    return NyanInfoCard(
+      variant: NyanInfoCardVariant.grouped,
+      padding: const EdgeInsets.symmetric(
+        horizontal: NyanSpacing.space16,
+        vertical: NyanSpacing.space20,
       ),
       child: Row(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: NyanSpacing.space4),
-                  Text(
-                    subtitle!,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      height: 1.3,
-                      color: subtitleColor ??
-                          theme.textTheme.bodySmall?.color?.withValues(
-                            alpha: 0.8,
-                          ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+          // Logo chip — 56×56: padding 12 + icon 32 + padding 12.
+          // TODO(#brand-svg): replace with SvgPicture.asset('assets/brand/logo-peek.svg')
+          // once flutter_svg is added to pubspec.yaml.
+          NyanBookLogoMark(
+            iconSize: 32,
+            padding: const EdgeInsets.all(NyanSpacing.space12),
           ),
-          const SizedBox(width: NyanSpacing.space12),
-          Theme(
-            data: theme.copyWith(
-              switchTheme: SwitchThemeData(
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                splashRadius: 24,
-                thumbColor: WidgetStateProperty.resolveWith((states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return isDark
-                        ? theme.colorScheme.onPrimary.withValues(alpha: 0.96)
-                        : theme.cardColor;
-                  }
-                  return isDark
-                      ? theme.colorScheme.onSurface.withValues(alpha: 0.46)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.6);
-                }),
-                trackColor: WidgetStateProperty.resolveWith((states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return theme.colorScheme.primary.withValues(
-                      alpha: isDark ? 0.64 : 0.68,
-                    );
-                  }
-                  return theme.colorScheme.surfaceContainerHighest.withValues(
-                    alpha: isDark ? 0.38 : 0.46,
-                  );
-                }),
-                trackOutlineColor: WidgetStateProperty.resolveWith((states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return theme.colorScheme.surface.withValues(alpha: 0);
-                  }
-                  return theme.dividerColor.withValues(
-                    alpha: isDark ? 0.14 : 0.18,
-                  );
-                }),
-                overlayColor: WidgetStateProperty.all(
-                  theme.colorScheme.surface.withValues(alpha: 0),
+          const SizedBox(width: 14),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Nyan Read',
+                style: TextStyle(
+                  fontFamily: NyanTypography.uiFontFamily,
+                  // Spec: 18pt app name in About card.
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                  color: nyan.textPrimary,
                 ),
               ),
-            ),
-            child: Switch(
-              value: value,
-              onChanged: onChanged,
-            ),
+              const SizedBox(height: 2),
+              Text(
+                '$_kAppVersion · ฅ^•ﻌ•^ฅ',
+                style: TextStyle(
+                  fontFamily: NyanTypography.uiFontFamily,
+                  fontSize: NyanTypography.meta,
+                  fontWeight: FontWeight.w400,
+                  height: 1.3,
+                  color: nyan.textSecondary,
+                ),
+              ),
+            ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ActionRow extends StatelessWidget {
-  const _ActionRow({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-    this.subtitle,
-    this.iconColor,
-    this.titleColor,
-    this.chevronColor,
-    this.iconBackgroundAlpha,
-  });
-
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final VoidCallback onTap;
-  final Color? iconColor;
-  final Color? titleColor;
-  final Color? chevronColor;
-  final double? iconBackgroundAlpha;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final tone = iconColor ?? theme.colorScheme.primary;
-
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          _kSettingsHorizontalPadding,
-          _kSettingsRowVerticalPadding,
-          _kSettingsHorizontalPadding,
-          _kSettingsRowVerticalPadding,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: tone.withValues(
-                  alpha: iconBackgroundAlpha ??
-                      (theme.brightness == Brightness.dark ? 0.12 : 0.08),
-                ),
-                borderRadius: BorderRadius.circular(NyanRadius.small),
-              ),
-              child: Icon(icon, color: tone, size: 17),
-            ),
-            const SizedBox(width: NyanSpacing.space12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: titleColor,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: NyanSpacing.space4),
-                    Text(
-                      subtitle!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        height: 1.3,
-                        color: theme.textTheme.bodySmall?.color?.withValues(
-                          alpha: 0.78,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: NyanSpacing.space12),
-            Icon(
-              NyanIcons.chevronRight,
-              size: 20,
-              color: chevronColor ??
-                  theme.textTheme.bodySmall?.color?.withValues(alpha: 0.56),
-            ),
-          ],
-        ),
       ),
     );
   }
