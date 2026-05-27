@@ -127,13 +127,19 @@ class ReaderConfig {
   final PageTurnMode pageTurnMode;
   final PageAnimation pageAnimation;
 
+  /// When true, engines render reading body text in Source Han Serif SC
+  /// rather than Noto Sans SC.  Engines that do not control body font
+  /// (e.g. PDF) may ignore this field.
+  final bool useSerif;
+
   const ReaderConfig({
     required this.backgroundColor,
     required this.textColor,
     required this.fontSize,
     required this.lineHeight,
-    this.pageTurnMode = PageTurnMode.upDown,
+    this.pageTurnMode = PageTurnMode.swipe,
     this.pageAnimation = PageAnimation.fade,
+    this.useSerif = false,
   });
 }
 

@@ -74,7 +74,7 @@
   - `lib/core/theme/nyan_colors.dart` — 原子色值常量（`NyanColors.creamPrimary` 等）
   - `lib/core/theme/nyan_spacing.dart` — 间距（`NyanSpacing.space16` 等）
   - `lib/core/theme/nyan_radius.dart` — 圆角（`NyanRadius.card` 等）
-  - `lib/core/theme/nyan_shadows.dart` — 阴影工具方法（`NyanShadows.lightCard` / `subtle`）
+  - `lib/core/theme/nyan_shadows.dart` — 阴影工具方法（`NyanShadows.lightCard` / `subtle` / `settingsGrouped`）
   - `lib/core/theme/nyan_typography.dart` — 字体族与字号（`NyanTypography.uiFontFamily` 等）
 - **MUST**：**主题敏感**的颜色（随 creamLight / sumiDark 切换）必须通过 `NyanTheme` 扩展读取：
   ```dart
@@ -219,7 +219,7 @@
 
 1. **禁止纯白（`#FFFFFF`）与纯黑（`#000000`）**。所有"白"是奶白（`creamSurface` / `creamBackground`），所有"黑"是深墨（`inkNightBackground` 或深棕 `creamTextMain`）。
 2. **强色只用抹茶绿**（`creamPrimary` / `creamPrimaryDeep`）。温度与亮度语义才允许使用陶土橘（`highlightOrange`）。
-3. **层次首选"圆角 + 背景色阶 + 暖色调分隔线"**；阴影只允许走 `NyanShadows.subtle` 或 `NyanShadows.lightCard`（均 ≤12px blur，≤5% alpha）。**严禁**自己构造 `BoxShadow`。
+3. **层次首选"圆角 + 背景色阶 + 暖色调分隔线"**；阴影只允许走 `NyanShadows.lightCard` / `subtle` / `settingsGrouped`（均 ≤12px blur，≤5% alpha）。**严禁**自己构造 `BoxShadow`。
 
 ### 4.2 设计 Token 真相表（MUST 引用这些常量，不得新造色值）
 
@@ -233,10 +233,10 @@
 | 卡片/面板表面 | `#FFFDF8` | `#262B27` | `surface` |
 | 嵌入式凹陷表面（Tab 槽、Slider 轨道） | `#F1ECDD` | `#202520` | `surfaceMuted` |
 | 正文文字 | `#3F3A34` | `#E8E1D5` | `textPrimary` |
-| 次级文字（说明 / 副标题） | `#8A8377` | `#AAA396` | `textSecondary` |
-| 三级文字（占位 / 单位） | `#B0ACA5` | `#8F8A84` | `textMuted` |
-| 主强色（抹茶绿按钮底） | `#98A27C` | `#93A07C` | `primary` |
-| 深强色（选中描边 / accent） | `#7E8B61` | `#9AAD86` | `primaryDeep` / `accent` |
+| 次级文字（说明 / 副标题） | `#5F5950` | `#B4AC9F` | `textSecondary` |
+| 三级文字（占位 / 单位） | `#6B6559` | `#A6A099` | `textMuted` |
+| 主强色（抹茶绿按钮底） | `#6E7A55` | `#A9B690` | `primary` |
+| 深强色（选中描边 / accent） | `#5A6644` | `#B3C29A` | `primaryDeep` / `accent` |
 | 分隔线（暖调描边） | `#E5DED2` | `#3A3F3A` | `divider` / `borderColor` |
 
 **原子常量（只在 `nyan_colors.dart` 与 `theme_presets.dart` 内部使用，业务代码 MUST NOT 直接引用）：**
@@ -281,8 +281,9 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 
 - `NyanShadows.lightCard(shadowColor)` — 12px blur + 6px blur 双层，4%/2% alpha。用于**悬浮卡片**（如 Bookshelf 书卡 hover）。
 - `NyanShadows.subtle(shadowColor)` — 8px blur 单层，5% alpha。用于**次级浮层**（Toast、Overlay ToolBar）。
+- `NyanShadows.settingsGrouped(shadowColor)` — 10px blur 单层，1.4% alpha。用于**设置分组卡片**（Settings 的行组容器 `NyanRowGroup`）。
 
-调用时 `shadowColor` **MUST** 传 `nyan.textPrimary`（随主题变暗/变亮，保证暗色主题下阴影依然柔和）。
+调用时 `shadowColor` **MUST** 传 `nyan.textPrimary`（随主题变暗/变亮，保证暗色主题下阴影依然柔和）。深色主题（Sumi Dark）中所有阴影均为零——仅用色阶对比分离。
 
 #### 4.2.5 字体与字号 — `lib/core/theme/nyan_typography.dart`
 

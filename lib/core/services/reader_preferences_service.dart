@@ -6,10 +6,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/nyan_colors.dart';
 import '../utils/layout_debouncer.dart';
 
-/// Page turn direction.
+/// Page turn interaction model.
+///
+/// Index values are persisted to SharedPreferences as raw integers — the
+/// ordering MUST NOT change (only append new values at the tail).
+///   0 = swipe  (continuous vertical scroll; was `upDown`)
+///   1 = tap    (horizontal page-by-page via SmoothPageReader; was `leftRight`)
+///   2 = disabled (no gesture page turning — overlay controls only)
 enum PageTurnMode {
-  upDown,
-  leftRight,
+  swipe,    // index 0
+  tap,      // index 1
+  disabled, // index 2
 }
 
 /// 翻页动画类型
@@ -54,7 +61,7 @@ class ReaderPreferencesService extends ChangeNotifier {
   SharedPreferences? _prefs;
 
   // 默认配置
-  PageTurnMode _pageTurnMode = PageTurnMode.upDown;
+  PageTurnMode _pageTurnMode = PageTurnMode.swipe;
   PageAnimation _pageAnimation = PageAnimation.fade;
 
   // Reader display settings
@@ -65,6 +72,9 @@ class ReaderPreferencesService extends ChangeNotifier {
   double _warmth = 0.0; // 0.0 (Cool/None) to 1.0 (Max Warmth)
   double _minPhysicalBrightness = 0.10; // User preferred hardware floor
   double _followSystemOffset = 0.0; // +/- offset from system brightness
+
+  /// When true the reading body uses Source Han Serif SC; otherwise Noto Sans SC.
+  bool _useSerif = false;
 
   /// When false, the left-edge vertical drag gesture to adjust brightness is
   /// ignored (reduces accidental drags while still allowing sheet controls).
@@ -88,6 +98,7 @@ class ReaderPreferencesService extends ChangeNotifier {
   double get minPhysicalBrightness => _minPhysicalBrightness;
   double get followSystemOffset => _followSystemOffset;
 
+  bool get useSerif => _useSerif;
   bool get edgeBrightnessGestureEnabled => _edgeBrightnessGestureEnabled;
 
   /// Returns the gamma-corrected brightness value (0.0 - 1.0)
@@ -110,7 +121,7 @@ class ReaderPreferencesService extends ChangeNotifier {
   // 从持久化存储加载配置
   void _loadPreferences() {
     final turnModeIndex =
-        _prefs?.getInt('page_turn_mode') ?? PageTurnMode.upDown.index;
+        _prefs?.getInt('page_turn_mode') ?? PageTurnMode.swipe.index;
     final animationIndex =
         _prefs?.getInt('page_animation') ?? PageAnimation.fade.index;
 
@@ -134,6 +145,7 @@ class ReaderPreferencesService extends ChangeNotifier {
         _prefs?.getDouble('reader_follow_system_offset') ?? 0.0;
     _edgeBrightnessGestureEnabled =
         _prefs?.getBool('reader_edge_brightness_gesture_enabled') ?? true;
+    _useSerif = _prefs?.getBool('reader_use_serif') ?? false;
   }
 
   // 设置翻页方式
@@ -225,15 +237,24 @@ class ReaderPreferencesService extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Set serif mode
+  Future<void> setUseSerif(bool value) async {
+    if (_useSerif == value) return;
+    _useSerif = value;
+    _schedulePrefWrite('reader_use_serif', value);
+    notifyListeners();
+  }
+
   // 重置为默认配置
   Future<void> resetToDefaults() async {
-    _pageTurnMode = PageTurnMode.upDown;
+    _pageTurnMode = PageTurnMode.swipe;
     _pageAnimation = PageAnimation.fade;
     _fontSize = 18.0;
     _lineHeight = 1.5;
     _backgroundColor = NyanColors.readerPaperDefault;
     _warmth = 0.0;
     _followSystemOffset = 0.0;
+    _useSerif = false;
 
     // Reset is an atomic user-intent: drop any in-flight continuous-slider
     // writes so we don't resurrect them half a second later, then persist
@@ -243,7 +264,7 @@ class ReaderPreferencesService extends ChangeNotifier {
 
     final prefs = _prefs;
     if (prefs != null) {
-      await prefs.setInt('page_turn_mode', PageTurnMode.upDown.index);
+      await prefs.setInt('page_turn_mode', PageTurnMode.swipe.index);
       await prefs.setInt('page_animation', PageAnimation.fade.index);
       await prefs.setDouble('reader_font_size', 18.0);
       await prefs.setDouble('reader_line_height', 1.5);
@@ -251,6 +272,7 @@ class ReaderPreferencesService extends ChangeNotifier {
           NyanColors.readerPaperDefault.toARGB32());
       await prefs.setDouble('reader_warmth', 0.0);
       await prefs.setDouble('reader_follow_system_offset', 0.0);
+      await prefs.setBool('reader_use_serif', false);
     }
 
     notifyListeners();

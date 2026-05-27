@@ -3,14 +3,15 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/services/backup_recovery_service.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
-import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/riverpod_providers.dart';
+import 'reading_settings_page.dart';
 import '../../core/services/service_locator.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
@@ -312,37 +313,29 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         [readerPrefs, reminderService],
                       ),
                       builder: (context, _) {
+                        // Subtitle summarises the two most user-visible prefs
+                        // so the row is informative without needing to open it.
+                        final fontLabel = readerPrefs.useSerif
+                            ? loc.readerFontFamilySerif
+                            : loc.readerFontFamilySans;
+                        final sizeLabel =
+                            '${readerPrefs.fontSize.toStringAsFixed(0)}pt';
+
                         return NyanRowGroup(
                           children: [
+                            // Reading Settings shortcut — per SettingsScreen.jsx.
+                            // Page Turn Mode now lives inside the reader sheet;
+                            // font / size / layout prefs are set here.
                             NyanListRow(
                               leadingIcon: NyanIcons.book,
-                              title: loc.pageTurnMode,
-                              subtitle: _getPageTurnModeLabel(
-                                readerPrefs.pageTurnMode,
-                                loc,
-                              ),
+                              title: loc.readingSettings,
+                              subtitle: '$sizeLabel · $fontLabel',
                               showChevron: true,
-                              onTap: () async {
-                                final mode =
-                                    await showNyanSelectionSheet<PageTurnMode>(
-                                  context: context,
-                                  title: loc.pageTurnMode,
-                                  currentValue: readerPrefs.pageTurnMode,
-                                  options: [
-                                    NyanSelectionOption(
-                                      value: PageTurnMode.leftRight,
-                                      label: loc.pageTurnModeLeftRight,
-                                    ),
-                                    NyanSelectionOption(
-                                      value: PageTurnMode.upDown,
-                                      label: loc.pageTurnModeUpDown,
-                                    ),
-                                  ],
-                                );
-                                if (mode != null) {
-                                  await readerPrefs.setPageTurnMode(mode);
-                                }
-                              },
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const ReadingSettingsPage(),
+                                ),
+                              ),
                             ),
                             NyanListRow(
                               leadingIcon: NyanIcons.alarm,
@@ -442,12 +435,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           showChevron: true,
                           onTap: () => _handleImportData(context),
                         ),
-                        NyanListRow(
-                          leadingIcon: NyanIcons.adminPanel,
-                          title: loc.adminPanel,
-                          showChevron: true,
-                          onTap: () => context.push('/admin'),
-                        ),
+                        // Admin Panel removed from user-facing Settings per
+                        // SettingsScreen.jsx spec — still accessible at /admin
+                        // for internal use during development.
                       ],
                     ),
 
@@ -493,15 +483,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  String _getPageTurnModeLabel(PageTurnMode mode, AppLocalizations loc) {
-    switch (mode) {
-      case PageTurnMode.upDown:
-        return loc.pageTurnModeUpDown;
-      case PageTurnMode.leftRight:
-        return loc.pageTurnModeLeftRight;
-    }
-  }
-
   String _getThemeName(ThemePreset preset, AppLocalizations loc) {
     switch (preset) {
       case ThemePreset.creamLight:
@@ -530,12 +511,11 @@ class _AboutCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Logo chip — 56×56: padding 12 + icon 32 + padding 12.
-          // TODO(#brand-svg): replace with SvgPicture.asset('assets/brand/logo-peek.svg')
-          // once flutter_svg is added to pubspec.yaml.
-          NyanBookLogoMark(
-            iconSize: 32,
-            padding: const EdgeInsets.all(NyanSpacing.space12),
+          // Logo — 56×56 SVG, centered via padding.
+          SvgPicture.asset(
+            'assets/brand/logo-peek.svg',
+            width: 56,
+            height: 56,
           ),
           const SizedBox(width: 14),
           Column(

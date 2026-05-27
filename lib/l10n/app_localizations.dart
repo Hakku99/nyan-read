@@ -212,6 +212,24 @@ abstract class AppLocalizations {
   /// **'Disabled'**
   String get pageTurnDisabled;
 
+  /// No description provided for @readerFontFamily.
+  ///
+  /// In en, this message translates to:
+  /// **'Font'**
+  String get readerFontFamily;
+
+  /// No description provided for @readerFontFamilySans.
+  ///
+  /// In en, this message translates to:
+  /// **'Sans'**
+  String get readerFontFamilySans;
+
+  /// No description provided for @readerFontFamilySerif.
+  ///
+  /// In en, this message translates to:
+  /// **'Serif'**
+  String get readerFontFamilySerif;
+
   /// No description provided for @pageAnimation.
   ///
   /// In en, this message translates to:
@@ -1130,6 +1148,24 @@ abstract class AppLocalizations {
   /// **'Line spacing rhythm'**
   String get readerLineHeightHint;
 
+  /// No description provided for @readerBrightnessDim.
+  ///
+  /// In en, this message translates to:
+  /// **'Dim'**
+  String get readerBrightnessDim;
+
+  /// No description provided for @readerBrightnessNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get readerBrightnessNormal;
+
+  /// No description provided for @readerBrightnessBright.
+  ///
+  /// In en, this message translates to:
+  /// **'Bright'**
+  String get readerBrightnessBright;
+
   /// No description provided for @readerWarmthLow.
   ///
   /// In en, this message translates to:
@@ -1351,6 +1387,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to delete bookmark: {error}'**
   String failedToDeleteBookmark(String error);
+
+  /// No description provided for @bookmarkAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmark added'**
+  String get bookmarkAdded;
 
   /// No description provided for @notesAndHighlightsTitle.
   ///

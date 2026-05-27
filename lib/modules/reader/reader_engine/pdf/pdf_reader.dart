@@ -201,7 +201,7 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
   @override
   Future<void> nextPage() async {
     if (!_isDocumentReady) return;
-    if (_config.pageTurnMode == PageTurnMode.leftRight) {
+    if (_config.pageTurnMode == PageTurnMode.tap) {
       final pageCount = _pdfController.pagesCount;
       if (pageCount == null || pageCount == 0) return;
       final target = (_pdfController.page + 1).clamp(1, pageCount);
@@ -217,7 +217,7 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
   @override
   Future<void> previousPage() async {
     if (!_isDocumentReady) return;
-    if (_config.pageTurnMode == PageTurnMode.leftRight) {
+    if (_config.pageTurnMode == PageTurnMode.tap) {
       final pageCount = _pdfController.pagesCount;
       if (pageCount == null || pageCount == 0) return;
       final target = (_pdfController.page - 1).clamp(1, pageCount);

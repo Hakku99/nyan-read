@@ -262,7 +262,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                                 // the Scaffold.
                                                 child: RepaintBoundary(
                                                   child: readerPrefs.pageTurnMode ==
-                                                          PageTurnMode.leftRight
+                                                          PageTurnMode.tap
                                                       ? SmoothPageReader(
                                                           key: _smoothPageReaderKey,
                                                           onPreviousTap: () {
@@ -293,6 +293,78 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                                 ),
                                               ),
                                             ),
+                                            // T6: Chapter caption —
+                                            // bottom-right counterpart to
+                                            // the progress % label on the
+                                            // left. Both fade when controls
+                                            // are visible so the bottom
+                                            // overlay's row takes over.
+                                            Positioned(
+                                              right: 16,
+                                              bottom: padding.bottom > 0
+                                                  ? padding.bottom + 4
+                                                  : 16,
+                                              child: Opacity(
+                                                opacity: (_showControls ||
+                                                        hasBottomBar)
+                                                    ? 0
+                                                    : 1,
+                                                child: ConstrainedBox(
+                                                  // Cap width at 45% of the
+                                                  // viewport so a long chapter
+                                                  // title cannot trample the
+                                                  // progress % on the left.
+                                                  constraints: BoxConstraints(
+                                                    maxWidth:
+                                                        constraints.maxWidth *
+                                                            0.45,
+                                                  ),
+                                                  child: ListenableBuilder(
+                                                    listenable: controller,
+                                                    builder: (context, _) {
+                                                      final loc =
+                                                          AppLocalizations.of(
+                                                              context)!;
+                                                      final label =
+                                                          readerChapterSummaryLabel(
+                                                        chapters:
+                                                            controller.chapters,
+                                                        currentChapterIndex:
+                                                            controller
+                                                                .currentChapterIndex,
+                                                        loc: loc,
+                                                      );
+                                                      return Text(
+                                                        label,
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        textAlign:
+                                                            TextAlign.right,
+                                                        style: TextStyle(
+                                                          fontFamily:
+                                                              NyanTypography
+                                                                  .uiFontFamily,
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.w400,
+                                                          color: Theme.of(
+                                                                  context)
+                                                              .colorScheme
+                                                              .onSurface
+                                                              .withValues(
+                                                                alpha: isDark
+                                                                    ? 0.42
+                                                                    : 0.5,
+                                                              ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+
                                             Positioned(
                                               left: 16,
                                               bottom: padding.bottom > 0
@@ -419,7 +491,33 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                             ),
                           ),
 
-                          // 5. Brightness HUD Overlay
+                          // 5. Top overlay — slides in from the top alongside
+                          // the bottom overlay so the reader title/author and
+                          // quick actions (back, bookmark, more) are always
+                          // reachable when controls are visible.
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: _ReaderTopOverlay(
+                              visible: _showControls,
+                              controller: controller,
+                              onBack: () => _handleBackFromTopOverlay(
+                                context,
+                                controller,
+                              ),
+                              onAddBookmark: () =>
+                                  _handleAddBookmarkFromTopOverlay(
+                                context,
+                                controller,
+                              ),
+                              onOpenSettings: () => _handleOverlayTile(
+                                () => _openReaderSettings(context, controller),
+                              ),
+                            ),
+                          ),
+
+                          // 6. Brightness HUD Overlay
                           // Injected just below overlays and gesture catchers
                           BrightnessHudWidget(
                               controller: _brightnessController),
@@ -560,6 +658,37 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     );
   }
 
+  /// Top-bar back button: saves reading progress and shuts down brightness
+  /// before popping. Mirrors the [PopScope.onPopInvokedWithResult] flow so both
+  /// paths (hardware back / overlay back button) reach the same exit sequence.
+  Future<void> _handleBackFromTopOverlay(
+    BuildContext context,
+    ReaderController controller,
+  ) async {
+    _setControlsVisible(false);
+    await controller.saveBeforeExit();
+    await _brightnessController.shutdown();
+    if (context.mounted) Navigator.of(context).pop();
+  }
+
+  /// Top-bar bookmark button: saves a bookmark at the current reading position
+  /// and shows a brief floating SnackBar confirming the action.
+  Future<void> _handleAddBookmarkFromTopOverlay(
+    BuildContext context,
+    ReaderController controller,
+  ) async {
+    final added = await controller.addBookmark();
+    if (!added || !context.mounted) return;
+    final loc = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(loc.bookmarkAdded),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<void> _openBookmarksPage(
     BuildContext context,
     ReaderController controller,
@@ -608,7 +737,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     required bool forward,
   }) async {
     if (controller.settingsManager.preferences.pageTurnMode ==
-        PageTurnMode.leftRight) {
+        PageTurnMode.tap) {
       final smoothState = _smoothPageReaderKey.currentState;
       if (smoothState != null && !smoothState.isAnimating) {
         await smoothState.playTurn(

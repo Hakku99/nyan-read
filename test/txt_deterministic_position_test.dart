@@ -103,7 +103,7 @@ void main() {
         textColor: Colors.black,
         fontSize: 16,
         lineHeight: 1.4,
-        pageTurnMode: PageTurnMode.leftRight,
+        pageTurnMode: PageTurnMode.tap,
       ));
 
       await _pumpReader(tester, engine1, const Size(320, 640));
@@ -134,7 +134,7 @@ void main() {
         textColor: Colors.black,
         fontSize: 16,
         lineHeight: 1.4,
-        pageTurnMode: PageTurnMode.leftRight,
+        pageTurnMode: PageTurnMode.tap,
       ));
 
       await _pumpReader(tester, engine2, const Size(320, 640));
@@ -311,7 +311,7 @@ void main() {
         textColor: Colors.black,
         fontSize: 18,
         lineHeight: 1.5,
-        pageTurnMode: PageTurnMode.leftRight,
+        pageTurnMode: PageTurnMode.tap,
       ));
 
       await _pumpReader(tester, engine1, const Size(320, 640));
@@ -331,7 +331,7 @@ void main() {
         textColor: Colors.black,
         fontSize: 18,
         lineHeight: 1.5,
-        pageTurnMode: PageTurnMode.leftRight,
+        pageTurnMode: PageTurnMode.tap,
       ));
 
       await _pumpReader(tester, engine2, const Size(320, 640));

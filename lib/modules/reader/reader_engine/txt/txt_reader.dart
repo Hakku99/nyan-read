@@ -11,6 +11,7 @@ import '../../../../core/models/book.dart';
 import '../../../../core/utils/chapter_heading_display.dart';
 import '../../../../core/models/highlight.dart';
 import '../../../../core/services/reader_preferences_service.dart';
+import '../../../../core/theme/nyan_typography.dart';
 import '../../../../core/utils/book_source_access.dart';
 import '../../widgets/highlightable_text.dart';
 import '../reader_engine.dart';
@@ -765,7 +766,12 @@ class TxtReaderEngine
             fontSize: config.fontSize,
             height: config.lineHeight,
             color: config.textColor,
-            fontFamily: 'Roboto',
+            // Use the user-selected font family rather than the hard-coded
+            // 'Roboto' default; NyanTypography tokens resolve to registered
+            // assets so the layout is deterministic across platforms.
+            fontFamily: config.useSerif
+                ? NyanTypography.readingSerifFontFamily
+                : NyanTypography.uiFontFamily,
           ),
           backgroundColor: config.backgroundColor,
           padding: itemPadding,
@@ -1166,7 +1172,7 @@ class TxtReaderEngine
     required int index,
     required double alignment,
   }) async {
-    if (_config.pageTurnMode == PageTurnMode.leftRight) {
+    if (_config.pageTurnMode == PageTurnMode.tap) {
       _itemScrollController.jumpTo(index: index, alignment: alignment);
       return;
     }
@@ -1210,10 +1216,15 @@ class TxtReaderEngine
     _inFlightPaginationKeys.add(paginationKey);
     _isPaginationCalculated = false;
 
+    // Pagination must use the same font family the reader will render with;
+    // a mismatch here would produce incorrect page-break positions and break
+    // the §3.6 determinism invariant (same settings → same pagination).
     final style = TextStyle(
       fontSize: _config.fontSize,
       height: _config.lineHeight,
-      fontFamily: 'Roboto',
+      fontFamily: _config.useSerif
+          ? NyanTypography.readingSerifFontFamily
+          : NyanTypography.uiFontFamily,
     );
 
     try {

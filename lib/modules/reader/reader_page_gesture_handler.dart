@@ -11,7 +11,7 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     final controller = _boundController;
     if (controller != null &&
         controller.settingsManager.preferences.pageTurnMode ==
-            PageTurnMode.leftRight) {
+            PageTurnMode.tap) {
       _resetPanState();
       return;
     }
@@ -51,7 +51,7 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     ReaderController controller,
   ) {
     if (controller.settingsManager.preferences.pageTurnMode ==
-        PageTurnMode.leftRight) {
+        PageTurnMode.tap) {
       _smoothPageReaderKey.currentState?.handleExternalTap(globalPosition);
       return;
     }
@@ -105,7 +105,14 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
 
     final now = DateTime.now();
     final turnMode = c.settingsManager.preferences.pageTurnMode;
-    if (turnMode == PageTurnMode.leftRight) {
+
+    // Disabled mode: no tap-to-turn; any tap toggles the overlay instead.
+    if (turnMode == PageTurnMode.disabled) {
+      _showReaderControls(context, c);
+      return;
+    }
+
+    if (turnMode == PageTurnMode.tap) {
       final ratioX = localX / width;
       if (ratioX < 0.20) {
         _triggerPageTurn(c, forward: false, at: now);
@@ -142,7 +149,10 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     final mode = controller.settingsManager.preferences.pageTurnMode;
     final velocity = details.velocity.pixelsPerSecond;
 
-    if (mode == PageTurnMode.leftRight) {
+    // Disabled mode: swipe gestures do not turn pages.
+    if (mode == PageTurnMode.disabled) return;
+
+    if (mode == PageTurnMode.tap) {
       final isMostlyHorizontal = delta.dx.abs() > delta.dy.abs() * 1.5;
       if (!isMostlyHorizontal) return;
       final vx = velocity.dx.abs();

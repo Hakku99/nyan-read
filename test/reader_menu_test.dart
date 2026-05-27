@@ -266,6 +266,12 @@ class MockReaderController extends ChangeNotifier
   void setBackground(Color color) {}
 
   @override
+  void setPageTurnMode(PageTurnMode mode) {}
+
+  @override
+  void setUseSerif(bool value) {}
+
+  @override
   List<Highlight> get highlights => [];
 
   @override

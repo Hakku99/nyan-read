@@ -241,6 +241,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   void setFontSize(double size) => settingsManager.setFontSize(size);
   void setLineHeight(double height) => settingsManager.setLineHeight(height);
   void setBackground(Color color) => settingsManager.setBackground(color);
+  void setPageTurnMode(PageTurnMode mode) =>
+      settingsManager.setPageTurnMode(mode);
+  void setUseSerif(bool value) => settingsManager.setUseSerif(value);
 
   Future<void> setWarmth(double value) async {
     await _brightnessControllerRef?.setWarmth(value);

@@ -66,6 +66,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pageTurnDisabled => '禁用';
 
   @override
+  String get readerFontFamily => '字体';
+
+  @override
+  String get readerFontFamilySans => '无衬线';
+
+  @override
+  String get readerFontFamilySerif => '衬线';
+
+  @override
   String get pageAnimation => '翻页动画';
 
   @override
@@ -540,6 +549,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerLineHeightHint => '调整阅读节奏';
 
   @override
+  String get readerBrightnessDim => '暗';
+
+  @override
+  String get readerBrightnessNormal => '正常';
+
+  @override
+  String get readerBrightnessBright => '亮';
+
+  @override
   String get readerWarmthLow => '低';
 
   @override
@@ -667,6 +685,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String failedToDeleteBookmark(String error) {
     return '删除书签失败：$error';
   }
+
+  @override
+  String get bookmarkAdded => '已添加书签';
 
   @override
   String notesAndHighlightsTitle(int count) {

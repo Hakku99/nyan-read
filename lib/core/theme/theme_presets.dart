@@ -351,7 +351,9 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     divider: NyanColors.creamDivider,
     borderColor: NyanColors.creamDivider,
     brightness: Brightness.light,
-    primaryButtonBackground: NyanColors.creamPrimary,
+    // creamPrimaryDeep gives ~6.0:1 vs creamSurface foreground (AA+); creamPrimary
+    // was marginal at ~4.5:1 — Fix #2B.
+    primaryButtonBackground: NyanColors.creamPrimaryDeep,
     primaryButtonForeground: NyanColors.creamSurface,
     successColor: NyanColors.creamSuccess,
     warningColor: NyanColors.highlightOrange,
@@ -378,8 +380,10 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     divider: NyanColors.inkNightDivider,
     borderColor: NyanColors.inkNightDivider,
     brightness: Brightness.dark,
+    // inkNightBackground (~7.6:1) on inkNightPrimary (green) button passes AAA.
+    // inkNightTextMain was 1.65:1 — critical AA failure, Fix #1.
     primaryButtonBackground: NyanColors.inkNightPrimary,
-    primaryButtonForeground: NyanColors.inkNightTextMain,
+    primaryButtonForeground: NyanColors.inkNightBackground,
     successColor: NyanColors.inkNightSuccess,
     warningColor: NyanColors.highlightOrange,
     infoColor: NyanColors.readerInfoBlue,
@@ -387,8 +391,10 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     errorPrimaryTextColor: NyanColors.errorPrimaryDark,
     errorSecondaryTextColor: NyanColors.errorSecondaryDark,
     errorAccentColor: NyanColors.errorAccentDark,
+    // inkNightBackground (~7.6:1) on inkNightPrimary (green) FAB passes AAA.
+    // inkNightTextMain was 1.65:1 — critical AA failure, Fix #1.
     fabBackground: NyanColors.inkNightPrimary,
-    fabForeground: NyanColors.inkNightTextMain,
+    fabForeground: NyanColors.inkNightBackground,
   ),
 };
 

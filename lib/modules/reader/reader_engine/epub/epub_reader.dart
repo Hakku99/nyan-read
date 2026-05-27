@@ -144,7 +144,7 @@ class EpubReaderEngine implements ReaderEngine {
     await _waitForViewReady();
     final clamped = progress.clamp(0.0, 1.0);
     final targetIndex = (clamped * (_paragraphCount - 1)).round();
-    if (_config.pageTurnMode == PageTurnMode.leftRight) {
+    if (_config.pageTurnMode == PageTurnMode.tap) {
       _epubController.jumpTo(index: targetIndex, alignment: 0);
       _lastKnownProgress = clamped;
       return;

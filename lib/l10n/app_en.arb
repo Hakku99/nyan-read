@@ -19,6 +19,9 @@
   "pageTurnTap": "Tap",
   "pageTurnSwipe": "Swipe",
   "pageTurnDisabled": "Disabled",
+  "readerFontFamily": "Font",
+  "readerFontFamilySans": "Sans",
+  "readerFontFamilySerif": "Serif",
   "pageAnimation": "Page Animation",
   "pageAnimationFade": "Directional fade transition",
   "pageAnimationPaper": "Subtle paper effect",
@@ -227,6 +230,9 @@
   "readerTypographyFineTuneSubtitle": "Font size and line height",
   "readerFontSizeHint": "Larger or smaller",
   "readerLineHeightHint": "Line spacing rhythm",
+  "readerBrightnessDim": "Dim",
+  "readerBrightnessNormal": "Normal",
+  "readerBrightnessBright": "Bright",
   "readerWarmthLow": "Low",
   "readerWarmthMedium": "Medium",
   "readerWarmthHigh": "High",
@@ -329,6 +335,7 @@
       }
     }
   },
+  "bookmarkAdded": "Bookmark added",
   "notesAndHighlightsTitle": "Notes & Highlights ({count})",
   "@notesAndHighlightsTitle": {
     "placeholders": {

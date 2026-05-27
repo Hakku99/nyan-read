@@ -170,7 +170,7 @@ void main() {
         textColor: Colors.black,
         fontSize: 16,
         lineHeight: 1.4,
-        pageTurnMode: PageTurnMode.leftRight,
+        pageTurnMode: PageTurnMode.tap,
       ));
       await engine.goToPosition(TxtReadingPosition(paragraphIndex: 64));
       await tester.pump();
@@ -225,7 +225,7 @@ void main() {
         textColor: Colors.black,
         fontSize: 20,
         lineHeight: 1.7,
-        pageTurnMode: PageTurnMode.leftRight,
+        pageTurnMode: PageTurnMode.tap,
       ));
 
       await _pumpReader(tester, engine, const Size(320, 640));
@@ -263,7 +263,7 @@ void main() {
         textColor: Colors.black,
         fontSize: 16,
         lineHeight: 1.4,
-        pageTurnMode: PageTurnMode.upDown,
+        pageTurnMode: PageTurnMode.swipe,
       ));
 
       await engine.goToPosition(TxtReadingPosition(paragraphIndex: 80));
@@ -289,7 +289,7 @@ void main() {
         textColor: Colors.black,
         fontSize: 16,
         lineHeight: 1.4,
-        pageTurnMode: PageTurnMode.upDown,
+        pageTurnMode: PageTurnMode.swipe,
       ));
 
       await engine.goToPosition(TxtReadingPosition(paragraphIndex: 80));

@@ -9,7 +9,6 @@ import '../../../core/theme/nyan_radius.dart';
 import '../../../core/theme/nyan_spacing.dart';
 import '../../../core/theme/nyan_typography.dart';
 import '../../../core/theme/theme_presets.dart';
-import '../../../core/ui/components/nyan_confirm_dialog.dart';
 import '../../../core/ui/components/nyan_overlay_style.dart';
 import '../../bookshelf/widgets/segmented_tab_control.dart';
 import '../controllers/brightness_controller.dart';
@@ -119,21 +118,6 @@ class _ReaderMenuState extends State<ReaderMenu> {
                     }
                   },
                 );
-                Future<void> resetAllAction() async {
-                  HapticFeedback.lightImpact();
-                  await controller.resetReaderAppearanceDefaults();
-                }
-                final actionsRow = _ReaderSettingsActionsRow(
-                  resetCurrentTabLabel: _resetLabelForSection(
-                    context,
-                    loc,
-                    _selectedSection,
-                  ),
-                  resetAllLabel: loc.readerResetAll,
-                  onResetCurrentTab: resetSection.onResetCurrentTab,
-                  onResetAll: resetAllAction,
-                );
-
                 Widget buildHeaderAndPanel() {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -210,7 +194,7 @@ class _ReaderMenuState extends State<ReaderMenu> {
                       children: [
                         buildHeaderAndPanel(),
                         const SizedBox(height: NyanSpacing.space8),
-                        actionsRow,
+                        resetSection,
                       ],
                     ),
                   );
@@ -224,7 +208,7 @@ class _ReaderMenuState extends State<ReaderMenu> {
                     children: [
                       buildHeaderAndPanel(),
                       const SizedBox(height: NyanSpacing.space8),
-                      actionsRow,
+                      resetSection,
                     ],
                   ),
                 );
@@ -285,6 +269,9 @@ class _ReaderMenuState extends State<ReaderMenu> {
           brightnessController: widget.brightnessController,
           loc: loc,
           onWarmthChanged: controller.setWarmth,
+          pageTurnMode:
+              controller.settingsManager.preferences.pageTurnMode,
+          onSetPageTurnMode: controller.setPageTurnMode,
           denseLayout: denseLayout,
         );
       case _ReaderMenuSection.text:
@@ -295,6 +282,9 @@ class _ReaderMenuState extends State<ReaderMenu> {
           backgroundColor: controller.backgroundColor,
           onSetFontSize: controller.setFontSize,
           onSetLineHeight: controller.setLineHeight,
+          useSerif:
+              controller.settingsManager.preferences.useSerif,
+          onSetUseSerif: controller.setUseSerif,
           loc: loc,
           denseLayout: denseLayout,
         );
@@ -305,25 +295,6 @@ class _ReaderMenuState extends State<ReaderMenu> {
           loc: loc,
         );
     }
-  }
-}
-
-Future<void> _confirmResetAllFromHeader(
-  BuildContext context,
-  AppLocalizations loc,
-  Future<void> Function() onResetAll,
-) async {
-  final confirmed = await showNyanConfirmDialog(
-    context,
-    title: loc.readerResetAllConfirmTitle,
-    description: loc.readerResetAllConfirmMessage,
-    confirmLabel: loc.readerResetAllConfirmAction,
-    cancelLabel: loc.cancel,
-    tone: NyanConfirmTone.warning,
-    icon: NyanIcons.restart,
-  );
-  if (confirmed == true && context.mounted) {
-    await onResetAll();
   }
 }
 
@@ -455,80 +426,3 @@ class _ReaderSettingsResetSection extends StatelessWidget {
   }
 }
 
-class _ReaderSettingsActionsRow extends StatelessWidget {
-  const _ReaderSettingsActionsRow({
-    required this.resetCurrentTabLabel,
-    required this.resetAllLabel,
-    required this.onResetCurrentTab,
-    required this.onResetAll,
-  });
-
-  final String resetCurrentTabLabel;
-  final String resetAllLabel;
-  final Future<void> Function() onResetCurrentTab;
-  final Future<void> Function() onResetAll;
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Flexible(
-          child: _ReaderSettingsResetSection(
-            label: resetCurrentTabLabel,
-            onResetCurrentTab: onResetCurrentTab,
-          ),
-        ),
-        const SizedBox(width: NyanSpacing.space4),
-        Flexible(
-          child: Align(
-            alignment: Alignment.center,
-            child: TextButton(
-              onPressed: () async => _confirmResetAllFromHeader(
-                context,
-                loc,
-                onResetAll,
-              ),
-              style: TextButton.styleFrom(
-                foregroundColor: theme.colorScheme.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: NyanSpacing.space8,
-                  vertical: NyanSpacing.space8,
-                ),
-                minimumSize: const Size(0, NyanSpacing.minTapTarget),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    NyanIcons.restart,
-                    size: 18,
-                    color: theme.colorScheme.primary.withValues(alpha: 0.88),
-                  ),
-                  const SizedBox(width: NyanSpacing.space8),
-                  Flexible(
-                    child: Text(
-                      resetAllLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        height: 1.0,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}

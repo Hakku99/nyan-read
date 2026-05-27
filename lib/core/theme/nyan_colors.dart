@@ -10,7 +10,8 @@ class NyanColors {
   static const Color creamPrimaryDeep = Color(0xFF5A6644);
   static const Color creamTextMain = Color(0xFF3F3A34);
   static const Color creamTextSecondary = Color(0xFF5F5950);
-  static const Color creamTextMuted = Color(0xFF706A5A);
+  // Darkened from #706A5A to ensure ≥5:1 WCAG AA margin on creamBackground/creamSurface.
+  static const Color creamTextMuted = Color(0xFF6B6559);
   static const Color creamDivider = Color(0xFFE5DED2);
   static const Color creamSuccess = Color(0xFF4F6B1E);
 
@@ -20,7 +21,8 @@ class NyanColors {
   static const Color inkNightPrimaryDeep = Color(0xFFB3C29A);
   static const Color inkNightTextMain = Color(0xFFE8E1D5);
   static const Color inkNightTextSecondary = Color(0xFFB4AC9F);
-  static const Color inkNightTextMuted = Color(0xFF9C968D);
+  // Lightened from #9C968D to ensure ≥5.5:1 WCAG AA margin on inkNightSurface/inkNightBackground.
+  static const Color inkNightTextMuted = Color(0xFFA6A099);
   static const Color inkNightSurfaceMuted = Color(0xFF202520);
   static const Color inkNightDivider = Color(0xFF3A3F3A);
   static const Color inkNightSuccess = Color(0xFF8FBC8F);

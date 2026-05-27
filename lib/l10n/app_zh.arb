@@ -19,6 +19,9 @@
   "pageTurnTap": "点击",
   "pageTurnSwipe": "滑动",
   "pageTurnDisabled": "禁用",
+  "readerFontFamily": "字体",
+  "readerFontFamilySans": "无衬线",
+  "readerFontFamilySerif": "衬线",
   "pageAnimation": "翻页动画",
   "pageAnimationFade": "方向性淡入过渡",
   "pageAnimationPaper": "仿真纸张效果",
@@ -227,6 +230,9 @@
   "readerTypographyFineTuneSubtitle": "字体大小与行高",
   "readerFontSizeHint": "调大或调小",
   "readerLineHeightHint": "调整阅读节奏",
+  "readerBrightnessDim": "暗",
+  "readerBrightnessNormal": "正常",
+  "readerBrightnessBright": "亮",
   "readerWarmthLow": "低",
   "readerWarmthMedium": "中",
   "readerWarmthHigh": "高",
@@ -323,6 +329,7 @@
       }
     }
   },
+  "bookmarkAdded": "已添加书签",
   "notesAndHighlightsTitle": "笔记与高亮 ({count})",
   "@notesAndHighlightsTitle": {
     "placeholders": {

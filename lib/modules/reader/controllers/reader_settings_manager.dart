@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/services/reader_preferences_service.dart';
@@ -57,6 +59,7 @@ class ReaderSettingsManager {
       lineHeight: _lineHeight,
       pageTurnMode: preferences.pageTurnMode,
       pageAnimation: preferences.pageAnimation,
+      useSerif: preferences.useSerif,
     ));
   }
 
@@ -79,6 +82,16 @@ class ReaderSettingsManager {
     _updateEngineConfig();
     preferences.setBackgroundColor(color);
     onSettingsChanged();
+  }
+
+  void setPageTurnMode(PageTurnMode mode) {
+    // Persisting fires _handlePreferencesChanged, which re-calls
+    // _updateEngineConfig + onSettingsChanged — no need to duplicate here.
+    unawaited(preferences.setPageTurnMode(mode));
+  }
+
+  void setUseSerif(bool value) {
+    unawaited(preferences.setUseSerif(value));
   }
 
   void handleLayoutChange(Size newSize, Size? lastSize, VoidCallback onUpdate) {

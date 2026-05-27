@@ -53,5 +53,11 @@ class MockReaderSettingsManager implements ReaderSettingsManager {
   void setLineHeight(double height) {}
 
   @override
+  void setPageTurnMode(PageTurnMode mode) {}
+
+  @override
+  void setUseSerif(bool value) {}
+
+  @override
   Future<void> dispose() async {}
 }

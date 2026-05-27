@@ -9,7 +9,7 @@ void main() {
 
     await service.initialize();
 
-    expect(service.pageTurnMode, PageTurnMode.upDown);
+    expect(service.pageTurnMode, PageTurnMode.swipe);
   });
 
   test('persists page turn mode selection', () async {
@@ -17,12 +17,12 @@ void main() {
     final service = ReaderPreferencesService();
     await service.initialize();
 
-    await service.setPageTurnMode(PageTurnMode.leftRight);
+    await service.setPageTurnMode(PageTurnMode.tap);
     await service.flushPendingWrites();
 
     final reloaded = ReaderPreferencesService();
     await reloaded.initialize();
 
-    expect(reloaded.pageTurnMode, PageTurnMode.leftRight);
+    expect(reloaded.pageTurnMode, PageTurnMode.tap);
   });
 }

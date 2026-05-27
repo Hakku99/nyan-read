@@ -66,6 +66,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pageTurnDisabled => 'Disabled';
 
   @override
+  String get readerFontFamily => 'Font';
+
+  @override
+  String get readerFontFamilySans => 'Sans';
+
+  @override
+  String get readerFontFamilySerif => 'Serif';
+
+  @override
   String get pageAnimation => 'Page Animation';
 
   @override
@@ -567,6 +576,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerLineHeightHint => 'Line spacing rhythm';
 
   @override
+  String get readerBrightnessDim => 'Dim';
+
+  @override
+  String get readerBrightnessNormal => 'Normal';
+
+  @override
+  String get readerBrightnessBright => 'Bright';
+
+  @override
   String get readerWarmthLow => 'Low';
 
   @override
@@ -705,6 +723,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String failedToDeleteBookmark(String error) {
     return 'Failed to delete bookmark: $error';
   }
+
+  @override
+  String get bookmarkAdded => 'Bookmark added';
 
   @override
   String notesAndHighlightsTitle(int count) {
