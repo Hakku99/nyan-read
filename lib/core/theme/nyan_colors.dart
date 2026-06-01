@@ -15,17 +15,29 @@ class NyanColors {
   static const Color creamDivider = Color(0xFFE5DED2);
   static const Color creamSuccess = Color(0xFF4F6B1E);
 
-  static const Color inkNightBackground = Color(0xFF1D211E);
-  static const Color inkNightSurface = Color(0xFF262B27);
+  // ── Sumi Dark — v3 elevation ladder (design-system handoff 2026-06) ──────
+  // Depth is carried by TONE, not drop-shadow: surfaces step LIGHTER as they
+  // rise toward the user, on a deliberate ladder with a visible ~5–8 L* gap so
+  // each elevated layer reads as a distinct plane:
+  //   bg #181B16 (page void) < surfaceMuted #1D211B (recessed track) <
+  //   surface #242922 (cards/bars, +1) < surfaceRaised #2E342B
+  //   (dialogs/sheets/popovers, highest).
+  // Source: colors_and_type.css [data-theme="sumi"]; HANDOFF-flutter.md §2.
+  static const Color inkNightBackground = Color(0xFF181B16);
+  static const Color inkNightSurface = Color(0xFF242922);
+  static const Color inkNightSurfaceMuted = Color(0xFF1D211B);
+  static const Color inkNightSurfaceRaised = Color(0xFF2E342B);
   static const Color inkNightPrimary = Color(0xFFA9B690);
-  static const Color inkNightPrimaryDeep = Color(0xFFB3C29A);
-  static const Color inkNightTextMain = Color(0xFFE8E1D5);
-  static const Color inkNightTextSecondary = Color(0xFFB4AC9F);
-  // Lightened from #9C968D to ensure ≥5.5:1 WCAG AA margin on inkNightSurface/inkNightBackground.
-  static const Color inkNightTextMuted = Color(0xFFA6A099);
-  static const Color inkNightSurfaceMuted = Color(0xFF202520);
-  static const Color inkNightDivider = Color(0xFF3A3F3A);
-  static const Color inkNightSuccess = Color(0xFF8FBC8F);
+  static const Color inkNightPrimaryDeep = Color(0xFFB7C69E);
+  static const Color inkNightTextMain = Color(0xFFECE6DB);
+  static const Color inkNightTextSecondary = Color(0xFFBBB3A6);
+  // #9A948B clears WCAG AA on BOTH background and surface under the v3 ladder.
+  static const Color inkNightTextMuted = Color(0xFF9A948B);
+  static const Color inkNightDivider = Color(0xFF3D443A);
+  // Explicit card edge — brighter than divider; used when a hard border helps a
+  // surface read as a plane (e.g. the luminous hairline ring on dark chrome).
+  static const Color inkNightBorder = Color(0xFF474E42);
+  static const Color inkNightSuccess = Color(0xFF94C194);
 
   static const Color highlightYellow = Color(0xFFF2E58A);
   static const Color highlightGreen = Color(0xFFA8D18D);

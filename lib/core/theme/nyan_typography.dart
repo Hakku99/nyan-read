@@ -16,6 +16,13 @@ class NyanTypography {
   static const double body = 16;
   static const double meta = 13;
 
+  /// Olive eyebrow / section caption — the 6th and smallest type size.
+  /// **Reserved for uppercase section eyebrows only** (e.g. the olive dotted
+  /// labels inside settings groups, reader settings headers). MUST NOT appear
+  /// in body copy, list rows, or any non-caption surface.
+  /// Source: `colors_and_type.css` `--fz-caption`; `AGENTS.md §4.2.5`.
+  static const double caption = 11;
+
   /// Interactive control label sizes — Claude Design system exception
   /// (see AGENTS.md §4.2.5). These three values are reserved for
   /// [NyanPrimaryButton] labels only and MUST NOT appear in body copy,
@@ -27,6 +34,18 @@ class NyanTypography {
   ///   comfortable (lg) → 17pt
   static const double buttonCompact = 14;
   static const double buttonComfortable = 17;
+
+  /// Olive uppercase eyebrow label — 11pt / w500 / +0.22 letter-spacing.
+  /// Pass [color] as `nyan.primaryDeep` from the active [NyanTheme].
+  /// Use only for section eyebrows above grouped cards / reader settings headers.
+  static TextStyle eyebrowStyle(Color color) => TextStyle(
+        fontFamily: uiFontFamily,
+        fontSize: caption,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.22,
+        height: 1.0,
+        color: color,
+      );
 
   static TextTheme textTheme({
     required Color textMain,

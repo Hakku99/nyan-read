@@ -52,12 +52,14 @@ class NyanInfoCard extends StatelessWidget {
         ? (isDark ? 0.2 : 0.16)
         : (isDark ? 0.24 : 0.3);
 
+    // v3 ladder: dark no longer opts out — the ring carries plane separation.
+    // Muted cards stay shadowless: they are recessed (inset) surfaces, not lifted.
     final bool isMuted = tone == NyanInfoCardTone.muted;
-    final List<BoxShadow> shadows = (isDark || isMuted)
+    final List<BoxShadow> shadows = isMuted
         ? const []
         : (isGrouped
-            ? NyanShadows.settingsGrouped(theme.shadowColor)
-            : NyanShadows.lightCard(theme.shadowColor));
+            ? NyanShadows.settingsGrouped(nyanTheme)
+            : NyanShadows.lightCard(nyanTheme));
 
     final content = Container(
       decoration: BoxDecoration(

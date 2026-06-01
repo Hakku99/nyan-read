@@ -311,8 +311,9 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
           color: theme.dividerColor.withValues(alpha: isDark ? 0.22 : 0.18),
           width: 0.6,
         ),
-        boxShadow:
-            isDark ? const [] : NyanShadows.subtle(nyanTheme.textPrimary),
+        // v3 ladder: dark no longer opts out of shadow — the ring carries the
+        // plane separation. Pass the full theme so the recipe picks the ladder.
+        boxShadow: NyanShadows.subtle(nyanTheme),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,

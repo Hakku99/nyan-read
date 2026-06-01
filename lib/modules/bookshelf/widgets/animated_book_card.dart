@@ -111,7 +111,7 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
             width: widget.isSelected ? 2 : 1,
           ),
           color: widget.isSelected ? context.selectionSurface : theme.cardColor,
-          boxShadow: NyanShadows.subtle(theme.shadowColor),
+          boxShadow: NyanShadows.subtle(nyan),
         ),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,

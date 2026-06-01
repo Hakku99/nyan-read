@@ -51,7 +51,7 @@ class NyanRowGroup extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: borderRadius,
-        boxShadow: NyanShadows.settingsGrouped(nyan.textPrimary),
+        boxShadow: NyanShadows.settingsGrouped(nyan),
       ),
       child: Container(
         padding: padding,

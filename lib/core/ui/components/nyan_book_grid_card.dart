@@ -48,7 +48,7 @@ class NyanBookGridCard extends StatelessWidget {
               color: isSelected
                   ? context.selectionSurface
                   : theme.cardColor,
-              boxShadow: NyanShadows.subtle(theme.shadowColor),
+              boxShadow: NyanShadows.subtle(context.nyanTheme),
             ),
             child: Align(
               alignment: Alignment.center,

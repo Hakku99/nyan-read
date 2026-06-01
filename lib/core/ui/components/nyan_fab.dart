@@ -34,7 +34,7 @@ class NyanFAB extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(NyanRadius.input),
-        boxShadow: NyanShadows.subtle(nyan.textPrimary),
+        boxShadow: NyanShadows.subtle(nyan),
       ),
       child: FloatingActionButton(
         onPressed: onPressed,
