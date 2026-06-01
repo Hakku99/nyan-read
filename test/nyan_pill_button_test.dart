@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nyan_read/core/theme/nyan_radius.dart';
 import 'package:nyan_read/core/theme/nyan_spacing.dart';
 import 'package:nyan_read/core/theme/nyan_typography.dart';
 import 'package:nyan_read/core/theme/theme_presets.dart';
@@ -30,49 +31,54 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
   }
 
-  ShapeBorder pillShape(WidgetTester tester) {
-    final material = tester.widget<Material>(find.byType(Material).last);
-    return material.shape!;
+  BoxDecoration pillDecoration(WidgetTester tester) {
+    final container =
+        tester.widget<AnimatedContainer>(find.byType(AnimatedContainer).first);
+    return container.decoration as BoxDecoration;
   }
 
   // ── Shape ──────────────────────────────────────────────────────────────────
   group('NyanPillButton shape', () {
-    testWidgets('uses StadiumBorder', (tester) async {
+    testWidgets('uses squared r-chip 12pt corners (not a stadium)', (tester) async {
       await pumpPill(tester);
-      expect(pillShape(tester), isA<StadiumBorder>());
+      final dec = pillDecoration(tester);
+      expect(
+        dec.borderRadius,
+        const BorderRadius.all(Radius.circular(NyanRadius.chip)),
+        reason: 'design-system: chip=12 squared, not StadiumBorder',
+      );
     });
 
-    testWidgets('unselected border is 1px divider', (tester) async {
+    testWidgets('unselected border is transparent 1.5px', (tester) async {
       await pumpPill(tester, selected: false);
-      final shape = pillShape(tester) as StadiumBorder;
-      expect(shape.side.width, 1.0);
-      expect(shape.side.color, preset.divider);
+      final dec = pillDecoration(tester);
+      final border = dec.border! as Border;
+      expect(border.top.width, 1.5);
+      expect(border.top.color, Colors.transparent);
     });
 
     testWidgets('selected border is 1.5px primaryDeep', (tester) async {
       await pumpPill(tester, selected: true);
-      final shape = pillShape(tester) as StadiumBorder;
-      expect(shape.side.width, 1.5);
-      expect(shape.side.color, preset.primaryDeep);
+      final dec = pillDecoration(tester);
+      final border = dec.border! as Border;
+      expect(border.top.width, 1.5);
+      expect(border.top.color, preset.primaryDeep);
     });
   });
 
   // ── Background ─────────────────────────────────────────────────────────────
   group('NyanPillButton background', () {
-    testWidgets('always uses nyan.surface (no fill on select)', (tester) async {
+    testWidgets('unselected fill is surfaceMuted', (tester) async {
       await pumpPill(tester, selected: false);
-      final unselectedMaterial =
-          tester.widget<Material>(find.byType(Material).last);
+      expect(pillDecoration(tester).color, preset.surfaceMuted);
+    });
 
+    testWidgets('selected fill is transparent (outline-only)', (tester) async {
       await pumpPill(tester, selected: true);
-      final selectedMaterial =
-          tester.widget<Material>(find.byType(Material).last);
-
-      expect(unselectedMaterial.color, preset.surface);
-      expect(selectedMaterial.color, preset.surface);
+      expect(pillDecoration(tester).color, Colors.transparent);
     });
   });
 
@@ -83,10 +89,10 @@ void main() {
       expect(find.text('High'), findsOneWidget);
     });
 
-    testWidgets('label color is textPrimary when unselected', (tester) async {
+    testWidgets('label color is textSecondary when unselected', (tester) async {
       await pumpPill(tester, label: 'High', selected: false);
       final text = tester.widget<Text>(find.text('High'));
-      expect(text.style?.color, preset.textPrimary);
+      expect(text.style?.color, preset.textSecondary);
     });
 
     testWidgets('label color is primaryDeep when selected', (tester) async {
@@ -124,9 +130,13 @@ void main() {
             ),
         orElse: () => throw TestFailure('pill padding not found'),
       );
-      expect(pillPadding.padding,
-          const EdgeInsets.symmetric(
-              horizontal: NyanSpacing.space16, vertical: NyanSpacing.space8));
+      expect(
+        pillPadding.padding,
+        const EdgeInsets.symmetric(
+          horizontal: NyanSpacing.space16,
+          vertical: NyanSpacing.space8,
+        ),
+      );
     });
   });
 
@@ -142,11 +152,11 @@ void main() {
       expect(find.byType(Icon), findsOneWidget);
     });
 
-    testWidgets('icon colour matches label colour (textPrimary when unselected)',
+    testWidgets('icon colour matches label colour (textSecondary when unselected)',
         (tester) async {
       await pumpPill(tester, icon: Icons.book, selected: false);
       final icon = tester.widget<Icon>(find.byType(Icon));
-      expect(icon.color, preset.textPrimary);
+      expect(icon.color, preset.textSecondary);
     });
   });
 
