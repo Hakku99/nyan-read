@@ -202,8 +202,11 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
         labelStyle: TextStyle(color: textSecondary),
         hintStyle: TextStyle(color: textSecondary.withValues(alpha: 0.7)),
       ),
+      // Dialogs and sheets sit on the highest elevation tier (surfaceRaised).
+      // In Cream Light this equals surface; in Sumi Dark it steps one ladder
+      // level lighter (#2E342B) so they visually float above cards.
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: surface,
+        backgroundColor: surfaceRaised,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(NyanRadius.sheet),
@@ -211,7 +214,7 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: surface,
+        backgroundColor: surfaceRaised,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(NyanRadius.panel),
         ),

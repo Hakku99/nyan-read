@@ -40,6 +40,17 @@ class NyanBottomSheet extends StatelessWidget {
           borderRadius: const BorderRadius.vertical(
             top: Radius.circular(NyanRadius.sheet),
           ),
+          // Dark catch-light: 1px top edge at 5% white simulates the CSS
+          // `inset 0 1px 0 rgba(255,255,255,0.05)` that Flutter BoxShadow
+          // cannot express directly (no inset mode).
+          border: nyan.brightness == Brightness.dark
+              ? const Border(
+                  top: BorderSide(
+                    color: Color(0x0DFFFFFF), // white @ ~5%
+                    width: 1,
+                  ),
+                )
+              : null,
         ),
         child: Padding(
           padding: contentPadding ??

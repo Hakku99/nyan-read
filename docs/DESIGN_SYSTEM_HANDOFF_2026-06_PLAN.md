@@ -253,9 +253,9 @@ priority and authorised editing `AGENTS.md`:
 - [x] A5 Theme-aware shadow engine (dark elevation ladder) — *Opus/medium-high*
 
 ### Phase B — Components
-- [ ] B1 Squared pill (outline-on-select) — *Sonnet/medium*
-- [ ] B2 Segmented control audit — *Sonnet/low*
-- [ ] B3 Eyebrow caption adoption — *Sonnet/low*
+- [x] B1 Squared pill (outline-on-select) — *Sonnet/medium*
+- [x] B2 Segmented control aligned to June 2026 bundle — *Sonnet/low* (track r-control 14, 280ms, surfaceMuted bg, no border)
+- [x] B3 Eyebrow caption — *no-op* (caption=11 token added in A2; `.nyan-caption` unused in app screens; `NyanSectionHeader` correctly uses meta=13/w600 per JSX)
 - [ ] B4 Raised-surface wiring (dialogs/sheets/popovers) — *Sonnet/medium*
 
 ### Phase C — One Paper reader chrome ⚠ Protected Surface
