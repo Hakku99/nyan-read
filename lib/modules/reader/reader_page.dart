@@ -7,7 +7,6 @@ import '../../core/models/book.dart';
 import '../../core/models/highlight.dart';
 import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/riverpod_providers.dart';
-import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
 import '../bookmark/bookmark_list_page.dart';
@@ -16,10 +15,8 @@ import 'widgets/reader_error_view.dart';
 import 'widgets/highlight_note_dialog.dart';
 import 'widgets/reader_menu.dart';
 import 'dart:async';
-import '../../core/ui/components/nyan_overlay_style.dart';
 import '../../l10n/app_localizations.dart';
 import 'widgets/reader_chapter_summary.dart';
-import 'widgets/reader_settings/reader_settings_display_panel.dart';
 import 'brightness/brightness_orchestrator.dart';
 import 'brightness/brightness_repository.dart';
 import 'brightness/system_brightness_adapter.dart';
@@ -29,6 +26,7 @@ import 'controllers/reader_controller_provider.dart';
 import 'brightness/overlay_widget.dart';
 import 'widgets/brightness_hud_widget.dart';
 import 'widgets/chapter_list_widget.dart';
+import 'widgets/one_paper_dock.dart';
 import 'widgets/smooth_page_reader.dart';
 import '../../core/ui/nyan_icons.dart';
 export 'controllers/reader_controller.dart';
@@ -53,6 +51,11 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       GlobalKey<ScaffoldState>();
   final GlobalKey _readerBodyKey = GlobalKey();
   bool _showControls = false;
+
+  /// One Paper: which sheet the dock has grown into (`chapters` / `settings`),
+  /// or `null` when collapsed to a resting dock. `bookmarks` never sets this —
+  /// it pushes a full destination page instead.
+  DockAction? _openSheet;
   Offset? _tapDownPosition;
   Offset? _panStartPosition;
   Offset? _panLastPosition;
@@ -157,6 +160,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
               listenable: controller,
               builder: (context, _) {
                 final bgColor = controller.backgroundColor;
+                final loc = AppLocalizations.of(context)!;
                 return PopScope(
                   canPop: false,
                   onPopInvokedWithResult: (didPop, result) async {
@@ -461,40 +465,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                               ),
                             ),
 
-                          // 4. P4 bottom overlay — sticky strip with
-                          // 4-tile dock. Sits in the Stack so it lives within
-                          // the same brightness-overlay-affected region as the
-                          // reader engine. IgnorePointer wrapper inside the
-                          // widget makes it pass-through when hidden.
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            child: _ReaderBottomOverlay(
-                              visible: _showControls,
-                              controller: controller,
-                              onOpenChapters: () => _handleOverlayTile(
-                                () => _openChapterList(context, controller),
-                              ),
-                              onOpenBookmarks: () => _handleOverlayTile(
-                                () => _openBookmarksPage(context, controller),
-                              ),
-                              onOpenBrightness: () => _handleOverlayTile(
-                                () => _openReaderBrightness(
-                                  context,
-                                  controller,
-                                ),
-                              ),
-                              onOpenSettings: () => _handleOverlayTile(
-                                () => _openReaderSettings(context, controller),
-                              ),
-                            ),
-                          ),
-
-                          // 5. Top overlay — slides in from the top alongside
-                          // the bottom overlay so the reader title/author and
-                          // quick actions (back, bookmark, more) are always
-                          // reachable when controls are visible.
+                          // 4. Top overlay — floating paper bar: back /
+                          // title + author / sun (brightness) / bookmark /
+                          // more. Stays a floating inset bar (One Paper).
                           Positioned(
                             top: 0,
                             left: 0,
@@ -511,14 +484,69 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                 context,
                                 controller,
                               ),
-                              onOpenSettings: () => _handleOverlayTile(
-                                () => _openReaderSettings(context, controller),
+                              onOpenSettings: () =>
+                                  _toggleSheet(DockAction.settings, controller),
+                            ),
+                          ),
+
+                          // 5. Scrim — warm-ink dim that rises with a grown
+                          // sheet; tapping it collapses the dock back to a
+                          // resting bar. Above the top bar (dims it), below the
+                          // dock. (Canvas recede/blur added in C5.)
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              ignoring: _openSheet == null,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: _collapseSheet,
+                                child: AnimatedOpacity(
+                                  opacity: _openSheet != null ? 1.0 : 0.0,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: const Cubic(0.33, 0.9, 0.36, 1.0),
+                                  child: ColoredBox(
+                                    color: Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? const Color(0x94000000) // 0.58
+                                        : const Color(0x57282420), // warm 0.34
+                                  ),
+                                ),
                               ),
                             ),
                           ),
 
-                          // 6. Brightness HUD Overlay
-                          // Injected just below overlays and gesture catchers
+                          // 6. One Paper dock — floating panel that grows into
+                          // a sheet (Settings / Chapters). Replaces the P4
+                          // sticky strip. Brightness lives elsewhere (top-bar
+                          // sun popover + left-edge drag), not in the dock.
+                          OnePaperDock(
+                            visible: _showControls,
+                            sheetOpen: _openSheet != null,
+                            title: _sheetTitle(loc),
+                            meta: _sheetMeta(controller, loc),
+                            onGrabberTap: _collapseSheet,
+                            footer: DockFooter(
+                              sheetOpen: _openSheet != null,
+                              chapterIndex:
+                                  controller.currentChapterIndex ?? -1,
+                              chapterCount: controller.chapters.length,
+                              chapterLabel: readerChapterSummaryLabel(
+                                chapters: controller.chapters,
+                                currentChapterIndex:
+                                    controller.currentChapterIndex,
+                                loc: loc,
+                              ),
+                              progressListenable: controller.progressListenable,
+                              activeAction: _openSheet,
+                              onAction: (a) =>
+                                  _handleDockAction(a, context, controller),
+                              onPrevChapter: () => _stepChapter(controller, -1),
+                              onNextChapter: () => _stepChapter(controller, 1),
+                            ),
+                            child: _buildSheetChild(controller),
+                          ),
+
+                          // 7. Brightness HUD Overlay — topmost so the
+                          // edge-drag feedback reads over the dock.
                           BrightnessHudWidget(
                               controller: _brightnessController),
                         ],
@@ -552,110 +580,116 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     if (!mounted) return;
   }
 
-  /// Tile-press handler: dismiss the overlay strip first (so its slide-out
-  /// can run in parallel with the child sheet's slide-in), then fire the
-  /// destination action. Each [_open*] helper itself calls [_setControlsVisible]
-  /// internally but we set it eagerly to avoid a frame where both layers are
-  /// visible.
-  void _handleOverlayTile(VoidCallback action) {
-    _setControlsVisible(false);
-    action();
+  // ── One Paper dock state machine ─────────────────────────────────────────
+
+  /// Header title for the grown sheet.
+  String? _sheetTitle(AppLocalizations loc) {
+    switch (_openSheet) {
+      case DockAction.settings:
+        return loc.readingSettings;
+      case DockAction.chapters:
+        return loc.readerDockChapters;
+      case DockAction.bookmarks:
+      case null:
+        return null;
+    }
   }
 
-  /// Brightness tile destination — slim modal sheet with the brightness +
-  /// warmth + auto-brightness controls reused from the full reader menu.
-  Future<void> _openReaderBrightness(
-    BuildContext context,
-    ReaderController controller,
-  ) async {
-    if (!context.mounted) return;
-    await _showReaderBrightnessSheet(
-      context: context,
-      brightnessController: _brightnessController,
-      readerController: controller,
-    );
+  /// Header trailing meta for the grown sheet ("42% read" / "184 chapters").
+  String? _sheetMeta(ReaderController controller, AppLocalizations loc) {
+    switch (_openSheet) {
+      case DockAction.settings:
+        final pct = (controller.currentProgress.clamp(0.0, 1.0) * 100).round();
+        return loc.readerSettingsProgressHint(pct);
+      case DockAction.chapters:
+        return loc.chapterCount(controller.chapters.length);
+      case DockAction.bookmarks:
+      case null:
+        return null;
+    }
   }
 
-  /// Settings tile destination — opens the full [ReaderMenu] as a standalone
-  /// modal bottom sheet. Replaces the old in-sheet Quick/Full toggle path.
-  Future<void> _openReaderSettings(
-    BuildContext context,
-    ReaderController controller,
-  ) async {
-    if (!context.mounted) return;
-    await _showReaderSettingsSheet(
-      context: context,
-      readerController: controller,
-      brightnessController: _brightnessController,
-      scaffoldKey: readerPageScaffoldKey,
-    );
-  }
-
-  Future<void> _openChapterList(
-    BuildContext context,
-    ReaderController controller,
-  ) async {
-    _setControlsVisible(false);
-    await controller.syncChapterAfterScroll();
-    if (!context.mounted) return;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      isDismissible: true,
-      enableDrag: true,
-      backgroundColor:
-          Theme.of(context).colorScheme.surface.withValues(alpha: 0),
-      barrierColor: NyanOverlayStyle.modalBarrierColor(context),
-      builder: (sheetContext) {
-        final maxSheetHeight = MediaQuery.sizeOf(sheetContext).height * 0.92;
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.of(sheetContext).pop(),
-              ),
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              // Clip the whole sheet (including software dim layers) so rounded
-              // corners match Reading Settings and no square dimming leaks.
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(NyanRadius.sheet),
-                ),
-                child: BrightnessOverlayWidget(
-                  stackFit: StackFit.passthrough,
-                  stateListenable: _brightnessController.stateListenable,
-                  warmthListenable: _brightnessController.warmthListenable,
-                  child: Material(
-                    color: Theme.of(sheetContext).colorScheme.surface,
-                    elevation: 6,
-                    shadowColor: Theme.of(sheetContext)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.14),
-                    child: ChapterListWidget(
-                      bookTitle: controller.book.title,
-                      bookAuthor: controller.book.author,
-                      chapters: controller.chapters,
-                      currentChapterIndex: controller.currentChapterIndex,
-                      currentProgress: controller.currentProgress,
-                      maxSheetHeight: maxSheetHeight -
-                          MediaQuery.viewPaddingOf(sheetContext).bottom,
-                      onChapterTap: (index, locator) {
-                        Navigator.of(sheetContext).pop();
-                        controller.jumpToChapter(index, locator);
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+  /// The grown-sheet body — the existing settings / chapters widgets rendered
+  /// chromeless inside the dock. `null` when collapsed (so neither builds).
+  Widget? _buildSheetChild(ReaderController controller) {
+    switch (_openSheet) {
+      case DockAction.settings:
+        return ReaderMenu(
+          controller: controller,
+          scaffoldKey: readerPageScaffoldKey,
+          brightnessController: _brightnessController,
+          showSheetChrome: false,
+          showHeader: false,
         );
-      },
-    );
+      case DockAction.chapters:
+        return ChapterListWidget(
+          bookTitle: controller.book.title,
+          bookAuthor: controller.book.author,
+          chapters: controller.chapters,
+          currentChapterIndex: controller.currentChapterIndex,
+          currentProgress: controller.currentProgress,
+          // The dock's Flexible bounds the real height; this only feeds the
+          // (now-bypassed) compact heuristic, so a nominal value is fine.
+          maxSheetHeight: 520,
+          showSheetChrome: false,
+          showHeader: false,
+          onChapterTap: (index, locator) {
+            controller.jumpToChapter(index, locator);
+            _collapseSheet();
+          },
+        );
+      case DockAction.bookmarks:
+      case null:
+        return null;
+    }
+  }
+
+  /// Dispatch a dock footer action: chapters/settings grow the dock in place;
+  /// bookmarks pushes a destination page (and first collapses any open sheet).
+  void _handleDockAction(
+    DockAction action,
+    BuildContext context,
+    ReaderController controller,
+  ) {
+    switch (action) {
+      case DockAction.bookmarks:
+        _collapseSheet();
+        unawaited(_openBookmarksPage(context, controller));
+      case DockAction.chapters:
+      case DockAction.settings:
+        _toggleSheet(action, controller);
+    }
+  }
+
+  /// Grow the dock into [action]'s sheet, or collapse it if already open.
+  void _toggleSheet(DockAction action, ReaderController controller) {
+    final willOpen = _openSheet != action;
+    if (willOpen && action == DockAction.chapters) {
+      // Freshen the current-chapter highlight before the list appears.
+      unawaited(controller.syncChapterAfterScroll());
+    }
+    setState(() {
+      _openSheet = willOpen ? action : null;
+      // Opening a sheet implies the chrome is up.
+      if (willOpen) _showControls = true;
+    });
+  }
+
+  /// Collapse a grown sheet back to a resting dock.
+  void _collapseSheet() {
+    if (_openSheet == null) return;
+    setState(() => _openSheet = null);
+  }
+
+  /// Step one chapter via the dock footer carets. Calls the existing
+  /// [ReaderController.jumpToChapter] — pagination/position math is untouched.
+  Future<void> _stepChapter(ReaderController controller, int delta) async {
+    final current = controller.currentChapterIndex;
+    if (current == null) return;
+    final target = current + delta;
+    if (target < 0 || target >= controller.chapters.length) return;
+    HapticFeedback.selectionClick();
+    await controller.jumpToChapter(target, controller.chapters[target].locator);
   }
 
   /// Top-bar back button: saves reading progress and shuts down brightness
@@ -709,9 +743,11 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   }
 
   void _setControlsVisible(bool visible) {
-    if (_showControls == visible) return;
+    // Hiding chrome also collapses any grown sheet.
+    if (_showControls == visible && (visible || _openSheet == null)) return;
     setState(() {
       _showControls = visible;
+      if (!visible) _openSheet = null;
     });
   }
 

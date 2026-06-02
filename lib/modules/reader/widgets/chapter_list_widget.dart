@@ -37,6 +37,15 @@ class ChapterListWidget extends StatefulWidget {
 
   final void Function(int index, ChapterLocator locator) onChapterTap;
 
+  /// When false, drops the outer surface + height clamp so the widget can be
+  /// embedded inside another surface (the One Paper dock). The host must then
+  /// provide a bounded height (e.g. via a [Flexible]).
+  final bool showSheetChrome;
+
+  /// When false, drops the drag handle + book header card (the host supplies
+  /// its own title/meta). The sort control + list are always kept.
+  final bool showHeader;
+
   const ChapterListWidget({
     super.key,
     required this.bookTitle,
@@ -46,6 +55,8 @@ class ChapterListWidget extends StatefulWidget {
     required this.currentProgress,
     required this.maxSheetHeight,
     required this.onChapterTap,
+    this.showSheetChrome = true,
+    this.showHeader = true,
   });
 
   @override
@@ -241,29 +252,31 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
     NyanTheme nyanTheme,
   ) {
     return [
-      Center(
-        child: Container(
-          width: 42,
-          height: 4,
-          margin: const EdgeInsets.only(top: 10),
-          decoration: BoxDecoration(
-            color: nyanTheme.divider.withValues(alpha: 0.88),
-            borderRadius: BorderRadius.circular(NyanRadius.small),
+      if (widget.showHeader) ...[
+        Center(
+          child: Container(
+            width: 42,
+            height: 4,
+            margin: const EdgeInsets.only(top: 10),
+            decoration: BoxDecoration(
+              color: nyanTheme.divider.withValues(alpha: 0.88),
+              borderRadius: BorderRadius.circular(NyanRadius.small),
+            ),
           ),
         ),
-      ),
-      const SizedBox(height: NyanSpacing.space12),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: NyanSpacing.space16),
-        child: _BookHeaderCard(
-          title: widget.bookTitle,
-          chapterCountText: loc.chapterCount(widget.chapters.length),
-          onCopyTitle: () async {
-            await Clipboard.setData(ClipboardData(text: widget.bookTitle));
-          },
+        const SizedBox(height: NyanSpacing.space12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: NyanSpacing.space16),
+          child: _BookHeaderCard(
+            title: widget.bookTitle,
+            chapterCountText: loc.chapterCount(widget.chapters.length),
+            onCopyTitle: () async {
+              await Clipboard.setData(ClipboardData(text: widget.bookTitle));
+            },
+          ),
         ),
-      ),
-      const SizedBox(height: NyanSpacing.space12),
+        const SizedBox(height: NyanSpacing.space12),
+      ],
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: NyanSpacing.space16),
         child: SegmentedTabControl(
@@ -292,6 +305,24 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
     final loc = AppLocalizations.of(context)!;
     final entries = _visibleEntries;
     final compact = _shouldUseCompactSheet(context, entries.length);
+
+    // Embedded in the One Paper dock: no surface, no outer height clamp; fill
+    // the bounded height the host (a Flexible) provides, virtualizing the list.
+    if (!widget.showSheetChrome) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ..._buildSheetHeader(context, loc, nyanTheme),
+          Expanded(
+            child: _buildListStack(
+              loc: loc,
+              entries: entries,
+              listShrinkWrap: false,
+            ),
+          ),
+        ],
+      );
+    }
 
     final sheetBody = ColoredBox(
       color: theme.colorScheme.surface,

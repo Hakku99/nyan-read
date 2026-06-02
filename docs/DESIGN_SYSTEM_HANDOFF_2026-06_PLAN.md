@@ -186,6 +186,65 @@ priority and authorised editing `AGENTS.md`:
 
 ## 6. Per-task execution log
 
+### C1 — One Paper: Impact / Risk / Verification + mapping (2026-06-01)
+
+**Spec sources:** `components/reader.jsx` (`OnePaperDock`, `DockFooter`, `ReaderSettingsBody`, `ReaderChapterList`, `Knob`, panels); `ReaderScreen.jsx` (composition, gesture model, brightness popover).
+
+**Current implementation (what changes):**
+- `reader_page.dart` orchestrates a `Stack` with: reader body + corner progress/chapter labels; error view; **edge brightness gesture (already present**, lines ~438–462, `edgeBrightnessGestureEnabled`); a **sticky bottom strip** `_ReaderBottomOverlay` (4 tiles: Chapters/Bookmarks/Brightness/Settings); a **sticky top strip** `_ReaderTopOverlay` (back / title / bookmark / more); `BrightnessHudWidget`.
+- Chrome visibility = single `bool _showControls`.
+- Settings + Chapters + Brightness each open as **separate `showModalBottomSheet`** destinations (`_showReaderSettingsSheet` → `ReaderMenu`; `_openChapterList` → `ChapterListWidget`; `_showReaderBrightnessSheet` → `ReaderSettingsDisplayPanel`).
+
+**Target (One Paper):**
+- One floating **`OnePaperDock`** (inset 12, `r-dock` 24) that **grows into a sheet** (`r-sheet` 28, `dur-grow` 320ms) in place — no modal push for Settings/Chapters.
+- **`DockFooter`** pinned at base: chapter stepper `‹ ›` + thin progress bar (collapsed only) + **3 actions** (Chapters/Bookmarks/Settings). **Brightness leaves the dock.**
+- Bookmarks stays a **pushed page** (already is).
+- Brightness → **top-bar sun popover** (centered glass dialog) + the **existing edge-gesture** (kept).
+- Sheet rise → canvas **recede `scale(0.97)` + warm scrim + 2px blur**; tap scrim / grabber collapses.
+
+**Component mapping (JSX → Dart):**
+| JSX | Dart target | Reuse? |
+|---|---|---|
+| `OnePaperDock` | new `widgets/one_paper_dock.dart` | new shell |
+| `DockFooter` | new (same file or `dock_footer.dart`) | new; wires `progressListenable` + `jumpToChapter` |
+| `ReaderSettingsBody` (Display/Text/Theme) | existing `reader_settings/*` panels + `ReaderMenu` body | **reuse** (render chromeless in dock) |
+| `ReaderChapterList` | existing `ChapterListWidget` | **reuse** (render chromeless in dock) |
+| Brightness dialog | existing `ReaderSettingsDisplayPanel` brightness block / `BrightnessHudWidget` | **reuse** in a centered dialog |
+
+**Controller API available (no new engine contract needed):** `chapters`, `currentChapterIndex` (int?), `currentProgress`, `progressListenable`, `jumpToChapter(index, locator)`, `nextPage`/`previousPage`, `addBookmark`, `setWarmth`, `setPageTurnMode`, `syncChapterAfterScroll`, `backgroundColor`. Stepper prev/next = `jumpToChapter(idx∓1, chapters[idx∓1].locator)`.
+
+**IMPACT:** Chrome-only (D4). No change to `ReaderEngine` / `ReadingPosition` / `ChapterLocator` / pagination. The stepper and chapter list call the *existing* `jumpToChapter`; progress reads the *existing* `progressListenable`. The §3.5 protected algorithms are untouched.
+
+**RISK:**
+1. **Gesture collisions** — page-turn taps (`SmoothPageReader` center/edge taps), chrome toggle tap, tap-scrim-to-collapse, and left-third edge brightness drag must stay disjoint. *Mitigation:* keep `SmoothPageReader` center-tap → chrome toggle; when a sheet is open, the scrim layer (above canvas, below dock) absorbs taps → collapse; edge-gesture zone unchanged.
+2. **Animation cost** — `max-height` grow + canvas blur could jank on low-end (`AGENTS §3.4` saveLayer/Opacity rules). *Mitigation:* `AnimatedSize`/`AnimatedContainer` for grow; scrim via animated-opacity `Container` (no saveLayer); 2px `BackdropFilter` mounted **only while a sheet is open**; `RepaintBoundary` around the dock.
+3. **BrightnessOverlayWidget scoping** — modal sheets currently re-wrap the brightness overlay; growing in place means the dock lives under the *existing* top-level `BrightnessOverlayWidget`, so the warmth/dim tint now also colors the dock. *Mitigation:* acceptable (dock is chrome over the page); verify legibility both themes.
+4. **State migration** — `_showControls` → `{chrome, sheet}` touches several call sites (`_handleOverlayTile`, `_open*`). *Mitigation:* land C2–C5 behind the same `_setControlsVisible` entry points; keep old `_open*` helpers callable until cutover.
+
+**VERIFICATION (per task):** widget tests for DockFooter (stepper enable/disable at ends, 3 actions, progress bind), grow/collapse state machine, and the §3.6 invariants (TOC current-chapter == footer chapter; cold-resume position unchanged). Manual: both themes, immersive→dock→sheet→collapse, edge brightness, sun popover, page-turn still works with chrome hidden.
+
+**Status:** ✅ analysis complete; approved; C2+C3 landed.
+
+---
+
+### C2 + C3 — OnePaperDock + DockFooter + reader_page rewire (2026-06-01)
+
+**What changed:**
+- **New** `lib/modules/reader/widgets/one_paper_dock.dart` — `OnePaperDock` (floating inset-12 panel; radius `r-dock`24→`r-sheet`28; body reveal via `AnimatedAlign(heightFactor)` over `dur-grow` 320ms; immersive slide/opacity via `AnimatedSlide`/`AnimatedOpacity`; grabber + title/meta header) and `DockFooter` (chapter stepper `‹ ›` + thin progress bar shown only when collapsed + 3 actions Chapters/Bookmarks/Settings; `DockAction` enum; active = matcha tint). Progress/% bind to `progressListenable`.
+- `chapter_list_widget.dart` — added `showSheetChrome` / `showHeader` flags; embedded path returns a chromeless `Column[sort, Expanded(virtualized list)]` for the dock.
+- `reader_page.dart` — replaced the P4 sticky strip with `OnePaperDock` + scrim. New state `DockAction? _openSheet`; methods `_sheetTitle/_sheetMeta/_buildSheetChild/_handleDockAction/_toggleSheet/_collapseSheet/_stepChapter`; `_setControlsVisible` now collapses the sheet on hide. Settings → `ReaderMenu(showSheetChrome:false, showHeader:false)`; Chapters → chromeless `ChapterListWidget`; Bookmarks → existing pushed page. Top-bar "more" now grows the Settings sheet. Removed dead modal helpers + unused imports.
+- `reader_page_overlay.dart` — removed the sticky bottom strip + brightness/settings modal-sheet helpers; kept the floating top bar.
+
+**Reused (no rebuild):** Display/Text/Theme panels (`ReaderMenu`), `ChapterListWidget`, `progressListenable`, `jumpToChapter`. **No pagination/position change** (§3.5 / §3.6 intact).
+
+**Known gaps (next tasks):** brightness sun popover not yet added (C4) — brightness is reachable via the **existing left-edge drag** meanwhile; sheet **close** clears content instantly (open is smooth) — C5 will keep content mounted during the collapse + add canvas recede/blur.
+
+**How to test:**
+1. `flutter analyze` → clean (only pre-existing `_runAnchorHealingInIsolate`).
+2. `flutter test` reader suite → 22 pass; the only 2 failures are pre-existing `reader_menu_test` "Reset all" cases (a separate reset-section design, confirmed via stash — unrelated to One Paper).
+3. Manual: open a book → tap center → dock appears floating inset; tap **Settings**/**Chapters** → dock grows into a sheet in place; tap scrim or grabber → collapses; stepper carets change chapter; **Bookmarks** pushes a page; page-turn still works with chrome hidden.
+
+
 ### A1 — Radius `chip 12` + semantic names (2026-06-01)
 
 **What changed:** `lib/core/theme/nyan_radius.dart`
@@ -256,12 +315,12 @@ priority and authorised editing `AGENTS.md`:
 - [x] B1 Squared pill (outline-on-select) — *Sonnet/medium*
 - [x] B2 Segmented control aligned to June 2026 bundle — *Sonnet/low* (track r-control 14, 280ms, surfaceMuted bg, no border)
 - [x] B3 Eyebrow caption — *no-op* (caption=11 token added in A2; `.nyan-caption` unused in app screens; `NyanSectionHeader` correctly uses meta=13/w600 per JSX)
-- [ ] B4 Raised-surface wiring (dialogs/sheets/popovers) — *Sonnet/medium*
+- [x] B4 Raised-surface wiring (dialogs/sheets/popovers) — *Sonnet/medium*
 
 ### Phase C — One Paper reader chrome ⚠ Protected Surface
-- [ ] C1 Impact/Risk/Verification + mapping — *Opus/high* (D2: full rework; D4: chrome-only)
-- [ ] C2 `OnePaperDock` grow-to-sheet — *Opus/high*
-- [ ] C3 `DockFooter` stepper + progress + 3 actions — *Opus/high*
+- [x] C1 Impact/Risk/Verification + mapping — *Opus/high* (D2: full rework; D4: chrome-only)
+- [x] C2 `OnePaperDock` grow-to-sheet — *Opus/high*
+- [x] C3 `DockFooter` + reader_page state-machine rewire — *Opus/high*
 - [ ] C4 Brightness relocation (edge gesture + sun popover) — *Opus/high*
 - [ ] C5 Depth response (scrim/blur/recede) — *Opus/medium*
 - [ ] C6 Reader tests — *Sonnet/medium*
