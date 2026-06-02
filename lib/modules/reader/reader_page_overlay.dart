@@ -28,6 +28,8 @@ class _ReaderTopOverlay extends StatelessWidget {
     required this.controller,
     required this.onBack,
     required this.onAddBookmark,
+    required this.onToggleBrightness,
+    required this.brightnessActive,
     required this.onOpenSettings,
   });
 
@@ -35,6 +37,8 @@ class _ReaderTopOverlay extends StatelessWidget {
   final ReaderController controller;
   final VoidCallback onBack;
   final VoidCallback onAddBookmark;
+  final VoidCallback onToggleBrightness;
+  final bool brightnessActive;
   final VoidCallback onOpenSettings;
 
   @override
@@ -126,6 +130,13 @@ class _ReaderTopOverlay extends StatelessWidget {
                         ),
                       ),
                       _TopOverlayIconButton(
+                        icon: NyanIcons.sun,
+                        ink: ink,
+                        active: brightnessActive,
+                        activeColor: theme.colorScheme.primary,
+                        onTap: onToggleBrightness,
+                      ),
+                      _TopOverlayIconButton(
                         icon: NyanIcons.bookmark,
                         ink: ink,
                         onTap: onAddBookmark,
@@ -155,14 +166,22 @@ class _TopOverlayIconButton extends StatelessWidget {
     required this.icon,
     required this.ink,
     required this.onTap,
+    this.active = false,
+    this.activeColor,
   });
 
   final IconData icon;
   final Color ink;
   final VoidCallback onTap;
 
+  /// When true the button reads as "toggled on" (matcha-tinted chip + glyph) —
+  /// used by the brightness sun button while its popover is open.
+  final bool active;
+  final Color? activeColor;
+
   @override
   Widget build(BuildContext context) {
+    final accent = activeColor ?? ink;
     return InkResponse(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -173,10 +192,24 @@ class _TopOverlayIconButton extends StatelessWidget {
         width: NyanSpacing.minTapTarget,
         height: NyanSpacing.minTapTarget,
         child: Center(
-          child: Icon(
-            icon,
-            size: 20,
-            color: ink.withValues(alpha: 0.85),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOutCubic,
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: active
+                  ? accent.withValues(alpha: 0.14)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(NyanRadius.control),
+            ),
+            child: Center(
+              child: Icon(
+                icon,
+                size: 20,
+                color: active ? accent : ink.withValues(alpha: 0.85),
+              ),
+            ),
           ),
         ),
       ),

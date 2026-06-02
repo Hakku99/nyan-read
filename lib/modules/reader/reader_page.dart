@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import '../../core/models/book.dart';
 import '../../core/models/highlight.dart';
 import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/riverpod_providers.dart';
+import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
 import '../bookmark/bookmark_list_page.dart';
@@ -27,6 +29,7 @@ import 'brightness/overlay_widget.dart';
 import 'widgets/brightness_hud_widget.dart';
 import 'widgets/chapter_list_widget.dart';
 import 'widgets/one_paper_dock.dart';
+import 'widgets/reader_brightness_popover.dart';
 import 'widgets/smooth_page_reader.dart';
 import '../../core/ui/nyan_icons.dart';
 export 'controllers/reader_controller.dart';
@@ -56,6 +59,15 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   /// or `null` when collapsed to a resting dock. `bookmarks` never sets this —
   /// it pushes a full destination page instead.
   DockAction? _openSheet;
+
+  /// The sheet whose body is currently mounted. Lags [_openSheet] on close so
+  /// the content stays visible through the collapse animation, then clears.
+  DockAction? _displayedSheet;
+  Timer? _sheetCloseTimer;
+
+  /// Top-bar sun brightness popover (centered glass dialog). Mutually exclusive
+  /// with [_openSheet].
+  bool _brightnessPopoverOpen = false;
   Offset? _tapDownPosition;
   Offset? _panStartPosition;
   Offset? _panLastPosition;
@@ -98,6 +110,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   void dispose() {
     _pageTurnLockTimer?.cancel();
     _chapterSyncDebounce?.cancel();
+    _sheetCloseTimer?.cancel();
     _boundController = null;
     unawaited(_brightnessController.shutdown());
     _brightnessController.dispose();
@@ -484,6 +497,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                 context,
                                 controller,
                               ),
+                              onToggleBrightness: _toggleBrightnessPopover,
+                              brightnessActive: _brightnessPopoverOpen,
                               onOpenSettings: () =>
                                   _toggleSheet(DockAction.settings, controller),
                             ),
@@ -503,12 +518,25 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                                   opacity: _openSheet != null ? 1.0 : 0.0,
                                   duration: const Duration(milliseconds: 300),
                                   curve: const Cubic(0.33, 0.9, 0.36, 1.0),
-                                  child: ColoredBox(
-                                    color: Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? const Color(0x94000000) // 0.58
-                                        : const Color(0x57282420), // warm 0.34
-                                  ),
+                                  // The 2px Gaussian recede is the one place
+                                  // blur is used; mount the BackdropFilter only
+                                  // while a sheet is open so it carries no idle
+                                  // saveLayer cost during reading.
+                                  child: _openSheet != null
+                                      ? BackdropFilter(
+                                          filter: ImageFilter.blur(
+                                            sigmaX: 2,
+                                            sigmaY: 2,
+                                          ),
+                                          child: ColoredBox(
+                                            color: Theme.of(context)
+                                                        .brightness ==
+                                                    Brightness.dark
+                                                ? const Color(0x94000000)
+                                                : const Color(0x57282420),
+                                          ),
+                                        )
+                                      : const SizedBox.expand(),
                                 ),
                               ),
                             ),
@@ -521,8 +549,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                           OnePaperDock(
                             visible: _showControls,
                             sheetOpen: _openSheet != null,
-                            title: _sheetTitle(loc),
-                            meta: _sheetMeta(controller, loc),
+                            // Title/meta/body track [_displayedSheet] so content
+                            // stays mounted through the collapse animation.
+                            title: _sheetTitle(loc, _displayedSheet),
+                            meta: _sheetMeta(controller, loc, _displayedSheet),
                             onGrabberTap: _collapseSheet,
                             footer: DockFooter(
                               sheetOpen: _openSheet != null,
@@ -542,10 +572,19 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                               onPrevChapter: () => _stepChapter(controller, -1),
                               onNextChapter: () => _stepChapter(controller, 1),
                             ),
-                            child: _buildSheetChild(controller),
+                            child: _buildSheetChild(controller, _displayedSheet),
                           ),
 
-                          // 7. Brightness HUD Overlay — topmost so the
+                          // 7. Brightness sun popover — centered glass dialog
+                          // over the canvas; above the dock (only mounts while
+                          // open).
+                          ReaderBrightnessPopover(
+                            visible: _brightnessPopoverOpen,
+                            controller: _brightnessController,
+                            onDismiss: _closeBrightnessPopover,
+                          ),
+
+                          // 8. Brightness HUD Overlay — topmost so the
                           // edge-drag feedback reads over the dock.
                           BrightnessHudWidget(
                               controller: _brightnessController),
@@ -582,9 +621,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
   // ── One Paper dock state machine ─────────────────────────────────────────
 
-  /// Header title for the grown sheet.
-  String? _sheetTitle(AppLocalizations loc) {
-    switch (_openSheet) {
+  /// Header title for the grown sheet (driven by [_displayedSheet]).
+  String? _sheetTitle(AppLocalizations loc, DockAction? sheet) {
+    switch (sheet) {
       case DockAction.settings:
         return loc.readingSettings;
       case DockAction.chapters:
@@ -596,8 +635,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   }
 
   /// Header trailing meta for the grown sheet ("42% read" / "184 chapters").
-  String? _sheetMeta(ReaderController controller, AppLocalizations loc) {
-    switch (_openSheet) {
+  String? _sheetMeta(
+    ReaderController controller,
+    AppLocalizations loc,
+    DockAction? sheet,
+  ) {
+    switch (sheet) {
       case DockAction.settings:
         final pct = (controller.currentProgress.clamp(0.0, 1.0) * 100).round();
         return loc.readerSettingsProgressHint(pct);
@@ -610,9 +653,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   }
 
   /// The grown-sheet body — the existing settings / chapters widgets rendered
-  /// chromeless inside the dock. `null` when collapsed (so neither builds).
-  Widget? _buildSheetChild(ReaderController controller) {
-    switch (_openSheet) {
+  /// chromeless inside the dock. Driven by [_displayedSheet] so content stays
+  /// mounted through the collapse animation; `null` once fully collapsed.
+  Widget? _buildSheetChild(ReaderController controller, DockAction? sheet) {
+    switch (sheet) {
       case DockAction.settings:
         return ReaderMenu(
           controller: controller,
@@ -668,10 +712,18 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       // Freshen the current-chapter highlight before the list appears.
       unawaited(controller.syncChapterAfterScroll());
     }
+    _sheetCloseTimer?.cancel();
     setState(() {
-      _openSheet = willOpen ? action : null;
-      // Opening a sheet implies the chrome is up.
-      if (willOpen) _showControls = true;
+      if (willOpen) {
+        _openSheet = action;
+        _displayedSheet = action;
+        // Opening a sheet implies chrome up + the brightness popover closed.
+        _showControls = true;
+        _brightnessPopoverOpen = false;
+      } else {
+        _openSheet = null;
+        _scheduleDisplayedSheetClear();
+      }
     });
   }
 
@@ -679,6 +731,34 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   void _collapseSheet() {
     if (_openSheet == null) return;
     setState(() => _openSheet = null);
+    _scheduleDisplayedSheetClear();
+  }
+
+  /// Clear the mounted sheet body after the collapse animation finishes, so the
+  /// content fades out with the dock rather than vanishing on the first frame.
+  void _scheduleDisplayedSheetClear() {
+    _sheetCloseTimer?.cancel();
+    // Matches OnePaperDock's --dur-grow (320ms) collapse.
+    _sheetCloseTimer = Timer(const Duration(milliseconds: 320), () {
+      if (!mounted || _openSheet != null || _displayedSheet == null) return;
+      setState(() => _displayedSheet = null);
+    });
+  }
+
+  /// Toggle the top-bar brightness popover (mutually exclusive with a sheet).
+  void _toggleBrightnessPopover() {
+    setState(() {
+      _brightnessPopoverOpen = !_brightnessPopoverOpen;
+      if (_brightnessPopoverOpen && _openSheet != null) {
+        _openSheet = null;
+        _scheduleDisplayedSheetClear();
+      }
+    });
+  }
+
+  void _closeBrightnessPopover() {
+    if (!_brightnessPopoverOpen) return;
+    setState(() => _brightnessPopoverOpen = false);
   }
 
   /// Step one chapter via the dock footer carets. Calls the existing
@@ -743,12 +823,19 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   }
 
   void _setControlsVisible(bool visible) {
-    // Hiding chrome also collapses any grown sheet.
-    if (_showControls == visible && (visible || _openSheet == null)) return;
+    // Hiding chrome also collapses any grown sheet / brightness popover.
+    if (_showControls == visible &&
+        (visible || (_openSheet == null && !_brightnessPopoverOpen))) {
+      return;
+    }
     setState(() {
       _showControls = visible;
-      if (!visible) _openSheet = null;
+      if (!visible) {
+        _openSheet = null;
+        _brightnessPopoverOpen = false;
+      }
     });
+    if (!visible) _scheduleDisplayedSheetClear();
   }
 
   void _showHighlightNoteDialog(

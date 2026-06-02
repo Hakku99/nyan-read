@@ -244,6 +244,25 @@ priority and authorised editing `AGENTS.md`:
 2. `flutter test` reader suite → 22 pass; the only 2 failures are pre-existing `reader_menu_test` "Reset all" cases (a separate reset-section design, confirmed via stash — unrelated to One Paper).
 3. Manual: open a book → tap center → dock appears floating inset; tap **Settings**/**Chapters** → dock grows into a sheet in place; tap scrim or grabber → collapses; stepper carets change chapter; **Bookmarks** pushes a page; page-turn still works with chrome hidden.
 
+---
+
+### C4 — Brightness relocation (2026-06-01)
+
+**What changed:**
+- **New** `lib/modules/reader/widgets/reader_brightness_popover.dart` — `ReaderBrightnessPopover`: centered glass dialog (BackdropFilter 13.6px, **mounted only while open**) with sun badge + "Brightness" + live `%` + moon–slider–sun row (reuses `ReaderSettingsSlider`, bound to `BrightnessController.uiBrightnessValue`/`setFromSlider`) + "Follow system brightness" switch (`toggleFollowSystem`). Card on `surfaceRaised` + `lightCard` shadow.
+- `reader_page_overlay.dart` — added a **sun button** to the top bar (between title and bookmark); `_TopOverlayIconButton` gained an `active` state (matcha-tint chip when the popover is open).
+- `reader_page.dart` — `_brightnessPopoverOpen` state + `_toggleBrightnessPopover`/`_closeBrightnessPopover`; popover added to the Stack (above dock). Brightness popover and grown sheet are mutually exclusive. The **existing left-edge drag brightness gesture is retained** (now there are two affordances, per spec).
+
+### C5 — Depth response (2026-06-01)
+
+**What changed (`reader_page.dart`):**
+- Scrim now wraps a **2px `BackdropFilter`** (the one sanctioned blur) — **mounted only while a sheet is open**, so no idle saveLayer cost during reading.
+- **Smooth close**: added `_displayedSheet` (+ a 320ms `_sheetCloseTimer`) so the sheet body stays mounted through the collapse animation and clears after, instead of vanishing on the first frame. Title/meta/body read `_displayedSheet`; `sheetOpen`/`activeAction` read `_openSheet`.
+
+**Deferred:** the canvas `scale(0.97)` recede — wrapping the ~200-line reader-body subtree in `AnimatedScale` risked corrupting the protected `reader_page.dart` for a subtle 3% transform. The scrim + 2px blur already deliver the depth cue; the scale can be added later as an isolated, low-risk follow-up.
+
+**How to test:** `flutter analyze` clean; reader tests pass except the 2 pre-existing "Reset all" cases. Manual: tap the **sun** in the top bar → glass brightness dialog; drag the left edge → brightness HUD; open Settings/Chapters → page dims + softly blurs behind the sheet; collapse → content fades with the dock (no snap).
+
 
 ### A1 — Radius `chip 12` + semantic names (2026-06-01)
 
@@ -321,8 +340,8 @@ priority and authorised editing `AGENTS.md`:
 - [x] C1 Impact/Risk/Verification + mapping — *Opus/high* (D2: full rework; D4: chrome-only)
 - [x] C2 `OnePaperDock` grow-to-sheet — *Opus/high*
 - [x] C3 `DockFooter` + reader_page state-machine rewire — *Opus/high*
-- [ ] C4 Brightness relocation (edge gesture + sun popover) — *Opus/high*
-- [ ] C5 Depth response (scrim/blur/recede) — *Opus/medium*
+- [x] C4 Brightness relocation (edge gesture kept + top-bar sun popover) — *Opus/high*
+- [x] C5 Depth response (scrim + 2px blur + smooth close) — *Opus/medium* (canvas scale recede deferred — see log)
 - [ ] C6 Reader tests — *Sonnet/medium*
 
 ### Phase D — Brand v2
