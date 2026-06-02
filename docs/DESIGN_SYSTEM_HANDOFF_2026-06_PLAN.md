@@ -336,13 +336,31 @@ priority and authorised editing `AGENTS.md`:
 
 ---
 
+### A4 (corrected) + E1 + E2 — error palette + AGENTS.md reconciliation (2026-06-01)
+
+**A4 correction:** `nyan_colors.dart` error constants were still clinical red (`#C62828`…) — Phase A mis-assessed this as a no-op. Replaced with the bundle's **warm clay**: light `#FBF2EC / #A85A38 / #8A6A55 / #ECD9CC`, dark `#241D18 / #D89B7E / #B6967F / #3A2D24`.
+
+**E1 — `AGENTS.md` amended (you authorized editing it):**
+- §4.2.1 — Sumi Dark color table re-toned to the v3 ladder; added `surfaceRaised` + `borderColor` rows; added a warm-clay error-palette note; expanded the atomic-constant list.
+- §4.2.2 — radius table now leads with `chip 12` + semantic `control/cardNested/dock` (old names kept as aliases); replaced the "pills use StadiumBorder" line with "squared chip 12 / outline-on-select".
+- §4.2.4 — shadows now take `NyanTheme`; **retired "Sumi Dark has no shadows"** → documented the ring + catch-light ladder + the BoxShadow-inset caveat.
+- §4.2.5 — type scale 5 → **6 sizes** (`caption 11`, eyebrow-only).
+- §4.3 — rewrote the Segmented Control (track `control 14`, `surfaceMuted`, no border, 280ms, `primaryDeep`/`textSecondary`, surface chip + grouped shadow) and Pill (squared `chip 12`, `surfaceMuted`→transparent+`primaryDeep` outline) specs; added a **One Paper reader-chrome** baseline bullet + raised-surface sheet note + an Icon/`NyanIcons` (Phosphor) rule.
+- §4.4 — fixed the `blurRadius > 12` line (dark token ambient may reach 24px); added anti-patterns: no `dark ? const []` shadow opt-out, no `StadiumBorder` pills, glass-blur exception noted.
+
+**E2 — no-op:** grep of `docs/` found no other file carrying stale dark hex / stadium references.
+
+**How to test:** `flutter analyze` clean; `theme_resolution_test` passes; read AGENTS.md §4.2–§4.4 — every rule now matches the shipped code.
+
+---
+
 ## 7. Progress checklist
 
 ### Phase A — Tokens
 - [x] A1 Radius `chip 12` + semantic names — *Haiku/low*
 - [x] A2 Caption `11` type + eyebrow style — *Haiku/low*
 - [x] A3 Sumi Dark re-tone + `surfaceRaised`/`border` fields — *Opus/medium* (D1: light raised = surface)
-- [ ] A4 Warm-clay error palette — *Sonnet/low*
+- [x] A4 Warm-clay error palette — *Sonnet/low* (done in Phase E — was mis-assessed as a no-op in Phase A)
 - [x] A5 Theme-aware shadow engine (dark elevation ladder) — *Opus/medium-high*
 
 ### Phase B — Components
@@ -365,8 +383,8 @@ priority and authorised editing `AGENTS.md`:
 - [x] D3 About logo → nyan_mark_v2.png — *Haiku/low*
 
 ### Phase E — Docs
-- [ ] E1 Amend AGENTS.md — *Opus/medium*
-- [ ] E2 Update token docs — *Sonnet/low*
+- [x] E1 Amend AGENTS.md — *Opus/medium*
+- [x] E2 Update token docs — *no-op* (no other `docs/` file held stale token tables)
 
 ### Phase F — Verification
 - [ ] F1 Static / grep guards — *Sonnet/low*

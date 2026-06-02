@@ -46,15 +46,19 @@ class NyanColors {
   static const Color highlightOrange = Color(0xFFF2BE7E);
   static const Color readerInfoBlue = Color(0xFF7FABAC);
 
-  static const Color errorBackgroundLight = Color(0xFFFFF0F0);
-  static const Color errorPrimaryLight = Color(0xFFC62828);
-  static const Color errorSecondaryLight = Color(0xFFD32F2F);
-  static const Color errorAccentLight = Color(0xFFFFCDD2);
+  // Warm-clay error palette (design-system handoff 2026-06): a desaturated
+  // terracotta that shares the warm-paper chroma, so errors read as calm and
+  // on-brand rather than clinical Material red. Source: colors_and_type.css
+  // --error-* (light + sumi).
+  static const Color errorBackgroundLight = Color(0xFFFBF2EC);
+  static const Color errorPrimaryLight = Color(0xFFA85A38);
+  static const Color errorSecondaryLight = Color(0xFF8A6A55);
+  static const Color errorAccentLight = Color(0xFFECD9CC);
 
-  static const Color errorBackgroundDark = Color(0xFF2B2020);
-  static const Color errorPrimaryDark = Color(0xFFFFCDD2);
-  static const Color errorSecondaryDark = Color(0xFFE57373);
-  static const Color errorAccentDark = Color(0xFFEF9A9A);
+  static const Color errorBackgroundDark = Color(0xFF241D18);
+  static const Color errorPrimaryDark = Color(0xFFD89B7E);
+  static const Color errorSecondaryDark = Color(0xFFB6967F);
+  static const Color errorAccentDark = Color(0xFF3A2D24);
 
   // ===========================================================================
   // Reader runtime defaults (出厂默认的阅读画布色；用户可在阅读设置中覆盖)

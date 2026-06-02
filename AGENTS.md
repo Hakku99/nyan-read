@@ -227,23 +227,32 @@
 
 **主题敏感色（MUST 通过 `NyanTheme` 扩展访问）：**
 
+> **Sumi Dark 色阶已按设计系统交付包（2026-06）重新调校为 v3 高度阶梯（elevation ladder）**：
+> 暗色用"色调"承载层级——表面随升起逐级**变亮**（`bg < surfaceMuted < surface < surfaceRaised`，相邻保持可见亮度差）。
+
 | 语义 | creamLight 值 | sumiDark 值 | `NyanTheme` 字段 |
 |---|---|---|---|
-| 页面主背景（纸色） | `#F6F3EA` | `#1D211E` | `background` |
-| 卡片/面板表面 | `#FFFDF8` | `#262B27` | `surface` |
-| 嵌入式凹陷表面（Tab 槽、Slider 轨道） | `#F1ECDD` | `#202520` | `surfaceMuted` |
-| 正文文字 | `#3F3A34` | `#E8E1D5` | `textPrimary` |
-| 次级文字（说明 / 副标题） | `#5F5950` | `#B4AC9F` | `textSecondary` |
-| 三级文字（占位 / 单位） | `#6B6559` | `#A6A099` | `textMuted` |
+| 页面主背景（纸色 / 暗色页底） | `#F6F3EA` | `#181B16` | `background` |
+| 卡片/面板表面（+1 层） | `#FFFDF8` | `#242922` | `surface` |
+| 嵌入式凹陷表面（Tab 槽、Slider 轨道，刚高于页底） | `#F1ECDD` | `#1D211B` | `surfaceMuted` |
+| 最高浮层（对话框 / Sheet / 弹出层；亮色复用 surface） | `#FFFDF8` | `#2E342B` | `surfaceRaised` |
+| 正文文字 | `#3F3A34` | `#ECE6DB` | `textPrimary` |
+| 次级文字（说明 / 副标题） | `#5F5950` | `#BBB3A6` | `textSecondary` |
+| 三级文字（占位 / 单位） | `#6B6559` | `#9A948B` | `textMuted` |
 | 主强色（抹茶绿按钮底） | `#6E7A55` | `#A9B690` | `primary` |
-| 深强色（选中描边 / accent） | `#5A6644` | `#B3C29A` | `primaryDeep` / `accent` |
-| 分隔线（暖调描边） | `#E5DED2` | `#3A3F3A` | `divider` / `borderColor` |
+| 深强色（选中描边 / accent） | `#5A6644` | `#B7C69E` | `primaryDeep` / `accent` |
+| 分隔线（暖调描边） | `#E5DED2` | `#3D443A` | `divider` |
+| 卡片硬描边（暗色发光环用） | `#E5DED2` | `#474E42` | `borderColor` |
+
+**错误色（暖陶土，非临床红）**——设计系统交付包要求错误状态读起来"平静、在地"而非"刺眼的 Material 红"：
+creamLight `errorBackground #FBF2EC` / `errorPrimary #A85A38` / `errorSecondary #8A6A55` / `errorAccent #ECD9CC`；
+sumiDark `#241D18` / `#D89B7E` / `#B6967F` / `#3A2D24`。
 
 **原子常量（只在 `nyan_colors.dart` 与 `theme_presets.dart` 内部使用，业务代码 MUST NOT 直接引用）：**
 
-- cream 系列：`creamBackground / creamSurface / creamSurfaceMuted / creamPrimary / creamPrimaryDeep / creamTextMain / creamTextSecondary / creamDivider`
-- ink 系列：`inkNightBackground / inkNightSurface / inkNightPrimary / inkNightTextMain / inkNightTextSecondary / inkNightDivider`
-- ink 深阶：`inkNightPrimaryDeep`（用于 dark preset 的 accent/深强调）
+- cream 系列：`creamBackground / creamSurface / creamSurfaceMuted / creamPrimary / creamPrimaryDeep / creamTextMain / creamTextSecondary / creamTextMuted / creamDivider`
+- ink 系列：`inkNightBackground / inkNightSurface / inkNightSurfaceMuted / inkNightSurfaceRaised / inkNightPrimary / inkNightTextMain / inkNightTextSecondary / inkNightTextMuted / inkNightDivider`
+- ink 深阶：`inkNightPrimaryDeep`（dark preset 的 accent/深强调）、`inkNightBorder`（v3 阶梯的卡片硬描边/发光环）
 
 **语义色（固定值，不随主题切换，可直接引用）：**
 
@@ -259,15 +268,21 @@
 
 #### 4.2.2 圆角 — `lib/core/theme/nyan_radius.dart`
 
+**One Paper 同心圆角家族（2026-06 设计系统对齐）**，由内向外随高度递增：
+
 | 常量 | 值 | 用途 |
 |---|---|---|
-| `NyanRadius.small` | `14` | Tab 胶囊容器、小型 chip |
-| `NyanRadius.input` | `16` | 输入框、FAB、按钮 |
-| `NyanRadius.card` | `20` | 卡片、书架 item、阅读设置面板内卡 |
-| `NyanRadius.panel` | `24` | 对话框、次级 Sheet |
-| `NyanRadius.sheet` | `28` | 顶层 Bottom Sheet |
+| `NyanRadius.chip` | `12` | **选项 chip / Pill 按钮**（嵌套最深）、stepper caret |
+| `NyanRadius.control`（旧名 `small`） | `14` | 分段控件外轨、列表行图标 chip |
+| `NyanRadius.cardNested`（旧名 `input`） | `16` | Sheet 内嵌卡、输入框、FAB、按钮 |
+| `NyanRadius.card` | `20` | 顶层卡片、书架 item |
+| `NyanRadius.dock`（旧名 `panel`） | `24` | 静止 dock / 浮动栏、对话框 |
+| `NyanRadius.sheet` | `28` | dock 长成的 Sheet、所有底部 Sheet |
 
-Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用 `StadiumBorder()`，不使用上述数值。
+> `small / input / panel` 保留为 `control / cardNested / dock` 的 `const` 别名（向后兼容），新代码 SHOULD 用语义名。
+> 同心内嵌可比外圈小 3pt（如 14 轨内放 11 指示器）——这是刻意的非阶梯值，不是越界。
+
+Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **MUST** 用 `RoundedRectangleBorder(NyanRadius.chip)`（12pt 方圆角），选中态仅靠"去填充 + `primaryDeep` 描边/文字"区分（见 §4.3）。
 
 #### 4.2.3 间距 — `lib/core/theme/nyan_spacing.dart`
 
@@ -279,17 +294,23 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 
 #### 4.2.4 阴影 — `lib/core/theme/nyan_shadows.dart`
 
-- `NyanShadows.lightCard(shadowColor)` — 12px blur + 6px blur 双层，4%/2% alpha。用于**悬浮卡片**（如 Bookshelf 书卡 hover）。
-- `NyanShadows.subtle(shadowColor)` — 8px blur 单层，5% alpha。用于**次级浮层**（Toast、Overlay ToolBar）。
-- `NyanShadows.settingsGrouped(shadowColor)` — 10px blur 单层，1.4% alpha。用于**设置分组卡片**（Settings 的行组容器 `NyanRowGroup`）。
+三个工具方法**现在接收 `NyanTheme nyan`（不再是裸 `Color`）**，并按 `nyan.brightness` 自动选配方：
 
-调用时 `shadowColor` **MUST** 传 `nyan.textPrimary`（随主题变暗/变亮，保证暗色主题下阴影依然柔和）。深色主题（Sumi Dark）中所有阴影均为零——仅用色阶对比分离。
+- `NyanShadows.lightCard(nyan)` — 浮动 chrome（卡片、顶栏、dock、Sheet、对话框、弹出层）。
+- `NyanShadows.subtle(nyan)` — 次级浮层（Toast、轻浮动通知）。
+- `NyanShadows.settingsGrouped(nyan)` — 设置分组卡片（`NyanRowGroup`）。
+
+- **Cream Light**：暖墨 drop shadow（lightCard 4%/2%@12/6px；subtle 5%@8px；grouped 1.4%@10px），墨色取自 `nyan.textPrimary`。
+- **Sumi Dark（v3 高度阶梯，2026-06 修订）**：**"暗色无阴影"旧规已废止**。暗色用 **`0.75px` 发光描边环**（`nyan.divider` 88/66/50% spread）+ 柔和黑色 ambient 承载层级，让升起的表面读成独立平面。
+  - CSS 还含 `inset 0 1px 0 white@5%` 顶部 catch-light；Flutter `BoxShadow` 无 inset 模式，故该 1px 内高光**不在阴影 token 内**——需要的浮层（对话框/Sheet）在自身 decoration 上加 `Border(top: white@5%)` 顶边补上（见 `NyanBottomSheet` / 亮度弹层）。
+
+**MUST NOT** 自造 `BoxShadow`；需要新阴影先在 token 内定义。**MUST NOT** 再写 `dark ? const [] : ...` 给暗色卡片退订阴影——环已承载平面分离。
 
 #### 4.2.5 字体与字号 — `lib/core/theme/nyan_typography.dart`
 
 - UI 字体族：`NyanTypography.uiFontFamily` = **`Noto Sans SC`**
 - 阅读正文可选 serif：`NyanTypography.readingSerifFontFamily` = `Source Han Serif SC`
-- 字号阶梯（**仅允许**以下 5 档）：`display 32` / `title 24` / `section 20` / `body 16` / `meta 13`
+- 字号阶梯（**仅允许**以下 6 档）：`display 32` / `title 24` / `section 20` / `body 16` / `meta 13` / `caption 11`。其中 **`caption 11` 仅用于橄榄色 eyebrow 小标题**（`NyanTypography.eyebrowStyle(nyan.primaryDeep)`，w500 + 0.22 字距 + 大写），**MUST NOT** 用于正文、列表行或其它表面。
 - **字重仅允许**：`FontWeight.w400`（Regular，正文）/ `FontWeight.w500`（Medium，按钮/标签）/ `FontWeight.w600`（SemiBold，标题/数值）。**MUST NOT** 使用 `w100–w300` 或 `w700–w900`。
 
 > **例外 — 交互控件标签字号（Claude Design 系统对齐，2026-05）**：`NyanPrimaryButton` 的 label 文字按 size 变体使用 **14 / 16 / 17pt**（compact / standard / comfortable，来源：`components.jsx` 设计 spec）。这三个值是控件标签**专属**——**MUST NOT** 出现在正文、标题或任何其它表面。常量定义见 `NyanTypography.buttonCompact` / `NyanTypography.buttonComfortable`（body 16 复用 `NyanTypography.body`）。
@@ -298,14 +319,15 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 
 ### 4.3 组件样式底线（MUST）
 
-- **Bottom Sheet**：顶部圆角 `NyanRadius.sheet`（28pt），顶部 12pt 留白内含 40×4pt 抓手（`textMuted` 色），**无外阴影**（靠 `BrightnessOverlayWidget` 的软暗化自然区分层级）。
-- **Tab / Segmented Control**：外层容器 `NyanRadius.card`（20pt）圆角 + 4pt 内边距，内部滑动指示器 `NyanRadius.input`（16pt）——同心圆角嵌套（concentric corners）；选中胶囊 = `primary` 实心（emphasis 样式）或 `primary @ 18%`（subtle 样式）+ 相应文字色；**禁止**下划线；滑动指示器动画固定 **240ms ease-out-cubic**（来源：Claude Design `segmented-tab.html`）。
+- **Bottom Sheet / 对话框 / 弹出层**：圆角 `NyanRadius.sheet`（28pt）/`dock`（24pt），顶部 12pt 留白内含抓手（`--grabber` = `primary` 36%亮/50%暗）；底色取 `surfaceRaised`（亮色等于 surface，暗色为 v3 阶梯最高层）；阴影走 `NyanShadows.lightCard(nyan)`（暗色自带发光环）。
+- **Tab / Segmented Control**（2026-06 交付包对齐）：外层轨道 `NyanRadius.control`（14pt）+ 4pt 内边距 + `surfaceMuted` 底（**仅靠色调凹陷，无描边**）；内部滑动指示器同心内嵌 11pt（=14−3）；emphasis 指示器 = `surface` 实心 + `NyanShadows.settingsGrouped`，subtle 指示器 = `primary @ 16%` tint；选中文字 = `primaryDeep`，未选 = `textSecondary`；**禁止**下划线；动画固定 **280ms ease-paper**（`cubic-bezier(0.33,0.9,0.36,1)`，来源 `components/primitives.jsx`）。
 
-  > **修订说明（2026-05 Claude Design 对齐）**：原文误记外层圆角为 `NyanRadius.small`（14pt）、动画上限为 150ms；实际代码与设计规范均为 20pt（`NyanRadius.card`）外层 / 16pt（`NyanRadius.input`）内层 / 240ms 动画，此处更正。
-- **Pill 按钮（分段按钮，如 低/中/高、紧凑/标准/舒展）**：`StadiumBorder`；未选 = `surface` 底 + `divider` 描边 + `textPrimary` 文字；选中 = **仅换描边色为 `primaryDeep` + 文字换 `primaryDeep`**，**不填充**（这是本项目独有的克制风格，和 Material 的"填充 chip"截然不同）。
+  > **修订说明（2026-06 交付包对齐）**：此前记为外层 20pt(`card`) / 内层 16pt / 240ms / primary 实心填充；交付包 `SegmentedTabControl` 实为外层 14pt(`control`) / 内层 11pt / 280ms / surface 浮起 chip，此处更正。
+- **Pill 按钮 / 选项 chip（低/中/高、紧凑/标准/舒展、Sans/Serif 等）**（2026-06）：**方圆角 `NyanRadius.chip`（12pt），不再是 `StadiumBorder`**；未选 = `surfaceMuted` 底 + 透明描边 + `textSecondary` 文字；选中 = **去填充（透明底）+ `primaryDeep` 1.5px 描边 + `primaryDeep` 文字**——chip "浮离轨道"。这是本项目的招牌交互（outline-on-select），和 Material 填充 chip 截然不同。
+- **Reader chrome（One Paper，2026-06）**：阅读器底部**只有一块浮动纸面板**——collapsed 时是 `dock`（`OnePaperDock`，inset 12pt / `r-dock` 24），点 Chapters/Settings **原地长成 sheet**（`r-sheet` 28，`AnimatedAlign` 高度展开，`dur-grow` 320ms ease-paper），footer（章节 stepper `‹ ›` + 细进度条 + 3 个动作 Chapters/Bookmarks/Settings）始终钉在底部。**亮度不在 dock**：走顶栏太阳弹层（`ReaderBrightnessPopover`，玻璃拟态）+ 左缘竖向拖拽。Sheet 升起时页面 scrim + 2px 模糊（仅展开时挂载）。Bookmarks 是 push 页面，不是 sheet（"adjust→sheet；browse→page"）。**MUST NOT** 回退到边到边贴底控制条或把 Settings/Chapters 改成独立 modal sheet。
 - **Slider**：轨道高 3–4pt 用 `surfaceMuted`，已填充段用 `primaryDeep`（亮度）或 `highlightOrange`（暖色温），thumb 10–12pt 实心同色，**无光晕、无阴影、无放大**。
 - **Card**：圆角 `NyanRadius.card`（20pt），`surface` 底，`divider` 描边；**默认无阴影**；仅在书架 hover / 次级浮层必要时使用 `NyanShadows.subtle`。
-- **Icon**：线性 1.5pt 感，主题卡的"选中对勾"是**全项目唯一允许的硬实心圆徽标**。
+- **Icon**：线性 1.5pt 感——图标系统为 **Phosphor Regular**，所有图标 **MUST** 来自 `lib/core/ui/nyan_icons.dart`（`NyanIcons.*`），**MUST NOT** 直接用 `Icons.*`。填充权重仅保留给"已设书签"与主题卡选中对勾（后者是全项目唯一允许的硬实心圆徽标）。
 - **Haptics**：滑块拖动最多一次 `HapticFeedback.lightImpact`；翻页 **MUST NOT** 触发触感反馈。
 - **Tap target**：所有可点击元素最小 44×44pt（`NyanSpacing.minTapTarget`）。
 
@@ -313,9 +335,11 @@ Pill 按钮（低/中/高、紧凑/标准/舒展、+/- stepper）**MUST** 使用
 
 - ❌ Material3 `FilledButton` / `ElevatedButton` 默认阴影（项目已在 `NyanTheme.themeData` 里把 `elevation: 0`，不要去改回来）；
 - ❌ `CircularProgressIndicator` 的默认蓝色（必须显式指定 `valueColor: AlwaysStoppedAnimation(nyan.primary)`）；
-- ❌ 自造 `BoxShadow` 或 `blurRadius > 12` 的阴影；
+- ❌ 自造 `BoxShadow`（必须走 `NyanShadows.*` 工具；亮色 ≤12px blur，暗色 v3 阶梯的 ambient 可达 24px 但仅限 token 内部）；
+- ❌ 给暗色卡片写 `dark ? const [] : ...` 退订阴影（v3 发光环已承载平面分离）；
+- ❌ Pill / 选项 chip 用 `StadiumBorder`（已废止，改用 `NyanRadius.chip` 12pt 方圆角 + outline-on-select）；
 - ❌ 高饱和色（iOS 蓝、Material 紫、霓虹任何色）；
-- ❌ 大面积线性/径向渐变；
+- ❌ 大面积线性/径向渐变（亮度弹层的玻璃拟态模糊是经维护者批准的唯一例外）；
 - ❌ `Icons.xxx_filled` 填充图标（对勾徽标除外）；
 - ❌ 卡片之间加 `Divider`（层次用 `surfaceMuted` 背景色差代替）；
 - ❌ 字重越界（仅允许 `w400 / w500 / w600`，`w700+` 一律 reject）；
