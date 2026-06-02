@@ -342,7 +342,7 @@ priority and authorised editing `AGENTS.md`:
 - [x] C3 `DockFooter` + reader_page state-machine rewire — *Opus/high*
 - [x] C4 Brightness relocation (edge gesture kept + top-bar sun popover) — *Opus/high*
 - [x] C5 Depth response (scrim + 2px blur + smooth close) — *Opus/medium* (canvas scale recede deferred — see log)
-- [ ] C6 Reader tests — *Sonnet/medium*
+- [x] C6 Reader tests (`one_paper_dock_test.dart`, 11 tests) — *Sonnet/medium*
 
 ### Phase D — Brand v2
 - [ ] D1 Import + register assets — *Haiku/low*
