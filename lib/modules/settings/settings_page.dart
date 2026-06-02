@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
@@ -493,11 +492,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 }
 
-/// About card — app identity block per SettingsScreen.jsx spec.
+/// About card — app identity block.
 ///
-/// Uses [NyanBookLogoMark] as a stand-in until flutter_svg is added to
-/// pubspec.yaml, at which point this should render:
-///   SvgPicture.asset('assets/brand/logo-peek.svg', width: 56, height: 56)
+/// Logo is the redesigned flat One Paper brand mark `nyan_mark_v2.png`
+/// (HANDOFF-flutter.md §3: the old gradient/3D render is retired). This
+/// deliberately follows the bridge doc's explicit instruction over the older
+/// `SettingsScreen.jsx` mock, which still referenced the retired logo asset.
 class _AboutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -511,11 +511,12 @@ class _AboutCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Logo — 56×56 SVG, centered via padding.
-          SvgPicture.asset(
-            'assets/brand/logo-peek.svg',
+          // Logo — 56×56 flat One Paper brand mark (nyan_mark_v2).
+          Image.asset(
+            'assets/images/nyan_mark_v2.png',
             width: 56,
             height: 56,
+            fit: BoxFit.contain,
           ),
           const SizedBox(width: 14),
           Column(

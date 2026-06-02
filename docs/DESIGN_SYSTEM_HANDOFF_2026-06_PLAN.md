@@ -321,6 +321,21 @@ priority and authorised editing `AGENTS.md`:
 
 ---
 
+### D1+D2+D3 — Brand v2 assets (2026-06-01)
+
+**What changed:**
+- Imported `assets/images/nyan_mark_v2.png` + `nyan_app_icon{,_matcha,_sumi}.png` (auto-registered via the existing `assets/images/` directory entry — no pubspec change).
+- About card (`settings_page.dart`) logo: `SvgPicture.asset('assets/brand/logo-peek.svg')` → `Image.asset('assets/images/nyan_mark_v2.png')`; removed the now-unused `flutter_svg` import from that file.
+- Splash (`splash_page.dart`): **no change** — `splash_screen.png` is byte-identical to the handoff.
+
+**Conflict noted:** HANDOFF-flutter.md §3 ("old gradient/3D render retired → use `nyan_mark_v2.png` for About") vs `SettingsScreen.jsx` (still shows the retired `nyan_read_logo_transparent.png`). Followed the explicit bridge-doc redesign instruction. Easily reversible if the cat `logo-peek.svg` is preferred.
+
+**Deferred (D3 decision):** launcher-icon regeneration. The new `nyan_app_icon*.png` sit ready in `assets/images/`; the follow-up is to point `flutter_launcher_icons.yaml` at `nyan_app_icon.png` and run the generator across Android + iOS. `flutter_svg` is now unused in `lib/` but kept (sanctioned brand-SVG renderer per AGENTS §4.6; brand SVGs remain registered).
+
+**How to test:** `flutter analyze` clean; open Settings → the About card shows the flat One Paper mark at 56×56.
+
+---
+
 ## 7. Progress checklist
 
 ### Phase A — Tokens
@@ -345,9 +360,9 @@ priority and authorised editing `AGENTS.md`:
 - [x] C6 Reader tests (`one_paper_dock_test.dart`, 11 tests) — *Sonnet/medium*
 
 ### Phase D — Brand v2
-- [ ] D1 Import + register assets — *Haiku/low*
-- [ ] D2 Splash art swap (launcher regen deferred per D3) — *Sonnet/low*
-- [ ] D3 About logo — *Haiku/low*
+- [x] D1 Import + register assets — *Haiku/low*
+- [x] D2 Splash — *no-op* (splash_screen.png byte-identical to handoff; unchanged)
+- [x] D3 About logo → nyan_mark_v2.png — *Haiku/low*
 
 ### Phase E — Docs
 - [ ] E1 Amend AGENTS.md — *Opus/medium*
