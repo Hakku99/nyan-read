@@ -729,24 +729,9 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               ),
             ),
           ),
-        if (showHeaderSections && continueReadingBook != null)
-          SliverToBoxAdapter(
-            child: Padding(
-              // 4pt side inset keeps the hero card slightly inset from the
-              // grid edge; 14pt bottom gap matches the grid row rhythm.
-              padding: const EdgeInsets.fromLTRB(
-                NyanSpacing.space4,
-                0,
-                NyanSpacing.space4,
-                NyanShelfUi.sectionGapAfterShelfChrome,
-              ),
-              child: _buildContinueReadingSection(
-                context,
-                continueReadingBook,
-                useCompactContinueReading,
-              ),
-            ),
-          ),
+        // Pinned shelf switcher sits directly under the title, above the
+        // continue-reading hero (BookshelfScreen.jsx: tabs are pinned chrome,
+        // the hero scrolls beneath them).
         SliverPersistentHeader(
           pinned: true,
           delegate: BookshelfShelfPinnedHeaderDelegate(
@@ -764,6 +749,22 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             ),
           ),
         ),
+        if (showHeaderSections && continueReadingBook != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              // 4pt side inset matches the grid / hero rhythm. No vertical pad:
+              // the pinned tabs supply the gap above and the grid's own top pad
+              // supplies the gap below (avoids a doubled 32pt gulf).
+              padding: const EdgeInsets.symmetric(
+                horizontal: NyanSpacing.space4,
+              ),
+              child: _buildContinueReadingSection(
+                context,
+                continueReadingBook,
+                useCompactContinueReading,
+              ),
+            ),
+          ),
         ..._buildShelfSlivers(
           context,
           activeBooks,

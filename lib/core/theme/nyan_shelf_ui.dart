@@ -25,21 +25,9 @@ abstract final class NyanShelfUi {
   /// Spec uses 12px gap for list vs 14px for grid — intentional asymmetry.
   static const double listTileSpacing = 12;
 
-  /// Equal gaps between grid card blocks: icon — title — progress.
-  static const double gridCardBlockGap = NyanSpacing.space8;
-
-  /// Uniform padding on all 4 sides of the grid card — 12 pt per Claude Design
-  /// spec (`shelf-grid.html` rule: "Padding 12 px on all four sides").
-  static const double gridCardPadding = NyanSpacing.space12;
-
-  /// Reduced padding used when the card is selected (border grows 1→2 px,
-  /// so we subtract 1 pt to keep the inner content area identical:
-  /// 12 − 1 = 11. Not a standard 8-grid value; derivation is 100% intentional).
-  static const double gridCardSelectedPadding = 11.0;
-
-  /// Minimum height of the title text slot — reserves 2 lines of
-  /// 12.5 px × 1.28 line-height (= 32 px) so every card in a row
-  /// shares the same content rhythm regardless of title length.
+  /// Minimum height of the title text slot below a grid cover — reserves 2
+  /// lines of 12.5px × 1.28 line-height (= 32px) so every card in a row keeps
+  /// the same vertical rhythm regardless of title length.
   static const double gridCardTitleMinHeight = 32.0;
 
   /// Horizontal inset for the main bookshelf scroll content (screen edge).
