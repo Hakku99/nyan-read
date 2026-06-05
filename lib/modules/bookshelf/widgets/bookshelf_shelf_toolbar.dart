@@ -38,7 +38,7 @@ class BookshelfShelfToolbar extends StatelessWidget {
       child: SizedBox(
         height: _kShelfSegmentedHeight,
         child: SegmentedTabControl(
-          style: SegmentedTabStyle.subtle,
+          style: SegmentedTabStyle.shelf,
           backgroundColor: NyanOverlayStyle.recessedSurface(context),
           tabs: tabs,
           selectedIndex: selectedIndex,

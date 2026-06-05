@@ -4,11 +4,19 @@ import '../../../core/theme/nyan_shadows.dart';
 import '../../../core/theme/nyan_spacing.dart';
 import '../../../core/ui/nyan_theme_context.dart';
 
-/// Visual weight: [emphasis] = floating surface chip + grouped shadow (default);
-/// [subtle] = matcha-tint chip (doesn't compete with a hero CTA nearby).
+/// Visual weight:
+/// [emphasis] = floating surface chip + grouped shadow, `primaryDeep` selected
+///   text (default — reader sort / sections, per `primitives.jsx`).
+/// [subtle] = matcha-tint chip, `primaryDeep` selected text (sort-order sheet —
+///   doesn't compete with a hero CTA nearby).
+/// [shelf] = surface chip + grouped shadow, **`textPrimary` w600** selected /
+///   `textMuted` unselected. The top-level Public/Private shelf switcher
+///   (`BookshelfScreen.jsx`): a dark bold label reads as page-level navigation,
+///   not an in-panel adjustment. Documented exception to AGENTS.md §4.3.
 enum SegmentedTabStyle {
   emphasis,
   subtle,
+  shelf,
 }
 
 /// Segmented / tab control — "ONE recessed-track style for the whole system."
@@ -63,15 +71,21 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
   Widget build(BuildContext context) {
     final nyan = context.nyanTheme;
     final subtle = widget.style == SegmentedTabStyle.subtle;
+    final shelf = widget.style == SegmentedTabStyle.shelf;
 
     final Color trackBg = widget.backgroundColor ?? nyan.surfaceMuted;
 
+    // emphasis + shelf both use a surface chip; only subtle uses the matcha tint.
     final Color indicatorBg = subtle
         ? nyan.primary.withValues(alpha: 0.16)
         : nyan.surface;
 
     final List<BoxShadow> indicatorShadow =
         subtle ? const [] : NyanShadows.settingsGrouped(nyan);
+
+    // Shelf uses 3pt inset so the 11pt indicator (14−3) reads truly concentric,
+    // matching BookshelfScreen.jsx; other variants keep the 4pt grid value.
+    final double trackPadding = shelf ? 3 : NyanSpacing.space4;
 
     return Container(
       height: 40,
@@ -80,7 +94,7 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
         borderRadius: BorderRadius.circular(NyanRadius.control),
         // No border — recessed by tone only (AGENTS.md §4.3 / bundle spec).
       ),
-      padding: const EdgeInsets.all(NyanSpacing.space4),
+      padding: EdgeInsets.all(trackPadding),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final tabWidth = constraints.maxWidth / widget.tabs.length;
@@ -109,8 +123,14 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                 children: List.generate(widget.tabs.length, (index) {
                   final tab = widget.tabs[index];
                   final isSelected = index == widget.selectedIndex;
-                  final Color labelColor =
-                      isSelected ? nyan.primaryDeep : nyan.textSecondary;
+                  // Shelf switcher: dark bold selected label (page-level voice).
+                  // Other variants: matcha-deep selected label (in-panel voice).
+                  final Color labelColor = shelf
+                      ? (isSelected ? nyan.textPrimary : nyan.textMuted)
+                      : (isSelected ? nyan.primaryDeep : nyan.textSecondary);
+                  final FontWeight labelWeight = (shelf && isSelected)
+                      ? FontWeight.w600
+                      : FontWeight.w500;
 
                   return SizedBox(
                     width: tabWidth,
@@ -135,7 +155,7 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                                 tab.label,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: labelWeight,
                                   height: widget.labelLineHeight,
                                   color: labelColor,
                                 ),
