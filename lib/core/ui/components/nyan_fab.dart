@@ -28,12 +28,12 @@ class NyanFAB extends StatelessWidget {
   Widget build(BuildContext context) {
     final nyan = context.nyanTheme;
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(NyanRadius.input),
+      borderRadius: BorderRadius.circular(NyanRadius.dock),
     );
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(NyanRadius.input),
+        borderRadius: BorderRadius.circular(NyanRadius.dock),
         boxShadow: NyanShadows.subtle(nyan),
       ),
       child: FloatingActionButton(

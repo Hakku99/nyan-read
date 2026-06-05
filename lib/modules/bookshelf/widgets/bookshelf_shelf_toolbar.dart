@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:nyan_read/core/theme/nyan_spacing.dart';
-import 'package:nyan_read/core/theme/theme_presets.dart';
-import 'package:nyan_read/core/ui/components/nyan_info_card.dart';
 import 'package:nyan_read/core/ui/components/nyan_overlay_style.dart';
 import 'package:nyan_read/modules/bookshelf/widgets/segmented_tab_control.dart';
 
@@ -35,7 +33,7 @@ class BookshelfShelfToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NyanInfoCard(
+    return Padding(
       padding: const EdgeInsets.all(_kShelfCardPadding),
       child: SizedBox(
         height: _kShelfSegmentedHeight,
@@ -74,27 +72,11 @@ class BookshelfShelfPinnedHeaderDelegate extends SliverPersistentHeaderDelegate 
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    final theme = Theme.of(context);
-    final nyan = resolveNyanTheme(theme);
-    final bottomAlpha = theme.brightness == Brightness.dark ? 0.35 : 0.28;
-
-    // Use scaffold background so the square [Material] behind [NyanInfoCard]'s rounded rect does
-    // not read as bright "corner slivers" (card leaves the bbox corners unpainted; surface≠scaffold).
     return SizedBox(
       height: maxExtent,
       child: Material(
-        color: theme.scaffoldBackgroundColor,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: nyan.divider.withValues(alpha: bottomAlpha),
-                width: 1,
-              ),
-            ),
-          ),
-          child: child,
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: child,
       ),
     );
   }

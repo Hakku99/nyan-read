@@ -45,7 +45,7 @@ class NyanSquareActionButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: nyan.surface,
         borderRadius: radius,
-        border: Border.all(color: nyan.divider, width: 1),
+        border: Border.all(color: nyan.divider.withValues(alpha: 0.44), width: 1),
       ),
       child: Icon(icon, size: iconSize, color: iconColor),
     );

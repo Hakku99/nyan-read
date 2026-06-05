@@ -12,7 +12,6 @@ import '../../core/services/feature_manager.dart';
 import '../../core/services/riverpod_providers.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
 import '../../core/models/book.dart';
-import '../../core/services/mascot_manager.dart';
 import '../../core/theme/nyan_shelf_ui.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
@@ -831,41 +830,22 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       AdsUI.hide();
       final loc = AppLocalizations.of(context)!;
 
-      final viewHeight = MediaQuery.sizeOf(context).height;
-      final minEmptyBody = (viewHeight * 0.42).clamp(280.0, 560.0);
-
       return [
-        SliverToBoxAdapter(
+        SliverFillRemaining(
+          hasScrollBody: false,
           child: Padding(
-            padding:
-                EdgeInsets.only(bottom: _shelfScrollBottomPadding(context)),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: minEmptyBody),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final compactLayout = constraints.maxHeight < 520;
-
-                  return Center(
-                    child: NyanEmptyState(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: NyanSpacing.space24,
-                      ),
-                      iconSpacing: NyanSpacing.space12,
-                      descriptionSpacing: NyanSpacing.space4,
-                      textMinHeight: compactLayout ? 112 : 132,
-                      icon: MascotManager().render(
-                        MascotScene.emptyShelf,
-                        size: compactLayout ? 112 : 128,
-                      ),
-                      title: isPrivate
-                          ? loc.emptyShelfMessage
-                          : loc.emptyShelfTitle,
-                      description: isPrivate
-                          ? loc.emptyPrivateShelf
-                          : loc.emptyShelfSubtitle,
-                    ),
-                  );
-                },
+            padding: EdgeInsets.only(
+              bottom: NyanShelfUi.scrollBottomFabClearance,
+            ),
+            child: Center(
+              child: NyanEmptyState(
+                iconData: NyanIcons.books,
+                title: isPrivate
+                    ? loc.emptyShelfMessage
+                    : loc.emptyShelfTitle,
+                description: isPrivate
+                    ? loc.emptyPrivateShelf
+                    : loc.emptyShelfSubtitle,
               ),
             ),
           ),
