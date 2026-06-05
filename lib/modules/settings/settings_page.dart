@@ -460,9 +460,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                               title: loc.upgradeToPro,
                               subtitle: loc.upgradeToProSubtitle,
                               showChevron: true,
-                              onTap: () {
-                                // TODO(#upgrade): implement upgrade flow.
-                              },
+                              onTap: () => context.push('/admin'),
                             ),
                         ],
                       ),
