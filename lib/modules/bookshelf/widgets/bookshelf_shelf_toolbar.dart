@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:nyan_read/core/theme/nyan_spacing.dart';
-import 'package:nyan_read/core/ui/components/nyan_overlay_style.dart';
 import 'package:nyan_read/modules/bookshelf/widgets/segmented_tab_control.dart';
 
 const double _kShelfCardPadding = NyanSpacing.space12;
@@ -39,7 +38,9 @@ class BookshelfShelfToolbar extends StatelessWidget {
         height: _kShelfSegmentedHeight,
         child: SegmentedTabControl(
           style: SegmentedTabStyle.shelf,
-          backgroundColor: NyanOverlayStyle.recessedSurface(context),
+          // No backgroundColor override — the shelf variant uses the default
+          // surfaceMuted track (BookshelfScreen.jsx), which reads as a warm
+          // recessed beige against the page and the white selected chip.
           tabs: tabs,
           selectedIndex: selectedIndex,
           onTabChanged: onTabChanged,
