@@ -75,13 +75,31 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         NyanShelfUi.scrollBottomFabClearance;
   }
 
-  /// Single 3-column layout for the whole shelf so ad segments don’t resize tiles.
-  SliverGridDelegateWithFixedCrossAxisCount _bookshelfGridDelegate() {
+  /// 3-column grid delegate with dynamically computed aspect ratio.
+  ///
+  /// The cover follows a 120:156 portrait ratio; text below is fixed height.
+  /// Computing from [context] ensures the ratio is correct for every screen width.
+  SliverGridDelegateWithFixedCrossAxisCount _bookshelfGridDelegate(
+    BuildContext context,
+  ) {
+    const double crossAxisSpacing = NyanShelfUi.gridCrossAxisSpacing; // 12
+    const double gridSideInset = NyanSpacing.space4; // 4pt each side
+
+    final double screenWidth = MediaQuery.sizeOf(context).width;
+    final double usedWidth =
+        2 * NyanShelfUi.bookshelfPageHorizontalPadding +
+        2 * gridSideInset +
+        2 * crossAxisSpacing; // 2 gaps for 3 columns
+    final double cardWidth = (screenWidth - usedWidth) / 3;
+    final double coverHeight = cardWidth / NyanShelfUi.gridCoverAspectRatio;
+    final double cardHeight =
+        coverHeight + NyanShelfUi.gridCardTextSectionHeight;
+
     return SliverGridDelegateWithFixedCrossAxisCount(
       crossAxisCount: 3,
-      childAspectRatio: NyanShelfUi.gridChildAspectRatio,
-      crossAxisSpacing: NyanShelfUi.gridCrossAxisSpacing,
-      mainAxisSpacing: NyanShelfUi.gridMainAxisSpacing,
+      childAspectRatio: cardWidth / cardHeight,
+      crossAxisSpacing: crossAxisSpacing,
+      mainAxisSpacing: NyanShelfUi.gridMainAxisSpacing, // 16
     );
   }
 
@@ -887,7 +905,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             bottomPad,
           ),
           sliver: SliverGrid(
-            gridDelegate: _bookshelfGridDelegate(),
+            gridDelegate: _bookshelfGridDelegate(context),
             delegate: SliverChildBuilderDelegate(
               (context, index) => _buildGridBookTile(context, books[index]),
               childCount: books.length,
@@ -905,7 +923,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       SliverPadding(
         padding: EdgeInsets.fromLTRB(gridSideInset, topPad, gridSideInset, 0),
         sliver: SliverGrid(
-          gridDelegate: _bookshelfGridDelegate(),
+          gridDelegate: _bookshelfGridDelegate(context),
           delegate: SliverChildBuilderDelegate(
             (context, index) =>
                 _buildGridBookTile(context, leadingBooks[index]),
@@ -928,7 +946,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         SliverPadding(
           padding: EdgeInsets.fromLTRB(gridSideInset, 0, gridSideInset, bottomPad),
           sliver: SliverGrid(
-            gridDelegate: _bookshelfGridDelegate(),
+            gridDelegate: _bookshelfGridDelegate(context),
             delegate: SliverChildBuilderDelegate(
               (context, index) =>
                   _buildGridBookTile(context, trailingBooks[index]),
