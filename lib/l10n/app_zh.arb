@@ -126,6 +126,7 @@
   "deselectAll": "取消全选",
   "appTitle": "Nyan Read ฅ^•ﻌ•^ฅ",
   "enjoyReading": "享受阅读时光",
+  "bookshelf": "书架",
   "listView": "列表视图",
   "gridView": "网格视图",
   "sort": "排序",
@@ -240,6 +241,7 @@
   "readerTypographyStandard": "标准",
   "readerTypographyComfortable": "舒展",
   "readerTypographyPreviewSample": "春日和风，纸页轻响，阅读让时间慢下来。",
+  "readerResetSection": "重置{section}",
   "readerResetAppearance": "恢复默认",
   "readerResetAppearanceHint": "字体、行距、主题、暖色温与亮度模式",
   "readerResetCurrentTab": "重置本页",
@@ -250,6 +252,17 @@
   "readerResetAllConfirmAction": "全部重置",
   "tableOfContents": "目录",
   "readerSettingsProgressHint": "阅读进度 {pct}%",
+  "chapterOfCount": "第 {current} 章 / 共 {total} 章",
+  "@chapterOfCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "readerDockChapters": "目录",
   "jumpToCurrentChapter": "定位当前章节",
   "chapterListProgressLabel": "已读 {current} / {total} 章",
@@ -301,6 +314,14 @@
   },
   "bookmarksTitle": "书签 ({count})",
   "@bookmarksTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookmarksSavedCount": "已存 {count} 个",
+  "@bookmarksSavedCount": {
     "placeholders": {
       "count": {
         "type": "int"

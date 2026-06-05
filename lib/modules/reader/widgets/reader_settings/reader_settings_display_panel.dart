@@ -58,19 +58,10 @@ class ReaderSettingsDisplayPanel extends StatelessWidget {
           padding: EdgeInsets.all(
             denseLayout ? NyanSpacing.space12 : NyanSpacing.space16,
           ),
+          // Design DisplayPanel order: Brightness · Warmth · Page Turn Mode
+          // (`components/reader.jsx`).
           child: Column(
             children: [
-              _PageTurnModeRow(
-                pageTurnMode: pageTurnMode,
-                tapLabel: loc.pageTurnTap,
-                swipeLabel: loc.pageTurnSwipe,
-                disabledLabel: loc.pageTurnDisabled,
-                sectionLabel: loc.pageTurnMode,
-                onSelect: onSetPageTurnMode,
-              ),
-              SizedBox(
-                height: denseLayout ? NyanSpacing.space8 : NyanSpacing.space16,
-              ),
               ListenableBuilder(
                 listenable: brightnessController,
                 builder: (context, _) {
@@ -231,6 +222,17 @@ class ReaderSettingsDisplayPanel extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              SizedBox(
+                height: denseLayout ? NyanSpacing.space8 : NyanSpacing.space16,
+              ),
+              _PageTurnModeRow(
+                pageTurnMode: pageTurnMode,
+                tapLabel: loc.pageTurnTap,
+                swipeLabel: loc.pageTurnSwipe,
+                disabledLabel: loc.pageTurnDisabled,
+                sectionLabel: loc.pageTurnMode,
+                onSelect: onSetPageTurnMode,
               ),
             ],
           ),

@@ -352,6 +352,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enjoyReading => 'Enjoy your reading';
 
   @override
+  String get bookshelf => 'Bookshelf';
+
+  @override
   String get listView => 'List View';
 
   @override
@@ -607,6 +610,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'The quick brown fox jumps over the lazy dog.';
 
   @override
+  String readerResetSection(String section) {
+    return 'Reset $section';
+  }
+
+  @override
   String get readerResetAppearance => 'Reset to defaults';
 
   @override
@@ -638,6 +646,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String readerSettingsProgressHint(Object pct) {
     return 'Reading progress $pct%';
+  }
+
+  @override
+  String chapterOfCount(int current, int total) {
+    return 'Chapter $current of $total';
   }
 
   @override
@@ -692,6 +705,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String bookmarksTitle(int count) {
     return 'Bookmarks ($count)';
+  }
+
+  @override
+  String bookmarksSavedCount(int count) {
+    return '$count saved';
   }
 
   @override

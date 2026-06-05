@@ -770,6 +770,12 @@ abstract class AppLocalizations {
   /// **'Enjoy your reading'**
   String get enjoyReading;
 
+  /// No description provided for @bookshelf.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookshelf'**
+  String get bookshelf;
+
   /// No description provided for @listView.
   ///
   /// In en, this message translates to:
@@ -1208,6 +1214,12 @@ abstract class AppLocalizations {
   /// **'The quick brown fox jumps over the lazy dog.'**
   String get readerTypographyPreviewSample;
 
+  /// Per-tab reset button label in the reader settings sheet. {section} is the tab name (Display / Text / Theme).
+  ///
+  /// In en, this message translates to:
+  /// **'Reset {section}'**
+  String readerResetSection(String section);
+
   /// No description provided for @readerResetAppearance.
   ///
   /// In en, this message translates to:
@@ -1267,6 +1279,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reading progress {pct}%'**
   String readerSettingsProgressHint(Object pct);
+
+  /// No description provided for @chapterOfCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapter {current} of {total}'**
+  String chapterOfCount(int current, int total);
 
   /// Short label for the Chapters tile in the reader bottom dock (must fit alongside 3 other tiles in a narrow strip).
   ///
@@ -1339,6 +1357,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bookmarks ({count})'**
   String bookmarksTitle(int count);
+
+  /// No description provided for @bookmarksSavedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} saved'**
+  String bookmarksSavedCount(int count);
 
   /// No description provided for @noBookmarksYet.
   ///

@@ -48,7 +48,6 @@ class _ReaderMenuState extends State<ReaderMenu> {
   _ReaderMenuSection _selectedSection = _ReaderMenuSection.display;
 
   String _resetLabelForSection(
-    BuildContext context,
     AppLocalizations loc,
     _ReaderMenuSection section,
   ) {
@@ -57,8 +56,9 @@ class _ReaderMenuState extends State<ReaderMenu> {
       _ReaderMenuSection.text => loc.readerMenuText,
       _ReaderMenuSection.theme => loc.readerMenuTheme,
     };
-    final isChinese = Localizations.localeOf(context).languageCode == 'zh';
-    return isChinese ? '重置$sectionLabel' : 'Reset $sectionLabel';
+    // Uses the l10n template so both EN ("Reset Display") and ZH ("重置显示")
+    // are produced from the ARB without locale sniffing in widget code.
+    return loc.readerResetSection(sectionLabel);
   }
 
   @override
@@ -99,7 +99,6 @@ class _ReaderMenuState extends State<ReaderMenu> {
                 );
                 final resetSection = _ReaderSettingsResetSection(
                   label: _resetLabelForSection(
-                    context,
                     loc,
                     _selectedSection,
                   ),

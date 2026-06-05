@@ -126,6 +126,7 @@
   "deselectAll": "Deselect All",
   "appTitle": "Nyan Read ฅ^•ﻌ•^ฅ",
   "enjoyReading": "Enjoy your reading",
+  "bookshelf": "Bookshelf",
   "listView": "List View",
   "gridView": "Grid View",
   "sort": "Sort",
@@ -240,6 +241,15 @@
   "readerTypographyStandard": "Standard",
   "readerTypographyComfortable": "Comfortable",
   "readerTypographyPreviewSample": "The quick brown fox jumps over the lazy dog.",
+  "readerResetSection": "Reset {section}",
+  "@readerResetSection": {
+    "description": "Per-tab reset button label in the reader settings sheet. {section} is the tab name (Display / Text / Theme).",
+    "placeholders": {
+      "section": {
+        "type": "String"
+      }
+    }
+  },
   "readerResetAppearance": "Reset to defaults",
   "readerResetAppearanceHint": "Font, spacing, theme, warmth, and brightness mode",
   "readerResetCurrentTab": "Reset this tab",
@@ -252,6 +262,17 @@
   "readerSettingsProgressHint": "Reading progress {pct}%",
   "@readerSettingsProgressHint": {
     "description": "Meta text shown on the right of the Reader Settings sheet header. {pct} is replaced with the rounded reading-progress percentage."
+  },
+  "chapterOfCount": "Chapter {current} of {total}",
+  "@chapterOfCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "readerDockChapters": "Chapters",
   "@readerDockChapters": {
@@ -307,6 +328,14 @@
   },
   "bookmarksTitle": "Bookmarks ({count})",
   "@bookmarksTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookmarksSavedCount": "{count} saved",
+  "@bookmarksSavedCount": {
     "placeholders": {
       "count": {
         "type": "int"

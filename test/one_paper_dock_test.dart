@@ -29,7 +29,6 @@ void main() {
             sheetOpen: sheetOpen,
             chapterIndex: chapterIndex,
             chapterCount: chapterCount,
-            chapterLabel: 'The lacquer cup',
             progressListenable: ValueNotifier<double>(progress),
             activeAction: activeAction,
             onAction: onAction ?? (_) {},
@@ -78,6 +77,13 @@ void main() {
       expect(find.byIcon(NyanIcons.chevronRight), findsOneWidget);
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
       expect(find.text('42%'), findsOneWidget);
+    });
+
+    testWidgets('centre label reads "Chapter n of N" (1-based)',
+        (tester) async {
+      await pumpFooter(tester, chapterIndex: 3, chapterCount: 18);
+      final loc = await AppLocalizations.delegate.load(const Locale('en'));
+      expect(find.text(loc.chapterOfCount(4, 18)), findsOneWidget);
     });
 
     testWidgets('hides the stepper + progress bar when grown into a sheet',
@@ -159,7 +165,6 @@ void main() {
                     sheetOpen: sheetOpen,
                     chapterIndex: 3,
                     chapterCount: 18,
-                    chapterLabel: 'The lacquer cup',
                     progressListenable: ValueNotifier<double>(0.42),
                     activeAction: null,
                     onAction: (_) {},

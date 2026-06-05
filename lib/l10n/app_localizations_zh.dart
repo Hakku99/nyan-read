@@ -349,6 +349,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enjoyReading => '享受阅读时光';
 
   @override
+  String get bookshelf => '书架';
+
+  @override
   String get listView => '列表视图';
 
   @override
@@ -579,6 +582,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerTypographyPreviewSample => '春日和风，纸页轻响，阅读让时间慢下来。';
 
   @override
+  String readerResetSection(String section) {
+    return '重置$section';
+  }
+
+  @override
   String get readerResetAppearance => '恢复默认';
 
   @override
@@ -608,6 +616,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String readerSettingsProgressHint(Object pct) {
     return '阅读进度 $pct%';
+  }
+
+  @override
+  String chapterOfCount(int current, int total) {
+    return '第 $current 章 / 共 $total 章';
   }
 
   @override
@@ -656,6 +669,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String bookmarksTitle(int count) {
     return '书签 ($count)';
+  }
+
+  @override
+  String bookmarksSavedCount(int count) {
+    return '已存 $count 个';
   }
 
   @override

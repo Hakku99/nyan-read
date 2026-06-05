@@ -34,13 +34,6 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
       Localizations.localeOf(context).languageCode.startsWith('zh');
   AppLocalizations get _loc => AppLocalizations.of(context)!;
 
-  String _headerSubtitle() {
-    if (_isZh) {
-      return '\u300a${widget.bookTitle}\u300b';
-    }
-    return widget.bookTitle;
-  }
-
   String _formatCreatedAt(dynamic createdAt) {
     if (createdAt is! int) {
       return '';
@@ -135,8 +128,11 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
         child: Column(
           children: [
             NyanPageHeader(
-              title: loc.bookmarksTitle(_bookmarks.length),
-              subtitle: _headerSubtitle(),
+              // Per the design bookmarks page: plain "Bookmarks" title with a
+              // "{n} saved" meta — not the book title (you're already in the
+              // book's context when arriving here).
+              title: loc.bookmarks,
+              subtitle: loc.bookmarksSavedCount(_bookmarks.length),
               titleStyle: theme.textTheme.titleLarge?.copyWith(
                 fontSize: NyanTypography.section,
                 fontWeight: FontWeight.w600,

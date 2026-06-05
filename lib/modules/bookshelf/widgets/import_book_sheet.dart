@@ -122,7 +122,8 @@ class _ShelfBadge extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(NyanRadius.input),
+        // Badge/pill label — concentric chip radius (12pt) per §4.3.
+        borderRadius: BorderRadius.circular(NyanRadius.chip),
         border: Border.all(
           color: theme.dividerColor.withValues(alpha: 0.45),
         ),
@@ -163,7 +164,8 @@ class _SheetLeadingIcon extends StatelessWidget {
       height: NyanSpacing.minTapTarget,
       decoration: BoxDecoration(
         color: theme.colorScheme.primary.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(NyanRadius.input),
+        // Icon container nested inside a sheet card — cardNested (16pt).
+        borderRadius: BorderRadius.circular(NyanRadius.cardNested),
       ),
       child: Icon(
         icon,
@@ -190,7 +192,8 @@ class _FormatChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.primary.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(NyanRadius.input),
+        // Format tag chips — concentric chip radius (12pt) per §4.3.
+        borderRadius: BorderRadius.circular(NyanRadius.chip),
         border: Border.all(
           color: theme.dividerColor.withValues(alpha: 0.5),
         ),

@@ -29,6 +29,7 @@ import '../../core/utils/title_sort_key.dart';
 import 'book_details_page.dart';
 import 'widgets/import_book_sheet.dart';
 import 'widgets/bookshelf_shelf_toolbar.dart';
+import 'widgets/bookshelf_sort_sheet.dart';
 import 'widgets/segmented_tab_control.dart';
 import 'bookshelf_view_model.dart';
 import 'bookshelf_view_model_provider.dart';
@@ -363,36 +364,17 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   }
 
   void _showSortMenu(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
-    final sortOptions = [
-      (SortBy.recency, false, loc.lastReadDesc),
-      (SortBy.recency, true, loc.lastReadAsc),
-      (SortBy.importDate, false, loc.addedDesc),
-      (SortBy.importDate, true, loc.addedAsc),
-      (SortBy.title, true, loc.titleAsc),
-      (SortBy.title, false, loc.titleDesc),
-    ];
-
-    final selected =
-        await showNyanSelectionSheet<({SortBy sortBy, bool isAscending})>(
+    // Two-axis sort sheet (key chips + Ascending/Descending segmented control)
+    // that applies live while open, per `BookshelfScreen.jsx`.
+    await showBookshelfSortSheet(
       context: context,
-      title: loc.sortBy,
-      currentValue: (sortBy: _prefs.sortBy, isAscending: _prefs.isAscending),
-      options: [
-        for (final option in sortOptions)
-          NyanSelectionOption(
-            value: (sortBy: option.$1, isAscending: option.$2),
-            label: option.$3,
-          ),
-      ],
+      currentSortBy: _prefs.sortBy,
+      currentAscending: _prefs.isAscending,
+      onChanged: (sortBy, isAscending) async {
+        await _prefs.setSort(sortBy, isAscending);
+        _vm.loadBooks();
+      },
     );
-
-    if (selected == null) return;
-
-    await _prefs.setSort(selected.sortBy, selected.isAscending);
-    if (!context.mounted) return;
-
-    _vm.loadBooks();
   }
 
   Future<void> _handlePrivacyLock(BuildContext context) async {
@@ -665,7 +647,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   }) {
     final loc = AppLocalizations.of(context)!;
     final continueReadingBook = _resolveContinueReadingBook(activeBooks);
-    final theme = Theme.of(context);
     final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
     const useCompactContinueReading = false;
 
@@ -673,71 +654,61 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       slivers: [
         if (showHeaderSections)
           SliverToBoxAdapter(
-            child: Theme(
-              data: theme.copyWith(
-                textTheme: theme.textTheme.copyWith(
-                  bodySmall: theme.textTheme.bodySmall?.copyWith(
-                    fontSize: NyanTypography.meta,
-                    height: 1.35,
-                    letterSpacing: 0.15,
-                  ),
+            child: NyanPageHeader(
+              // Plain "Bookshelf" per BookshelfScreen U9; the mascot wordmark
+              // is reserved for Splash + About (design README).
+              title: loc.bookshelf,
+              actions: [
+                // Sort
+                NyanSquareActionButton(
+                  icon: NyanIcons.sort,
+                  tooltip: loc.sortBy,
+                  onPressed: () => _showSortMenu(context),
                 ),
-              ),
-              child: NyanPageHeader(
-                title: loc.appTitle,
-                subtitle: loc.enjoyReading,
-                actions: [
-                  // View-mode toggle
-                  Builder(
-                    builder: (context) {
-                      final isGridView = _prefs.viewMode == ViewMode.grid;
-                      return NyanRecessedIconButton(
-                        icon: isGridView
-                            ? NyanIcons.viewList
-                            : NyanIcons.viewGrid,
-                        tooltip: isGridView ? loc.listView : loc.gridView,
-                        onPressed: () async {
-                          await _prefs.setViewMode(
-                            isGridView ? ViewMode.list : ViewMode.grid,
-                          );
-                          setState(() {});
-                        },
-                      );
-                    },
-                  ),
-                  // Sort
-                  NyanRecessedIconButton(
-                    icon: NyanIcons.sort,
-                    tooltip: loc.sortBy,
-                    onPressed: () => _showSortMenu(context),
-                  ),
-                  // Privacy lock (Pro only)
-                  if (featureManager.isPro)
-                    NyanRecessedIconButton(
-                      icon: featureManager.isPrivateShelfUnlocked
-                          ? NyanIcons.lockOpen
-                          : NyanIcons.lock,
-                      tooltip: featureManager.isPrivateShelfUnlocked
-                          ? loc.lockPrivacyShelf
-                          : loc.unlockPrivacyShelf,
-                      onPressed: () => _handlePrivacyLock(context),
-                    ),
-                  // Settings
-                  NyanRecessedIconButton(
-                    tooltip: loc.settingsTitle,
-                    icon: NyanIcons.settings,
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SettingsPage()),
-                    ).then((_) => setState(() {})),
-                  ),
-                ],
-                padding: const EdgeInsets.fromLTRB(
-                  NyanSpacing.space4,
-                  0,
-                  NyanSpacing.space4,
-                  NyanSpacing.space12,
+                // View-mode toggle — icon shows the layout you'll switch TO.
+                Builder(
+                  builder: (context) {
+                    final isGridView = _prefs.viewMode == ViewMode.grid;
+                    return NyanSquareActionButton(
+                      icon: isGridView
+                          ? NyanIcons.viewList
+                          : NyanIcons.viewGrid,
+                      tooltip: isGridView ? loc.listView : loc.gridView,
+                      onPressed: () async {
+                        await _prefs.setViewMode(
+                          isGridView ? ViewMode.list : ViewMode.grid,
+                        );
+                        setState(() {});
+                      },
+                    );
+                  },
                 ),
+                // Privacy lock (Pro only)
+                if (featureManager.isPro)
+                  NyanSquareActionButton(
+                    icon: featureManager.isPrivateShelfUnlocked
+                        ? NyanIcons.lockOpen
+                        : NyanIcons.lock,
+                    tooltip: featureManager.isPrivateShelfUnlocked
+                        ? loc.lockPrivacyShelf
+                        : loc.unlockPrivacyShelf,
+                    onPressed: () => _handlePrivacyLock(context),
+                  ),
+                // Settings
+                NyanSquareActionButton(
+                  tooltip: loc.settingsTitle,
+                  icon: NyanIcons.settings,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsPage()),
+                  ).then((_) => setState(() {})),
+                ),
+              ],
+              padding: const EdgeInsets.fromLTRB(
+                NyanSpacing.space4,
+                0,
+                NyanSpacing.space4,
+                NyanSpacing.space12,
               ),
             ),
           ),

@@ -559,12 +559,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                               chapterIndex:
                                   controller.currentChapterIndex ?? -1,
                               chapterCount: controller.chapters.length,
-                              chapterLabel: readerChapterSummaryLabel(
-                                chapters: controller.chapters,
-                                currentChapterIndex:
-                                    controller.currentChapterIndex,
-                                loc: loc,
-                              ),
                               progressListenable: controller.progressListenable,
                               activeAction: _openSheet,
                               onAction: (a) =>

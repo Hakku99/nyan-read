@@ -227,7 +227,6 @@ class DockFooter extends StatelessWidget {
     required this.sheetOpen,
     required this.chapterIndex,
     required this.chapterCount,
-    required this.chapterLabel,
     required this.progressListenable,
     required this.activeAction,
     required this.onAction,
@@ -241,9 +240,6 @@ class DockFooter extends StatelessWidget {
   final int chapterIndex;
   final int chapterCount;
 
-  /// Pre-resolved, localized chapter label (title or fallback).
-  final String chapterLabel;
-
   final ValueListenable<double> progressListenable;
   final DockAction? activeAction;
   final void Function(DockAction) onAction;
@@ -256,6 +252,15 @@ class DockFooter extends StatelessWidget {
     final loc = AppLocalizations.of(context)!;
     final atStart = chapterIndex <= 0;
     final atEnd = chapterCount <= 0 || chapterIndex >= chapterCount - 1;
+
+    // Design `DockFooter`: the collapsed stepper centre reads "Chapter n of N"
+    // (not the chapter title — the sheet header carries the title). Uses the
+    // same chapterIndex/chapterCount as the TOC, so the two stay consistent
+    // (AGENTS.md §3.6). Falls back to 1-based clamps when the index is unknown.
+    final rangeLabel = loc.chapterOfCount(
+      chapterIndex >= 0 ? chapterIndex + 1 : 1,
+      chapterCount > 0 ? chapterCount : 1,
+    );
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -275,7 +280,8 @@ class DockFooter extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (!sheetOpen) _buildProgressStepper(nyan, atStart, atEnd),
+            if (!sheetOpen)
+              _buildProgressStepper(nyan, atStart, atEnd, rangeLabel),
             _buildActions(nyan, loc),
           ],
         ),
@@ -283,7 +289,12 @@ class DockFooter extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressStepper(NyanTheme nyan, bool atStart, bool atEnd) {
+  Widget _buildProgressStepper(
+    NyanTheme nyan,
+    bool atStart,
+    bool atEnd,
+    String rangeLabel,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         NyanSpacing.space8,
@@ -310,7 +321,7 @@ class DockFooter extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          chapterLabel,
+                          rangeLabel,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -394,7 +405,10 @@ class DockFooter extends StatelessWidget {
           ),
           _ActionTile(
             action: DockAction.settings,
-            icon: NyanIcons.tune,
+            // Design `DockFooter` uses the "Aa" (title) glyph for Settings —
+            // the reader settings are typography-led. `NyanIcons.fontSize`
+            // maps to Phosphor `textAa`.
+            icon: NyanIcons.fontSize,
             label: loc.settingsTitle,
             selected: activeAction == DockAction.settings,
             onTap: () => onAction(DockAction.settings),

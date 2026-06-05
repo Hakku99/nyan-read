@@ -254,7 +254,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           showChevron: true,
                           onTap: () async {
                             final preset =
-                                await showNyanSelectionSheet<ThemePreset>(
+                                await showNyanChipSelectionSheet<ThemePreset>(
                               context: context,
                               title: loc.themePreset,
                               currentValue: themeManager.currentPreset,
@@ -281,7 +281,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           showChevron: true,
                           onTap: () async {
                             final locale =
-                                await showNyanSelectionSheet<Locale>(
+                                await showNyanChipSelectionSheet<Locale>(
                               context: context,
                               title: loc.language,
                               currentValue: languageManager.locale,
@@ -364,7 +364,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                 showChevron: true,
                                 onTap: () async {
                                   final interval =
-                                      await showNyanSelectionSheet<int>(
+                                      await showNyanChipSelectionSheet<int>(
                                     context: context,
                                     title: loc.reminderInterval,
                                     currentValue:
