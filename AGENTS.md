@@ -292,6 +292,8 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — 交互控件内部间隙（Claude Design 系统对齐，2026-05）**：`NyanPrimaryButton` 的图标↔文字间隙固定为 **6pt**（来源：`components.jsx` 设计 spec）。此例外**仅限**控件内部 icon-label 配对（按钮、Pill 等），**MUST NOT** 用于卡片、列表、页面层级的布局间距。
 
+> **例外 — 章节列表行内部间隙（交付包对齐，2026-06，来源 `reader.jsx` `ReaderChapterList`）**：`ChapterListItem` 的数字徽标↔标题间隙固定为 **14pt**（`_kBadgeTitleGap`，来源：`reader.jsx` `gap: 14`）。此例外**仅限** `ChapterListItem` 徽标与标题之间，**MUST NOT** 用于其它列表行、卡片或页面级布局间距。
+
 #### 4.2.4 阴影 — `lib/core/theme/nyan_shadows.dart`
 
 三个工具方法**现在接收 `NyanTheme nyan`（不再是裸 `Color`）**，并按 `nyan.brightness` 自动选配方：

@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nyan_read/core/theme/nyan_radius.dart';
 import 'package:nyan_read/core/theme/nyan_spacing.dart';
+import 'package:nyan_read/core/theme/nyan_typography.dart';
 import 'package:nyan_read/core/theme/theme_presets.dart';
-import 'package:nyan_read/core/ui/components/nyan_overlay_style.dart';
 import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/core/utils/chapter_heading_display.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
@@ -203,14 +203,15 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
           itemCount: entries.length,
           itemScrollController: _itemScrollController,
           itemPositionsListener: _itemPositionsListener,
-          padding: const EdgeInsets.fromLTRB(
-            NyanSpacing.space12,
+          // When embedded in the dock (showSheetChrome=false), the dock's
+          // SingleChildScrollView already provides 16pt horizontal padding —
+          // adding our own 12pt here would double-pad the content and make rows
+          // appear narrower than the spec. Standalone sheet owns its own margins.
+          padding: EdgeInsets.fromLTRB(
+            widget.showSheetChrome ? NyanSpacing.space12 : 0,
             NyanSpacing.space4,
-            NyanSpacing.space12,
-            NyanSpacing.space16,
-          ).copyWith(
-            bottom: NyanSpacing.space16 +
-                (_showJumpToCurrent ? NyanSpacing.space32 : 0),
+            widget.showSheetChrome ? NyanSpacing.space12 : 0,
+            NyanSpacing.space16 + (_showJumpToCurrent ? NyanSpacing.space32 : 0),
           ),
           itemBuilder: (context, index) {
             final item = entries[index];
@@ -218,7 +219,6 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
               title: item.title,
               indexLabel: '${item.sourceIndex + 1}',
               isCurrent: item.isCurrent,
-              showDivider: index != entries.length - 1,
               onTap: () =>
                   widget.onChapterTap(item.sourceIndex, item.chapter.locator),
             );
@@ -277,8 +277,13 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
         ),
         const SizedBox(height: NyanSpacing.space12),
       ],
+      // Horizontal padding: when embedded the dock body already provides 16pt,
+      // so adding more here would double-pad and shrink the sort control.
+      // Standalone sheet has no outer padding and needs the full 16pt margin.
       Padding(
-        padding: const EdgeInsets.symmetric(horizontal: NyanSpacing.space16),
+        padding: EdgeInsets.symmetric(
+          horizontal: widget.showSheetChrome ? NyanSpacing.space16 : 0,
+        ),
         child: SegmentedTabControl(
           tabs: [
             SegmentedTab(label: loc.sortOrderAsc),
@@ -290,7 +295,11 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
               _sortOrder = index == 0 ? _TocSortOrder.asc : _TocSortOrder.desc;
             });
           },
-          backgroundColor: NyanOverlayStyle.recessedSurface(context),
+          style: SegmentedTabStyle.subtle,
+          // surfaceMuted (#F1ECDD) is the correct spec track colour for the subtle
+          // variant. recessedSurface (#F8F6F0) is too close to white and makes
+          // the track imperceptible against the sheet surface.
+          backgroundColor: nyanTheme.surfaceMuted,
           labelLineHeight: 1.15,
         ),
       ),
@@ -306,14 +315,22 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
     final entries = _visibleEntries;
     final compact = _shouldUseCompactSheet(context, entries.length);
 
-    // Embedded in the One Paper dock: no surface, no outer height clamp; fill
-    // the bounded height the host (a Flexible) provides, virtualizing the list.
+    // Embedded in the One Paper dock: no surface, no outer height clamp.
+    // The dock body is a SingleChildScrollView + Column(mainAxisSize.min), which
+    // gives the child unbounded height — Expanded would collapse to 0pt there.
+    // Instead, give ScrollablePositionedList a fixed SizedBox height so it can
+    // virtualize correctly. The total content (~chrome 150 + list 370 = 520pt)
+    // fits within maxSheetHeight, so the outer scroll is inactive.
     if (!widget.showSheetChrome) {
+      final listHeight = (widget.maxSheetHeight - _kTocSheetChromeHeight)
+          .clamp(120.0, widget.maxSheetHeight);
       return Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ..._buildSheetHeader(context, loc, nyanTheme),
-          Expanded(
+          SizedBox(
+            height: listHeight,
             child: _buildListStack(
               loc: loc,
               entries: entries,
@@ -513,7 +530,6 @@ class ChapterListItem extends StatelessWidget {
   final String title;
   final String indexLabel;
   final bool isCurrent;
-  final bool showDivider;
   final VoidCallback onTap;
 
   const ChapterListItem({
@@ -521,18 +537,26 @@ class ChapterListItem extends StatelessWidget {
     required this.title,
     required this.indexLabel,
     required this.isCurrent,
-    this.showDivider = false,
     required this.onTap,
   });
+
+  // Badge↔title gap from reader.jsx ReaderChapterList `gap: 14` — a component-
+  // internal spec value, same category as the 6pt button icon-label exception.
+  // MUST NOT be used outside chapter list rows.
+  static const double _kBadgeTitleGap = 14.0;
 
   @override
   Widget build(BuildContext context) {
     final nyanTheme = resolveNyanTheme(Theme.of(context));
     final rowColor = isCurrent
-        ? nyanTheme.primary.withValues(alpha: 0.08)
-        : nyanTheme.surface.withValues(alpha: 0);
+        ? nyanTheme.primary.withValues(alpha: 0.12)
+        : Colors.transparent;
     final numberBg = isCurrent ? nyanTheme.primary : nyanTheme.surfaceMuted;
-    final numberFg = isCurrent ? nyanTheme.onPrimary : nyanTheme.textSecondary;
+    // Spec: badge text when current = var(--nyan-surface), not onPrimary.
+    // In light mode onPrimary resolves to creamBackground (#F6F3EA) while
+    // surface is #FFFDF8 — both appear white on the green badge, but surface
+    // is the contract value and diverges more noticeably in future theme work.
+    final numberFg = isCurrent ? nyanTheme.surface : nyanTheme.textMuted;
     final titleColor =
         isCurrent ? nyanTheme.primaryDeep : nyanTheme.textPrimary;
     final loc = AppLocalizations.of(context)!;
@@ -543,46 +567,38 @@ class ChapterListItem extends StatelessWidget {
       button: true,
       child: Material(
         color: rowColor,
-        borderRadius: BorderRadius.circular(NyanRadius.small),
+        borderRadius: BorderRadius.circular(NyanRadius.chip),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(NyanRadius.small),
+          borderRadius: BorderRadius.circular(NyanRadius.chip),
           child: Container(
             constraints: const BoxConstraints(minHeight: 54),
             padding: const EdgeInsets.symmetric(
-              horizontal: NyanSpacing.space12,
+              horizontal: NyanSpacing.space8,
               vertical: NyanSpacing.space12,
-            ),
-            decoration: BoxDecoration(
-              border: showDivider
-                  ? Border(
-                      bottom: BorderSide(
-                        color: nyanTheme.divider.withValues(alpha: 0.34),
-                        width: 0.5,
-                      ),
-                    )
-                  : null,
             ),
             child: Row(
               children: [
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 30,
+                  height: 30,
                   decoration: BoxDecoration(
                     color: numberBg,
-                    borderRadius: BorderRadius.circular(NyanRadius.small),
+                    borderRadius: BorderRadius.circular(NyanRadius.chip),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     indexLabel,
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontFamily: NyanTypography.monoFontFamily,
+                      fontSize: 13,
+                      fontWeight:
+                          isCurrent ? FontWeight.w600 : FontWeight.w500,
                       color: numberFg,
                     ),
                   ),
                 ),
-                const SizedBox(width: NyanSpacing.space12),
+                const SizedBox(width: _kBadgeTitleGap),
                 Expanded(
                   child: Text(
                     title,
@@ -590,17 +606,18 @@ class ChapterListItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 15,
-                      height: 1.3,
-                      fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+                      height: 1.35,
+                      fontWeight:
+                          isCurrent ? FontWeight.w500 : FontWeight.w400,
                       color: titleColor,
                     ),
                   ),
                 ),
                 if (isCurrent)
                   Icon(
-                    NyanIcons.play,
+                    NyanIcons.playFilled,
                     color: nyanTheme.primary,
-                    size: 21,
+                    size: 16,
                   ),
               ],
             ),

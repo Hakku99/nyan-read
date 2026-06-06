@@ -136,6 +136,10 @@ class NyanIcons {
 
   // ── Playback ────────────────────────────────────────────────────────────
   static const IconData play = PhosphorIconsRegular.play;
+  // Filled play — used as the "currently reading" indicator inside ChapterListItem
+  // (spec: `ph-fill ph-play`; §4.6 delivery-package takes priority over the
+  // regular-only icon rule in §4.3 for this specific affordance).
+  static const IconData playFilled = PhosphorIconsFill.play;
   static const IconData skipNext = PhosphorIconsRegular.skipForward;
   static const IconData skipPrevious = PhosphorIconsRegular.skipBack;
 
