@@ -35,6 +35,17 @@ class NyanTypography {
   static const double buttonCompact = 14;
   static const double buttonComfortable = 17;
 
+  /// Bookshelf list-row micro-labels — design-system handoff exception
+  /// (see AGENTS.md §4.2.5). Reserved for [AnimatedBookCardList] ONLY:
+  ///   [shelfFormatChip]     → 9pt, the TXT / EPUB / PDF format badge
+  ///   [shelfProgressLabel]  → 11pt monospace, the trailing reading percentage
+  /// These two values MUST NOT appear in body copy, headings, or any other
+  /// surface.
+  ///
+  /// Source: `nyan-read-design-system/project/screens/bundle3.jsx` `BookListRow`
+  static const double shelfFormatChip = 9;
+  static const double shelfProgressLabel = 11;
+
   /// Olive uppercase eyebrow label — 11pt / w500 / +0.22 letter-spacing.
   /// Pass [color] as `nyan.primaryDeep` from the active [NyanTheme].
   /// Use only for section eyebrows above grouped cards / reader settings headers.

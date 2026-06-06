@@ -315,6 +315,8 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — 交互控件标签字号（Claude Design 系统对齐，2026-05）**：`NyanPrimaryButton` 的 label 文字按 size 变体使用 **14 / 16 / 17pt**（compact / standard / comfortable，来源：`components.jsx` 设计 spec）。这三个值是控件标签**专属**——**MUST NOT** 出现在正文、标题或任何其它表面。常量定义见 `NyanTypography.buttonCompact` / `NyanTypography.buttonComfortable`（body 16 复用 `NyanTypography.body`）。
 
+> **例外 — 书架列表行微标签（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `BookListRow`）**：list-view 书行的两个微标签低于字号阶梯——格式徽标（TXT / EPUB / PDF）**9pt w600**，尾部阅读百分比 **11pt monospace**（`NyanTypography.monoFontFamily`）。这两个值是**书架列表行专属**——**MUST NOT** 出现在正文、标题或任何其它表面。常量定义见 `NyanTypography.shelfFormatChip`（9）/ `NyanTypography.shelfProgressLabel`（11）。§4.6 交付包优先。
+
 > ✅ **字体已注册（§6 Phase 0 已完成）**：`pubspec.yaml` 的 `flutter.fonts` 段已声明 `Noto Sans SC`（400/500/600）+ `Source Han Serif SC`（400/600）；字体文件存放于 `assets/fonts/`，**未纳入 Git**（体积原因）。开发者需按 `assets/fonts/README.md` 说明手动放置字体文件。缺少字体时 Flutter 打印 warning 并回落平台字体，不影响编译；但 serif 阅读模式仅在字体文件就位后生效。
 
 ### 4.3 组件样式底线（MUST）
@@ -329,6 +331,7 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 - **Reader chrome（One Paper，2026-06）**：阅读器底部**只有一块浮动纸面板**——collapsed 时是 `dock`（`OnePaperDock`，inset 12pt / `r-dock` 24），点 Chapters/Settings **原地长成 sheet**（`r-sheet` 28，`AnimatedAlign` 高度展开，`dur-grow` 320ms ease-paper），footer（章节 stepper `‹ ›` + 细进度条 + 3 个动作 Chapters/Bookmarks/Settings）始终钉在底部。**亮度不在 dock**：走顶栏太阳弹层（`ReaderBrightnessPopover`，玻璃拟态）+ 左缘竖向拖拽。Sheet 升起时页面 scrim + 2px 模糊（仅展开时挂载）。Bookmarks 是 push 页面，不是 sheet（"adjust→sheet；browse→page"）。**MUST NOT** 回退到边到边贴底控制条或把 Settings/Chapters 改成独立 modal sheet。
 - **Slider**：轨道高 3–4pt 用 `surfaceMuted`，已填充段用 `primaryDeep`（亮度）或 `highlightOrange`（暖色温），thumb 10–12pt 实心同色，**无光晕、无阴影、无放大**。
 - **Card**：圆角 `NyanRadius.card`（20pt），`surface` 底，`divider` 描边；**默认无阴影**；仅在书架 hover / 次级浮层必要时使用 `NyanShadows.subtle`。
+- **书架列表视图（list view，2026-06，来源 `screens/bundle3.jsx` `BookListRow`）**：**单块分组面板**而非逐项独立卡片——外层 `surface` 底 + `NyanRadius.cardNested`（16pt）+ `NyanShadows.settingsGrouped` + `--chrome-edge` 描边（亮色透明、暗色 `divider` 环），各行**无自身边框/阴影**，行间用 0.5px `divider@34%` 发丝线（左右内缩 12pt）分隔。行内：左侧 44×58 竖向封面（`NyanRadius.chip`），标题 14pt w600 单行 + 作者独占一行（`textMuted`）+ 进度行（仅 `progress>0` 时显示：满宽 3pt 轨 + 11pt mono 百分比），尾部格式徽标 + `chevronRight`。为不破坏懒加载（§3.4），分组外观由 `DecoratedSliver` 承载、内部仍是 `SliverList.builder`。选中态走整行 `primaryDeep` 淡色填充（`context.selectionSurface`），不加逐行描边。**MUST NOT** 回退到逐项独立卡片 + 卡间留白的旧实现。
 - **Icon**：线性 1.5pt 感——图标系统为 **Phosphor Regular**，所有图标 **MUST** 来自 `lib/core/ui/nyan_icons.dart`（`NyanIcons.*`），**MUST NOT** 直接用 `Icons.*`。填充权重仅保留给"已设书签"与主题卡选中对勾（后者是全项目唯一允许的硬实心圆徽标）。
 - **Haptics**：滑块拖动最多一次 `HapticFeedback.lightImpact`；翻页 **MUST NOT** 触发触感反馈。
 - **Tap target**：所有可点击元素最小 44×44pt（`NyanSpacing.minTapTarget`）。

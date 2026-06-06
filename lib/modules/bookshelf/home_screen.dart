@@ -12,10 +12,13 @@ import '../../core/services/feature_manager.dart';
 import '../../core/services/riverpod_providers.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
 import '../../core/models/book.dart';
+import '../../core/theme/nyan_radius.dart';
+import '../../core/theme/nyan_shadows.dart';
 import '../../core/theme/nyan_shelf_ui.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
 import '../../core/ui/components/components.dart';
+import '../../core/ui/nyan_theme_context.dart';
 import '../../modules/privacy/privacy_lock_service.dart';
 import 'package:go_router/go_router.dart';
 import '../settings/settings_page.dart';
@@ -992,6 +995,24 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     );
   }
 
+  /// Surface / radius / shadow / hairline border for the list-view grouped
+  /// panel (bundle3.jsx `BookListRow` group). The border follows the
+  /// `--chrome-edge` token: transparent in light, a [NyanTheme.divider] ring in
+  /// dark. Painted by [DecoratedSliver] so the inner [SliverList] stays lazy.
+  BoxDecoration _listGroupDecoration(BuildContext context) {
+    final nyan = context.nyanTheme;
+    final isDark = nyan.brightness == Brightness.dark;
+    return BoxDecoration(
+      color: nyan.surface,
+      borderRadius: BorderRadius.circular(NyanRadius.cardNested),
+      border: Border.all(
+        color: isDark ? nyan.divider : Colors.transparent,
+        width: 1,
+      ),
+      boxShadow: NyanShadows.settingsGrouped(nyan),
+    );
+  }
+
   List<Widget> _buildListSlivers(
     BuildContext context,
     List<Book> books, {
@@ -1003,7 +1024,11 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     // 4pt horizontal inset mirrors the grid and continue-reading card side padding.
     const double listSideInset = NyanSpacing.space4;
 
+    final decoration = _listGroupDecoration(context);
+    final dividerColor = context.nyanTheme.divider.withValues(alpha: 0.34);
+
     if (!showInlineAd) {
+      final lastIndex = books.length - 1;
       return [
         SliverPadding(
           padding: EdgeInsets.fromLTRB(
@@ -1012,10 +1037,19 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             listSideInset,
             bottomPad,
           ),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) => _buildListBookTile(context, books[index]),
-              childCount: books.length,
+          sliver: DecoratedSliver(
+            decoration: decoration,
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => _buildListBookTile(
+                  context,
+                  books[index],
+                  showTopDivider: index > 0,
+                  isFirst: index == 0,
+                  isLast: index == lastIndex,
+                ),
+                childCount: books.length,
+              ),
             ),
           ),
         ),
@@ -1023,6 +1057,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     }
 
     final itemCount = books.length + 1;
+    final adIndex = AdsUI.bookshelfListInsertionIndex;
 
     return [
       SliverPadding(
@@ -1032,31 +1067,52 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           listSideInset,
           bottomPad,
         ),
-        sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              if (index == AdsUI.bookshelfListInsertionIndex) {
-                // Only bottom inset: previous tile already has [listTileSpacing] margin.
-                return Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: NyanShelfUi.listTileSpacing,
-                  ),
-                  child: AdsUI.buildBookshelfInlineAd(context),
-                );
-              }
+        sliver: DecoratedSliver(
+          decoration: decoration,
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                if (index == adIndex) {
+                  // Ad lives inside the grouped panel, divided like any row.
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (index > 0)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: NyanSpacing.space12,
+                          ),
+                          child: Container(height: 0.5, color: dividerColor),
+                        ),
+                      AdsUI.buildBookshelfInlineAd(context),
+                    ],
+                  );
+                }
 
-              final bookIndex =
-                  index > AdsUI.bookshelfListInsertionIndex ? index - 1 : index;
-              return _buildListBookTile(context, books[bookIndex]);
-            },
-            childCount: itemCount,
+                final bookIndex = index > adIndex ? index - 1 : index;
+                return _buildListBookTile(
+                  context,
+                  books[bookIndex],
+                  showTopDivider: index > 0,
+                  isFirst: index == 0,
+                  isLast: index == itemCount - 1,
+                );
+              },
+              childCount: itemCount,
+            ),
           ),
         ),
       ),
     ];
   }
 
-  Widget _buildListBookTile(BuildContext context, Book book) {
+  Widget _buildListBookTile(
+    BuildContext context,
+    Book book, {
+    required bool showTopDivider,
+    required bool isFirst,
+    required bool isLast,
+  }) {
     return ListenableBuilder(
       listenable: _vm,
       builder: (context, _) {
@@ -1068,6 +1124,9 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           bookData: book.toMap(),
           isSelected: isSelected,
           isSelectionMode: isSelectionMode,
+          showTopDivider: showTopDivider,
+          isFirst: isFirst,
+          isLast: isLast,
           onTap: () {
             if (isSelectionMode) {
               vm.toggleBookSelection(book.id);

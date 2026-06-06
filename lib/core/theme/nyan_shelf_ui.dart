@@ -25,6 +25,14 @@ abstract final class NyanShelfUi {
   /// Spec uses 12px gap for list vs 14px for grid — intentional asymmetry.
   static const double listTileSpacing = 12;
 
+  /// List-row thumbnail size — a small portrait cover, not a square badge
+  /// (bundle3.jsx `BookListRow`: 44 × 58 with `r-chip` rounding).
+  static const double listCoverWidth = 44;
+  static const double listCoverHeight = 58;
+
+  /// List-row format badge height (bundle3.jsx `BookListRow`: h18 pill).
+  static const double listFormatChipHeight = 18;
+
   /// Minimum height of the title text slot below a grid cover — reserves 2
   /// lines of 12.5px × 1.28 line-height (= 32px) so every card in a row keeps
   /// the same vertical rhythm regardless of title length.
