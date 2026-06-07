@@ -511,6 +511,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerMenuTheme => '主题';
 
   @override
+  String get readingTheme => '阅读主题';
+
+  @override
   String readerSheetProgressSubtitle(String percent) {
     return '阅读进度 $percent';
   }

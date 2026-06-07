@@ -22,12 +22,16 @@ class NyanPillButton extends StatelessWidget {
     required this.selected,
     this.onPressed,
     this.icon,
+    this.horizontalPadding,
   });
 
   final String label;
   final bool selected;
   final VoidCallback? onPressed;
   final IconData? icon;
+  // Optional horizontal padding override — spec allows 6pt for dense rows
+  // (e.g. Compact/Standard/Comfortable line-height pills). §4.6 delivery package.
+  final double? horizontalPadding;
 
   static const _kRadius = NyanRadius.chip;
   static const _kBorderRadius = BorderRadius.all(Radius.circular(_kRadius));
@@ -61,15 +65,18 @@ class NyanPillButton extends StatelessWidget {
           borderRadius: _kBorderRadius,
           child: ConstrainedBox(
             constraints: const BoxConstraints(
-              minHeight: NyanSpacing.minTapTarget,
+              // Spec PillButton: minHeight 36 (§4.6 delivery-package override
+              // of §4.3 minTapTarget 44 — dense settings panel context).
+              minHeight: 36.0,
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: NyanSpacing.space16,
-                vertical: NyanSpacing.space8,
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding ?? NyanSpacing.space16,
+                // Spec: padding "9px 16px".
+                vertical: 9.0,
               ),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (icon != null) ...[
                     Icon(icon, size: 16, color: textColor),
@@ -83,6 +90,7 @@ class NyanPillButton extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       softWrap: false,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: NyanTypography.uiFontFamily,
                         fontSize: 14,

@@ -294,6 +294,8 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — 章节列表行内部间隙（交付包对齐，2026-06，来源 `reader.jsx` `ReaderChapterList`）**：`ChapterListItem` 的数字徽标↔标题间隙固定为 **14pt**（`_kBadgeTitleGap`，来源：`reader.jsx` `gap: 14`）。此例外**仅限** `ChapterListItem` 徽标与标题之间，**MUST NOT** 用于其它列表行、卡片或页面级布局间距。
 
+> **例外 — Reader 设置 Knob 内边距（交付包对齐，2026-06，来源 `reader.jsx` `Knob`）**：`ReaderSettingsKnob` 的内边距固定为 **14pt**（`padding: 14`，来源：`reader.jsx`）。此例外**仅限** `ReaderSettingsKnob` 容器本身，**MUST NOT** 用于卡片、列表、页面层级的布局间距。
+
 #### 4.2.4 阴影 — `lib/core/theme/nyan_shadows.dart`
 
 三个工具方法**现在接收 `NyanTheme nyan`（不再是裸 `Color`）**，并按 `nyan.brightness` 自动选配方：
@@ -316,6 +318,8 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 - **字重仅允许**：`FontWeight.w400`（Regular，正文）/ `FontWeight.w500`（Medium，按钮/标签）/ `FontWeight.w600`（SemiBold，标题/数值）。**MUST NOT** 使用 `w100–w300` 或 `w700–w900`。
 
 > **例外 — 交互控件标签字号（Claude Design 系统对齐，2026-05）**：`NyanPrimaryButton` 的 label 文字按 size 变体使用 **14 / 16 / 17pt**（compact / standard / comfortable，来源：`components.jsx` 设计 spec）。这三个值是控件标签**专属**——**MUST NOT** 出现在正文、标题或任何其它表面。常量定义见 `NyanTypography.buttonCompact` / `NyanTypography.buttonComfortable`（body 16 复用 `NyanTypography.body`）。
+
+> **例外 — Reader 设置 Knob 标签字号（交付包对齐，2026-06，来源 `reader.jsx` `Knob`）**：`ReaderSettingsKnob` 的标签文字使用 **15pt w600**（来源：`reader.jsx` knob label style）。此值介于阶梯 `body 16` 与 `meta 13` 之间，是刻意的非阶梯值（§4.6 交付包优先）。此例外**仅限** `ReaderSettingsKnob` 标签，**MUST NOT** 出现在正文、列表行或其它表面。
 
 > **例外 — 书架列表行微标签（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `BookListRow`）**：list-view 书行的两个微标签低于字号阶梯——格式徽标（TXT / EPUB / PDF）**9pt w600**，尾部阅读百分比 **11pt monospace**（`NyanTypography.monoFontFamily`）。这两个值是**书架列表行专属**——**MUST NOT** 出现在正文、标题或任何其它表面。常量定义见 `NyanTypography.shelfFormatChip`（9）/ `NyanTypography.shelfProgressLabel`（11）。§4.6 交付包优先。
 

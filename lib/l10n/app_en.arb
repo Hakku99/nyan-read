@@ -211,6 +211,7 @@
   "readerMenuDisplay": "Display",
   "readerMenuText": "Text",
   "readerMenuTheme": "Theme",
+  "readingTheme": "Reading Theme",
   "readerSheetProgressSubtitle": "Reading progress {percent}",
   "@readerSheetProgressSubtitle": {
     "placeholders": {

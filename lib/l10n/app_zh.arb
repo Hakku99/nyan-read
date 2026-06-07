@@ -211,6 +211,7 @@
   "readerMenuDisplay": "显示",
   "readerMenuText": "文本",
   "readerMenuTheme": "主题",
+  "readingTheme": "阅读主题",
   "readerSheetProgressSubtitle": "阅读进度 {percent}",
   "@readerSheetProgressSubtitle": {
     "placeholders": {

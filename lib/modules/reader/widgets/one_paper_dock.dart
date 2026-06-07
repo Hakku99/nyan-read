@@ -82,10 +82,12 @@ class OnePaperDock extends StatelessWidget {
     final body = ConstrainedBox(
       constraints: BoxConstraints(maxHeight: maxSheetHeight),
       child: SingleChildScrollView(
+        // Spec OnePaperDock: padding "0 14px 8px" (reader.jsx). 14pt is a deliberate
+        // spec exception to the §4.2.3 8-multiple rule — §4.6 delivery package wins.
         padding: const EdgeInsets.fromLTRB(
-          NyanSpacing.space16,
+          14.0,
           0,
-          NyanSpacing.space16,
+          14.0,
           NyanSpacing.space8,
         ),
         child: Column(
