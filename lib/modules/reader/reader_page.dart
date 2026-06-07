@@ -26,7 +26,6 @@ import 'controllers/brightness_controller.dart';
 import 'controllers/reader_controller.dart';
 import 'controllers/reader_controller_provider.dart';
 import 'brightness/overlay_widget.dart';
-import 'widgets/brightness_hud_widget.dart';
 import 'widgets/chapter_list_widget.dart';
 import 'widgets/one_paper_dock.dart';
 import 'widgets/reader_brightness_popover.dart';
@@ -104,6 +103,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     );
     _brightnessController = BrightnessController(brightnessOrchestrator);
     unawaited(_brightnessController.initialize());
+    // Left-edge drag reuses the same popover as the sun button — one UI for
+    // brightness regardless of entry point.
+    _brightnessController.isAdjusting.addListener(_onBrightnessAdjustingChanged);
   }
 
   @override
@@ -112,9 +114,26 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     _chapterSyncDebounce?.cancel();
     _sheetCloseTimer?.cancel();
     _boundController = null;
+    _brightnessController.isAdjusting.removeListener(_onBrightnessAdjustingChanged);
     unawaited(_brightnessController.shutdown());
     _brightnessController.dispose();
     super.dispose();
+  }
+
+  void _onBrightnessAdjustingChanged() {
+    if (!mounted) return;
+    if (_brightnessController.isAdjusting.value) {
+      if (_brightnessPopoverOpen) return;
+      setState(() {
+        _brightnessPopoverOpen = true;
+        if (_openSheet != null) {
+          _openSheet = null;
+          _scheduleDisplayedSheetClear();
+        }
+      });
+    } else {
+      _closeBrightnessPopover();
+    }
   }
 
   @override
@@ -578,10 +597,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                             onDismiss: _closeBrightnessPopover,
                           ),
 
-                          // 8. Brightness HUD Overlay — topmost so the
-                          // edge-drag feedback reads over the dock.
-                          BrightnessHudWidget(
-                              controller: _brightnessController),
                         ],
                       ),
                     ),

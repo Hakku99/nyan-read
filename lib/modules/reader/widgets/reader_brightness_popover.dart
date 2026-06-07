@@ -58,49 +58,77 @@ class ReaderBrightnessPopover extends StatelessWidget {
             curve: _kEase,
             child: ColoredBox(
               // Warm-ink wash so the page reads as "receded behind glass".
-              color: nyan.background.withValues(alpha: isDark ? 0.56 : 0.46),
+              color: nyan.background.withValues(alpha: isDark ? 0.42 : 0.46),
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(NyanSpacing.space24),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.96, end: 1.0),
-                    duration: _kDur,
-                    curve: _kEase,
-                    builder: (context, scale, child) =>
-                        Transform.scale(scale: scale, child: child),
-                    child: GestureDetector(
+                  child: LayoutBuilder(
+                    builder: (context, outer) {
+                      // Explicit card width: fill available space up to 320pt.
+                      // LayoutBuilder resolves the real constraint so BackdropFilter
+                      // can't shrink-wrap against content instead of the max.
+                      final cardWidth = outer.maxWidth.clamp(0.0, 320.0);
+                      return GestureDetector(
                       // Taps on the card must not dismiss.
                       behavior: HitTestBehavior.opaque,
                       onTap: () {},
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 320),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: nyan.surfaceRaised,
-                            borderRadius:
-                                BorderRadius.circular(NyanRadius.sheet),
-                            border: isDark
-                                ? Border.all(color: nyan.divider, width: 1)
-                                : null,
-                            boxShadow: NyanShadows.lightCard(nyan),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(22),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _header(nyan, loc),
-                                const SizedBox(height: 18),
-                                _sliderRow(nyan),
-                                const SizedBox(height: NyanSpacing.space16),
-                                _followRow(context, nyan, loc),
-                              ],
+                      child: SizedBox(
+                          width: cardWidth,
+                          // Shadow must live outside ClipRRect — BoxShadow
+                          // renders beyond the box bounds and would be clipped
+                          // otherwise, making it invisible.
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.circular(NyanRadius.sheet),
+                              boxShadow: NyanShadows.lightCard(nyan),
+                            ),
+                            child: ClipRRect(
+                              borderRadius:
+                                  BorderRadius.circular(NyanRadius.sheet),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    // Semi-transparent frosted-glass card.
+                                    color: nyan.surface.withValues(
+                                      alpha: isDark ? 0.88 : 0.82,
+                                    ),
+                                    borderRadius:
+                                        BorderRadius.circular(NyanRadius.sheet),
+                                    border: Border.all(
+                                      // Spec: color-mix(surface 70%, chrome-edge)
+                                      // chrome-edge = transparent (light) / divider (dark)
+                                      color: isDark
+                                          ? Color.lerp(
+                                              nyan.surface,
+                                              nyan.divider,
+                                              0.30,
+                                            )!
+                                          : nyan.surface.withValues(alpha: 0.70),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(22),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        _header(nyan, loc),
+                                        const SizedBox(height: 18),
+                                        _sliderRow(nyan),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -194,42 +222,6 @@ class ReaderBrightnessPopover extends StatelessWidget {
         const SizedBox(width: NyanSpacing.space12),
         Icon(NyanIcons.sun, size: 18, color: nyan.textMuted),
       ],
-    );
-  }
-
-  Widget _followRow(BuildContext context, NyanTheme nyan, AppLocalizations loc) {
-    return Container(
-      padding: const EdgeInsets.only(top: NyanSpacing.space12),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: nyan.divider.withValues(alpha: 0.5),
-            width: 0.5,
-          ),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            loc.readerFollowSystemBrightness,
-            style: TextStyle(
-              fontFamily: NyanTypography.uiFontFamily,
-              fontSize: NyanTypography.meta,
-              fontWeight: FontWeight.w400,
-              height: 1.35,
-              color: nyan.textSecondary,
-            ),
-          ),
-          ListenableBuilder(
-            listenable: controller,
-            builder: (context, _) => Switch(
-              value: controller.followSystem,
-              onChanged: (_) => controller.toggleFollowSystem(),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
