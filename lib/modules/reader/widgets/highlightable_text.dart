@@ -5,6 +5,7 @@ import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/models/highlight.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:async';
+import 'text_selection_menu.dart';
 
 /// Text widget that renders highlights and supports selection
 class HighlightableText extends StatefulWidget {
@@ -295,7 +296,6 @@ class _HighlightableTextState extends State<HighlightableText> {
     BuildContext context,
     EditableTextState editableTextState,
   ) {
-    // Get current selection from the editable text state
     final selection = editableTextState.textEditingValue.selection;
     final fullText = widget.text;
 
@@ -311,32 +311,15 @@ class _HighlightableTextState extends State<HighlightableText> {
       }
     }
 
-    final buttonItems = <ContextMenuButtonItem>[
-      ContextMenuButtonItem(
-        label: 'Copy',
-        onPressed: () {
-          if (selectedText.isNotEmpty) {
-            Clipboard.setData(ClipboardData(text: selectedText));
-            SnackBarUtils.show(context, 'Copied to clipboard');
-          }
-          editableTextState.hideToolbar();
-        },
-      ),
-      ContextMenuButtonItem(
-        label: 'Search',
-        onPressed: () {
-          if (selectedText.isNotEmpty) {
-            _searchInBrowser(selectedText);
-          }
-          editableTextState.hideToolbar();
-        },
-      ),
-    ];
-
-    for (final color in HighlightColors.all) {
-      buttonItems.add(ContextMenuButtonItem(
-        label: '${_getColorEmoji(color)} ${HighlightColors.getName(color)}',
-        onPressed: () {
+    final anchors = editableTextState.contextMenuAnchors;
+    // Place the menu above the selection (primaryAnchor) when space allows,
+    // falling back to below (secondaryAnchor) at the top of the screen.
+    return _PositionedSelectionMenu(
+      anchors: anchors,
+      child: TextSelectionMenu(
+        selectedText: selectedText,
+        position: anchors.primaryAnchor,
+        onHighlight: (color) {
           if (selectedText.isNotEmpty) {
             widget.onTextSelected?.call(
               widget.paragraphIndex,
@@ -348,30 +331,21 @@ class _HighlightableTextState extends State<HighlightableText> {
           }
           editableTextState.hideToolbar();
         },
-      ));
-    }
-
-    return AdaptiveTextSelectionToolbar.buttonItems(
-      anchors: editableTextState.contextMenuAnchors,
-      buttonItems: buttonItems,
+        onCopy: () {
+          if (selectedText.isNotEmpty) {
+            SnackBarUtils.show(context, 'Copied to clipboard');
+          }
+          editableTextState.hideToolbar();
+        },
+        onSearch: () {
+          if (selectedText.isNotEmpty) {
+            _searchInBrowser(selectedText);
+          }
+          editableTextState.hideToolbar();
+        },
+        onDismiss: editableTextState.hideToolbar,
+      ),
     );
-  }
-
-  String _getColorEmoji(String colorCode) {
-    switch (colorCode) {
-      case HighlightColors.yellow:
-        return '🟡';
-      case HighlightColors.green:
-        return '🟢';
-      case HighlightColors.blue:
-        return '🔵';
-      case HighlightColors.pink:
-        return '🔴';
-      case HighlightColors.orange:
-        return '🟠';
-      default:
-        return '⚪';
-    }
   }
 
   Future<void> _searchInBrowser(String query) async {
@@ -390,5 +364,54 @@ class _HighlightableTextState extends State<HighlightableText> {
             context, 'Could not open browser. Search link copied.');
       }
     }
+  }
+}
+
+/// Positions [TextSelectionMenu] above or below the selection anchor,
+/// keeping the menu within screen bounds.
+class _PositionedSelectionMenu extends StatelessWidget {
+  final TextSelectionToolbarAnchors anchors;
+  final Widget child;
+
+  const _PositionedSelectionMenu({
+    required this.anchors,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // menuHeight is an estimate; the real height is constrained by the child.
+    const double menuHeight = 56;
+    const double menuMargin = 8;
+
+    final primary = anchors.primaryAnchor;
+    final secondary = anchors.secondaryAnchor;
+
+    final screenSize = MediaQuery.sizeOf(context);
+
+    // Prefer above the selection; fall back to below when near top edge.
+    final double top;
+    if (primary.dy - menuHeight - menuMargin >= 0) {
+      top = primary.dy - menuHeight - menuMargin;
+    } else if (secondary != null) {
+      top = secondary.dy + menuMargin;
+    } else {
+      top = primary.dy + menuMargin;
+    }
+
+    // Clamp horizontally so the menu doesn't bleed off screen edges.
+    const double menuWidth = 300; // generous upper bound
+    final double left = (primary.dx - menuWidth / 2)
+        .clamp(menuMargin, screenSize.width - menuWidth - menuMargin);
+
+    return Stack(
+      children: [
+        Positioned(
+          top: top,
+          left: left,
+          child: child,
+        ),
+      ],
+    );
   }
 }

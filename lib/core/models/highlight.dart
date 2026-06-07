@@ -110,13 +110,13 @@ class Highlight {
   }
 }
 
-/// Predefined highlight colors
+/// Predefined highlight colors — values match NyanColors.highlight* tokens.
 class HighlightColors {
-  static const String yellow = '#FFEB3B';
-  static const String green = '#4CAF50';
-  static const String blue = '#2196F3';
-  static const String pink = '#E91E63';
-  static const String orange = '#FF9800';
+  static const String yellow = '#F2E58A';
+  static const String green = '#A8D18D';
+  static const String blue = '#9EC5E8';
+  static const String pink = '#E8A0BF';
+  static const String orange = '#F2BE7E';
 
   static const List<String> all = [yellow, green, blue, pink, orange];
 
