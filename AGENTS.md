@@ -321,6 +321,10 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — Reader 设置 Knob 标签字号（交付包对齐，2026-06，来源 `reader.jsx` `Knob`）**：`ReaderSettingsKnob` 的标签文字使用 **15pt w600**（来源：`reader.jsx` knob label style）。此值介于阶梯 `body 16` 与 `meta 13` 之间，是刻意的非阶梯值（§4.6 交付包优先）。此例外**仅限** `ReaderSettingsKnob` 标签，**MUST NOT** 出现在正文、列表行或其它表面。
 
+> **例外 — One Paper 模态 Sheet 标题字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `ImportSheet`）**：`NyanOnePaperSheet` 内的模态 sheet 标题（如 "Import Books"）使用 **18pt w600**，`letterSpacing: -0.1`（来源：`bundle3.jsx` `font: "600 18px/1.2"`）。此值介于阶梯 `section 20` 与 `body 16` 之间，是 One Paper 浮层标题的专属字号（§4.6 交付包优先）。此例外**仅限** `NyanOnePaperSheet` 内的顶层标题，**MUST NOT** 出现在正文、列表行、卡片或其它表面。
+
+> **例外 — Import Sheet "Supported Formats" 节标签字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `ImportSheet`）**：`ImportBookSheet` 的 Supported Formats 节标题使用 **15pt w500**（来源：`bundle3.jsx` `font: "500 15px/1.2"`）。此值介于阶梯 `body 16` 与 `meta 13` 之间（§4.6 交付包优先）。此例外**仅限** `ImportBookSheet` 内的该节标题，**MUST NOT** 出现在其它表面。
+
 > **例外 — 书架列表行微标签（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `BookListRow`）**：list-view 书行的两个微标签低于字号阶梯——格式徽标（TXT / EPUB / PDF）**9pt w600**，尾部阅读百分比 **11pt monospace**（`NyanTypography.monoFontFamily`）。这两个值是**书架列表行专属**——**MUST NOT** 出现在正文、标题或任何其它表面。常量定义见 `NyanTypography.shelfFormatChip`（9）/ `NyanTypography.shelfProgressLabel`（11）。§4.6 交付包优先。
 
 > ✅ **字体已注册（§6 Phase 0 已完成）**：`pubspec.yaml` 的 `flutter.fonts` 段已声明 `Noto Sans SC`（400/500/600）+ `Source Han Serif SC`（400/600）；字体文件存放于 `assets/fonts/`，**未纳入 Git**（体积原因）。开发者需按 `assets/fonts/README.md` 说明手动放置字体文件。缺少字体时 Flutter 打印 warning 并回落平台字体，不影响编译；但 serif 阅读模式仅在字体文件就位后生效。

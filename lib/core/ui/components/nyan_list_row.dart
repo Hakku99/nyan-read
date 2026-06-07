@@ -147,7 +147,14 @@ class NyanListRow extends StatelessWidget {
       chipBg = nyan.errorBackgroundColor;
       chipFg = nyan.errorPrimaryTextColor;
     } else {
-      chipBg = nyan.primary.withValues(alpha: 0.09);
+      // spec (_chrome.jsx ListRow): color-mix(in srgb, primary 9%, surfaceMuted)
+      // — an opaque blend, not a transparent tint. Using alpha-blend over
+      // surfaceMuted ensures the chip colour matches the spec regardless of which
+      // surface colour happens to be behind the row.
+      chipBg = Color.alphaBlend(
+        nyan.primary.withValues(alpha: 0.09),
+        nyan.surfaceMuted,
+      );
       chipFg = nyan.primary;
     }
 

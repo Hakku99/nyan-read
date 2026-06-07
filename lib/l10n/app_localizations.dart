@@ -917,19 +917,19 @@ abstract class AppLocalizations {
   /// No description provided for @importBooksSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose files from your device and add them to your shelf.'**
+  /// **'Add more books to your shelf.'**
   String get importBooksSubtitle;
 
   /// No description provided for @importBooksEmptySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Import your first book from this device and start reading.'**
+  /// **'Add your first book to get started.'**
   String get importBooksEmptySubtitle;
 
   /// No description provided for @importFilesSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Pick one or more supported ebook files.'**
+  /// **'Browse and open .txt, .epub or .pdf'**
   String get importFilesSubtitle;
 
   /// No description provided for @supportedFormats.
@@ -941,7 +941,7 @@ abstract class AppLocalizations {
   /// No description provided for @supportedFormatsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'TXT, EPUB, and PDF are ready to import.'**
+  /// **'Plain text, e-book, and document files.'**
   String get supportedFormatsSubtitle;
 
   /// No description provided for @supportedFormatsDescription.

@@ -445,22 +445,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importBooksTitle => 'Import Books';
 
   @override
-  String get importBooksSubtitle =>
-      'Choose files from your device and add them to your shelf.';
+  String get importBooksSubtitle => 'Add more books to your shelf.';
 
   @override
-  String get importBooksEmptySubtitle =>
-      'Import your first book from this device and start reading.';
+  String get importBooksEmptySubtitle => 'Add your first book to get started.';
 
   @override
-  String get importFilesSubtitle => 'Pick one or more supported ebook files.';
+  String get importFilesSubtitle => 'Browse and open .txt, .epub or .pdf';
 
   @override
   String get supportedFormats => 'Supported Formats';
 
   @override
   String get supportedFormatsSubtitle =>
-      'TXT, EPUB, and PDF are ready to import.';
+      'Plain text, e-book, and document files.';
 
   @override
   String get supportedFormatsDescription =>

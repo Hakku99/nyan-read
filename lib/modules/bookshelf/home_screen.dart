@@ -18,6 +18,7 @@ import '../../core/theme/nyan_shelf_ui.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
 import '../../core/ui/components/components.dart';
+import '../../core/ui/nyan_sheet.dart';
 import '../../core/ui/nyan_theme_context.dart';
 import '../../modules/privacy/privacy_lock_service.dart';
 import 'package:go_router/go_router.dart';
@@ -366,10 +367,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     final loc = AppLocalizations.of(context)!;
     final shelfLabel = isPrivateShelf ? loc.privateShelf : loc.publicShelf;
 
-    showModalBottomSheet(
+    showNyanSheet(
       context: context,
-      backgroundColor:
-          Theme.of(context).colorScheme.surface.withValues(alpha: 0),
       builder: (context) {
         return ImportBookSheet(
           isEmptyShelf: activeBooks.isEmpty,

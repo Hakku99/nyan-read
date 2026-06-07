@@ -34,6 +34,11 @@ class NyanIcons {
   /// Generic "book" glyph — replaces Material `Icons.menu_book`, `book_open`,
   /// any book cover placeholder. Use `books` (plural) for a library/shelf.
   static const IconData book = PhosphorIconsRegular.bookOpen;
+
+  /// Plain closed-book outline (`ph-book`). Used where the design spec calls
+  /// for a single-volume icon without the open-pages silhouette — e.g. the
+  /// "Supported Formats" leading icon in ImportBookSheet.
+  static const IconData bookClosed = PhosphorIconsRegular.book;
   static const IconData books = PhosphorIconsRegular.books;
   static const IconData bookCollection = PhosphorIconsRegular.bookBookmark;
   static const IconData bookmark = PhosphorIconsRegular.bookmarkSimple;

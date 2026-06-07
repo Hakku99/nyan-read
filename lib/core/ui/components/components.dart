@@ -4,6 +4,7 @@ export 'nyan_book_logo_mark.dart';
 export 'nyan_book_grid_card.dart';
 export 'nyan_bookmark_card.dart';
 export 'nyan_bottom_sheet.dart';
+export 'nyan_one_paper_sheet.dart';
 export 'nyan_confirm_dialog.dart';
 export 'nyan_continue_reading_card.dart';
 export 'nyan_dialog_option_row.dart';

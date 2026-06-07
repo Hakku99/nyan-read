@@ -427,19 +427,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importBooksTitle => '导入书籍';
 
   @override
-  String get importBooksSubtitle => '从设备中选择文件，加入你的书架。';
+  String get importBooksSubtitle => '继续向书架添加书籍。';
 
   @override
-  String get importBooksEmptySubtitle => '从设备中导入第一本书，开始阅读。';
+  String get importBooksEmptySubtitle => '导入第一本书，开始阅读。';
 
   @override
-  String get importFilesSubtitle => '选择一个或多个受支持的电子书文件。';
+  String get importFilesSubtitle => '浏览并打开 .txt、.epub 或 .pdf 文件';
 
   @override
   String get supportedFormats => '支持的格式';
 
   @override
-  String get supportedFormatsSubtitle => '目前支持 TXT、EPUB 和 PDF。';
+  String get supportedFormatsSubtitle => '纯文本、电子书和文档文件。';
 
   @override
   String get supportedFormatsDescription =>
