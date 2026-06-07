@@ -4,8 +4,10 @@ import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../../core/models/highlight.dart';
 import '../../../core/theme/nyan_colors.dart';
+import '../../../core/theme/nyan_radius.dart';
 import '../../../core/theme/nyan_spacing.dart';
 import '../../../core/ui/components/nyan_overlay_style.dart';
+import '../../../core/ui/components/nyan_primary_button.dart';
 import '../../../core/ui/nyan_theme_context.dart';
 
 /// Dialog for adding or editing a note on a highlight.
@@ -73,10 +75,7 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final primaryText = context.nyanTheme.textPrimary.withValues(alpha: 0.94);
-    final surfaceColor = _HighlightDialogPalette.dialogSurface(context);
-    final borderColor = _HighlightDialogPalette.dialogBorder(context);
+    final nyan = context.nyanTheme;
     final highlightColor = _parseColor(_selectedColorCode);
     final excerpt = widget.highlight?.selectedText.trim();
 
@@ -85,7 +84,7 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
         horizontal: _HighlightNoteDialogTokens.outerInset,
         vertical: _HighlightNoteDialogTokens.outerInset,
       ),
-      backgroundColor: theme.colorScheme.surface.withValues(alpha: 0),
+      backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0),
       elevation: 0,
       child: ConstrainedBox(
         constraints: const BoxConstraints(
@@ -93,11 +92,14 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
         ),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: surfaceColor,
+            color: nyan.surfaceRaised,
             borderRadius: BorderRadius.circular(
               _HighlightNoteDialogTokens.surfaceRadius,
             ),
-            border: Border.all(color: borderColor, width: 1),
+            border: Border.all(
+              color: _HighlightDialogPalette.dialogBorder(context),
+              width: 1,
+            ),
             boxShadow: _HighlightDialogPalette.dialogShadow(context),
           ),
           child: SingleChildScrollView(
@@ -106,6 +108,7 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── Title row ──
                 Row(
                   children: [
                     Expanded(
@@ -116,11 +119,12 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
                           Expanded(
                             child: Text(
                               loc.editNote,
-                              style: theme.textTheme.titleLarge?.copyWith(
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
                                 height: 1.16,
-                                color: primaryText,
+                                letterSpacing: -0.1,
+                                color: nyan.textPrimary.withValues(alpha: 0.94),
                               ),
                             ),
                           ),
@@ -131,15 +135,12 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
                       const SizedBox(width: NyanSpacing.space12),
                       _DeleteIconButton(
                         semanticLabel: loc.deleteNote,
-                        color: _HighlightDialogPalette.deleteTone(context),
                         onTap: _handleDelete,
-                        backgroundColor: _HighlightDialogPalette.deleteSurface(
-                          context,
-                        ),
                       ),
                     ],
                   ],
                 ),
+                // ── Excerpt preview ──
                 if (excerpt != null && excerpt.isNotEmpty) ...[
                   const SizedBox(height: 10),
                   _HighlightPreviewCard(
@@ -148,30 +149,41 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
                   ),
                 ],
                 const SizedBox(height: 12),
+                // ── Color picker ──
                 _ColorPickerRow(
                   colors: HighlightColors.all,
                   selectedColorCode:
                       _selectedColorCode ?? HighlightColors.yellow,
                   onSelected: (color) {
-                    setState(() {
-                      _selectedColorCode = color;
-                    });
+                    setState(() => _selectedColorCode = color);
                   },
                 ),
                 const SizedBox(height: 12),
+                // ── Note input ──
                 _NoteInputCard(
                   controller: _controller,
                   focusNode: _focusNode,
                   hintText: loc.addNoteHint,
                 ),
-                const SizedBox(height: 10),
-                _DialogActionRow(
-                  cancelLabel: loc.cancel,
-                  saveLabel: loc.save,
-                  primaryText: primaryText,
-                  surfaceColor: surfaceColor,
-                  onCancel: () => Navigator.of(context).pop(),
-                  onSave: _handleSave,
+                const SizedBox(height: 14),
+                // ── Actions ──
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    NyanPrimaryButton(
+                      label: loc.cancel,
+                      onPressed: () => Navigator.of(context).pop(),
+                      variant: NyanPrimaryButtonVariant.ghost,
+                      size: NyanPrimaryButtonSize.comfortable,
+                    ),
+                    const SizedBox(width: 10),
+                    NyanPrimaryButton(
+                      label: loc.save,
+                      onPressed: _handleSave,
+                      variant: NyanPrimaryButtonVariant.primary,
+                      size: NyanPrimaryButtonSize.comfortable,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -187,116 +199,92 @@ class _HighlightNoteDialogTokens {
 
   static const double outerInset = 20;
   static const double maxWidth = 560;
-  static const double surfaceRadius = 30;
+  // Floating dialog sits at dock level per --r-dock / NyanRadius.dock.
+  static const double surfaceRadius = NyanRadius.dock;
   static const double padding = 18;
-  static const double pickerHeight = 42;
-  static const double pickerRadius = 20;
-  static const double pickerSwatchSize = 38;
-  static const double pickerInnerSwatchSize = 14;
-  static const double previewRadius = 20;
+  // All inner cards use cardNested (concentric inside dock).
+  static const double pickerRadius = NyanRadius.cardNested;
+  static const double pickerSwatchSize = 26;
+  static const double previewRadius = NyanRadius.cardNested;
   static const double previewMinHeight = 48;
   static const double inputMinHeight = 82;
-  static const double inputRadius = 22;
+  static const double inputRadius = NyanRadius.cardNested;
   static const double inputPadding = 15;
-  static const double iconButtonTapSize = 36;
-  static const double iconButtonVisualSize = 26;
-  static const double buttonHeight = 50;
-  static const double buttonRadius = 17;
-  static const double dialogBorderAlpha = 0.085;
-  static const double pickerBorderAlpha = 0.022;
-  static const double previewBorderAlpha = 0.06;
-  static const double inputBorderAlpha = 0.105;
-  static const double deleteBorderAlpha = 0.04;
-  static const double cancelBorderAlpha = 0.11;
+  static const double iconButtonTapSize = 40;
 }
 
 class _HighlightDialogPalette {
   const _HighlightDialogPalette._();
 
-  static Color dialogSurface(BuildContext context) {
-    return Color.alphaBlend(
-      context.nyanTheme.textSecondary.withValues(alpha: 0.012),
-      NyanColors.highlightPaperDialog,
-    );
-  }
-
   static Color dialogBorder(BuildContext context) {
-    return surfaceBorder(context, _HighlightNoteDialogTokens.dialogBorderAlpha);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Light: chrome-edge is transparent. Dark: divider ring for elevation.
+    return isDark ? context.nyanTheme.divider : Colors.transparent;
   }
 
   static List<BoxShadow> dialogShadow(BuildContext context) {
-    final theme = Theme.of(context);
-    if (theme.brightness == Brightness.dark) {
-      return const [];
+    if (Theme.of(context).brightness == Brightness.dark) {
+      final divider = context.nyanTheme.divider;
+      return [
+        // Luminous hairline ring (v3 elevation ladder).
+        BoxShadow(
+          color: divider.withValues(alpha: 0.88),
+          blurRadius: 0,
+          spreadRadius: 0.375,
+          offset: Offset.zero,
+        ),
+        const BoxShadow(
+          color: Color(0x70000000),
+          blurRadius: 24,
+          offset: Offset(0, 10),
+        ),
+        const BoxShadow(
+          color: Color(0x57000000),
+          blurRadius: 8,
+          offset: Offset(0, 3),
+        ),
+      ];
     }
-
     return const [
       BoxShadow(
         color: NyanColors.shadowSoft,
         blurRadius: 24,
-        spreadRadius: 0,
         offset: Offset(0, 8),
       ),
       BoxShadow(
         color: NyanColors.shadowHairline,
         blurRadius: 8,
-        spreadRadius: 0,
         offset: Offset(0, 2),
       ),
     ];
   }
 
-  static Color pickerSurface(BuildContext context) {
-    return Color.alphaBlend(
-      context.nyanTheme.textSecondary.withValues(alpha: 0.006),
-      NyanColors.highlightPaperPicker,
-    );
-  }
-
-  static Color previewSurface(BuildContext context) {
-    return Color.alphaBlend(
-      context.nyanTheme.textSecondary.withValues(alpha: 0.012),
-      NyanColors.highlightPaperPreview,
-    );
-  }
-
-  static Color inputSurface(BuildContext context) {
-    return Color.alphaBlend(
-      context.nyanTheme.textSecondary.withValues(alpha: 0.015),
-      NyanColors.highlightPaperInput,
-    );
-  }
-
   static Color badgeSurface(BuildContext context, Color highlightColor) {
+    // Spec: color-mix(in srgb, ink 12%, nyan-surface) — flat 12% for all colors.
     return Color.lerp(
-      dialogSurface(context),
+      context.nyanTheme.surfaceRaised,
       displayHighlight(highlightColor),
-      isYellowHighlight(highlightColor) ? 0.1 : 0.075,
+      0.12,
     )!;
   }
 
-  static Color deleteTone(BuildContext context) {
-    return Color.alphaBlend(
-      NyanColors.highlightInkSepia.withValues(alpha: 0.76),
-      context.nyanTheme.textPrimary.withValues(alpha: 0.1),
-    );
+  static Color previewBackground(BuildContext context, Color highlightColor) {
+    return Color.lerp(
+      context.nyanTheme.surfaceMuted,
+      displayHighlight(highlightColor),
+      0.06,
+    )!;
   }
 
-  static Color deleteSurface(BuildContext context) {
-    return Color.alphaBlend(
-      context.nyanTheme.textSecondary.withValues(alpha: 0.04),
-      dialogSurface(context),
-    );
+  static Color previewBorder(BuildContext context, Color highlightColor) {
+    return Color.lerp(
+      context.nyanTheme.divider,
+      displayHighlight(highlightColor),
+      0.14,
+    )!;
   }
 
-  static Color surfaceBorder(BuildContext context, double alpha) {
-    return Theme.of(context).colorScheme.outline.withValues(
-          alpha: alpha,
-        );
-  }
-
-  // Flutter 3.27+：Color.r/.g/.b 为 0-1 双精度。下列阈值按 0-255 整数范围给出，
-  // 因此 compare 前乘 255 并 round。
+  // Flutter 3.27+: Color.r/.g/.b are 0-1 doubles; multiply by 255 before comparing.
   static int _r255(Color c) => (c.r * 255).round();
   static int _g255(Color c) => (c.g * 255).round();
   static int _b255(Color c) => (c.b * 255).round();
@@ -305,111 +293,53 @@ class _HighlightDialogPalette {
     return _r255(color) > 230 && _g255(color) > 210 && _b255(color) < 170;
   }
 
+  // Dialog-specific ink colours — from HL_SWATCHES.ink in bundle1.jsx.
+  // These are darker/more saturated than the NyanColors.highlightInk* tokens,
+  // which are lighter variants used for text-highlight backgrounds elsewhere.
+  static const Color _inkYellow = Color(0xFFB89A2C);
+  static const Color _inkGreen  = Color(0xFF4E8A2D);
+  static const Color _inkBlue   = Color(0xFF2E6B96);
+  static const Color _inkPink   = Color(0xFFA84070);
+  static const Color _inkOrange = Color(0xFFB8662A);
+
   static Color displayHighlight(Color color) {
-    if (isYellowHighlight(color)) {
-      return NyanColors.highlightInkYellow;
-    }
+    if (isYellowHighlight(color)) return _inkYellow;
     final r = _r255(color);
     final g = _g255(color);
     final b = _b255(color);
-    if (b > r && b > g) {
-      return NyanColors.highlightInkBlue;
-    }
-    if (r > 220 && b > 150) {
-      return NyanColors.highlightInkPink;
-    }
-    if (r > 220 && g > 150 && b < 150) {
-      return NyanColors.highlightInkOrange;
-    }
-    if (g > r && g > b) {
-      return NyanColors.highlightInkGreen;
-    }
+    if (b > r && b > g) return _inkBlue;
+    if (r > 220 && b > 150) return _inkPink;
+    if (r > 220 && g > 150 && b < 150) return _inkOrange;
+    if (g > r && g > b) return _inkGreen;
     return Color.alphaBlend(NyanColors.highlightPaperLiftTint, color);
-  }
-
-  static Color previewSurfaceFor(BuildContext context, Color highlightColor) {
-    final base = previewSurface(context);
-    final blend = isYellowHighlight(highlightColor) ? 0.02 : 0.008;
-    return Color.lerp(base, displayHighlight(highlightColor), blend)!;
-  }
-
-  static Color previewBarColor(Color highlightColor) {
-    if (isYellowHighlight(highlightColor)) {
-      return NyanColors.highlightPreviewBar;
-    }
-    return displayHighlight(highlightColor).withValues(alpha: 0.54);
-  }
-
-  static Color pickerRingColor(Color highlightColor) {
-    final fill = displayHighlight(highlightColor);
-    return fill.withValues(
-      alpha: isYellowHighlight(highlightColor) ? 0.2 : 0.17,
-    );
-  }
-
-  static Color pickerOuterSurface(BuildContext context, Color highlightColor) {
-    final base = pickerSurface(context);
-    final fill = displayHighlight(highlightColor);
-    final blend = isYellowHighlight(highlightColor) ? 0.13 : 0.095;
-    return Color.lerp(base, fill, blend)!;
-  }
-
-  static Color pickerLiftSurface(BuildContext context, Color highlightColor) {
-    final cream = Color.lerp(
-      dialogSurface(context),
-      Theme.of(context).colorScheme.surface,
-      0.28,
-    )!;
-    final liftTint = displayHighlight(highlightColor).withValues(
-      alpha: isYellowHighlight(highlightColor) ? 0.1 : 0.08,
-    );
-    return Color.alphaBlend(liftTint, cream);
-  }
-
-  static Color pickerShadowColor(Color highlightColor) {
-    final fill = displayHighlight(highlightColor);
-    return fill.withValues(
-      alpha: isYellowHighlight(highlightColor) ? 0.045 : 0.03,
-    );
-  }
-
-  static Color mutedText(BuildContext context) {
-    return context.nyanTheme.textSecondary.withValues(alpha: 0.76);
   }
 }
 
 class _SelectedColorBadge extends StatelessWidget {
-  const _SelectedColorBadge({
-    required this.color,
-  });
+  const _SelectedColorBadge({required this.color});
 
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = Color.lerp(
-      context.nyanTheme.textPrimary.withValues(alpha: 0.7),
-      _HighlightDialogPalette.displayHighlight(color),
-      0.16,
-    )!;
+    final nyan = context.nyanTheme;
+    final inkColor = _HighlightDialogPalette.displayHighlight(color);
+    // Spec: color-mix(in srgb, ink 88%, nyan-text) — strongly tinted toward the ink.
+    final iconColor = Color.lerp(nyan.textPrimary, inkColor, 0.88)!;
 
     return DecoratedBox(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: _HighlightDialogPalette.badgeSurface(context, color),
         border: Border.all(
-          color: color.withValues(alpha: 0.02),
+          color: inkColor.withValues(alpha: 0.10),
           width: 1,
         ),
       ),
       child: SizedBox(
         width: 24,
         height: 24,
-        child: Icon(
-          NyanIcons.editNote,
-          size: 12,
-          color: iconColor,
-        ),
+        child: Icon(NyanIcons.editNote, size: 12, color: iconColor),
       ),
     );
   }
@@ -433,45 +363,24 @@ class _ColorPickerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final surface = _HighlightDialogPalette.pickerSurface(context);
-
     return Container(
-      height: _HighlightNoteDialogTokens.pickerHeight,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color.lerp(surface, Theme.of(context).colorScheme.surface, 0.1)!,
-            surface,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(
-          _HighlightNoteDialogTokens.pickerRadius,
-        ),
-        border: Border.all(
-          color: _HighlightDialogPalette.surfaceBorder(
-            context,
-            _HighlightNoteDialogTokens.pickerBorderAlpha,
-          ),
-          width: 1,
-        ),
+        color: context.nyanTheme.surfaceMuted,
+        borderRadius: BorderRadius.circular(_HighlightNoteDialogTokens.pickerRadius),
       ),
-      child: Center(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var index = 0; index < colors.length; index++) ...[
-              _HighlightColorSwatch(
-                color: _parseColor(colors[index]),
-                isSelected: colors[index] == selectedColorCode,
-                onTap: () => onSelected(colors[index]),
-              ),
-              if (index != colors.length - 1) const SizedBox(width: 10),
-            ],
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          for (var i = 0; i < colors.length; i++) ...[
+            _HighlightColorSwatch(
+              color: _parseColor(colors[i]),
+              isSelected: colors[i] == selectedColorCode,
+              onTap: () => onSelected(colors[i]),
+            ),
+            if (i != colors.length - 1) const SizedBox(width: 16),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -490,85 +399,41 @@ class _HighlightColorSwatch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final creamSurface = _HighlightDialogPalette.dialogSurface(context);
-    final softenedColor = _HighlightDialogPalette.displayHighlight(color);
-    final borderColor = isSelected
-        ? _HighlightDialogPalette.pickerRingColor(color)
-        : Theme.of(context).colorScheme.surface.withValues(alpha: 0);
-    final outerColor = isSelected
-        ? _HighlightDialogPalette.pickerOuterSurface(context, color)
-        : Theme.of(context).colorScheme.surface.withValues(alpha: 0);
-    final liftSurface = _HighlightDialogPalette.pickerLiftSurface(
-      context,
-      color,
-    );
-    final shadow = isSelected
-        ? [
-            BoxShadow(
-              color: _HighlightDialogPalette.pickerShadowColor(color),
-              blurRadius: 4,
-              spreadRadius: 0,
-              offset: const Offset(0, 0.8),
-            ),
-          ]
-        : const <BoxShadow>[];
+    final nyan = context.nyanTheme;
+    final inkColor = _HighlightDialogPalette.displayHighlight(color);
 
-    return Material(
-      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOut,
-          width: _HighlightNoteDialogTokens.pickerSwatchSize,
-          height: _HighlightNoteDialogTokens.pickerSwatchSize,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: outerColor,
-            border: Border.all(color: borderColor, width: 1),
-            boxShadow: shadow,
-          ),
-          child: Center(
-            child: Container(
-              width: isSelected ? 26 : 20,
-              height: isSelected ? 26 : 20,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? liftSurface
-                    : Theme.of(context)
-                        .colorScheme
-                        .surface
-                        .withValues(alpha: 0),
-                shape: BoxShape.circle,
-                border: isSelected
-                    ? Border.all(
-                        color: creamSurface.withValues(alpha: 0.92),
-                        width: 0.9,
-                      )
-                    : null,
-              ),
-              child: Center(
-                child: Container(
-                  width: _HighlightNoteDialogTokens.pickerInnerSwatchSize +
-                      (isSelected ? 2 : 0),
-                  height: _HighlightNoteDialogTokens.pickerInnerSwatchSize +
-                      (isSelected ? 2 : 0),
-                  decoration: BoxDecoration(
-                    color: softenedColor,
-                    shape: BoxShape.circle,
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        width: _HighlightNoteDialogTokens.pickerSwatchSize,
+        height: _HighlightNoteDialogTokens.pickerSwatchSize,
+        decoration: BoxDecoration(
+          // Swatch shows the highlight fill colour, not the ink variant.
+          color: color,
+          shape: BoxShape.circle,
+          border: isSelected
+              ? null
+              : Border.all(color: inkColor.withValues(alpha: 0.20), width: 1),
+          boxShadow: isSelected
+              ? [
+                  // Outer matcha ring — drawn first (bottommost layer).
+                  BoxShadow(
+                    color: nyan.primaryDeep,
+                    blurRadius: 0,
+                    spreadRadius: 3,
+                    offset: Offset.zero,
                   ),
-                  child: isSelected
-                      ? Icon(
-                          NyanIcons.checkFilled,
-                          size: 10,
-                          color: creamSurface.withValues(alpha: 0.98),
-                        )
-                      : null,
-                ),
-              ),
-            ),
-          ),
+                  // surfaceMuted gap — drawn second (top layer), creates 2 px gap.
+                  BoxShadow(
+                    color: nyan.surfaceMuted,
+                    blurRadius: 0,
+                    spreadRadius: 2,
+                    offset: Offset.zero,
+                  ),
+                ]
+              : const [],
         ),
       ),
     );
@@ -586,74 +451,54 @@ class _HighlightPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primaryText = context.nyanTheme.textPrimary.withValues(alpha: 0.92);
-    final quoteColor = Color.lerp(
-      _HighlightDialogPalette.mutedText(context),
-      _HighlightDialogPalette.previewBarColor(highlightColor),
-      _HighlightDialogPalette.isYellowHighlight(highlightColor) ? 0.4 : 0.22,
-    )!;
+    final nyan = context.nyanTheme;
+    final inkColor = _HighlightDialogPalette.displayHighlight(highlightColor);
 
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(
         minHeight: _HighlightNoteDialogTokens.previewMinHeight,
       ),
-      padding: const EdgeInsets.fromLTRB(16, 9, 16, 9),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color.lerp(
-              _HighlightDialogPalette.previewSurfaceFor(
-                  context, highlightColor),
-              theme.colorScheme.surface,
-              0.12,
-            )!,
-            _HighlightDialogPalette.previewSurface(context),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(
-          _HighlightNoteDialogTokens.previewRadius,
-        ),
+        color: _HighlightDialogPalette.previewBackground(context, highlightColor),
+        borderRadius: BorderRadius.circular(_HighlightNoteDialogTokens.previewRadius),
         border: Border.all(
-          color: _HighlightDialogPalette.surfaceBorder(
-            context,
-            _HighlightNoteDialogTokens.previewBorderAlpha,
-          ),
+          color: _HighlightDialogPalette.previewBorder(context, highlightColor),
           width: 1,
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 18,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 1),
-              child: Icon(
-                NyanIcons.quote,
-                size: 15,
-                color: quoteColor.withValues(alpha: 0.88),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Vertical accent bar — stretches to match text height.
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Container(
+                width: 2.5,
+                decoration: BoxDecoration(
+                  color: inkColor.withValues(alpha: 0.65),
+                  borderRadius: BorderRadius.circular(99),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              text,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontSize: 13.8,
-                fontWeight: FontWeight.w500,
-                height: 1.36,
-                color: primaryText.withValues(alpha: 0.9),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w500,
+                  height: 1.38,
+                  color: nyan.textPrimary.withValues(alpha: 0.88),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -673,7 +518,10 @@ class _NoteInputCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final primaryText = context.nyanTheme.textPrimary.withValues(alpha: 0.94);
+    final nyan = context.nyanTheme;
+    final primaryText = nyan.textPrimary.withValues(alpha: 0.94);
+    // Solid blend: 88% surfaceMuted + 12% surface (matches spec's color-mix).
+    final inputBg = Color.lerp(nyan.surface, nyan.surfaceMuted, 0.88)!;
     final mergedListenable = Listenable.merge([focusNode, controller]);
 
     return ListenableBuilder(
@@ -682,12 +530,8 @@ class _NoteInputCard extends StatelessWidget {
         final isFocused = focusNode.hasFocus;
         final hasText = controller.text.isNotEmpty;
         final borderColor = isFocused
-            ? NyanOverlayStyle.mutedBrandOlive(context).withValues(alpha: 0.16)
-            : _HighlightDialogPalette.surfaceBorder(
-                context,
-                _HighlightNoteDialogTokens.inputBorderAlpha,
-              );
-        final inputSurface = _HighlightDialogPalette.inputSurface(context);
+            ? nyan.primary.withValues(alpha: 0.30)
+            : nyan.divider.withValues(alpha: 0.42);
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 160),
@@ -696,24 +540,13 @@ class _NoteInputCard extends StatelessWidget {
           constraints: const BoxConstraints(
             minHeight: _HighlightNoteDialogTokens.inputMinHeight,
           ),
-          padding: const EdgeInsets.fromLTRB(
-            _HighlightNoteDialogTokens.inputPadding,
-            12,
-            _HighlightNoteDialogTokens.inputPadding,
-            12,
+          padding: const EdgeInsets.symmetric(
+            horizontal: _HighlightNoteDialogTokens.inputPadding,
+            vertical: 12,
           ),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color.lerp(inputSurface, theme.colorScheme.surface, 0.08)!,
-                inputSurface,
-              ],
-            ),
-            borderRadius: BorderRadius.circular(
-              _HighlightNoteDialogTokens.inputRadius,
-            ),
+            color: inputBg,
+            borderRadius: BorderRadius.circular(_HighlightNoteDialogTokens.inputRadius),
             border: Border.all(color: borderColor, width: 1),
           ),
           child: SizedBox(
@@ -732,9 +565,7 @@ class _NoteInputCard extends StatelessWidget {
                           fontWeight: FontWeight.w400,
                           height: 1.44,
                           letterSpacing: 0.05,
-                          color: context.nyanTheme.textSecondary.withValues(
-                            alpha: 0.74,
-                          ),
+                          color: nyan.textSecondary.withValues(alpha: 0.74),
                         ),
                       ),
                     ),
@@ -784,15 +615,11 @@ class _NoteInputCard extends StatelessWidget {
 class _DeleteIconButton extends StatelessWidget {
   const _DeleteIconButton({
     required this.semanticLabel,
-    required this.color,
     required this.onTap,
-    required this.backgroundColor,
   });
 
   final String semanticLabel;
-  final Color color;
   final VoidCallback onTap;
-  final Color backgroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -800,171 +627,18 @@ class _DeleteIconButton extends StatelessWidget {
       button: true,
       label: semanticLabel,
       child: Material(
-        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0),
+        color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(NyanRadius.control),
           child: SizedBox(
             width: _HighlightNoteDialogTokens.iconButtonTapSize,
             height: _HighlightNoteDialogTokens.iconButtonTapSize,
             child: Center(
-              child: Ink(
-                width: _HighlightNoteDialogTokens.iconButtonVisualSize,
-                height: _HighlightNoteDialogTokens.iconButtonVisualSize,
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: _HighlightDialogPalette.surfaceBorder(
-                      context,
-                      _HighlightNoteDialogTokens.deleteBorderAlpha,
-                    ),
-                    width: 1,
-                  ),
-                ),
-                child: Center(
-                  child: Icon(
-                    NyanIcons.delete,
-                    size: 13,
-                    color: color.withValues(alpha: 0.86),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DialogActionRow extends StatelessWidget {
-  const _DialogActionRow({
-    required this.cancelLabel,
-    required this.saveLabel,
-    required this.primaryText,
-    required this.surfaceColor,
-    required this.onCancel,
-    required this.onSave,
-  });
-
-  final String cancelLabel;
-  final String saveLabel;
-  final Color primaryText;
-  final Color surfaceColor;
-  final VoidCallback onCancel;
-  final VoidCallback onSave;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 320;
-        final isTight = constraints.maxWidth < 360;
-        final gap = isTight ? NyanSpacing.space8 : 10.0;
-        final cancelPadding = isTight ? 18.0 : 20.0;
-        final savePadding = isTight ? 22.0 : 24.0;
-        final buttonGroup = Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _DialogActionButton(
-              label: cancelLabel,
-              onTap: onCancel,
-              backgroundColor: Color.alphaBlend(
-                context.nyanTheme.textSecondary.withValues(alpha: 0.026),
-                surfaceColor,
-              ),
-              borderColor: _HighlightDialogPalette.surfaceBorder(
-                context,
-                _HighlightNoteDialogTokens.cancelBorderAlpha,
-              ),
-              foregroundColor: primaryText,
-              fontWeight: FontWeight.w600,
-              horizontalPadding: cancelPadding,
-            ),
-            SizedBox(width: gap),
-            _DialogActionButton(
-              label: saveLabel,
-              onTap: onSave,
-              backgroundColor: NyanOverlayStyle.brandOlive(context),
-              borderColor: NyanOverlayStyle.brandOlive(context),
-              foregroundColor: Theme.of(context)
-                  .colorScheme
-                  .onPrimary
-                  .withValues(alpha: 0.97),
-              fontWeight: FontWeight.w700,
-              horizontalPadding: savePadding,
-            ),
-          ],
-        );
-
-        if (isCompact) {
-          return Align(
-            alignment: Alignment.centerRight,
-            child: buttonGroup,
-          );
-        }
-
-        return Align(
-          alignment: Alignment.centerRight,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerRight,
-            child: buttonGroup,
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _DialogActionButton extends StatelessWidget {
-  const _DialogActionButton({
-    required this.label,
-    required this.onTap,
-    required this.backgroundColor,
-    required this.borderColor,
-    required this.foregroundColor,
-    required this.fontWeight,
-    required this.horizontalPadding,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final Color backgroundColor;
-  final Color borderColor;
-  final Color foregroundColor;
-  final FontWeight fontWeight;
-  final double horizontalPadding;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(
-          _HighlightNoteDialogTokens.buttonRadius,
-        ),
-        child: Ink(
-          height: _HighlightNoteDialogTokens.buttonHeight,
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(
-              _HighlightNoteDialogTokens.buttonRadius,
-            ),
-            border: Border.all(color: borderColor, width: 1),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontSize: 16,
-                fontWeight: fontWeight,
-                color: foregroundColor,
+              child: Icon(
+                NyanIcons.delete,
+                size: 19,
+                color: context.nyanTheme.textMuted,
               ),
             ),
           ),

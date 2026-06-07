@@ -72,7 +72,7 @@ class NyanIcons {
   static const IconData upload = PhosphorIconsRegular.uploadSimple;
   static const IconData save = PhosphorIconsRegular.floppyDisk;
   static const IconData folderOpen = PhosphorIconsRegular.folderOpen;
-  static const IconData editNote = PhosphorIconsRegular.pencilSimpleLine;
+  static const IconData editNote = PhosphorIconsRegular.pencilLine;
 
   /// Covers Material `Icons.format_quote_rounded` — pull-quote glyph used in
   /// the highlight note dialog and similar excerpt UIs.
