@@ -269,6 +269,7 @@
     }
   },
   "readerDockChapters": "目录",
+  "readerDockHighlights": "高亮",
   "jumpToCurrentChapter": "定位当前章节",
   "chapterListProgressLabel": "已读 {current} / {total} 章",
   "@chapterListProgressLabel": {

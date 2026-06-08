@@ -670,6 +670,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerDockChapters => 'Chapters';
 
   @override
+  String get readerDockHighlights => 'Highlights';
+
+  @override
   String get jumpToCurrentChapter => 'Jump to current chapter';
 
   @override

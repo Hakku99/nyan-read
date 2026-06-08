@@ -51,6 +51,7 @@ class NyanIcons {
   static const IconData bookmarkAdded = PhosphorIconsFill.bookmarkSimple;
   static const IconData bookmarks = PhosphorIconsRegular.bookmarksSimple;
   static const IconData tableOfContents = PhosphorIconsRegular.listBullets;
+  static const IconData highlights = PhosphorIconsRegular.highlighter;
 
   // ── Common actions ──────────────────────────────────────────────────────
   static const IconData add = PhosphorIconsRegular.plus;

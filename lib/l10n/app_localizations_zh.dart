@@ -642,6 +642,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerDockChapters => '目录';
 
   @override
+  String get readerDockHighlights => '高亮';
+
+  @override
   String get jumpToCurrentChapter => '定位当前章节';
 
   @override

@@ -12,6 +12,7 @@ import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
 import '../bookmark/bookmark_list_page.dart';
+import '../notes/notes_list_page.dart';
 import 'reader_engine/reader_engine.dart';
 import 'widgets/reader_error_view.dart';
 import 'widgets/highlight_note_dialog.dart';
@@ -638,6 +639,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       case DockAction.chapters:
         return loc.readerDockChapters;
       case DockAction.bookmarks:
+      case DockAction.highlights:
       case null:
         return null;
     }
@@ -656,6 +658,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       case DockAction.chapters:
         return loc.chapterCount(controller.chapters.length);
       case DockAction.bookmarks:
+      case DockAction.highlights:
       case null:
         return null;
     }
@@ -692,13 +695,14 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           },
         );
       case DockAction.bookmarks:
+      case DockAction.highlights:
       case null:
         return null;
     }
   }
 
   /// Dispatch a dock footer action: chapters/settings grow the dock in place;
-  /// bookmarks pushes a destination page (and first collapses any open sheet).
+  /// bookmarks and highlights push destination pages (collapsing any open sheet first).
   void _handleDockAction(
     DockAction action,
     BuildContext context,
@@ -708,6 +712,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       case DockAction.bookmarks:
         _collapseSheet();
         unawaited(_openBookmarksPage(context, controller));
+      case DockAction.highlights:
+        _collapseSheet();
+        unawaited(_openHighlightsPage(context, controller));
       case DockAction.chapters:
       case DockAction.settings:
         _toggleSheet(action, controller);
@@ -828,6 +835,33 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     );
     if (result != null && result is Map<String, dynamic>) {
       await controller.handleBookmarkSelection(result);
+    }
+  }
+
+  Future<void> _openHighlightsPage(
+    BuildContext context,
+    ReaderController controller,
+  ) async {
+    _setControlsVisible(false);
+    // NotesListPage pops with the tapped Highlight when onJumpToHighlight is
+    // non-null. Passing a no-op enables the tap-to-navigate affordance; the
+    // actual jump is handled here after the page returns.
+    final result = await Navigator.push<Highlight>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NotesListPage(
+          bookId: controller.book.id,
+          bookTitle: controller.book.title,
+          onJumpToHighlight: (_) {},
+        ),
+      ),
+    );
+    if (result != null && !mounted) return;
+    if (result != null) {
+      await controller.handleBookmarkSelection({
+        'position_type': controller.book.format,
+        'position_payload': '{"paragraphIndex": ${result.paragraphIndex}}',
+      });
     }
   }
 

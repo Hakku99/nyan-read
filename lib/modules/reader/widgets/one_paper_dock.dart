@@ -10,9 +10,9 @@ import '../../../core/ui/nyan_icons.dart';
 import '../../../core/ui/nyan_theme_context.dart';
 import '../../../l10n/app_localizations.dart';
 
-/// The three persistent dock actions. Brightness intentionally lives elsewhere
+/// The four persistent dock actions. Brightness intentionally lives elsewhere
 /// (top-bar sun popover + left-edge vertical drag), per the One Paper model.
-enum DockAction { chapters, bookmarks, settings }
+enum DockAction { chapters, bookmarks, highlights, settings }
 
 // Animation tokens (colors_and_type.css):
 //   --dur-grow 320ms · --dur-chrome 280ms · --ease-paper cubic(0.33,0.9,0.36,1)
@@ -400,10 +400,17 @@ class DockFooter extends StatelessWidget {
           ),
           _ActionTile(
             action: DockAction.bookmarks,
-            icon: NyanIcons.bookmarks,
+            icon: NyanIcons.bookmark,
             label: loc.bookmarks,
             selected: activeAction == DockAction.bookmarks,
             onTap: () => onAction(DockAction.bookmarks),
+          ),
+          _ActionTile(
+            action: DockAction.highlights,
+            icon: NyanIcons.highlights,
+            label: loc.readerDockHighlights,
+            selected: activeAction == DockAction.highlights,
+            onTap: () => onAction(DockAction.highlights),
           ),
           _ActionTile(
             action: DockAction.settings,

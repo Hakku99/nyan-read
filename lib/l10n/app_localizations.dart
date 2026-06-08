@@ -1316,11 +1316,17 @@ abstract class AppLocalizations {
   /// **'Chapter {current} of {total}'**
   String chapterOfCount(int current, int total);
 
-  /// Short label for the Chapters tile in the reader bottom dock (must fit alongside 3 other tiles in a narrow strip).
+  /// Short label for the Chapters tile in the reader bottom dock (must fit alongside 4 other tiles in a narrow strip).
   ///
   /// In en, this message translates to:
   /// **'Chapters'**
   String get readerDockChapters;
+
+  /// Short label for the Highlights tile in the reader bottom dock (must fit alongside 3 other tiles in a narrow strip).
+  ///
+  /// In en, this message translates to:
+  /// **'Highlights'**
+  String get readerDockHighlights;
 
   /// No description provided for @jumpToCurrentChapter.
   ///

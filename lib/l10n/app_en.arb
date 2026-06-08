@@ -281,7 +281,11 @@
   },
   "readerDockChapters": "Chapters",
   "@readerDockChapters": {
-    "description": "Short label for the Chapters tile in the reader bottom dock (must fit alongside 3 other tiles in a narrow strip)."
+    "description": "Short label for the Chapters tile in the reader bottom dock (must fit alongside 4 other tiles in a narrow strip)."
+  },
+  "readerDockHighlights": "Highlights",
+  "@readerDockHighlights": {
+    "description": "Short label for the Highlights tile in the reader bottom dock (must fit alongside 3 other tiles in a narrow strip)."
   },
   "jumpToCurrentChapter": "Jump to current chapter",
   "chapterListProgressLabel": "{current} / {total} chapters",
