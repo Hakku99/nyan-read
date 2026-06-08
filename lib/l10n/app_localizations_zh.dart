@@ -771,16 +771,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get neverRead => '从未阅读';
 
   @override
-  String get errorFileNotFound => '这本书好像迷路了。\n找不到源文件，它可能已被移动或删除。';
+  String get errorFileNotFoundTitle => '这本书迷路了';
 
   @override
-  String get errorUnsupportedFormat => 'Nyan 还不能读取这种格式。\n当前暂不支持该文件类型。';
+  String get errorFileNotFoundBody => '找不到源文件——它可能已被移动或删除。';
 
   @override
-  String get errorParseFailed => '书页像是粘在一起了。\n文件解析失败，可能已经损坏。';
+  String get errorUnsupportedFormatTitle => 'Nyan 还不能读取这种格式';
 
   @override
-  String get errorUnknown => '发生了意外错误。\n请稍后再试。';
+  String get errorUnsupportedFormatBody => '暂不支持该文件类型。';
+
+  @override
+  String get errorParseFailedTitle => '书页像是粘在一起了';
+
+  @override
+  String get errorParseFailedBody => '无法打开此文件，它可能已损坏。';
+
+  @override
+  String get errorUnknownTitle => '出了点问题';
+
+  @override
+  String get errorUnknownBody => '发生了意外错误，请稍后再试。';
 
   @override
   String get emptyShelfTitle => '书架正在等待新的故事';

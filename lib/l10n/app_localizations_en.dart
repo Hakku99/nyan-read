@@ -287,13 +287,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
-  String get reportToDeveloper => 'Report to Developer';
+  String get reportToDeveloper => 'Report to developer';
 
   @override
-  String get showTechnicalDetails => 'Show Technical Details';
+  String get showTechnicalDetails => 'Show technical details';
 
   @override
-  String get hideTechnicalDetails => 'Hide Technical Details';
+  String get hideTechnicalDetails => 'Hide technical details';
 
   @override
   String get couldNotLaunchEmail => 'Could not launch email client';
@@ -808,20 +808,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get neverRead => 'Never read';
 
   @override
-  String get errorFileNotFound =>
-      'This book seems to have lost its way.\nThe file cannot be found, it may have been moved or deleted.';
+  String get errorFileNotFoundTitle => 'This book lost its way';
 
   @override
-  String get errorUnsupportedFormat =>
-      'Nyan cannot read this format.\nThis file type is not supported yet.';
+  String get errorFileNotFoundBody =>
+      'The file can\'t be found — it may have been moved or deleted.';
 
   @override
-  String get errorParseFailed =>
-      'The pages are stuck together.\nThis file may be corrupted or incomplete.';
+  String get errorUnsupportedFormatTitle => 'Nyan can\'t read this format';
 
   @override
-  String get errorUnknown =>
-      'Something unexpected happened.\nPlease try again later.';
+  String get errorUnsupportedFormatBody =>
+      'This file type isn\'t supported yet.';
+
+  @override
+  String get errorParseFailedTitle => 'These pages are stuck together';
+
+  @override
+  String get errorParseFailedBody =>
+      'We couldn\'t open this file. It might be corrupted.';
+
+  @override
+  String get errorUnknownTitle => 'Something went wrong';
+
+  @override
+  String get errorUnknownBody =>
+      'An unexpected error occurred. Please try again.';
 
   @override
   String get emptyShelfTitle => 'Bookshelf is waiting for stories';

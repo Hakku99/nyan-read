@@ -93,6 +93,16 @@ class NyanIcons {
   static const IconData warning = PhosphorIconsRegular.warning;
   static const IconData error = PhosphorIconsRegular.warningCircle;
   static const IconData bug = PhosphorIconsRegular.bug;
+
+  /// Used for the "Report to developer" button in error screens (ph-bug-beetle).
+  static const IconData bugBeetle = PhosphorIconsRegular.bugBeetle;
+
+  /// Used for the "File not found" error state icon (ph-compass).
+  static const IconData compass = PhosphorIconsRegular.compass;
+
+  /// Used for the "Unsupported format" error state icon (ph-file-dashed).
+  static const IconData fileDashed = PhosphorIconsRegular.fileDashed;
+
   static const IconData block = PhosphorIconsRegular.prohibit;
 
   // ── View / Visual ───────────────────────────────────────────────────────

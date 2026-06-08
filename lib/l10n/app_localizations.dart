@@ -647,19 +647,19 @@ abstract class AppLocalizations {
   /// No description provided for @reportToDeveloper.
   ///
   /// In en, this message translates to:
-  /// **'Report to Developer'**
+  /// **'Report to developer'**
   String get reportToDeveloper;
 
   /// No description provided for @showTechnicalDetails.
   ///
   /// In en, this message translates to:
-  /// **'Show Technical Details'**
+  /// **'Show technical details'**
   String get showTechnicalDetails;
 
   /// No description provided for @hideTechnicalDetails.
   ///
   /// In en, this message translates to:
-  /// **'Hide Technical Details'**
+  /// **'Hide technical details'**
   String get hideTechnicalDetails;
 
   /// No description provided for @couldNotLaunchEmail.
@@ -1532,29 +1532,53 @@ abstract class AppLocalizations {
   /// **'Never read'**
   String get neverRead;
 
-  /// No description provided for @errorFileNotFound.
+  /// No description provided for @errorFileNotFoundTitle.
   ///
   /// In en, this message translates to:
-  /// **'This book seems to have lost its way.\nThe file cannot be found, it may have been moved or deleted.'**
-  String get errorFileNotFound;
+  /// **'This book lost its way'**
+  String get errorFileNotFoundTitle;
 
-  /// No description provided for @errorUnsupportedFormat.
+  /// No description provided for @errorFileNotFoundBody.
   ///
   /// In en, this message translates to:
-  /// **'Nyan cannot read this format.\nThis file type is not supported yet.'**
-  String get errorUnsupportedFormat;
+  /// **'The file can\'t be found — it may have been moved or deleted.'**
+  String get errorFileNotFoundBody;
 
-  /// No description provided for @errorParseFailed.
+  /// No description provided for @errorUnsupportedFormatTitle.
   ///
   /// In en, this message translates to:
-  /// **'The pages are stuck together.\nThis file may be corrupted or incomplete.'**
-  String get errorParseFailed;
+  /// **'Nyan can\'t read this format'**
+  String get errorUnsupportedFormatTitle;
 
-  /// No description provided for @errorUnknown.
+  /// No description provided for @errorUnsupportedFormatBody.
   ///
   /// In en, this message translates to:
-  /// **'Something unexpected happened.\nPlease try again later.'**
-  String get errorUnknown;
+  /// **'This file type isn\'t supported yet.'**
+  String get errorUnsupportedFormatBody;
+
+  /// No description provided for @errorParseFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'These pages are stuck together'**
+  String get errorParseFailedTitle;
+
+  /// No description provided for @errorParseFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t open this file. It might be corrupted.'**
+  String get errorParseFailedBody;
+
+  /// No description provided for @errorUnknownTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get errorUnknownTitle;
+
+  /// No description provided for @errorUnknownBody.
+  ///
+  /// In en, this message translates to:
+  /// **'An unexpected error occurred. Please try again.'**
+  String get errorUnknownBody;
 
   /// No description provided for @emptyShelfTitle.
   ///

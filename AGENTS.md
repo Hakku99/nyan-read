@@ -248,6 +248,14 @@
 creamLight `errorBackground #FBF2EC` / `errorPrimary #A85A38` / `errorSecondary #8A6A55` / `errorAccent #ECD9CC`；
 sumiDark `#241D18` / `#D89B7E` / `#B6967F` / `#3A2D24`。
 
+> **U8 Reader Error View 用色说明（2026-06，来源 `bundle2-screens.jsx` `ErrorView`）**：
+> - **页面背景**：错误页使用 `nyan.background`（标准页底色），**MUST NOT** 用 `errorBackground`。
+> - **图标容器底色**：`Color.lerp(nyan.surface, errorPrimary, 0.08)` — 对应 CSS `color-mix(in srgb, var(--error-primary) 8%, var(--nyan-surface))`。
+> - **图标容器描边**：`errorPrimary.withValues(alpha: 0.22)`（0.7px 描边）。
+> - **Retry 按钮**：`NyanPrimaryButton(variant: primary)` — 抹茶绿，**MUST NOT** 用 `errorAccent`。
+> - **Report 按钮**：`NyanIcons.bugBeetle`（`ph-bug-beetle`）+ `nyan.textMuted`。
+> - `errorBackground` token 保留备用；**MUST NOT** 用作全屏错误页背景。
+
 **原子常量（只在 `nyan_colors.dart` 与 `theme_presets.dart` 内部使用，业务代码 MUST NOT 直接引用）：**
 
 - cream 系列：`creamBackground / creamSurface / creamSurfaceMuted / creamPrimary / creamPrimaryDeep / creamTextMain / creamTextSecondary / creamTextMuted / creamDivider`
@@ -330,6 +338,8 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 > **例外 — 书架列表行微标签（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `BookListRow`）**：list-view 书行的两个微标签低于字号阶梯——格式徽标（TXT / EPUB / PDF）**9pt w600**，尾部阅读百分比 **11pt monospace**（`NyanTypography.monoFontFamily`）。这两个值是**书架列表行专属**——**MUST NOT** 出现在正文、标题或任何其它表面。常量定义见 `NyanTypography.shelfFormatChip`（9）/ `NyanTypography.shelfProgressLabel`（11）。§4.6 交付包优先。
 
 > **例外 — Privacy PIN 键盘字号（交付包对齐，2026-06，来源 `screens/bundle4.jsx` `NumPad`）**：U16 全屏 PIN 键盘的数字键使用 **26pt w400**、退格图标 **22pt**，均落在 6 档阶梯之外（§4.6 交付包优先）。这两个值是 `PinInputWidget` 键盘**专属**——**MUST NOT** 出现在正文、标题或任何其它表面。常量定义见 `NyanTypography.pinKeyDigit`（26）/ `NyanTypography.pinKeyGlyph`（22）。
+
+> **例外 — Reader Error View 字号（交付包对齐，2026-06，来源 `screens/bundle2-screens.jsx` `ErrorView`）**：U8 错误视图的标题使用 **18pt w600**（`font: "600 18px/1.25"`），正文使用 **14pt w400**（`font: "400 14px/1.5"`），两者均落在 6 档阶梯之外（§4.6 交付包优先）。这两个值是 `ReaderErrorView` **专属**——**MUST NOT** 出现在正文列表行、卡片或其它表面。
 
 > ✅ **字体已注册（§6 Phase 0 已完成）**：`pubspec.yaml` 的 `flutter.fonts` 段已声明 `Noto Sans SC`（400/500/600）+ `Source Han Serif SC`（400/600）；字体文件存放于 `assets/fonts/`，**未纳入 Git**（体积原因）。开发者需按 `assets/fonts/README.md` 说明手动放置字体文件。缺少字体时 Flutter 打印 warning 并回落平台字体，不影响编译；但 serif 阅读模式仅在字体文件就位后生效。
 
