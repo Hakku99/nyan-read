@@ -83,11 +83,11 @@ flutter:
   fonts:
     - family: Noto Sans SC
       fonts:
-        - asset: assets/fonts/NotoSansSC-Regular.ttf
+        - asset: assets/fonts/subset/NotoSansSC-Regular.ttf
           weight: 400
-        - asset: assets/fonts/NotoSansSC-Medium.ttf
+        - asset: assets/fonts/subset/NotoSansSC-Medium.ttf
           weight: 500
-        - asset: assets/fonts/NotoSansSC-SemiBold.ttf
+        - asset: assets/fonts/subset/NotoSansSC-SemiBold.ttf
           weight: 600
     - family: Source Han Serif SC
       fonts:
