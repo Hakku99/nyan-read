@@ -428,57 +428,16 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   }
 
   Future<void> _showSetPasswordDialog(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
-    final created = await showNyanSecureEntryDialog(
-      context,
-      title: loc.setPrivacyPassword,
-      fields: [
-        NyanSecureFieldConfig(
-          label: loc.password,
-          controller: TextEditingController(),
-          autofocus: true,
-        ),
-        NyanSecureFieldConfig(
-          label: loc.confirmPassword,
-          controller: TextEditingController(),
-        ),
-      ],
-      confirmLabel: loc.save,
-      cancelLabel: loc.cancel,
-      onConfirm: (values) async {
-        if (values[0].isEmpty || values[0] != values[1]) {
-          return loc.passwordsDoNotMatch;
-        }
-        await PrivacyLockService().setPassword(values[0]);
-        return null;
-      },
-    );
-
+    // Full-screen PIN takeover (U16) — set→confirm. PrivacyLockService stores a
+    // 4-digit hashed PIN, so the numeric keypad is the canonical entry surface.
+    final created = await PrivacyLockService().showPinSetup(context);
     if (created == true && mounted) {
       _unlockPrivateShelfAfterRouteSettles();
     }
   }
 
   Future<void> _showEnterPasswordDialog(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
-    final unlocked = await showNyanSecureEntryDialog(
-      context,
-      title: loc.unlockPrivacyShelfTitle,
-      fields: [
-        NyanSecureFieldConfig(
-          label: loc.password,
-          controller: TextEditingController(),
-          autofocus: true,
-        ),
-      ],
-      confirmLabel: loc.unlock,
-      cancelLabel: loc.cancel,
-      onConfirm: (values) async {
-        final isValid = await PrivacyLockService().verifyPassword(values[0]);
-        return isValid ? null : loc.invalidPassword;
-      },
-    );
-
+    final unlocked = await PrivacyLockService().showPinVerify(context);
     if (unlocked == true && mounted) {
       _unlockPrivateShelfAfterRouteSettles();
     }

@@ -484,6 +484,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get unlock => '解锁';
 
   @override
+  String get pinEnter => '输入 PIN';
+
+  @override
+  String get pinSet => '设置 PIN';
+
+  @override
+  String get pinConfirm => '确认 PIN';
+
+  @override
+  String get pinMismatch => '两次 PIN 不一致，请重试';
+
+  @override
   String get fontSize => '字体大小';
 
   @override

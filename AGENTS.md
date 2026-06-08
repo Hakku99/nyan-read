@@ -266,6 +266,8 @@ sumiDark `#241D18` / `#D89B7E` / `#B6967F` / `#3A2D24`。
 
 **特殊状态色**（只在 `NyanTheme` 内定义）：`successColor` / `warningColor` / `infoColor` / 4 个 `errorXxx` / 2 个 `fabXxx`，业务代码通过 `Theme.of(context).extension<NyanTheme>()!.successColor` 等访问。
 
+> **例外 — Privacy PIN 全屏遮罩深色墨（交付包对齐，2026-06，来源 `screens/bundle4.jsx` `PinOverlay`）**：U16 全屏 PIN 遮罩的**深色变体**使用一组**专属墨色字面值**——页底 `#1D211E`、前景墨 `#E8E1D5`——与交付包 mock 严格一致（mock 没有复用标准 sumi token `#181B16` / `#ECE6DB`，而是另选了这两个略偏橄榄的近黑/暖白）。这两个值游离于两套 `NyanTheme` 预设之外，故定义在 `NyanColors.pinOverlayInkBackground` / `pinOverlayInk`，并**仅由** PIN 遮罩组件（`PinOverlayPage` / `PinInputWidget`）直接引用。**亮色变体仍走 `NyanTheme` token**（`background` / `textPrimary` / `textMuted` / `primary` / `primaryDeep`）。这是 §2.2.3"业务 Widget MUST NOT 直接引用原子色常量"的一处**显式豁免**，仅限此遮罩。
+
 #### 4.2.2 圆角 — `lib/core/theme/nyan_radius.dart`
 
 **One Paper 同心圆角家族（2026-06 设计系统对齐）**，由内向外随高度递增：
@@ -326,6 +328,8 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 > **例外 — Import Sheet "Supported Formats" 节标签字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `ImportSheet`）**：`ImportBookSheet` 的 Supported Formats 节标题使用 **15pt w500**（来源：`bundle3.jsx` `font: "500 15px/1.2"`）。此值介于阶梯 `body 16` 与 `meta 13` 之间（§4.6 交付包优先）。此例外**仅限** `ImportBookSheet` 内的该节标题，**MUST NOT** 出现在其它表面。
 
 > **例外 — 书架列表行微标签（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `BookListRow`）**：list-view 书行的两个微标签低于字号阶梯——格式徽标（TXT / EPUB / PDF）**9pt w600**，尾部阅读百分比 **11pt monospace**（`NyanTypography.monoFontFamily`）。这两个值是**书架列表行专属**——**MUST NOT** 出现在正文、标题或任何其它表面。常量定义见 `NyanTypography.shelfFormatChip`（9）/ `NyanTypography.shelfProgressLabel`（11）。§4.6 交付包优先。
+
+> **例外 — Privacy PIN 键盘字号（交付包对齐，2026-06，来源 `screens/bundle4.jsx` `NumPad`）**：U16 全屏 PIN 键盘的数字键使用 **26pt w400**、退格图标 **22pt**，均落在 6 档阶梯之外（§4.6 交付包优先）。这两个值是 `PinInputWidget` 键盘**专属**——**MUST NOT** 出现在正文、标题或任何其它表面。常量定义见 `NyanTypography.pinKeyDigit`（26）/ `NyanTypography.pinKeyGlyph`（22）。
 
 > ✅ **字体已注册（§6 Phase 0 已完成）**：`pubspec.yaml` 的 `flutter.fonts` 段已声明 `Noto Sans SC`（400/500/600）+ `Source Han Serif SC`（400/600）；字体文件存放于 `assets/fonts/`，**未纳入 Git**（体积原因）。开发者需按 `assets/fonts/README.md` 说明手动放置字体文件。缺少字体时 Flutter 打印 warning 并回落平台字体，不影响编译；但 serif 阅读模式仅在字体文件就位后生效。
 

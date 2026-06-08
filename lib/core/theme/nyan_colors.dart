@@ -164,6 +164,20 @@ class NyanColors {
   static const Color confirmBadgeBorder = Color(0x6BDCE4D3);
 
   // ===========================================================================
+  // Privacy PIN overlay — dark takeover ink (U16 handoff, AGENTS.md §4.2.1)
+  // The full-screen PIN overlay's DARK variant uses bespoke ink literals that
+  // sit OUTSIDE both NyanTheme presets, matching the U16 mock exactly (the mock
+  // hardcodes #1D211E / #E8E1D5 rather than the standard sumi tokens
+  // #181B16 / #ECE6DB). Referenced directly only by the PIN overlay widgets.
+  // Source: screens/bundle4.jsx `PinOverlay` (dark branch).
+  // ===========================================================================
+  /// Dark takeover page-void background (mock `bg`, dark branch).
+  static const Color pinOverlayInkBackground = Color(0xFF1D211E);
+
+  /// Dark takeover foreground ink — title, dots, keypad glyphs (mock `fg`).
+  static const Color pinOverlayInk = Color(0xFFE8E1D5);
+
+  // ===========================================================================
   // Misc fallbacks
   // ===========================================================================
   static const Color readerLabelFallbackDark = Color(0xFF3D3D3D);

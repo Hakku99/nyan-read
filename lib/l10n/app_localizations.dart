@@ -1022,6 +1022,30 @@ abstract class AppLocalizations {
   /// **'Unlock'**
   String get unlock;
 
+  /// No description provided for @pinEnter.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter PIN'**
+  String get pinEnter;
+
+  /// No description provided for @pinSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Set PIN'**
+  String get pinSet;
+
+  /// No description provided for @pinConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm PIN'**
+  String get pinConfirm;
+
+  /// No description provided for @pinMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'PINs don\'t match — try again'**
+  String get pinMismatch;
+
   /// No description provided for @fontSize.
   ///
   /// In en, this message translates to:

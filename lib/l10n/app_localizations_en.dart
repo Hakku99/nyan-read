@@ -509,6 +509,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unlock => 'Unlock';
 
   @override
+  String get pinEnter => 'Enter PIN';
+
+  @override
+  String get pinSet => 'Set PIN';
+
+  @override
+  String get pinConfirm => 'Confirm PIN';
+
+  @override
+  String get pinMismatch => 'PINs don\'t match — try again';
+
+  @override
   String get fontSize => 'Font Size';
 
   @override

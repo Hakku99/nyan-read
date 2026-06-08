@@ -46,6 +46,17 @@ class NyanTypography {
   static const double shelfFormatChip = 9;
   static const double shelfProgressLabel = 11;
 
+  /// Privacy PIN overlay keypad glyph sizes — design-system handoff exception
+  /// (see AGENTS.md §4.2.5). Reserved for the U16 PIN keypad ONLY:
+  ///   [pinKeyDigit] → 26pt, the 0–9 keypad digits
+  ///   [pinKeyGlyph] → 22pt, the backspace glyph
+  /// Both sit off the 6-step ladder; they MUST NOT appear in body copy,
+  /// headings, or any other surface.
+  ///
+  /// Source: `nyan-read-design-system/project/screens/bundle4.jsx` `NumPad`
+  static const double pinKeyDigit = 26;
+  static const double pinKeyGlyph = 22;
+
   /// Olive uppercase eyebrow label — 11pt / w500 / +0.22 letter-spacing.
   /// Pass [color] as `nyan.primaryDeep` from the active [NyanTheme].
   /// Use only for section eyebrows above grouped cards / reader settings headers.
