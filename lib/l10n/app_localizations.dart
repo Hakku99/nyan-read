@@ -680,6 +680,12 @@ abstract class AppLocalizations {
   /// **'File not found'**
   String get fileNotFound;
 
+  /// No description provided for @fileUnavailableCta.
+  ///
+  /// In en, this message translates to:
+  /// **'File unavailable'**
+  String get fileUnavailableCta;
+
   /// No description provided for @unknown.
   ///
   /// In en, this message translates to:

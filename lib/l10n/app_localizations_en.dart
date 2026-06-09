@@ -306,6 +306,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fileNotFound => 'File not found';
 
   @override
+  String get fileUnavailableCta => 'File unavailable';
+
+  @override
   String get unknown => 'Unknown';
 
   @override

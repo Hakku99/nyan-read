@@ -302,6 +302,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fileNotFound => '文件未找到';
 
   @override
+  String get fileUnavailableCta => '文件不可用';
+
+  @override
   String get unknown => '未知';
 
   @override

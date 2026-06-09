@@ -104,6 +104,7 @@
   "filePathCopied": "文件路径已复制到剪贴板",
   "fileExists": "文件存在",
   "fileNotFound": "文件未找到",
+  "fileUnavailableCta": "文件不可用",
   "unknown": "未知",
   "never": "从未",
   "backToBookshelf": "返回书架",

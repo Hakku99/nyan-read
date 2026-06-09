@@ -104,6 +104,7 @@
   "filePathCopied": "File path copied to clipboard",
   "fileExists": "File exists",
   "fileNotFound": "File not found",
+  "fileUnavailableCta": "File unavailable",
   "unknown": "Unknown",
   "never": "Never",
   "backToBookshelf": "Back to Bookshelf",
