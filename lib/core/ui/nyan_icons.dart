@@ -179,4 +179,8 @@ class NyanIcons {
   // ── Misc ────────────────────────────────────────────────────────────────
   static const IconData pets = PhosphorIconsRegular.pawPrint;
   static const IconData myLocation = PhosphorIconsRegular.crosshair;
+
+  /// Compact crosshair (no outer ring) — used by the "Jump to current" FAB
+  /// in the Chapters sheet. `ph-crosshair-simple` per design spec.
+  static const IconData jumpToCurrent = PhosphorIconsRegular.crosshairSimple;
 }

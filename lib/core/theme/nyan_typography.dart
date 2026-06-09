@@ -57,6 +57,15 @@ class NyanTypography {
   static const double pinKeyDigit = 26;
   static const double pinKeyGlyph = 22;
 
+  /// "Jump to current" floating action button label — design-system handoff
+  /// exception (see AGENTS.md §4.2.5). Reserved for the Chapters-sheet FAB
+  /// label ONLY. Sits between [meta] 13 and [buttonCompact] 14; it MUST NOT
+  /// appear in body copy, headings, list rows, or any other surface.
+  ///
+  /// Source: `screens/bundle1.jsx` `ChapterDockSheet` button span
+  ///   `font: "600 13.5px/1"`
+  static const double fabLabel = 13.5;
+
   /// Olive uppercase eyebrow label — 11pt / w500 / +0.22 letter-spacing.
   /// Pass [color] as `nyan.primaryDeep` from the active [NyanTheme].
   /// Use only for section eyebrows above grouped cards / reader settings headers.

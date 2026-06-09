@@ -704,7 +704,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readerDockHighlights => 'Highlights';
 
   @override
-  String get jumpToCurrentChapter => 'Jump to current chapter';
+  String get jumpToCurrentChapter => 'Jump to current';
 
   @override
   String chapterListProgressLabel(int current, int total) {

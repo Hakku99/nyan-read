@@ -1391,7 +1391,7 @@ abstract class AppLocalizations {
   /// No description provided for @jumpToCurrentChapter.
   ///
   /// In en, this message translates to:
-  /// **'Jump to current chapter'**
+  /// **'Jump to current'**
   String get jumpToCurrentChapter;
 
   /// No description provided for @chapterListProgressLabel.

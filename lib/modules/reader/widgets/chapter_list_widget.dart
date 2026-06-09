@@ -3,6 +3,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nyan_read/core/theme/nyan_radius.dart';
+import 'package:nyan_read/core/theme/nyan_shadows.dart';
 import 'package:nyan_read/core/theme/nyan_spacing.dart';
 import 'package:nyan_read/core/theme/nyan_typography.dart';
 import 'package:nyan_read/core/theme/theme_presets.dart';
@@ -226,20 +227,11 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
         ),
         if (_showJumpToCurrent)
           Positioned(
-            right: NyanSpacing.space16,
-            bottom: NyanSpacing.space16,
-            child: Semantics(
+            right: 0,
+            bottom: 10,
+            child: _JumpToCurrentButton(
               label: loc.jumpToCurrentChapter,
-              child: FloatingActionButton.extended(
-                heroTag: 'toc-jump-current',
-                onPressed: () => _jumpToCurrentChapter(animated: true),
-                icon: const Icon(NyanIcons.myLocation, size: 18),
-                label: Text(
-                  loc.jumpToCurrentChapter,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
+              onPressed: () => _jumpToCurrentChapter(animated: true),
             ),
           ),
       ],
@@ -620,6 +612,74 @@ class ChapterListItem extends StatelessWidget {
                     size: 16,
                   ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Floating "Jump to current" button for the Chapters sheet.
+///
+/// Spec: `bundle1.jsx` `ChapterDockSheet` — extended-FAB style, sticky
+/// bottom-right of the scrollable list. Deep-matcha fill, surface glyph,
+/// --r-dock radius (24pt), --shadow-light-card lift. Height 44, h-pad 18.
+class _JumpToCurrentButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+
+  const _JumpToCurrentButton({required this.label, required this.onPressed});
+
+  // Icon↔label gap from spec `gap: 8` — internal to this button only.
+  static const double _kIconLabelGap = 8.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final nyan = resolveNyanTheme(Theme.of(context));
+    return Semantics(
+      button: true,
+      label: label,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: nyan.primaryDeep,
+          borderRadius: BorderRadius.circular(NyanRadius.dock),
+          boxShadow: NyanShadows.lightCard(nyan),
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          borderRadius: BorderRadius.circular(NyanRadius.dock),
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(NyanRadius.dock),
+            splashColor: nyan.surface.withValues(alpha: 0.12),
+            highlightColor: nyan.surface.withValues(alpha: 0.08),
+            child: SizedBox(
+              height: 44,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      NyanIcons.jumpToCurrent,
+                      size: 17,
+                      color: nyan.surface,
+                    ),
+                    const SizedBox(width: _kIconLabelGap),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontFamily: NyanTypography.uiFontFamily,
+                        fontSize: NyanTypography.fabLabel,
+                        fontWeight: FontWeight.w600,
+                        height: 1.0,
+                        color: nyan.surface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

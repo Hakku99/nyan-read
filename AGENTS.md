@@ -341,6 +341,8 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — Reader Error View 字号（交付包对齐，2026-06，来源 `screens/bundle2-screens.jsx` `ErrorView`）**：U8 错误视图的标题使用 **18pt w600**（`font: "600 18px/1.25"`），正文使用 **14pt w400**（`font: "400 14px/1.5"`），两者均落在 6 档阶梯之外（§4.6 交付包优先）。这两个值是 `ReaderErrorView` **专属**——**MUST NOT** 出现在正文列表行、卡片或其它表面。
 
+> **例外 — Chapters Sheet "Jump to current" FAB 标签字号（交付包对齐，2026-06，来源 `screens/bundle1.jsx` `ChapterDockSheet`）**：目录 Sheet 浮动按钮的标签使用 **13.5pt w600**（来源：`bundle1.jsx` `font: "600 13.5px/1"`）。此值介于阶梯 `meta 13` 与 `buttonCompact 14` 之间（§4.6 交付包优先）。此例外**仅限** `_JumpToCurrentButton`（`chapter_list_widget.dart`）标签，**MUST NOT** 出现在正文、列表行、卡片或其它表面。常量定义见 `NyanTypography.fabLabel`（13.5）。
+
 > ✅ **字体已注册（§6 Phase 0 已完成）**：`pubspec.yaml` 的 `flutter.fonts` 段已声明 `Noto Sans SC`（400/500/600）+ `Source Han Serif SC`（400/600）；字体文件存放于 `assets/fonts/`，**未纳入 Git**（体积原因）。开发者需按 `assets/fonts/README.md` 说明手动放置字体文件。缺少字体时 Flutter 打印 warning 并回落平台字体，不影响编译；但 serif 阅读模式仅在字体文件就位后生效。
 
 ### 4.3 组件样式底线（MUST）
