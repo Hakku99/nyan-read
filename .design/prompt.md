@@ -5,7 +5,7 @@ This is our current ____ APP UI, do nothing until I give further instruction.
 ### Step 2
 This is our current design mock spec for ____ UI.
 
-Identify the differences between current app ____ UI with the design spec mock. Propose a plan for makes our current App UI looks like the design spec mock.
+Identify the differences between current app ____ UI with the design spec mock (e.g. font size, alignment, icon, gap). Propose a plan for makes our current App UI looks like the design spec mock.
 
 You may refer to ____ for retrieving the ____ UI styling, within section ____.
 
