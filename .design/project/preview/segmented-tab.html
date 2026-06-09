@@ -1,0 +1,41 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Components — Segmented tab" subtitle="Emphasis (solid) vs subtle (tinted) — 240ms slide" viewport="700x230" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Segmented tab control</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; }
+  .card { width: 100%; }
+  .row { display: flex; gap: 12px; align-items: center; }
+  .col { display: flex; flex-direction: column; gap: 12px; }
+  .swatch { width: 56px; height: 56px; border-radius: var(--radius-small); border: 1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent); }
+  .swatch-lg { width: 100%; height: 64px; border-radius: var(--radius-card); border: 1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent); }
+  .token-label { font: var(--fw-medium) var(--fz-meta)/1.2 var(--font-ui); color: var(--nyan-text); }
+  .token-meta  { font: var(--fw-regular) 11px/1.3 var(--font-mono); color: var(--nyan-text-secondary); }
+  .grid { display: grid; gap: 14px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font: var(--fw-medium) 11px/1 var(--font-mono); background: var(--nyan-surface-muted); color: var(--nyan-text-secondary); border: 1px solid var(--nyan-divider); }
+  
+</style>
+</head>
+<body><div class="card">
+  <div class="col" style="gap:14px;">
+    <!-- emphasis: white paper chip + soft lift on a recessed muted track -->
+    <div style="background:var(--nyan-surface-muted); border-radius:var(--r-control); padding:4px; height:40px; display:grid; grid-template-columns: 1fr 1fr;">
+      <div style="background:var(--nyan-surface); box-shadow:var(--shadow-grouped); border-radius:11px; display:flex; align-items:center; justify-content:center; gap:6px; color:var(--nyan-primary-deep); font:500 14px/1 var(--font-ui);"><i class="ph ph-book-open" style="font-size:16px;"></i>Public Shelf</div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:6px; color:var(--nyan-text-secondary); font:500 14px/1 var(--font-ui);"><i class="ph ph-lock-simple" style="font-size:16px;"></i>Privacy Shelf</div>
+    </div>
+    <!-- subtle: matcha-tint chip, same recessed track -->
+    <div style="background:var(--nyan-surface-muted); border-radius:var(--r-control); padding:4px; height:40px; display:grid; grid-template-columns: 1fr 1fr 1fr;">
+      <div style="display:flex; align-items:center; justify-content:center; color:var(--nyan-text-secondary); font:500 14px/1 var(--font-ui);">Display</div>
+      <div style="background:color-mix(in srgb, var(--nyan-primary) 16%, transparent); border-radius:11px; display:flex; align-items:center; justify-content:center; color:var(--nyan-primary-deep); font:500 14px/1 var(--font-ui);">Text</div>
+      <div style="display:flex; align-items:center; justify-content:center; color:var(--nyan-text-secondary); font:500 14px/1 var(--font-ui);">Theme</div>
+    </div>
+    <div class="token-meta">ONE segmented style across the app. Track is recessed by <em>tone</em> — <code>surface-muted</code>, no border. The selected segment is a floating chip that slides (280 ms ease-paper); selected text is always <code>primaryDeep</code>. <strong>Emphasis</strong> (top) = white <code>surface</code> chip + <code>grouped</code> lift. <strong>Subtle</strong> (bottom) = matcha-tint chip. Track <code>r-control · 14</code>, chip <code>11</code> — concentric.</div>
+  </div>
+</div></body>
+</html>

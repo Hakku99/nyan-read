@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Screens" name="U5 — Text Selection Menu" subtitle="Surface card + Phosphor icons · Cream + Sumi" viewport="890x480" -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>U5 · Text Selection Menu — Nyan Read</title>
+  <link rel="stylesheet" href="../colors_and_type.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    html, body { margin: 0; padding: 0; min-height: 100%; background: #ECE6D8; font-family: var(--font-ui); }
+    * { box-sizing: border-box; }
+    .screen-head { padding: 36px 40px 8px; max-width: 1100px; }
+    .screen-eyebrow { font: 500 11px/1 var(--font-ui); letter-spacing: 2px; text-transform: uppercase; color: var(--nyan-primary-deep); }
+    .screen-head h1 { font: 600 26px/1.2 var(--font-ui); letter-spacing: -0.3px; color: var(--nyan-text); margin: 12px 0 0; }
+    .screen-head p { font: 400 14.5px/1.5 var(--font-ui); color: var(--nyan-text-secondary); margin: 8px 0 0; max-width: 760px; text-wrap: pretty; }
+    .screen-wrap { display: flex; flex-wrap: wrap; gap: 30px; padding: 28px 40px 56px; align-items: flex-start; }
+    .frame { display: flex; flex-direction: column; gap: 11px; }
+    .frame-body { border-radius: 26px; overflow: hidden; background: var(--nyan-bg); box-shadow: 0 22px 55px -22px rgba(40,36,30,.45), 0 4px 14px -8px rgba(40,36,30,.22); border: 1px solid rgba(63,58,52,.07); }
+    .frame-label { font: 500 12px/1.35 var(--font-ui); letter-spacing: .2px; color: var(--nyan-text-muted); text-align: center; max-width: 390px; }
+    
+  </style>
+</head>
+<body>
+<div class="screen-head">
+  <div class="screen-eyebrow">Nyan Read · Screen Mock</div>
+  <h1>U5 · Text Selection Menu</h1>
+  <p>Corrective: --nyan-surface card replaces Material elevation-8 + grey divider. Phosphor icons, warm hairline.</p>
+</div>
+<div id="root"></div>
+<script type="text/babel" src="../components/primitives.jsx"></script>
+<script type="text/babel" src="../components/headers.jsx"></script>
+<script type="text/babel" src="../components/surfaces.jsx"></script>
+<script type="text/babel" src="../components/cards.jsx"></script>
+<script type="text/babel" src="../components/reader.jsx"></script>
+<script type="text/babel" src="../screens/_chrome.jsx"></script>
+<script type="text/babel" src="../screens/bundle2-screens.jsx"></script>
+  <script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+function Frame({ label, w, h, children }) {
+  return (
+    <div className="frame">
+      <div className="frame-body" style={{ width: w, height: h }}>{children}</div>
+      <div className="frame-label">{label}</div>
+    </div>
+  );
+}
+function App() {
+  return (
+    <div className="screen-wrap">
+      <Frame label="Cream Light" w={390} h={280}><U5Artboard dark={false} /></Frame>
+      <Frame label="Sumi Dark" w={390} h={280}><U5Artboard dark={true} /></Frame>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Colors — Sumi Dark core" subtitle="Warm green-black, no #000000" viewport="700x460" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sumi Dark — core surfaces</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; }
+  .row { display: flex; gap: 12px; align-items: center; }
+  .swatch { width: 56px; height: 56px; border-radius: var(--radius-small); border: 1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent); flex-shrink: 0; }
+  .token-label { font: 500 13px/1.2 var(--font-ui); color: var(--nyan-text); }
+  .token-meta  { font: 400 11px/1.3 var(--font-mono); color: var(--nyan-text-secondary); }
+  .delta { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; font: 600 10px/1.4 var(--font-mono); margin-left: 8px; background: #F0EBDE; color: #6E7A55; border: 1px solid #DCD2BB; }
+</style>
+</head>
+<body>
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div class="row"><div class="swatch" style="background:#181B16"></div><div style="flex:1;"><div class="token-label">background <span class="delta">revised · was #1D211E</span></div><div class="token-meta">#181B16 · page void — base layer</div></div></div>
+    <div class="row"><div class="swatch" style="background:#242922"></div><div style="flex:1;"><div class="token-label">surface <span class="delta">revised · was #262B27</span></div><div class="token-meta">#242922 · cards, panels, bars — +1 lift</div></div></div>
+    <div class="row"><div class="swatch" style="background:#2E342B"></div><div style="flex:1;"><div class="token-label">surfaceRaised <span class="delta">new</span></div><div class="token-meta">#2E342B · dialogs, sheets, popovers — highest</div></div></div>
+    <div class="row"><div class="swatch" style="background:#1D211B"></div><div style="flex:1;"><div class="token-label">surfaceMuted <span class="delta">revised · was #202520</span></div><div class="token-meta">#1D211B · recessed track, inset in a card</div></div></div>
+    <div class="row"><div class="swatch" style="background:#3D443A"></div><div style="flex:1;"><div class="token-label">divider <span class="delta">revised · was #3A3F3A</span></div><div class="token-meta">#3D443A · hairline + elevation ring</div></div></div>
+    <div class="row"><div class="swatch" style="background:#A9B690"></div><div style="flex:1;"><div class="token-label">primary <span class="delta">AA-revised · was #93A07C</span></div><div class="token-meta">#A9B690 · matcha · 7.59:1 AAA on bg</div></div></div>
+    <div class="row"><div class="swatch" style="background:#B7C69E"></div><div style="flex:1;"><div class="token-label">primaryDeep / accent <span class="delta">revised · was #B3C29A</span></div><div class="token-meta">#B7C69E · links / ghost text on lifted cards</div></div></div>
+  </div>
+</body>
+</html>

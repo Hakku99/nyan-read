@@ -21,6 +21,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readingSettings => 'Reading Settings';
 
   @override
+  String get reading => 'Reading';
+
+  @override
   String get readerQuickProgressSubtitle => 'Chapter seek and position';
 
   @override
@@ -99,7 +102,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readingReminder => 'Reading Reminder';
 
   @override
-  String get readingReminderSubtitle => 'Remind me to take a break';
+  String get readingReminderSubtitle => 'Chapter seek and position';
 
   @override
   String get reminderInterval => 'Reminder Interval';
@@ -108,6 +111,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String reminderMinutes(int minutes) {
     return '$minutes min';
   }
+
+  @override
+  String get reminderEvery15min => 'Every 15 min';
+
+  @override
+  String get reminderEvery30min => 'Every 30 min';
+
+  @override
+  String get reminderEveryHour => 'Every hour';
+
+  @override
+  String get reminderEvery2hours => 'Every 2 hours';
+
+  @override
+  String get reminderDaily => 'Daily';
 
   @override
   String get dataManagement => 'Data Management';
@@ -144,7 +162,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get about => 'About';
 
   @override
-  String get lockPrivacyShelfSubtitle => 'Hide until next unlock';
+  String get lockPrivacyShelfSubtitle => 'Require PIN to open';
 
   @override
   String get adminPanel => 'Admin Panel';
@@ -787,7 +805,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeCreamLight => 'Cream Light';
 
   @override
+  String get themeCreamLightHint => 'Warm paper — the default';
+
+  @override
   String get themeSumiDark => 'Sumi Dark';
+
+  @override
+  String get themeSumiDarkHint => 'Ink night for low light';
+
+  @override
+  String get themeMatchSystem => 'Match System';
+
+  @override
+  String get themeMatchSystemHint => 'Follow your device setting';
+
+  @override
+  String get pageTurnLeftRight => 'Left & Right';
+
+  @override
+  String get pageTurnLeftRightHint => 'Turn pages horizontally';
+
+  @override
+  String get pageTurnUpDown => 'Up & Down';
+
+  @override
+  String get pageTurnUpDownHint => 'Turn pages vertically';
+
+  @override
+  String get languageEnglishHint => 'English';
+
+  @override
+  String get languageChineseHint => 'Chinese · 简体中文';
 
   @override
   String get timeToday => 'Today';
@@ -842,28 +890,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emptyShelfSubtitle => 'Import a book to start reading';
 
   @override
-  String get exportData => 'Export Reading Assets';
+  String get exportData => 'Export Data';
 
   @override
-  String get exportDataSubtitle => 'Save reading data as JSON';
+  String get exportDataSubtitle => 'Save to device or share';
+
+  @override
+  String get exportDataSheetSubtitle => 'Choose where your reading data goes.';
 
   @override
   String get saveToDevice => 'Save to Device';
 
   @override
-  String get saveToDeviceSubtitle => 'Choose a folder on your device';
+  String get saveToDeviceSubtitle => 'Store a JSON backup in your Files';
 
   @override
-  String get shareVia => 'Share via...';
+  String get shareVia => 'Share...';
 
   @override
-  String get shareViaSubtitle => 'Gmail, Drive, Quick Share, etc.';
+  String get shareViaSubtitle => 'Send via Gmail, Drive or another app';
 
   @override
-  String get importData => 'Import Reading Assets';
+  String get importData => 'Import Data';
 
   @override
-  String get importDataSubtitle => 'Restore reading data from JSON backup';
+  String get importDataSubtitle => 'Restore from a backup file';
 
   @override
   String importSuccess(int count) {

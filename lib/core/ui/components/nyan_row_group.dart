@@ -5,13 +5,12 @@ import '../../theme/nyan_shadows.dart';
 import '../nyan_theme_context.dart';
 
 /// Container for a stack of [NyanListRow] / [NyanActionSheetRow] children
-/// with hairline `divider`-coloured separators between items.
+/// with hairline divider-coloured separators between items.
 ///
-/// Per design spec: outer radius is [NyanRadius.input] (16pt), border is
-/// 0.72px @ 16% alpha, separators are indented 64pt from the leading edge
-/// (aligns with icon slot), and the card carries a [NyanShadows.settingsGrouped]
-/// lift. Shadow is placed on an outer [DecoratedBox] so [Clip.antiAlias] on the
-/// inner container does not clip it.
+/// Per `_chrome.jsx` `RowGroup` (canonical Phase-4 HANDOFF):
+/// outer radius [NyanRadius.cardNested] (16pt), border `1px chrome-edge`
+/// (transparent light / nyan.divider dark), separators 0.5px @ 34% alpha with
+/// symmetric 16pt inset, [NyanShadows.settingsGrouped] lift.
 class NyanRowGroup extends StatelessWidget {
   const NyanRowGroup({
     super.key,
@@ -30,21 +29,25 @@ class NyanRowGroup extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final separatorColor = nyan.divider.withValues(alpha: 0.5);
-    final borderRadius = BorderRadius.circular(NyanRadius.input);
+    // Spec: divider = nyan.divider @ 34%, 0.5px, symmetric 16pt inset.
+    final separatorColor = nyan.divider.withValues(alpha: 0.34);
+    // Spec: chrome-edge = transparent in light, nyan.divider in dark.
+    final borderColor = nyan.brightness == Brightness.dark
+        ? nyan.divider
+        : Colors.transparent;
+    final borderRadius = BorderRadius.circular(NyanRadius.cardNested);
 
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
       rows.add(children[i]);
       if (i != children.length - 1) {
-        rows.add(Row(
-          children: [
-            const SizedBox(width: 64),
-            Expanded(
-              child: Container(height: 1, color: separatorColor),
-            ),
-          ],
-        ));
+        rows.add(
+          Padding(
+            // Spec: `margin: "0 16px"` — symmetric, not left-indent.
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SizedBox(height: 0.5, child: ColoredBox(color: separatorColor)),
+          ),
+        );
       }
     }
 
@@ -59,10 +62,8 @@ class NyanRowGroup extends StatelessWidget {
         decoration: BoxDecoration(
           color: nyan.surface,
           borderRadius: borderRadius,
-          border: Border.all(
-            color: nyan.divider.withValues(alpha: 0.16),
-            width: 0.72,
-          ),
+          // Spec: `1px solid chrome-edge`.
+          border: Border.all(color: borderColor, width: 1),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

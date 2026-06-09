@@ -1,0 +1,44 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Components — List rows" subtitle="Settings row with leading wash icon + chevron / switch" viewport="700x200" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>List row + action sheet row</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; }
+  .card { width: 100%; }
+  .row { display: flex; gap: 12px; align-items: center; }
+  .col { display: flex; flex-direction: column; gap: 12px; }
+  .swatch { width: 56px; height: 56px; border-radius: var(--radius-small); border: 1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent); }
+  .swatch-lg { width: 100%; height: 64px; border-radius: var(--radius-card); border: 1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent); }
+  .token-label { font: var(--fw-medium) var(--fz-meta)/1.2 var(--font-ui); color: var(--nyan-text); }
+  .token-meta  { font: var(--fw-regular) 11px/1.3 var(--font-mono); color: var(--nyan-text-secondary); }
+  .grid { display: grid; gap: 14px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font: var(--fw-medium) 11px/1 var(--font-mono); background: var(--nyan-surface-muted); color: var(--nyan-text-secondary); border: 1px solid var(--nyan-divider); }
+  
+</style>
+</head>
+<body><div class="card">
+  <div class="col" style="gap:10px;">
+    <div style="background:var(--nyan-surface); border-radius:var(--radius-card); border:1px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent); padding:14px 16px; display:flex; align-items:center; gap:12px;">
+      <div style="width:36px; height:36px; border-radius:var(--radius-small); background:color-mix(in srgb, var(--nyan-primary) 9%, transparent); display:grid; place-items:center;"><i class="ph ph-cloud-arrow-down" style="font-size:17px; color:var(--nyan-primary);"></i></div>
+      <div class="col" style="gap:4px; flex:1;">
+        <div style="font:600 16px/1.2 var(--font-ui); color:var(--nyan-text);">Export Reading Assets</div>
+        <div style="font:400 13px/1.3 var(--font-ui); color:var(--nyan-text-secondary);">Save reading data as JSON</div>
+      </div>
+      <i class="ph ph-caret-right" style="font-size:18px; color:color-mix(in srgb, var(--nyan-text-secondary) 44%, transparent);"></i>
+    </div>
+    <div style="background:var(--nyan-surface); border-radius:var(--radius-card); border:1px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent); padding:14px 16px; display:flex; align-items:center; gap:12px;">
+      <div class="col" style="gap:4px; flex:1;">
+        <div style="font:600 16px/1.2 var(--font-ui); color:var(--nyan-text);">Reading Reminder</div>
+        <div style="font:400 13px/1.3 var(--font-ui); color:var(--nyan-text-secondary);">Remind me to take a break</div>
+      </div>
+      <div style="width:44px; height:26px; border-radius:999px; background:var(--nyan-primary); position:relative;"><div style="position:absolute; top:3px; right:3px; width:20px; height:20px; background:var(--nyan-surface); border-radius:50%;"></div></div>
+    </div>
+  </div>
+</div></body>
+</html>

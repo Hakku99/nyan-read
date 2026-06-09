@@ -1,0 +1,153 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Brand — Iconography" subtitle="Phosphor Light/Regular vs Material Round — recommendation: Phosphor Regular" viewport="700x540" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Iconography — sleeker options</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+
+<!-- Three candidate icon fonts loaded side-by-side for visual comparison -->
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/light/style.css" />
+
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; color: var(--nyan-text); font-family: var(--font-ui); }
+
+  .h { font: 600 14px/1.2 var(--font-ui); color: var(--nyan-text); letter-spacing: -0.1px; margin-bottom: 8px; }
+  .sub { font: 400 12px/1.4 var(--font-ui); color: var(--nyan-text-secondary); margin-bottom: 14px; }
+
+  /* One row per icon set, four cells per row matched left-to-right */
+  .compare {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 0;
+    background: var(--nyan-surface);
+    border-radius: var(--radius-card);
+    border: 0.5px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent);
+    box-shadow: var(--shadow-light-card);
+    overflow: hidden;
+  }
+  .compare .label-cell {
+    padding: 16px 14px;
+    background: var(--nyan-surface-muted);
+    border-right: 1px solid var(--nyan-divider);
+    display: flex; flex-direction: column; gap: 4px; justify-content: center;
+  }
+  .compare .label-cell .name { font: 600 13px/1.2 var(--font-ui); color: var(--nyan-text); }
+  .compare .label-cell .meta { font: 400 11px/1.3 var(--font-mono); color: var(--nyan-text-secondary); }
+  .compare .icons-cell {
+    padding: 14px 16px;
+    display: flex; flex-wrap: wrap; gap: 18px;
+    align-items: center; justify-content: flex-start;
+  }
+  .compare .icons-cell .glyph {
+    width: 26px; height: 26px;
+    display: grid; place-items: center;
+    color: var(--nyan-text);
+  }
+  .compare .icons-cell .glyph i { font-size: 22px; line-height: 1; }
+  .compare .icons-cell .glyph .material-icons-round { font-size: 24px; line-height: 1; color: var(--nyan-text); }
+
+  .divider { height: 1px; background: var(--nyan-divider); }
+
+  .pick-card {
+    margin-top: 20px;
+    padding: 16px;
+    background: color-mix(in srgb, var(--nyan-primary) 7%, var(--nyan-surface));
+    border: 1px solid color-mix(in srgb, var(--nyan-primary) 30%, var(--nyan-divider));
+    border-radius: var(--radius-card);
+  }
+  .pick-card .title { font: 600 14px/1.3 var(--font-ui); color: var(--nyan-primary-deep); margin-bottom: 6px; }
+  .pick-card .body { font: 400 13px/1.5 var(--font-ui); color: var(--nyan-text); }
+  .pick-card code { font: 500 11px/1.3 var(--font-mono); color: var(--nyan-primary-deep); background: var(--nyan-surface); padding: 1px 6px; border-radius: 4px; }
+
+  .footnote {
+    margin-top: 14px; font: 400 12px/1.5 var(--font-ui); color: var(--nyan-text-secondary);
+  }
+  .footnote code { font: 500 11px/1.3 var(--font-mono); color: var(--nyan-text); background: var(--nyan-surface-muted); padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="h">Three free icon sets, same 9 glyphs</div>
+<div class="sub">All under MIT/Apache/SIL — free for any use. Same canvas, same color, same size — only the stroke weight and terminal style differ.</div>
+
+<div class="compare">
+  <!-- Phosphor Light — sleekest -->
+  <div class="label-cell">
+    <div class="name">Phosphor · Light</div>
+    <div class="meta">~1px stroke<br/>MIT</div>
+  </div>
+  <div class="icons-cell">
+    <div class="glyph"><i class="ph-light ph-book-open"></i></div>
+    <div class="glyph"><i class="ph-light ph-bookmark-simple"></i></div>
+    <div class="glyph"><i class="ph-light ph-lock-simple"></i></div>
+    <div class="glyph"><i class="ph-light ph-plus"></i></div>
+    <div class="glyph"><i class="ph-light ph-gear-six"></i></div>
+    <div class="glyph"><i class="ph-light ph-magnifying-glass"></i></div>
+    <div class="glyph"><i class="ph-light ph-dots-three"></i></div>
+    <div class="glyph"><i class="ph-light ph-caret-right"></i></div>
+    <div class="glyph"><i class="ph-light ph-check"></i></div>
+  </div>
+
+  <div class="divider" style="grid-column: 1 / -1;"></div>
+
+  <!-- Phosphor Regular — recommended -->
+  <div class="label-cell">
+    <div class="name">Phosphor · Regular</div>
+    <div class="meta">~1.5px stroke<br/>MIT</div>
+  </div>
+  <div class="icons-cell">
+    <div class="glyph"><i class="ph ph-book-open"></i></div>
+    <div class="glyph"><i class="ph ph-bookmark-simple"></i></div>
+    <div class="glyph"><i class="ph ph-lock-simple"></i></div>
+    <div class="glyph"><i class="ph ph-plus"></i></div>
+    <div class="glyph"><i class="ph ph-gear-six"></i></div>
+    <div class="glyph"><i class="ph ph-magnifying-glass"></i></div>
+    <div class="glyph"><i class="ph ph-dots-three"></i></div>
+    <div class="glyph"><i class="ph ph-caret-right"></i></div>
+    <div class="glyph"><i class="ph ph-check"></i></div>
+  </div>
+
+  <div class="divider" style="grid-column: 1 / -1;"></div>
+
+  <!-- Material Round — current / source fidelity -->
+  <div class="label-cell">
+    <div class="name">Material · Round</div>
+    <div class="meta">~2px stroke<br/>Apache · CURRENT</div>
+  </div>
+  <div class="icons-cell">
+    <div class="glyph"><span class="material-icons-round">menu_book</span></div>
+    <div class="glyph"><span class="material-icons-round">bookmark</span></div>
+    <div class="glyph"><span class="material-icons-round">lock</span></div>
+    <div class="glyph"><span class="material-icons-round">add</span></div>
+    <div class="glyph"><span class="material-icons-round">settings</span></div>
+    <div class="glyph"><span class="material-icons-round">search</span></div>
+    <div class="glyph"><span class="material-icons-round">more_horiz</span></div>
+    <div class="glyph"><span class="material-icons-round">chevron_right</span></div>
+    <div class="glyph"><span class="material-icons-round">check</span></div>
+  </div>
+</div>
+
+<div class="pick-card">
+  <div class="title">Recommendation: Phosphor Regular</div>
+  <div class="body">
+    The product reads <em>quieter</em> with a thinner stroke — paper books don't shout. Phosphor Regular keeps every glyph crisp at 16–24 pt, has the same coverage Material does (~1300 icons), and pairs better with the Noto Sans SC ink weight. Phosphor <strong>Light</strong> is even sleeker but falls below the WCAG 3:1 non-text-contrast minimum on cream surface at small sizes — use it for ≥24 pt only.
+  </div>
+</div>
+
+<div class="footnote">
+  <strong style="color:var(--nyan-text);">Tradeoff to know:</strong> The Flutter source uses <code>Icons.*_rounded</code> (Material Round). Switching this design system to Phosphor means designs you make here won't be pixel-identical to live screenshots of the running app. For marketing comps / new design work this is fine. For UI bug repros or screenshot annotations, stay on Material Round (or load both and use Material in the kit, Phosphor in marketing).
+  <br><br>
+  <strong style="color:var(--nyan-text);">Loading either set:</strong>
+  <br>Material Round (current): <code>&lt;link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round"&gt;</code>
+  <br>Phosphor: <code>&lt;link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css"&gt;</code> then <code>&lt;i class="ph ph-book-open"&gt;&lt;/i&gt;</code>
+  <br><br>
+  <strong style="color:var(--nyan-text);">Other free sets I considered:</strong> Lucide (MIT, ~1.5px) reads almost identical to Phosphor Regular but with fewer rounded terminals — slightly more "tech," less "paper." Heroicons (MIT) is excellent but its 24×24 only style limits sizing. Iconoir (MIT) is closest in calmness but ~1300 icons (vs Phosphor's 1300+ in 6 weights).
+</div>
+
+</body>
+</html>

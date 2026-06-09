@@ -1,0 +1,296 @@
+/* ============================================================================
+   Nyan Read — Design Tokens
+   ----------------------------------------------------------------------------
+   "Muji × paper-book × restrained matcha"
+   Two presets: Cream Light (default) + Sumi Dark.
+   All tokens mirror lib/core/theme/nyan_*.dart in the Flutter source.
+
+   Rules (from AGENTS.md §4):
+   - No pure #FFFFFF, no pure #000000. All "white" is cream; all "black" is ink.
+   - Strong color is only matcha green. Orange (highlightOrange) is allowed for
+     warmth / warning semantics.
+   - Shadows: ≤12px blur, ≤5% alpha. Use the shadow tokens. Never roll your own.
+   - Font weights allowed: 400, 500, 600 only.
+   ============================================================================ */
+
+/* Local OFL fonts — UI face is bundled.
+   Source Han Serif SC (reading-mode serif) is NOT bundled — see README font flag.
+   Reader serif mode falls back to platform CJK serif (Songti SC / SimSun / Georgia).
+   Upload the font file to assets/fonts/ to activate it; fallback stack renders until then. */
+
+/* Source Han Serif SC — awaiting font file upload */
+@font-face {
+  font-family: "Source Han Serif SC";
+  src: url("./assets/fonts/SourceHanSerifSC-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Han Serif SC";
+  src: url("./assets/fonts/SourceHanSerifSC-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans SC";
+  src: url("./assets/fonts/NotoSansSC-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  src: url("./assets/fonts/NotoSansSC-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  src: url("./assets/fonts/NotoSansSC-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-display: swap;
+}
+
+:root {
+  /* ── Cream Light — page surfaces (unchanged from source) ──────────────── */
+  --nyan-bg:              #F6F3EA;   /* page background (paper) */
+  --nyan-surface:         #FFFDF8;   /* cards, sheets, panels */
+  --nyan-surface-muted:   #F1ECDD;   /* recessed: tab tracks, slider rails */
+  --nyan-divider:         #E5DED2;   /* warm hairline rule */
+  --nyan-border:          #E5DED2;
+
+  /* ── Cream Light — type (AA-revised; diverges from upstream) ──────────── */
+  /* Originals shown for reference; see README "Token deviations from upstream". */
+  --nyan-text:            #3F3A34;   /* primary ink — unchanged · 11.07:1 AAA */
+  --nyan-text-secondary:  #5F5950;   /* was #8A8377 · 3.69 → 6.81:1 AA */
+  --nyan-text-muted:      #706A5A;   /* was #B0ACA5 · 2.22 → 5.30:1 AA */
+
+  /* ── Strong color — matcha (AA-revised) ───────────────────────────────── */
+  --nyan-primary:         #6E7A55;   /* was #98A27C · 2.65 → 4.51:1 AA (button fill w/ white text) */
+  --nyan-primary-deep:    #5A6644;   /* was #7E8B61 · 3.59 → 6.04:1 AA */
+  --nyan-success:         #4F6B1E;   /* was #6B8E23 · 3.74 → 5.98:1 AA */
+
+  /* Selection-check fill — deliberately theme-STABLE (not overridden in Sumi) so the
+     selected checkmark is always a deep-matcha circle with a WHITE tick in both themes. */
+  --nyan-select-fill:     #6E7A55;
+
+  /* Source-fidelity tokens (use only when matching live Flutter app pixel-for-pixel) */
+  --nyan-text-secondary-src: #8A8377;
+  --nyan-text-muted-src:     #B0ACA5;
+  --nyan-primary-src:        #98A27C;
+  --nyan-primary-deep-src:   #7E8B61;
+  --nyan-success-src:        #6B8E23;
+
+  /* ── Reader paper variants (canvas color, not app surface) ────────────── */
+  --reader-paper:         #FDFCF8;
+  --reader-ink:           #4A453E;
+  --reader-bg-cream:      #F7F5EF;
+  --reader-bg-sepia:      #EDE3C7;
+  --reader-ink-sepia:     #5C4F3F;
+  --reader-bg-sumi:       #262422;
+  --reader-ink-sumi:      #E5DED3;
+  --reader-bg-charcoal:   #141312;
+  --reader-ink-charcoal:  #F1EBDD;
+
+  /* ── Highlight pens (fixed; not theme-sensitive) ──────────────────────── */
+  --hl-yellow:            #F2E58A;
+  --hl-green:             #A8D18D;
+  --hl-blue:              #9EC5E8;
+  --hl-pink:              #E8A0BF;
+  --hl-orange:            #F2BE7E;   /* also: warmth + warning */
+  --reader-info-blue:     #7FABAC;
+
+  /* Ink-tinted highlight variants (used in highlight dialog preview) */
+  --hl-ink-yellow:        #D8C06B;
+  --hl-ink-blue:          #B9C1C2;
+  --hl-ink-pink:          #CDA2A8;
+  --hl-ink-orange:        #DBB686;
+  --hl-ink-green:         #A9C08E;
+
+  /* ── Error palette (Cream) — warm clay, not clinical red ──────────────────
+     A desaturated terracotta that shares the warm-paper chroma, so errors read
+     as calm and on-brand rather than alarming Material red. */
+  --error-bg:             #FBF2EC;
+  --error-primary:        #9C5C49;
+  --error-secondary:      #8A6A55;
+  --error-accent:         #ECD9CC;
+
+  /* ── Radii (NyanRadius) ───────────────────────────────────────────────── */
+  --radius-small:  14px;   /* tab capsule, chip */
+  --radius-input:  16px;   /* inputs, FAB, buttons */
+  --radius-card:   20px;   /* card, shelf item */
+  --radius-panel:  24px;   /* dialog, secondary sheet */
+  --radius-sheet:  28px;   /* top-level bottom sheet */
+
+  /* ── Spacing (NyanSpacing) ────────────────────────────────────────────── */
+  --space-4:   4px;
+  --space-8:   8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --min-tap:  44px;
+
+  /* ── Shadows (NyanShadows) ────────────────────────────────────────────── */
+  /*  Use --shadow-color so dark mode can dampen by re-defining it.        */
+  --shadow-color: rgba(63, 58, 52, 1);
+  --shadow-light-card:
+        0 4px 12px color-mix(in srgb, var(--shadow-color) 4%, transparent),
+        0 2px  6px color-mix(in srgb, var(--shadow-color) 2%, transparent);
+  --shadow-subtle:
+        0 2px  8px color-mix(in srgb, var(--shadow-color) 5%, transparent);
+  --shadow-grouped:
+        0 2px 10px color-mix(in srgb, var(--shadow-color) 1.4%, transparent);
+
+  /* ── "One Paper" chrome system (v2 unification) ───────────────────────────
+     Every bar / sheet / dock / panel obeys these. The reader dock and every
+     bottom sheet share one inset, one lift, one scrim response.
+     - Nothing but the reading canvas touches a screen edge.
+     - Layering is by tone + one soft shadow, never by border or glass.
+     ────────────────────────────────────────────────────────────────────── */
+  --inset:          12px;   /* float distance of all chrome from the screen edge */
+  --r-chip:         12px;   /* option chip / pill (nested deepest) */
+  --r-control:      14px;   /* segmented-control track + tinted list-row icon chip */
+  --r-card-nested:  16px;   /* card nested inside a sheet (concentric) */
+  --r-dock:         24px;   /* resting dock / floating bar */
+  --r-sheet:        28px;   /* dock grown into a sheet (== --radius-sheet) */
+
+  --ease-paper:     cubic-bezier(0.33, 0.9, 0.36, 1); /* @kind other */  /* paper-soft motion */
+  --dur-grow:       320ms; /* @kind other */ /* dock → sheet height/radius */
+  --dur-chrome:     280ms; /* @kind other */ /* bars reveal / dismiss */
+
+  /* Depth response when a sheet rises (no frosted glass — paper, not iOS) */
+  --scrim:          rgba(40, 36, 30, 0.34);  /* warm ink dim over the page */
+  --scrim-blur:     2px;                      /* gentle Gaussian recede */
+  --page-recede:    0.97; /* @kind other */ /* page scales back behind a sheet */
+  --grabber:        color-mix(in srgb, var(--nyan-primary) 36%, transparent);
+  --chrome-edge:    transparent;              /* hairline on floating chrome — invisible in light, a ring in dark */
+
+  /* ── Type (NyanTypography) ────────────────────────────────────────────── */
+  --font-ui:    "Noto Sans SC", -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-serif: "Source Han Serif SC", "Songti SC", "STSong", "SimSun", Georgia, serif;
+  --font-mono:  ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --fz-display: 32px;
+  --fz-title:   24px;
+  --fz-section: 20px;
+  --fz-body:    16px;
+  --fz-meta:    13px;
+  --fz-caption: 11px;   /* olive eyebrow / uppercase section caption (load-bearing) */
+
+  --fw-regular:  400; /* @kind font */
+  --fw-medium:   500; /* @kind font */
+  --fw-semibold: 600; /* @kind font */
+}
+
+/* ── Sumi Dark ─────────────────────────────────────────────────────────────
+   Dark-mode elevation doctrine (revised v4 — widened ladder):
+   In the dark, depth is carried by TONE, reinforced by a luminous hairline.
+   v3's ladder was too compressed — adjacent surfaces sat ~1.17:1 apart and
+   the eye, with no hue step to help, read the whole screen as one olive
+   field. v4 deepens the page void and lifts each surface decisively so every
+   adjacent step lands ~1.4–1.5:1, still inside the warm-sumi family (no pure
+   black/white). The ring + inset catch-light are kept and strengthened so a
+   card reads as a distinct plane even where the tonal step is subtle.
+
+     ELEVATION LADDER (lightest = closest)   ·   step vs. layer below
+       raised   #3E453A   dialogs · popovers · menus · sheets   (~1.27 over surface)
+       surface  #31372E   cards · panels · bars                 (~1.48 over page)
+       muted    #1A1E15   recessed: tab tracks, slider rails     (inset — darker than surface)
+       bg       #14170F   page void                             (base, darkest)
+   ────────────────────────────────────────────────────────────────────────── */
+[data-theme="sumi"], .nyan-sumi {
+  --nyan-bg:             #14170F;   /* page void — deepened for headroom */
+  --nyan-surface:        #31372E;   /* cards / panels / bars — clearly lifted (~1.48 over page) */
+  --nyan-surface-muted:  #1A1E15;   /* recessed track — reads as an inset on a card */
+  --nyan-surface-raised: #3E453A;   /* dialogs / sheets / popovers — highest */
+  --nyan-divider:        #4C5448;   /* hairline — reads as a line on surface (~1.6:1) */
+  --nyan-border:         #5A6253;   /* explicit card edge when needed (~2:1 on surface) */
+
+  /* AA-revised foregrounds (re-checked against the lighter v4 surface) */
+  --nyan-text:           #ECE6DB;   /* primary ink — 9.8:1 AAA on surface */
+  --nyan-text-secondary: #BBB3A6;   /* 5.9:1 AA on surface */
+  --nyan-text-muted:     #A39D93;   /* lifted from #9A948B → 4.5:1 AA on the lighter surface */
+
+  --nyan-primary:        #A9B690;   /* light sage accent · dark text on fill */
+  --nyan-primary-deep:   #B7C69E;   /* brighter — links / ghost text pop on lifted cards */
+  --nyan-success:        #94C194;
+
+  --error-bg:            #241D18;
+  --error-primary:       #CE9A86;
+  --error-secondary:     #B6967F;
+  --error-accent:        #3A2D24;
+
+  /* Elevation = luminous hairline ring + inset top catch-light + gentle ambient.
+     The ring is what makes a card read as a distinct plane in the dark; the
+     ambient shadow stays soft so it never muddies the deep page. v4 brightens
+     the rings (and gives resting cards a defining ring too — not just dialogs)
+     so separation holds wherever the tonal step alone is subtle. */
+  --shadow-color: rgba(0, 0, 0, 1);
+  --shadow-light-card:
+        0 0 0 0.75px color-mix(in srgb, var(--nyan-border) 92%, transparent),
+        inset 0 1px 0 color-mix(in srgb, #FFFFFF 7%, transparent),
+        0 12px 28px color-mix(in srgb, #000000 46%, transparent),
+        0 3px  8px color-mix(in srgb, #000000 36%, transparent);
+  --shadow-subtle:
+        0 0 0 0.75px color-mix(in srgb, var(--nyan-divider) 85%, transparent),
+        inset 0 1px 0 color-mix(in srgb, #FFFFFF 4%, transparent),
+        0 4px 14px color-mix(in srgb, #000000 36%, transparent);
+  --shadow-grouped:
+        0 0 0 0.75px color-mix(in srgb, var(--nyan-divider) 70%, transparent),
+        0 2px  8px color-mix(in srgb, #000000 26%, transparent);
+
+  /* Depth response when a sheet rises: deeper scrim + brighter chrome ring. */
+  --scrim:        rgba(0, 0, 0, 0.58);
+  --chrome-edge:  var(--nyan-divider);
+  --grabber:      color-mix(in srgb, var(--nyan-primary) 50%, transparent);
+}
+
+/* ── Semantic typography classes ─────────────────────────────────────────
+   Apply these directly to headings/text. They obey AGENTS.md §4.2.5:
+   only sizes 32 / 24 / 20 / 16 / 13 / 11 and weights 400 / 500 / 600.
+   (11px is the olive eyebrow caption only — never body text.)
+   ──────────────────────────────────────────────────────────────────────── */
+.nyan-display { font: var(--fw-semibold) var(--fz-display)/1.18 var(--font-ui); letter-spacing: -0.4px; color: var(--nyan-text); }
+.nyan-title   { font: var(--fw-semibold) var(--fz-title)/1.25  var(--font-ui); letter-spacing: -0.15px; color: var(--nyan-text); }
+.nyan-section { font: var(--fw-semibold) var(--fz-section)/1.3 var(--font-ui); color: var(--nyan-text); }
+.nyan-body    { font: var(--fw-regular)  var(--fz-body)/1.5   var(--font-ui); color: var(--nyan-text); }
+.nyan-label   { font: var(--fw-medium)   var(--fz-meta)/1.3   var(--font-ui); color: var(--nyan-text-secondary); letter-spacing: 0.1px; }
+.nyan-meta    { font: var(--fw-regular)  var(--fz-meta)/1.35  var(--font-ui); color: var(--nyan-text-secondary); }
+
+/* Olive section header — caps-ish label above grouped cards */
+.nyan-section-header {
+  font: var(--fw-semibold) var(--fz-meta)/1.3 var(--font-ui);
+  letter-spacing: 0.22px;
+  color: color-mix(in srgb, var(--nyan-primary) 90%, transparent);
+}
+
+/* Olive eyebrow caption (11px) — the dotted section labels inside screens */
+.nyan-caption {
+  font: var(--fw-medium) var(--fz-caption)/1 var(--font-ui);
+  letter-spacing: 0.22px;
+  text-transform: uppercase;
+  color: var(--nyan-primary-deep);
+}
+
+/* Serif reading body (used inside reader canvas only) */
+.nyan-reading-serif { font-family: var(--font-serif); font-weight: var(--fw-regular); line-height: 1.7; }
+.nyan-reading-sans  { font-family: var(--font-ui);    font-weight: var(--fw-regular); line-height: 1.7; }
+
+/* Base page reset for design system previews */
+html, body { background: var(--nyan-bg); color: var(--nyan-text); font-family: var(--font-ui); }
+* { box-sizing: border-box; }
+
+/* ── Shared motion keyframes (splash + chrome) ───────────────────────────── */
+@keyframes nyan-fadein  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes nyan-loadbar { 0% { transform: translateX(-100%); } 100% { transform: translateX(240%); } }
+@keyframes nyan-shake   { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
+@keyframes pin-shake    { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-8px); } 40%,80% { transform: translateX(8px); } }
+/* Indeterminate spinner (importing, deleting) — paper-soft constant rotation. */
+@keyframes nyan-spin    { to { transform: rotate(360deg); } }
+/* Response toast — soft rise + fade from the floating-chrome inset. */
+@keyframes nyan-toast-in  { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes nyan-toast-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(14px); } }
+/* Search field caret — quiet text-cursor blink for the focused search input. */
+@keyframes nyan-caret { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }

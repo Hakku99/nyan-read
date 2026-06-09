@@ -159,6 +159,16 @@ class NyanIcons {
   static const IconData skipNext = PhosphorIconsRegular.skipForward;
   static const IconData skipPrevious = PhosphorIconsRegular.skipBack;
 
+  // ── Page turn ────────────────────────────────────────────────────────────
+  /// Horizontal arrows (↔) — "Left & Right" page turn mode in Settings picker.
+  static const IconData pageTurnHorizontal = PhosphorIconsRegular.arrowsHorizontal;
+  /// Vertical arrows (↕) — "Up & Down" page turn mode in Settings picker.
+  static const IconData pageTurnVertical = PhosphorIconsRegular.arrowsVertical;
+
+  // ── System / device ──────────────────────────────────────────────────────
+  /// Half-light/half-dark device icon — "Match System" theme option.
+  static const IconData matchSystem = PhosphorIconsRegular.circleHalfTilt;
+
   // ── Misc ────────────────────────────────────────────────────────────────
   static const IconData pets = PhosphorIconsRegular.pawPrint;
   static const IconData myLocation = PhosphorIconsRegular.crosshair;

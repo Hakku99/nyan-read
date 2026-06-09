@@ -1,0 +1,180 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Components — Primary button" subtitle="Locked heights 36 / 44 / 52 / 56 px — padding horizontal only, labels nowrap" viewport="700x880" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Primary button — height system</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; color: var(--nyan-text); font-family: var(--font-ui); }
+
+  .section + .section { margin-top: 22px; }
+  .h { font: 600 14px/1.2 var(--font-ui); color: var(--nyan-text); letter-spacing: -0.1px; margin-bottom: 6px; }
+  .sub { font: 400 12px/1.4 var(--font-ui); color: var(--nyan-text-secondary); margin-bottom: 12px; }
+  .token-meta { font: 400 11px/1.3 var(--font-mono); color: var(--nyan-text-secondary); }
+
+  /* canonical button — fixed height, never grows */
+  .btn {
+    all: unset; box-sizing: border-box; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 0 24px;                            /* horizontal only — height controlled */
+    border-radius: var(--radius-input);
+    font: 500 16px/1 var(--font-ui);
+    flex-shrink: 0;
+  }
+  .btn .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .btn i { font-size: 18px; }
+  .btn.primary  { background: var(--nyan-primary);      color: var(--nyan-surface); }
+  .btn.deep     { background: var(--nyan-primary-deep); color: var(--nyan-surface); }
+  .btn.ghost    { background: transparent;              color: var(--nyan-primary-deep); font-weight: 600; font-size: 14px; }
+
+  .btn.sm { height: 36px; padding: 0 14px; font-size: 14px; }
+  .btn.md { height: 44px; padding: 0 24px; }
+  .btn.lg { height: 52px; padding: 0 28px; font-size: 17px; }
+  .btn.fab { height: 56px; width: 56px; padding: 0; border-radius: var(--radius-input); }
+
+  /* a measured-height ruler so the reader sees the rule, not just a button */
+  .ladder {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    align-items: center;
+    column-gap: 18px;
+    row-gap: 12px;
+  }
+  .ladder .px-label {
+    font: 500 11px/1 var(--font-mono);
+    color: var(--nyan-text-secondary);
+    text-align: right;
+  }
+  .ladder .cell { display: flex; align-items: center; gap: 14px; }
+
+  .compare {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  }
+  .verdict {
+    display: inline-flex; align-items: center; gap: 4px;
+    font: 600 10px/1 var(--font-mono); letter-spacing: 0.4px;
+    padding: 3px 8px; border-radius: 999px;
+    align-self: flex-start; margin-bottom: 10px;
+  }
+  .verdict.good { background: #E5F1E4; color: #2E6B3A; border: 1px solid #B7D8B5; }
+  .verdict.bad  { background: #FBE6E6; color: #9A2A2A; border: 1px solid #E8B6B6; }
+
+  .pair-card {
+    padding: 14px;
+    background: var(--nyan-surface);
+    border: 0.5px solid color-mix(in srgb, var(--nyan-divider) 50%, transparent);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-light-card);
+  }
+  .pair-card .anti { background: var(--nyan-primary); color: var(--nyan-surface); border-radius: var(--radius-input); display: inline-flex; align-items: center; padding: 14px 24px; font: 500 16px/1.4 var(--font-ui); max-width: 100%; }
+  .pair-card .anti.tall  { padding: 22px 24px; }   /* over-padded */
+  .pair-card .anti.wrap  { padding: 14px 24px; max-width: 180px; }  /* wraps and grows */
+
+  .rules ul { margin: 0; padding-left: 18px; font: 400 13px/1.55 var(--font-ui); color: var(--nyan-text); }
+  .rules li { margin: 4px 0; }
+  .rules code { font: 500 11px/1.3 var(--font-mono); color: var(--nyan-text); background: var(--nyan-surface-muted); padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="section">
+  <div class="h">Three heights, no others</div>
+  <div class="sub">Every Nyan button MUST be exactly one of 36 · 44 · 56 px tall. Set <code style="font:500 11px/1.3 var(--font-mono); background:var(--nyan-surface-muted); padding:1px 6px; border-radius:4px;">height</code>, never <code style="font:500 11px/1.3 var(--font-mono); background:var(--nyan-surface-muted); padding:1px 6px; border-radius:4px;">min-height + padding-y</code> — the latter lets icons or two-line labels balloon the box.</div>
+
+  <div class="ladder">
+    <div class="px-label">36 px</div>
+    <div class="cell">
+      <button class="btn primary sm"><span class="label">Continue</span></button>
+      <div class="token-meta">SECONDARY · in-card CTAs, compact action sheets (e.g. continue-reading hero, sort-by row)</div>
+    </div>
+
+    <div class="px-label">44 px</div>
+    <div class="cell">
+      <button class="btn primary md"><span class="label">Continue Reading</span></button>
+      <div class="token-meta">DEFAULT · the only height for body-flow CTAs · matches <code style="font:500 11px/1.3 var(--font-mono); background:var(--nyan-surface-muted); padding:1px 6px; border-radius:4px;">minTapTarget</code></div>
+    </div>
+
+    <div class="px-label">52 px</div>
+    <div class="cell">
+      <button class="btn deep lg"><span class="label">Start Reading</span></button>
+      <div class="token-meta">HERO · sticky bottom CTA only (e.g. paywall, full-screen import). Avoid elsewhere.</div>
+    </div>
+
+    <div class="px-label">56 px</div>
+    <div class="cell">
+      <button class="btn deep fab"><i class="ph ph-plus"></i></button>
+      <div class="token-meta">FAB · floating action only — Bookshelf import. Never label this; it stays a circle-square icon.</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="h">Variants at the default 44 px height</div>
+  <div class="ladder" style="grid-template-columns: 110px 1fr;">
+    <div class="px-label" style="text-align:left;">Primary</div>
+    <div class="cell">
+      <button class="btn primary md"><span class="label">Continue Reading</span></button>
+      <button class="btn primary md"><i class="ph ph-book-open"></i><span class="label">Continue</span></button>
+    </div>
+    <div class="px-label" style="text-align:left;">Deep</div>
+    <div class="cell">
+      <button class="btn deep md"><span class="label">Start Reading</span></button>
+      <button class="btn deep md"><i class="ph ph-plus"></i><span class="label">Import</span></button>
+    </div>
+    <div class="px-label" style="text-align:left;">Ghost</div>
+    <div class="cell">
+      <button class="btn ghost md"><span class="label">Cancel</span></button>
+      <button class="btn ghost md"><span class="label">Reset to defaults</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="h">Things that cause buttons to look bad</div>
+  <div class="compare">
+    <div class="pair-card">
+      <div class="verdict good">✓ DO</div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn primary md"><span class="label">Continue Reading</span></button>
+      </div>
+      <div class="token-meta" style="margin-top:8px;">Fixed <code style="font:500 11px/1.3 var(--font-mono); background:var(--nyan-surface-muted); padding:1px 6px; border-radius:4px;">height: 44</code>, single-line label, <code style="font:500 11px/1.3 var(--font-mono); background:var(--nyan-surface-muted); padding:1px 6px; border-radius:4px;">white-space: nowrap</code>.</div>
+    </div>
+    <div class="pair-card">
+      <div class="verdict bad">✗ DON'T</div>
+      <div class="anti tall">Continue Reading</div>
+      <div class="token-meta" style="margin-top:8px;">Vertical padding 22 px → 60 px tall. Drives the page rhythm off. Use <code style="font:500 11px/1.3 var(--font-mono); background:var(--nyan-surface-muted); padding:1px 6px; border-radius:4px;">height: 44</code> with <code style="font:500 11px/1.3 var(--font-mono); background:var(--nyan-surface-muted); padding:1px 6px; border-radius:4px;">padding: 0 24</code>.</div>
+    </div>
+
+    <div class="pair-card">
+      <div class="verdict good">✓ DO</div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn primary md" style="max-width:180px;"><span class="label">Continue Reading Long Title</span></button>
+      </div>
+      <div class="token-meta" style="margin-top:8px;">Constrained width truncates with ellipsis; height stays 44.</div>
+    </div>
+    <div class="pair-card">
+      <div class="verdict bad">✗ DON'T</div>
+      <div class="anti wrap">Continue Reading Long Title</div>
+      <div class="token-meta" style="margin-top:8px;">Label allowed to wrap → button doubles to ~74 px tall. Either truncate or shorten the label.</div>
+    </div>
+  </div>
+</div>
+
+<div class="section rules">
+  <div class="h">Rules</div>
+  <ul>
+    <li><code>height</code>, not <code>min-height + padding-y</code>. Pick 36 · 44 · 52 · 56 and stick to it.</li>
+    <li><code>padding</code> is horizontal only — 14 · 24 · 28 for sm · md · lg.</li>
+    <li><code>white-space: nowrap</code> + <code>text-overflow: ellipsis</code> on the label span. Buttons never wrap to two lines.</li>
+    <li>Icon size always one step below font-size: 18 px icon next to 16 px label, 16 px icon next to 14 px label.</li>
+    <li>Sticky bottom CTA = 52 px. Body CTA = 44 px. In-card CTA = 36 px. Floating action = 56 px square. Anything else is wrong.</li>
+    <li>Never put two body CTAs at 52 px on the same screen — the eye loses the primary.</li>
+  </ul>
+</div>
+
+</body>
+</html>

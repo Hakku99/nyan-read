@@ -21,6 +21,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readingSettings => '阅读设置';
 
   @override
+  String get reading => '阅读';
+
+  @override
   String get readerQuickProgressSubtitle => '章节跳转与阅读位置';
 
   @override
@@ -99,7 +102,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readingReminder => '阅读提醒';
 
   @override
-  String get readingReminderSubtitle => '提醒我休息一下';
+  String get readingReminderSubtitle => '章节跳转与阅读位置';
 
   @override
   String get reminderInterval => '提醒间隔';
@@ -108,6 +111,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String reminderMinutes(int minutes) {
     return '$minutes 分钟';
   }
+
+  @override
+  String get reminderEvery15min => '每 15 分钟';
+
+  @override
+  String get reminderEvery30min => '每 30 分钟';
+
+  @override
+  String get reminderEveryHour => '每小时';
+
+  @override
+  String get reminderEvery2hours => '每 2 小时';
+
+  @override
+  String get reminderDaily => '每天';
 
   @override
   String get dataManagement => '数据管理';
@@ -143,7 +161,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get about => '关于';
 
   @override
-  String get lockPrivacyShelfSubtitle => '隐藏直到下次解锁';
+  String get lockPrivacyShelfSubtitle => '需要 PIN 码才能打开';
 
   @override
   String get adminPanel => '管理面板';
@@ -750,7 +768,37 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themeCreamLight => '奶油白';
 
   @override
+  String get themeCreamLightHint => '温暖纸感，默认';
+
+  @override
   String get themeSumiDark => '墨色黑';
+
+  @override
+  String get themeSumiDarkHint => '深夜护眼';
+
+  @override
+  String get themeMatchSystem => '跟随系统';
+
+  @override
+  String get themeMatchSystemHint => '随设备深色模式切换';
+
+  @override
+  String get pageTurnLeftRight => '左右翻页';
+
+  @override
+  String get pageTurnLeftRightHint => '水平翻页';
+
+  @override
+  String get pageTurnUpDown => '上下翻页';
+
+  @override
+  String get pageTurnUpDownHint => '垂直翻页';
+
+  @override
+  String get languageEnglishHint => 'English';
+
+  @override
+  String get languageChineseHint => '中文 · 简体中文';
 
   @override
   String get timeToday => '今天';
@@ -801,28 +849,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get emptyShelfSubtitle => '导入一本书开始阅读';
 
   @override
-  String get exportData => '导出阅读数据';
+  String get exportData => '导出数据';
 
   @override
-  String get exportDataSubtitle => '将书籍、高亮和书签备份为 JSON';
+  String get exportDataSubtitle => '保存到设备或分享';
+
+  @override
+  String get exportDataSheetSubtitle => '选择阅读数据的保存方式';
 
   @override
   String get saveToDevice => '保存到设备';
 
   @override
-  String get saveToDeviceSubtitle => '选择设备上的文件夹';
+  String get saveToDeviceSubtitle => '将 JSON 备份存储到文件';
 
   @override
-  String get shareVia => '通过以下方式分享';
+  String get shareVia => '分享...';
 
   @override
-  String get shareViaSubtitle => 'Gmail、Drive、Quick Share 等';
+  String get shareViaSubtitle => '通过 Gmail、Drive 等应用发送';
 
   @override
-  String get importData => '导入阅读数据';
+  String get importData => '导入数据';
 
   @override
-  String get importDataSubtitle => '从之前导出的 JSON 文件恢复';
+  String get importDataSubtitle => '从备份文件恢复';
 
   @override
   String importSuccess(int count) {

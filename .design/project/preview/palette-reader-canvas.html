@@ -1,0 +1,34 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Colors — Reader paper variants" subtitle="Cream / Sepia / Sumi / Charcoal canvas (reader-only)" viewport="700x180" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Reader canvas paper variants</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; }
+  .card { width: 100%; }
+  .row { display: flex; gap: 12px; align-items: center; }
+  .col { display: flex; flex-direction: column; gap: 12px; }
+  .swatch { width: 56px; height: 56px; border-radius: var(--radius-small); border: 1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent); }
+  .swatch-lg { width: 100%; height: 64px; border-radius: var(--radius-card); border: 1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent); }
+  .token-label { font: var(--fw-medium) var(--fz-meta)/1.2 var(--font-ui); color: var(--nyan-text); }
+  .token-meta  { font: var(--fw-regular) 11px/1.3 var(--font-mono); color: var(--nyan-text-secondary); }
+  .grid { display: grid; gap: 14px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font: var(--fw-medium) 11px/1 var(--font-mono); background: var(--nyan-surface-muted); color: var(--nyan-text-secondary); border: 1px solid var(--nyan-divider); }
+  
+</style>
+</head>
+<body><div class="card">
+  <div class="grid" style="grid-template-columns: repeat(4, 1fr); gap:10px;">
+    <div class="col" style="gap:4px;"><div style="width:100%; height:64px; border-radius:var(--radius-card); background:#F7F5EF; display:flex; align-items:center; justify-content:center; color:#4A453E; font:600 14px/1 var(--font-serif); border:1px solid #E5DED2;">永</div><div class="token-meta">Cream · F7F5EF</div></div>
+    <div class="col" style="gap:4px;"><div style="width:100%; height:64px; border-radius:var(--radius-card); background:#EDE3C7; display:flex; align-items:center; justify-content:center; color:#5C4F3F; font:600 14px/1 var(--font-serif); border:1px solid #D6CBAF;">永</div><div class="token-meta">Sepia · EDE3C7</div></div>
+    <div class="col" style="gap:4px;"><div style="width:100%; height:64px; border-radius:var(--radius-card); background:#262422; display:flex; align-items:center; justify-content:center; color:#E5DED3; font:600 14px/1 var(--font-serif); border:1px solid #3A3635;">永</div><div class="token-meta">Sumi · 262422</div></div>
+    <div class="col" style="gap:4px;"><div style="width:100%; height:64px; border-radius:var(--radius-card); background:#141312; display:flex; align-items:center; justify-content:center; color:#F1EBDD; font:600 14px/1 var(--font-serif); border:1px solid #2A2826;">永</div><div class="token-meta">Charcoal · 141312</div></div>
+  </div>
+  <div style="font:400 12px/1.4 var(--font-ui); color:var(--nyan-text-secondary); margin-top:14px;">Reader paper is decoupled from app theme. Ink color flips automatically based on background luminance.</div>
+</div></body>
+</html>

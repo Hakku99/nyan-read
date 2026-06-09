@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Colors — Cream Light core" subtitle="Surfaces + matcha primary — no #FFFFFF allowed" viewport="700x460" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Cream Light — core surfaces</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; }
+  .row { display: flex; gap: 12px; align-items: center; }
+  .swatch { width: 56px; height: 56px; border-radius: var(--radius-small); border: 1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent); flex-shrink: 0; }
+  .token-label { font: 500 13px/1.2 var(--font-ui); color: var(--nyan-text); }
+  .token-meta  { font: 400 11px/1.3 var(--font-mono); color: var(--nyan-text-secondary); }
+  .delta { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; font: 600 10px/1.4 var(--font-mono); margin-left: 8px; background: #F0EBDE; color: #6E7A55; border: 1px solid #DCD2BB; }
+</style>
+</head>
+<body>
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div class="row"><div class="swatch" style="background:#F6F3EA"></div><div style="flex:1;"><div class="token-label">background</div><div class="token-meta">#F6F3EA · page paper (NEVER #FFFFFF)</div></div></div>
+    <div class="row"><div class="swatch" style="background:#FFFDF8"></div><div style="flex:1;"><div class="token-label">surface</div><div class="token-meta">#FFFDF8 · cards, sheets, panels</div></div></div>
+    <div class="row"><div class="swatch" style="background:#F1ECDD"></div><div style="flex:1;"><div class="token-label">surfaceMuted</div><div class="token-meta">#F1ECDD · tab tracks, slider rails, recessed</div></div></div>
+    <div class="row"><div class="swatch" style="background:#E5DED2"></div><div style="flex:1;"><div class="token-label">divider</div><div class="token-meta">#E5DED2 · warm hairline</div></div></div>
+    <div class="row"><div class="swatch" style="background:#6E7A55"></div><div style="flex:1;"><div class="token-label">primary (matcha) <span class="delta">AA-revised · was #98A27C</span></div><div class="token-meta">#6E7A55 · button fill, progress · 4.51:1 AA</div></div></div>
+    <div class="row"><div class="swatch" style="background:#5A6644"></div><div style="flex:1;"><div class="token-label">primaryDeep <span class="delta">AA-revised · was #7E8B61</span></div><div class="token-meta">#5A6644 · accent, selected outline · 6.04:1 AA</div></div></div>
+  </div>
+</body>
+</html>

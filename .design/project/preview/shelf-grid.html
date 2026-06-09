@@ -1,0 +1,116 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Components — Shelf grid" subtitle="U9 grid card — 120:156 cover wash, format chip, progress when started, 2-line title + author" viewport="700x900" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Bookshelf grid card</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; color: var(--nyan-text); font-family: var(--font-ui); }
+
+  .section + .section { margin-top: 22px; }
+  .h { font: 600 14px/1.2 var(--font-ui); color: var(--nyan-text); letter-spacing: -0.1px; margin-bottom: 6px; }
+  .sub { font: 400 12px/1.4 var(--font-ui); color: var(--nyan-text-secondary); margin-bottom: 12px; }
+  code { font: 500 11px/1.3 var(--font-mono); color: var(--nyan-text); background: var(--nyan-surface-muted); padding: 1px 6px; border-radius: 4px; }
+
+  /* Production: the 3-col grid on a 390 px shelf. The card is a chromeless
+     column — the grid track sets its width, the cover's 120:156 ratio sets
+     its height. No tile border, no fixed pixel box. */
+  .phone-row {
+    background: var(--nyan-bg);
+    padding: 16px;
+    border-radius: var(--radius-card);
+    border: 0.5px dashed color-mix(in srgb, var(--nyan-divider) 80%, transparent);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px 12px;
+    width: 358px;                 /* 390 px shelf − 16 px gutters */
+    box-sizing: border-box;
+  }
+
+  .gcard { display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
+  .gcard .cover {
+    position: relative; width: 100%; aspect-ratio: 120 / 156; border-radius: 12px;
+    background: color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface));
+    border: 0.5px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent);
+    display: grid; place-items: center; overflow: hidden;
+  }
+  .gcard .cover > i { font-size: 26px; color: var(--nyan-primary); }
+  .gcard .fmt {
+    position: absolute; top: 6px; right: 6px; height: 17px; padding: 0 6px; border-radius: 999px;
+    background: color-mix(in srgb, var(--nyan-surface) 88%, transparent);
+    border: 0.5px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent);
+    display: flex; align-items: center;
+    font: 600 9px/1 var(--font-ui); color: var(--nyan-primary-deep);
+  }
+  .gcard .progress { height: 3px; border-radius: 999px; background: color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface)); overflow: hidden; }
+  .gcard .progress > div { height: 100%; border-radius: 999px; background: var(--nyan-primary); }
+  .gcard .title { font: 600 12.5px/1.25 var(--font-ui); color: var(--nyan-text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .gcard .author { font: 400 11px/1.3 var(--font-ui); color: var(--nyan-text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Selected (U21 multi-select): primary ring on the cover + top-left check. */
+  .gcard.selected .cover { border: 2px solid var(--nyan-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--nyan-primary) 16%, transparent); }
+  .gcard .check {
+    position: absolute; top: 6px; left: 6px; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--nyan-select-fill); border: 1.5px solid var(--nyan-select-fill);
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--nyan-select-fill) 40%, transparent);
+    display: grid; place-items: center;
+  }
+  .gcard .check svg { display: block; }
+
+  .rules ul { margin: 0; padding-left: 18px; font: 400 13px/1.55 var(--font-ui); color: var(--nyan-text); }
+  .rules li { margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<div class="section">
+  <div class="h">Shelf grid card — U9 Bookshelf Home, Cream · grid view</div>
+  <div class="sub">
+    A chromeless column, not a bordered tile. Three parts stacked with an 8 px gap: a tall <code>120:156</code> cover wash (book glyph + format chip), a thin progress bar shown <em>only</em> once a book is started, then a 2-line title and single-line author. The 3-column grid track sets the width; the cover ratio sets the height.
+  </div>
+
+  <div class="phone-row">
+    <div class="gcard">
+      <div class="cover"><i class="ph ph-book-open"></i><span class="fmt">EPUB</span></div>
+      <div class="progress"><div style="width:42%"></div></div>
+      <div>
+        <div class="title">The Stillwater Diaries</div>
+        <div class="author">Matsuno Eri</div>
+      </div>
+    </div>
+    <div class="gcard">
+      <div class="cover"><i class="ph ph-book-open"></i><span class="fmt">TXT</span></div>
+      <div>
+        <div class="title">Borrowed Light</div>
+        <div class="author">Yuen Lai-Ying</div>
+      </div>
+    </div>
+    <div class="gcard selected">
+      <div class="cover"><i class="ph ph-book-open"></i><span class="fmt">PDF</span><span class="check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 L10 17.5 L19 7"></path></svg></span></div>
+      <div class="progress"><div style="width:88%"></div></div>
+      <div>
+        <div class="title">A Long Slope Down</div>
+        <div class="author">Park Hyun-joo</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section rules">
+  <div class="h">Rules</div>
+  <ul>
+    <li><strong>No tile chrome.</strong> The card has no background, border, or shadow of its own — it sits directly on the shelf. Structure comes from the cover wash, not a container.</li>
+    <li><strong>Cover ratio is fixed at <code>120 : 156</code>.</strong> Width is set by the 3-column grid; never hard-code a card width.</li>
+    <li><strong>Format chip</strong> (EPUB / TXT / PDF) pins to the cover's top-right in a translucent surface pill.</li>
+    <li><strong>Progress bar appears only when <code>pct &gt; 0</code></strong> — unread books skip it, so the title sits directly under the cover.</li>
+    <li><strong>Title clamps to 2 lines, author to 1</strong> (ellipsis). Rows stay even because the cover — not the text — drives height.</li>
+    <li><strong>Selected state</strong> (U21): a 2 px primary ring + 3 px halo on the cover and a top-left check. Selection chrome lives on the cover, never the text.</li>
+  </ul>
+</div>
+
+</body>
+</html>

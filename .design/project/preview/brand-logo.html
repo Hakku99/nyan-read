@@ -1,0 +1,567 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Brand — Nyan mark" subtitle="Matcha kawaii peek — brand-aligned palette" viewport="960x1620" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Brand — Nyan mark</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; color: var(--nyan-text); font-family: var(--font-ui); }
+  .section + .section { margin-top: 26px; }
+  .h   { font: 600 14px/1.2 var(--font-ui); color: var(--nyan-text); letter-spacing: -0.1px; margin-bottom: 4px; }
+  .sub { font: 400 12px/1.45 var(--font-ui); color: var(--nyan-text-secondary); margin-bottom: 14px; max-width: 880px; }
+  .meta { font: 400 11px/1.35 var(--font-mono); color: var(--nyan-text-secondary); }
+  code { font: 500 11px/1.3 var(--font-mono); color: var(--nyan-text); background: var(--nyan-surface-muted); padding: 1px 6px; border-radius: 4px; }
+
+  .concepts { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+  .concept {
+    padding: 18px 14px 16px;
+    background: var(--nyan-surface);
+    border-radius: var(--radius-card);
+    border: 0.5px solid color-mix(in srgb, var(--nyan-divider) 50%, transparent);
+    box-shadow: var(--shadow-light-card);
+    display: flex; flex-direction: column; gap: 10px; align-items: center;
+    position: relative;
+  }
+  .concept .logo-frame {
+    width: 100%; aspect-ratio: 1; background: var(--nyan-bg); border-radius: var(--radius-input);
+    display: grid; place-items: center; padding: 12px; box-sizing: border-box;
+  }
+  .concept .logo-frame svg, .concept .logo-frame img { width: 100%; height: 100%; display: block; }
+  .concept .label { font: 600 13px/1.2 var(--font-ui); color: var(--nyan-text); text-align: center; }
+  .concept .meta { text-align: center; }
+  .concept.recommended {
+    border: 1.5px solid var(--nyan-primary-deep);
+    background: color-mix(in srgb, var(--nyan-primary) 5%, var(--nyan-surface));
+  }
+  .concept.recommended::after {
+    content: "RECOMMENDED";
+    position: absolute; top: -10px; left: 12px;
+    background: var(--nyan-primary-deep); color: var(--nyan-surface);
+    padding: 3px 8px; border-radius: 999px;
+    font: 600 10px/1 var(--font-mono); letter-spacing: 0.5px;
+  }
+  .concept.legacy { opacity: 0.85; }
+  .concept.legacy::after {
+    content: "PRODUCTION PNG";
+    position: absolute; top: -10px; left: 12px;
+    background: var(--nyan-surface-muted); color: var(--nyan-text-secondary);
+    padding: 3px 8px; border-radius: 999px;
+    font: 600 10px/1 var(--font-mono); letter-spacing: 0.5px;
+  }
+  .concept.alt::after {
+    content: "ALT";
+    position: absolute; top: -10px; left: 12px;
+    background: var(--nyan-surface-muted); color: var(--nyan-text-secondary);
+    padding: 3px 8px; border-radius: 999px;
+    font: 600 10px/1 var(--font-mono); letter-spacing: 0.5px;
+  }
+  .concept.reference::after {
+    content: "REFERENCE";
+    position: absolute; top: -10px; left: 12px;
+    background: var(--hl-pink); color: var(--nyan-text);
+    padding: 3px 8px; border-radius: 999px;
+    font: 600 10px/1 var(--font-mono); letter-spacing: 0.5px;
+  }
+
+  .ladder {
+    display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap;
+    padding: 20px 18px; background: var(--nyan-surface);
+    border-radius: var(--radius-card);
+    border: 0.5px solid color-mix(in srgb, var(--nyan-divider) 50%, transparent);
+  }
+  .ladder .step { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .ladder .step svg { display: block; }
+  .ladder .step .px { font: 500 10px/1 var(--font-mono); color: var(--nyan-text-secondary); }
+
+  .splash-row { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start; }
+  .phone {
+    width: 240px; height: 420px;
+    background: var(--nyan-bg);
+    border-radius: 32px;
+    border: 8px solid #2a2826;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    display: flex; flex-direction: column;
+    overflow: hidden; position: relative;
+  }
+  .phone .splash-canvas {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 18px; padding: 24px;
+    background: var(--nyan-bg);
+    position: relative;
+  }
+  .phone .splash-canvas .mark { width: 128px; height: 128px; }
+  .phone .splash-canvas .wordmark-zh {
+    font: 600 26px/1 var(--font-serif); color: var(--nyan-text); letter-spacing: 6px;
+  }
+  .phone .splash-canvas .wordmark-en {
+    font: 500 12px/1 var(--font-ui); color: var(--nyan-text-secondary); letter-spacing: 4px; text-transform: uppercase;
+  }
+  .phone .splash-canvas .tagline {
+    position: absolute; bottom: 32px; left: 0; right: 0; text-align: center;
+    font: 400 11px/1.4 var(--font-ui); color: var(--nyan-text-muted);
+  }
+  .phone .splash-canvas .tagline .dot {
+    display: inline-block; width: 4px; height: 4px; border-radius: 50%;
+    background: var(--nyan-primary); vertical-align: middle; margin: 0 6px 2px;
+  }
+
+  /* Detail call-outs */
+  .details { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .detail {
+    padding: 16px 14px;
+    background: var(--nyan-surface);
+    border-radius: var(--radius-card);
+    border: 0.5px solid color-mix(in srgb, var(--nyan-divider) 50%, transparent);
+  }
+  .detail .swatch-frame {
+    aspect-ratio: 1; background: var(--nyan-bg); border-radius: var(--radius-input);
+    display: grid; place-items: center; margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .detail .swatch-frame svg { width: 100%; height: 100%; display: block; }
+  .detail .name { font: 600 12px/1.2 var(--font-ui); color: var(--nyan-text); }
+  .detail .desc { font: 400 11px/1.4 var(--font-ui); color: var(--nyan-text-secondary); margin-top: 3px; }
+
+  /* Palette */
+  .palette { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 16px;
+             background: var(--nyan-surface); border-radius: var(--radius-card);
+             border: 0.5px solid color-mix(in srgb, var(--nyan-divider) 50%, transparent); }
+  .swatch { display: flex; flex-direction: column; gap: 6px; }
+  .swatch .chip { width: 100%; aspect-ratio: 1.6; border-radius: 10px;
+                  border: 0.5px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent); }
+  .swatch .name { font: 500 11px/1.2 var(--font-ui); color: var(--nyan-text); }
+  .swatch .hex  { font: 400 10px/1.2 var(--font-mono); color: var(--nyan-text-secondary); }
+
+  .notes ul { margin: 0; padding-left: 18px; font: 400 13px/1.55 var(--font-ui); color: var(--nyan-text); }
+  .notes li { margin: 4px 0; }
+  .notes li + li { margin-top: 6px; }
+
+  pre.code {
+    margin: 0; padding: 14px;
+    background: var(--nyan-surface);
+    border: 0.5px solid var(--nyan-divider);
+    border-radius: var(--radius-card);
+    font: 500 12px/1.5 var(--font-mono);
+    color: var(--nyan-text);
+    white-space: pre;
+    overflow-x: auto;
+    box-shadow: var(--shadow-grouped);
+  }
+</style>
+
+<!--
+  Reusable SVG symbols — kawaii peek, matcha palette.
+
+  Palette (all from colors_and_type.css, no new tokens):
+    Outline / features:  --nyan-text          #3F3A34
+    Cat body fill:       lighter sage         #B5C29A   (a tint of --nyan-primary-src)
+    Cat shading on belly:cream                #FFFDF8   --nyan-surface
+    Book cover:          deep matcha          #7E8B61   --nyan-primary-deep-src
+    Book pages, paws, inner ears: cream       #FFFDF8   --nyan-surface
+    Heart accent:        pink at 0.85         #E8A0BF   --hl-pink
+    Badge interior:      paper                #F6F3EA   --nyan-bg
+-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+
+    <!-- ── Full Hana mark — chubby matcha cat peeking over an open book ── -->
+    <symbol id="nyan-mark" viewBox="0 0 200 200">
+
+      <!-- Badge frame -->
+      <rect x="12" y="12" width="176" height="176" rx="28"
+            fill="#F6F3EA" stroke="#3F3A34" stroke-width="2.5"/>
+
+      <!-- Tail (drawn behind book so only the visible flick pokes out right) -->
+      <path d="M 150 156
+               C 178 156, 192 145, 186 130
+               C 180 121, 168 124, 172 134
+               C 176 142, 180 152, 148 160 Z"
+            fill="#B5C29A" stroke="#3F3A34"
+            stroke-width="2" stroke-linejoin="round"/>
+
+      <!-- Cat head + upper body — one closed silhouette,
+           wide chubby head with two small rounded ear bumps -->
+      <path d="M 56 122
+               C 42 112, 40 78, 56 60
+               L 64 50
+               Q 76 28, 88 52
+               Q 100 56, 112 52
+               Q 124 28, 136 50
+               L 144 60
+               C 160 78, 158 112, 144 122
+               L 144 178
+               L 56 178 Z"
+            fill="#B5C29A" stroke="#3F3A34"
+            stroke-width="2.5" stroke-linejoin="round"/>
+
+      <!-- Inner ears — cream, brand-aligned (production has cream insides) -->
+      <path d="M 70 50 Q 76 38, 84 52 Z"
+            fill="#FFFDF8" stroke="none"/>
+      <path d="M 116 52 Q 124 38, 130 50 Z"
+            fill="#FFFDF8" stroke="none"/>
+
+      <!-- Eyes — friendly black dots with a 1 px cream highlight -->
+      <circle cx="83" cy="90" r="3.6" fill="#3F3A34"/>
+      <circle cx="117" cy="90" r="3.6" fill="#3F3A34"/>
+      <circle cx="84.2" cy="88.7" r="1" fill="#FFFDF8"/>
+      <circle cx="118.2" cy="88.7" r="1" fill="#FFFDF8"/>
+
+      <!-- Nose — tiny rounded triangle -->
+      <path d="M 96.5 100 L 103.5 100 L 100 104 Z"
+            fill="#3F3A34" stroke="#3F3A34" stroke-width="0.8"
+            stroke-linejoin="round"/>
+
+      <!-- Mouth — gentle smile -->
+      <path d="M 95 106 Q 100 110, 105 106"
+            fill="none" stroke="#3F3A34" stroke-width="1.6"
+            stroke-linecap="round"/>
+
+      <!-- Whiskers — cream (visible against sage), 3 lines each side -->
+      <g stroke="#FFFDF8" stroke-width="1.5" stroke-linecap="round">
+        <line x1="48" y1="94" x2="72" y2="96"/>
+        <line x1="46" y1="100" x2="72" y2="100"/>
+        <line x1="48" y1="106" x2="72" y2="104"/>
+        <line x1="128" y1="96" x2="152" y2="94"/>
+        <line x1="128" y1="100" x2="154" y2="100"/>
+        <line x1="128" y1="104" x2="152" y2="106"/>
+      </g>
+
+      <!-- Heart (top-left accent) — soft pink -->
+      <path d="M 40 70
+               C 36 66, 30 67, 32 72
+               C 32 77, 40 82, 40 82
+               C 40 82, 48 77, 48 72
+               C 50 67, 44 66, 40 70 Z"
+            fill="#E8A0BF" fill-opacity="0.85"
+            stroke="#3F3A34" stroke-width="1.6"
+            stroke-linejoin="round"/>
+
+      <!-- Speed-line accents (top-right) -->
+      <g stroke="#3F3A34" stroke-width="2" stroke-linecap="round">
+        <line x1="150" y1="60" x2="160" y2="58"/>
+        <line x1="154" y1="68" x2="164" y2="66"/>
+        <line x1="158" y1="76" x2="168" y2="74"/>
+      </g>
+
+      <!-- Book cover — deep matcha trapezoid, fanned open at top -->
+      <path d="M 26 172
+               L 30 134
+               Q 65 132, 100 144
+               Q 135 132, 170 134
+               L 174 172
+               Q 100 178, 26 172 Z"
+            fill="#7E8B61" stroke="#3F3A34"
+            stroke-width="2.4" stroke-linejoin="round"/>
+
+      <!-- Book pages — cream inner -->
+      <path d="M 38 168
+               L 40 140
+               Q 70 138, 100 148
+               Q 130 138, 160 140
+               L 162 168
+               Q 100 173, 38 168 Z"
+            fill="#FFFDF8" stroke="none"/>
+
+      <!-- Spine -->
+      <line x1="100" y1="148" x2="100" y2="172"
+            stroke="#3F3A34" stroke-width="1.8" stroke-linecap="round"/>
+
+      <!-- Left page lines -->
+      <g stroke="#3F3A34" stroke-width="1" stroke-linecap="round" opacity="0.45">
+        <line x1="52" y1="156" x2="88" y2="157"/>
+        <line x1="50" y1="163" x2="88" y2="164"/>
+      </g>
+
+      <!-- Right page: tiny fish doodle + one underline -->
+      <g stroke="#3F3A34" stroke-width="1.1" stroke-linecap="round" fill="none">
+        <ellipse cx="124" cy="157" rx="6" ry="3.5"/>
+        <path d="M 130 157 L 134 153 L 134 161 Z"/>
+      </g>
+      <circle cx="121" cy="156" r="0.8" fill="#3F3A34"/>
+      <line x1="115" y1="167" x2="146" y2="167"
+            stroke="#3F3A34" stroke-width="1" stroke-linecap="round" opacity="0.45"/>
+
+      <!-- Paws — two cream pillows resting on the book top -->
+      <path d="M 70 140
+               C 70 132, 86 132, 86 140
+               C 84 144, 72 144, 70 140 Z"
+            fill="#FFFDF8" stroke="#3F3A34" stroke-width="2"
+            stroke-linejoin="round"/>
+      <path d="M 114 140
+               C 114 132, 130 132, 130 140
+               C 128 144, 116 144, 114 140 Z"
+            fill="#FFFDF8" stroke="#3F3A34" stroke-width="2"
+            stroke-linejoin="round"/>
+
+    </symbol>
+
+    <!-- ── Compact: face-only kawaii head for ≤32 px ── -->
+    <symbol id="nyan-mark-compact" viewBox="0 0 120 120">
+      <!-- Chubby round head silhouette -->
+      <path d="M 20 86
+               C 6 76, 6 42, 22 28
+               L 28 18
+               Q 36 4, 46 26
+               Q 60 30, 74 26
+               Q 84 4, 92 18
+               L 98 28
+               C 114 42, 114 76, 100 86
+               Q 60 100, 20 86 Z"
+            fill="#B5C29A" stroke="#3F3A34"
+            stroke-width="3" stroke-linejoin="round"/>
+      <!-- Inner ears -->
+      <path d="M 34 28 Q 40 18, 48 30 Z" fill="#FFFDF8"/>
+      <path d="M 72 30 Q 80 18, 86 28 Z" fill="#FFFDF8"/>
+      <!-- Eyes -->
+      <circle cx="44" cy="58" r="4" fill="#3F3A34"/>
+      <circle cx="76" cy="58" r="4" fill="#3F3A34"/>
+      <circle cx="45.2" cy="56.5" r="1.1" fill="#FFFDF8"/>
+      <circle cx="77.2" cy="56.5" r="1.1" fill="#FFFDF8"/>
+      <!-- Nose -->
+      <path d="M 56 70 L 64 70 L 60 74 Z" fill="#3F3A34"/>
+      <!-- Smile -->
+      <path d="M 54 76 Q 60 80, 66 76"
+            fill="none" stroke="#3F3A34" stroke-width="2" stroke-linecap="round"/>
+      <!-- Whiskers -->
+      <g stroke="#FFFDF8" stroke-width="1.6" stroke-linecap="round">
+        <line x1="12" y1="60" x2="32" y2="62"/>
+        <line x1="12" y1="68" x2="32" y2="68"/>
+        <line x1="88" y1="62" x2="108" y2="60"/>
+        <line x1="88" y1="68" x2="108" y2="68"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+</head>
+<body>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<div class="section">
+  <div class="h">Brand mark — kawaii peek in matcha</div>
+  <div class="sub">The mascot keeps the kawaii peeking-over-a-book pose from the supplied reference, but switches to the <strong>matcha</strong> palette of the actual production logo and design system: sage body (<code>--nyan-primary-src</code>), deeper matcha book cover (<code>--nyan-primary-deep-src</code>), cream pages and paws (<code>--nyan-surface</code>). The pink heart accent is the only non-green color — a small nod to <code>--hl-pink</code> for warmth. Wide chubby face, small rounded ear bumps, dot eyes, cream whiskers — everything the previous draft got wrong, fixed.</div>
+
+  <div class="concepts">
+    <!-- Current production PNG -->
+    <div class="concept legacy">
+      <div class="logo-frame">
+        <img src="../assets/images/nyan_read_logo_transparent.png" alt="Production logo" />
+      </div>
+      <div class="label">Production PNG</div>
+      <div class="meta">Matcha sage cat<br/>Sets the color theme</div>
+    </div>
+
+    <!-- New kawaii matcha mark (recommended) -->
+    <div class="concept recommended">
+      <div class="logo-frame">
+        <svg viewBox="0 0 200 200"><use href="#nyan-mark"/></svg>
+      </div>
+      <div class="label">Kawaii peek — matcha</div>
+      <div class="meta">Splash · app icon · about<br/>200 × 200 SVG, brand palette</div>
+    </div>
+
+    <!-- Compact -->
+    <div class="concept alt">
+      <div class="logo-frame">
+        <svg viewBox="0 0 120 120"><use href="#nyan-mark-compact"/></svg>
+      </div>
+      <div class="label">Compact face</div>
+      <div class="meta">Favicon · list-row · ≤32 px<br/>Same character, simplified</div>
+    </div>
+
+    <!-- Source reference (kawaii style) -->
+    <div class="concept reference">
+      <div class="logo-frame" style="background: var(--nyan-surface);">
+        <img src="../uploads/pasted-1779112699045-0.png" alt="Style reference" style="object-fit: contain;"/>
+      </div>
+      <div class="label">Style reference</div>
+      <div class="meta">Pose &amp; proportions<br/>(palette swapped to brand matcha)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<div class="section">
+  <div class="h">What changed from the previous draft</div>
+  <div class="sub">Two complaints from review: <em>"the cat mascot looks ugly, totally not similar with sample provided on the right"</em> and <em>"color theme is not matching current design system."</em> Both addressed.</div>
+  <div class="details">
+
+    <div class="detail">
+      <div class="swatch-frame">
+        <svg viewBox="40 20 120 120"><use href="#nyan-mark"/></svg>
+      </div>
+      <div class="name">Wide chubby head</div>
+      <div class="desc">Old: tall narrow head, long pointed ears reaching y = 36 on a 200 box. New: head fills x = 40 – 160 with small <em>rounded</em> ear bumps — proportions read kawaii at a glance.</div>
+    </div>
+
+    <div class="detail">
+      <div class="swatch-frame">
+        <svg viewBox="20 20 160 110">
+          <path d="M 56 122 C 42 112, 40 78, 56 60 L 64 50 Q 76 28, 88 52 Q 100 56, 112 52 Q 124 28, 136 50 L 144 60 C 160 78, 158 112, 144 122 Q 100 134, 56 122 Z"
+                fill="#B5C29A" stroke="#3F3A34" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M 70 50 Q 76 38, 84 52 Z" fill="#FFFDF8"/>
+          <path d="M 116 52 Q 124 38, 130 50 Z" fill="#FFFDF8"/>
+        </svg>
+      </div>
+      <div class="name">Matcha sage body</div>
+      <div class="desc">Old draft was cream-on-cream — invisible against the page. New body is sage <code>#B5C29A</code> (tint of <code>--nyan-primary-src</code>) — matches the production PNG and reads against the paper background.</div>
+    </div>
+
+    <div class="detail">
+      <div class="swatch-frame">
+        <svg viewBox="20 120 160 60">
+          <path d="M 26 172 L 30 134 Q 65 132, 100 144 Q 135 132, 170 134 L 174 172 Q 100 178, 26 172 Z" fill="#7E8B61" stroke="#3F3A34" stroke-width="2.4" stroke-linejoin="round"/>
+          <path d="M 38 168 L 40 140 Q 70 138, 100 148 Q 130 138, 160 140 L 162 168 Q 100 173, 38 168 Z" fill="#FFFDF8"/>
+          <line x1="100" y1="148" x2="100" y2="172" stroke="#3F3A34" stroke-width="1.8" stroke-linecap="round"/>
+          <g stroke="#3F3A34" stroke-width="1.1" stroke-linecap="round" fill="none">
+            <ellipse cx="124" cy="157" rx="6" ry="3.5"/>
+            <path d="M 130 157 L 134 153 L 134 161 Z"/>
+          </g>
+          <circle cx="121" cy="156" r="0.8" fill="#3F3A34"/>
+          <path d="M 70 140 C 70 132, 86 132, 86 140 C 84 144, 72 144, 70 140 Z" fill="#FFFDF8" stroke="#3F3A34" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M 114 140 C 114 132, 130 132, 130 140 C 128 144, 116 144, 114 140 Z" fill="#FFFDF8" stroke="#3F3A34" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="name">Matcha book + cream pages</div>
+      <div class="desc">Old draft used a translucent pink book — off-palette. New book uses the production matcha cover (<code>--nyan-primary-deep-src</code>) with cream pages, a fish doodle on the right page, and two cream paws resting on the spine.</div>
+    </div>
+
+    <div class="detail">
+      <div class="swatch-frame">
+        <svg viewBox="28 50 160 120">
+          <path d="M 40 70 C 36 66, 30 67, 32 72 C 32 77, 40 82, 40 82 C 40 82, 48 77, 48 72 C 50 67, 44 66, 40 70 Z" fill="#E8A0BF" fill-opacity="0.85" stroke="#3F3A34" stroke-width="1.6" stroke-linejoin="round"/>
+          <g stroke="#3F3A34" stroke-width="2" stroke-linecap="round">
+            <line x1="150" y1="60" x2="160" y2="58"/>
+            <line x1="154" y1="68" x2="164" y2="66"/>
+            <line x1="158" y1="76" x2="168" y2="74"/>
+          </g>
+          <path d="M 150 156 C 178 156, 192 145, 186 130 C 180 121, 168 124, 172 134 C 176 142, 180 152, 148 160 Z"
+                fill="#B5C29A" stroke="#3F3A34" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="name">Tail + heart + flicks</div>
+      <div class="desc">Three kawaii punctuation marks, kept from the reference. Pink heart (warmth) on the left, three short flicks (excitement) on the right, sage tail curling out to the right of the book.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<div class="section notes">
+  <div class="h">Style commitments</div>
+  <ul>
+    <li><strong>Matcha-first, exactly like the production PNG.</strong> Cat body is <code>#B5C29A</code> — a lighter tint of <code>--nyan-primary-src</code> (#98A27C). Book cover is <code>--nyan-primary-deep-src</code> (#7E8B61). The wordmark stays brown ink. No new color tokens.</li>
+    <li><strong>Kawaii proportions from the reference.</strong> Wide chubby head (x = 40 – 160 on the 200 box) with two small <em>rounded</em> ear bumps instead of long pointed triangles. Dot eyes with a single cream highlight pixel — the simplest readable kawaii eye.</li>
+    <li><strong>Cream whiskers.</strong> Old whiskers were brown-on-cream — they're now cream-on-sage, the only correct contrast direction once the body is green.</li>
+    <li><strong>One pink accent, on purpose.</strong> The heart is the only non-matcha color on the badge. It's there for warmth and to hint at the highlight-pen pink in the larger design system — without dragging the whole mark away from the brand's matcha center of gravity.</li>
+    <li><strong>One pose, two scales.</strong> The full mark carries the story (peeking, book, fish, heart, speed lines). The compact face-only mark carries the silhouette down to 16 px. Same character, different responsibilities.</li>
+  </ul>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<div class="section">
+  <div class="h">Palette — what's actually on the badge</div>
+  <div class="sub">Six surfaces, sourced from <code>colors_and_type.css</code>. The only custom value is the lighter sage body tint — derived from <code>--nyan-primary-src</code> for visual lift against the deep matcha book.</div>
+  <div class="palette">
+    <div class="swatch"><div class="chip" style="background:#F6F3EA"></div><div class="name">Badge interior</div><div class="hex">--nyan-bg<br/>#F6F3EA</div></div>
+    <div class="swatch"><div class="chip" style="background:#B5C29A"></div><div class="name">Cat body + tail</div><div class="hex">sage tint of<br/>--nyan-primary-src · #B5C29A</div></div>
+    <div class="swatch"><div class="chip" style="background:#7E8B61"></div><div class="name">Book cover</div><div class="hex">--nyan-primary-deep-src<br/>#7E8B61</div></div>
+    <div class="swatch"><div class="chip" style="background:#FFFDF8"></div><div class="name">Pages, paws, ears, whiskers</div><div class="hex">--nyan-surface<br/>#FFFDF8</div></div>
+    <div class="swatch"><div class="chip" style="background:#3F3A34"></div><div class="name">Outline + features</div><div class="hex">--nyan-text<br/>#3F3A34</div></div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<div class="section">
+  <div class="h">Size ladder — when to swap to Compact</div>
+  <div class="sub">The full mark holds together down to ~64 px. Below that, fish/heart/speed-lines start to mud — switch to Compact.</div>
+  <div class="ladder">
+    <div class="step">
+      <svg width="16" height="16" viewBox="0 0 120 120"><use href="#nyan-mark-compact"/></svg>
+      <span class="px">16 · favicon (compact)</span>
+    </div>
+    <div class="step">
+      <svg width="24" height="24" viewBox="0 0 120 120"><use href="#nyan-mark-compact"/></svg>
+      <span class="px">24 · header (compact)</span>
+    </div>
+    <div class="step">
+      <svg width="32" height="32" viewBox="0 0 120 120"><use href="#nyan-mark-compact"/></svg>
+      <span class="px">32 · row avatar (compact)</span>
+    </div>
+    <div class="step">
+      <svg width="64" height="64" viewBox="0 0 200 200"><use href="#nyan-mark"/></svg>
+      <span class="px">64 · standalone · floor</span>
+    </div>
+    <div class="step">
+      <svg width="96" height="96" viewBox="0 0 200 200"><use href="#nyan-mark"/></svg>
+      <span class="px">96 · about row</span>
+    </div>
+    <div class="step">
+      <svg width="128" height="128" viewBox="0 0 200 200"><use href="#nyan-mark"/></svg>
+      <span class="px">128 · splash · app icon</span>
+    </div>
+    <div class="step">
+      <svg width="180" height="180" viewBox="0 0 200 200"><use href="#nyan-mark"/></svg>
+      <span class="px">180 · marketing hero</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<div class="section">
+  <div class="h">Splash screen — proposed</div>
+  <div class="sub">Cream paper background, the matcha mark centered, bilingual wordmark in serif below, quiet tagline anchored to the bottom. The book + cat carry the matcha; the rest of the composition stays paper-quiet.</div>
+
+  <div class="splash-row">
+    <div class="phone">
+      <div class="splash-canvas">
+        <svg class="mark" viewBox="0 0 200 200"><use href="#nyan-mark"/></svg>
+        <div class="wordmark-zh">喵阅</div>
+        <div class="wordmark-en">Nyan Read</div>
+        <div class="tagline">Enjoy reading time<span class="dot"></span>v1.0</div>
+      </div>
+    </div>
+
+    <div class="notes" style="padding-top: 8px;">
+      <div class="h">Splash composition</div>
+      <ul>
+        <li><strong>Background:</strong> <code>--nyan-bg</code> (#F6F3EA) full bleed.</li>
+        <li><strong>Mark:</strong> 128 × 128 dp, vertically centered on the device safe area. The badge frame becomes the app-icon outline.</li>
+        <li><strong>喵阅:</strong> Source Han Serif SC SemiBold, 26 sp, <code>letter-spacing: 6</code>.</li>
+        <li><strong>Nyan Read:</strong> Noto Sans SC Medium, 12 sp, all-caps, <code>letter-spacing: 4</code>, <code>--nyan-text-secondary</code>.</li>
+        <li><strong>Tagline:</strong> <code>--nyan-text-muted</code>, 11 sp, 32 dp from bottom safe area.</li>
+        <li><strong>No motion.</strong> If anything moves, fade-in the mark over 240 ms ease-out-cubic — nothing else.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<div class="section">
+  <div class="h">Files</div>
+  <div class="sub">Two SVGs ship: the full kawaii mark and the compact face. Both are self-contained — fills and strokes are baked in (not inherited via <code>currentColor</code>), because this style depends on the multi-color fills.</div>
+<pre class="code">assets/brand/logo-line.svg          ← UPDATED · full matcha mark · kawaii peek
+assets/brand/logo-line-compact.svg  ← UPDATED · compact face · ≤32 px
+
+assets/images/nyan_read_logo.png             ← PRODUCTION · current Flutter asset
+assets/images/nyan_read_logo_transparent.png ← PRODUCTION · transparent canvas
+assets/images/splash_screen.png              ← PRODUCTION · production splash</pre>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────── -->
+<div class="section notes">
+  <div class="h">Usage rules</div>
+  <ul>
+    <li><strong>Use as-is.</strong> The mark is a flat illustration with baked-in fills — don't try to re-tint individual strokes or fills.</li>
+    <li><strong>Clear-space</strong> around the badge = one ear-height (~14 % of the badge edge). Nothing crosses that ring, including the heart and speed-line accents.</li>
+    <li><strong>Minimum sizes:</strong> Standalone ≥ 64 px, Compact ≥ 16 px. Below 16 px, use a typographic <code>喵</code> glyph instead.</li>
+    <li><strong>Never recolor, rotate, skew, or place on photography.</strong> The matcha discipline is what makes the cozy atmosphere work — saturated backgrounds or photo backdrops fight it.</li>
+    <li><strong>For dark surfaces</strong> (sumi dark theme, marketing on dark), use the Compact mark inverted — set its background to a dark warm-ink and the body fill to cream. The full mark is not designed for dark surfaces; if you need one, request a dark variant rather than improvising.</li>
+  </ul>
+</div>
+
+</body>
+</html>

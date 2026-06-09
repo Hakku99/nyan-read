@@ -1,0 +1,94 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Components — Response feedback" subtitle="Shared toast for completed / failed / skipped / in-progress — quiet --shadow-subtle, floating inset" viewport="720x520" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Response feedback</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+  .toast {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--nyan-surface);
+    border: 1px solid var(--chrome-edge);
+    border-radius: var(--r-card-nested);
+    box-shadow: var(--shadow-subtle);
+    padding: 10px 12px; min-height: 56px;
+  }
+  .tile { width: 36px; height: 36px; flex-shrink: 0; border-radius: var(--r-chip); display: grid; place-items: center; }
+  .tile i { font-size: 20px; }
+  .body { flex: 1; min-width: 0; }
+  .title { font: 600 14px/1.25 var(--font-ui); color: var(--nyan-text); }
+  .desc  { font: 400 12.5px/1.35 var(--font-ui); color: var(--nyan-text-secondary); margin-top: 2px; }
+  .action { all: unset; cursor: pointer; flex-shrink: 0; height: 32px; padding: 0 12px; border-radius: var(--r-chip);
+            font: 600 13px/1 var(--font-ui); color: var(--nyan-primary-deep);
+            background: color-mix(in srgb, var(--nyan-primary) 10%, transparent); display: grid; place-items: center; }
+  .dismiss { all: unset; cursor: pointer; flex-shrink: 0; width: 32px; height: 32px; border-radius: var(--r-chip); display: grid; place-items: center; }
+  .dismiss i { font-size: 16px; color: var(--nyan-text-muted); }
+  @keyframes nyan-spin { to { transform: rotate(360deg); } }
+  .eyebrow { font: 500 11px/1 var(--font-ui); letter-spacing: 0.22px; text-transform: uppercase; color: var(--nyan-primary-deep); margin: 0 0 2px 2px; }
+</style>
+</head>
+<body>
+  <div class="eyebrow">Completed</div>
+  <div class="toast">
+    <div class="tile" style="background: color-mix(in srgb, var(--nyan-success) 13%, var(--nyan-surface));">
+      <i class="ph ph-check-circle" style="color: var(--nyan-success);"></i>
+    </div>
+    <div class="body">
+      <div class="title">Restored 12 books</div>
+      <div class="desc">Imported from your backup file.</div>
+    </div>
+    <button class="dismiss"><i class="ph ph-x"></i></button>
+  </div>
+
+  <div class="eyebrow">Failed</div>
+  <div class="toast">
+    <div class="tile" style="background: var(--error-bg);">
+      <i class="ph ph-warning-circle" style="color: var(--error-primary);"></i>
+    </div>
+    <div class="body">
+      <div class="title">Couldn't import 1 file</div>
+      <div class="desc">Nyan cannot read this format yet.</div>
+    </div>
+    <button class="action">Retry</button>
+  </div>
+
+  <div class="eyebrow">Skipped</div>
+  <div class="toast">
+    <div class="tile" style="background: var(--nyan-surface-muted);">
+      <i class="ph ph-skip-forward" style="color: var(--nyan-text-muted);"></i>
+    </div>
+    <div class="body">
+      <div class="title">2 books skipped</div>
+      <div class="desc">Already on your Public Shelf.</div>
+    </div>
+    <button class="dismiss"><i class="ph ph-x"></i></button>
+  </div>
+
+  <div class="eyebrow">Deleted · with Undo</div>
+  <div class="toast">
+    <div class="tile" style="background: color-mix(in srgb, var(--nyan-success) 13%, var(--nyan-surface));">
+      <i class="ph ph-check-circle" style="color: var(--nyan-success);"></i>
+    </div>
+    <div class="body">
+      <div class="title">Bookmark deleted</div>
+    </div>
+    <button class="action">Undo</button>
+  </div>
+
+  <div class="eyebrow">In progress</div>
+  <div class="toast">
+    <div class="tile" style="background: color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface));">
+      <i class="ph ph-circle-notch" style="color: var(--nyan-primary); animation: nyan-spin 900ms linear infinite;"></i>
+    </div>
+    <div class="body">
+      <div class="title">Moving to Privacy Shelf…</div>
+      <div class="desc">Encrypting 3 books.</div>
+    </div>
+  </div>
+</body>
+</html>

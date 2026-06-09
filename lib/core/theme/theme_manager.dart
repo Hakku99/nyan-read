@@ -6,14 +6,32 @@ class ThemeManager extends ChangeNotifier {
   ThemePreset _currentPreset = ThemePreset.creamLight;
 
   ThemePreset get currentPreset => _currentPreset;
-  NyanTheme get currentNyanTheme => themePresets[_currentPreset]!;
+
+  /// Returns the active NyanTheme for the current preset.
+  /// For [ThemePreset.matchSystem] this returns creamLight as a fallback —
+  /// the actual runtime theme is determined by [themeMode] + [lightTheme]/[darkTheme].
+  NyanTheme get currentNyanTheme => _currentPreset == ThemePreset.matchSystem
+      ? themePresets[ThemePreset.creamLight]!
+      : themePresets[_currentPreset]!;
 
   ThemeData get currentThemeData => currentNyanTheme.themeData;
 
-  // For compatibility with MaterialApp
-  ThemeData get lightTheme => currentThemeData;
-  ThemeData get darkTheme => currentThemeData;
-  ThemeMode get themeMode => ThemeMode.light; // We force the specific preset
+  ThemeData get lightTheme => _currentPreset == ThemePreset.matchSystem
+      ? themePresets[ThemePreset.creamLight]!.themeData
+      : currentThemeData;
+
+  ThemeData get darkTheme => _currentPreset == ThemePreset.matchSystem
+      ? themePresets[ThemePreset.sumiDark]!.themeData
+      : currentThemeData;
+
+  /// [ThemeMode.system] when [ThemePreset.matchSystem] is active so Flutter's
+  /// MaterialApp automatically selects [lightTheme] or [darkTheme] based on
+  /// the device brightness setting. All other presets force [ThemeMode.light]
+  /// because we embed the full NyanTheme inside a light ThemeData regardless
+  /// of whether it visually looks dark.
+  ThemeMode get themeMode => _currentPreset == ThemePreset.matchSystem
+      ? ThemeMode.system
+      : ThemeMode.light;
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -21,10 +39,10 @@ class ThemeManager extends ChangeNotifier {
     if (presetName != null) {
       if (presetName.contains('sakuraLight')) {
         _currentPreset = ThemePreset.creamLight;
-        setPreset(_currentPreset); // Save migration
+        setPreset(_currentPreset); // migrate legacy key
       } else if (presetName.contains('midnightBlue')) {
         _currentPreset = ThemePreset.sumiDark;
-        setPreset(_currentPreset); // Save migration
+        setPreset(_currentPreset); // migrate legacy key
       } else {
         try {
           _currentPreset =

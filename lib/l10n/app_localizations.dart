@@ -122,6 +122,12 @@ abstract class AppLocalizations {
   /// **'Reading Settings'**
   String get readingSettings;
 
+  /// No description provided for @reading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get reading;
+
   /// No description provided for @readerQuickProgressSubtitle.
   ///
   /// In en, this message translates to:
@@ -281,7 +287,7 @@ abstract class AppLocalizations {
   /// No description provided for @readingReminderSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Remind me to take a break'**
+  /// **'Chapter seek and position'**
   String get readingReminderSubtitle;
 
   /// No description provided for @reminderInterval.
@@ -295,6 +301,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{minutes} min'**
   String reminderMinutes(int minutes);
+
+  /// No description provided for @reminderEvery15min.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 15 min'**
+  String get reminderEvery15min;
+
+  /// No description provided for @reminderEvery30min.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 30 min'**
+  String get reminderEvery30min;
+
+  /// No description provided for @reminderEveryHour.
+  ///
+  /// In en, this message translates to:
+  /// **'Every hour'**
+  String get reminderEveryHour;
+
+  /// No description provided for @reminderEvery2hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 2 hours'**
+  String get reminderEvery2hours;
+
+  /// No description provided for @reminderDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get reminderDaily;
 
   /// No description provided for @dataManagement.
   ///
@@ -365,7 +401,7 @@ abstract class AppLocalizations {
   /// No description provided for @lockPrivacyShelfSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Hide until next unlock'**
+  /// **'Require PIN to open'**
   String get lockPrivacyShelfSubtitle;
 
   /// No description provided for @adminPanel.
@@ -1490,11 +1526,71 @@ abstract class AppLocalizations {
   /// **'Cream Light'**
   String get themeCreamLight;
 
+  /// No description provided for @themeCreamLightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm paper — the default'**
+  String get themeCreamLightHint;
+
   /// No description provided for @themeSumiDark.
   ///
   /// In en, this message translates to:
   /// **'Sumi Dark'**
   String get themeSumiDark;
+
+  /// No description provided for @themeSumiDarkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ink night for low light'**
+  String get themeSumiDarkHint;
+
+  /// No description provided for @themeMatchSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Match System'**
+  String get themeMatchSystem;
+
+  /// No description provided for @themeMatchSystemHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow your device setting'**
+  String get themeMatchSystemHint;
+
+  /// No description provided for @pageTurnLeftRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Left & Right'**
+  String get pageTurnLeftRight;
+
+  /// No description provided for @pageTurnLeftRightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn pages horizontally'**
+  String get pageTurnLeftRightHint;
+
+  /// No description provided for @pageTurnUpDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Up & Down'**
+  String get pageTurnUpDown;
+
+  /// No description provided for @pageTurnUpDownHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn pages vertically'**
+  String get pageTurnUpDownHint;
+
+  /// No description provided for @languageEnglishHint.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglishHint;
+
+  /// No description provided for @languageChineseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese · 简体中文'**
+  String get languageChineseHint;
 
   /// No description provided for @timeToday.
   ///
@@ -1595,14 +1691,20 @@ abstract class AppLocalizations {
   /// No description provided for @exportData.
   ///
   /// In en, this message translates to:
-  /// **'Export Reading Assets'**
+  /// **'Export Data'**
   String get exportData;
 
   /// No description provided for @exportDataSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Save reading data as JSON'**
+  /// **'Save to device or share'**
   String get exportDataSubtitle;
+
+  /// No description provided for @exportDataSheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where your reading data goes.'**
+  String get exportDataSheetSubtitle;
 
   /// No description provided for @saveToDevice.
   ///
@@ -1613,31 +1715,31 @@ abstract class AppLocalizations {
   /// No description provided for @saveToDeviceSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose a folder on your device'**
+  /// **'Store a JSON backup in your Files'**
   String get saveToDeviceSubtitle;
 
   /// No description provided for @shareVia.
   ///
   /// In en, this message translates to:
-  /// **'Share via...'**
+  /// **'Share...'**
   String get shareVia;
 
   /// No description provided for @shareViaSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Gmail, Drive, Quick Share, etc.'**
+  /// **'Send via Gmail, Drive or another app'**
   String get shareViaSubtitle;
 
   /// No description provided for @importData.
   ///
   /// In en, this message translates to:
-  /// **'Import Reading Assets'**
+  /// **'Import Data'**
   String get importData;
 
   /// No description provided for @importDataSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Restore reading data from JSON backup'**
+  /// **'Restore from a backup file'**
   String get importDataSubtitle;
 
   /// No description provided for @importSuccess.

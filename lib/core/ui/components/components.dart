@@ -24,6 +24,7 @@ export 'nyan_recessed_icon_button.dart';
 export 'nyan_row_group.dart';
 export 'nyan_secure_entry_dialog.dart';
 export 'nyan_chip_selection_sheet.dart';
+export 'nyan_option_sheet.dart';
 export 'nyan_section_header.dart';
 export 'nyan_sheet_appearance.dart';
 export 'nyan_sheet_card.dart';

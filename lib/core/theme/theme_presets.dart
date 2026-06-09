@@ -8,6 +8,8 @@ import 'nyan_typography.dart';
 enum ThemePreset {
   creamLight,
   sumiDark,
+  /// Follows the device's light/dark mode setting via [ThemeMode.system].
+  matchSystem,
 }
 
 @immutable
