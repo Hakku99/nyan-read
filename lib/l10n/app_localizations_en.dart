@@ -18,6 +18,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themePreset => 'Theme Preset';
 
   @override
+  String get themePresetSubtitle => 'How Nyan Read looks while you read.';
+
+  @override
   String get readingSettings => 'Reading Settings';
 
   @override
@@ -43,6 +46,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pageTurnMode => 'Page Turn Mode';
+
+  @override
+  String get pageTurnModeSubtitle => 'The direction pages move as you read.';
 
   @override
   String get pageTurnModeTap => 'Tap to turn pages';
@@ -108,6 +114,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reminderInterval => 'Reminder Interval';
 
   @override
+  String get reminderIntervalSubtitle =>
+      'How often to nudge you back to reading.';
+
+  @override
   String reminderMinutes(int minutes) {
     return '$minutes min';
   }
@@ -135,7 +145,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteFilesOnRemoveSubtitle =>
-      'Original files will also be removed from your device.';
+      'Remove source files when deleting a book';
 
   @override
   String get lockPrivateShelf => 'Lock Private Shelf';
@@ -204,6 +214,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get language => 'Language';
+
+  @override
+  String get languageSubtitle => 'App display language.';
 
   @override
   String get bookDetails => 'Book Details';

@@ -15,7 +15,6 @@ import '../../l10n/app_localizations.dart';
 import '../reader/widgets/reader_settings/reader_settings_text_panel.dart';
 
 const double _kHPad = NyanSpacing.space16;
-const double _kSectionGap = NyanSpacing.space24;
 
 /// Standalone reading-preferences page reachable from the Settings screen.
 ///
@@ -68,7 +67,6 @@ class ReadingSettingsPage extends ConsumerWidget {
                     // ── Page Turn Mode ────────────────────────────────────
                     NyanSectionHeader(title: loc.pageTurnMode),
                     _PageTurnModeCard(prefs: prefs, loc: loc),
-                    const SizedBox(height: _kSectionGap),
 
                     // ── Typography ────────────────────────────────────────
                     NyanSectionHeader(title: loc.readingSettings),

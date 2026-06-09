@@ -25,7 +25,6 @@ import '../../core/ui/nyan_theme_context.dart';
 import '../../core/utils/snackbar_utils.dart';
 
 const double _kHPad = NyanSpacing.space16;
-const double _kSectionGap = NyanSpacing.space24;
 
 /// Hardcoded until package_info_plus is added to pubspec.yaml.
 /// TODO(#package-info): replace with PackageInfo.fromPlatform() build string.
@@ -244,7 +243,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: _kSectionGap),
 
                     // ── Reading ───────────────────────────────────────────
                     NyanSectionHeader(
@@ -273,7 +271,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                               ),
                             ),
                             NyanListRow(
-                              leadingIcon: NyanIcons.alarm,
+                              leadingIcon: NyanIcons.bell,
                               title: loc.readingReminder,
                               subtitle: loc.readingReminderSubtitle,
                               trailing: NyanSwitch(
@@ -327,8 +325,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         );
                       },
                     ),
-                    const SizedBox(height: _kSectionGap),
-
                     // ── Data Management ───────────────────────────────────
                     NyanSectionHeader(
                       title: loc.dataManagement,
@@ -337,7 +333,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     NyanRowGroup(
                       children: [
                         NyanListRow(
-                          leadingIcon: NyanIcons.shareIos,
+                          leadingIcon: NyanIcons.exportData,
                           title: loc.exportData,
                           subtitle: loc.exportDataSubtitle,
                           showChevron: true,
@@ -364,7 +360,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     // ── Pro — only shown when the user is Pro ─────────────
                     // Spec (bundle4.jsx): no Pro section when isPro=false.
                     if (featureManager.isPro) ...[
-                      const SizedBox(height: _kSectionGap),
                       NyanSectionHeader(
                         title: loc.pro,
                         withLeadingDot: true,
@@ -382,8 +377,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         ],
                       ),
                     ],
-
-                    const SizedBox(height: _kSectionGap),
 
                     // ── About ─────────────────────────────────────────────
                     NyanSectionHeader(
@@ -411,6 +404,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final preset = await showNyanOptionSheet<ThemePreset>(
       context: context,
       title: loc.themePreset,
+      subtitle: loc.themePresetSubtitle,
       options: [
         NyanOptionItem(
           value: ThemePreset.creamLight,
@@ -445,6 +439,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final locale = await showNyanOptionSheet<Locale>(
       context: context,
       title: loc.language,
+      subtitle: loc.languageSubtitle,
       options: [
         // Spec: English first, then 中文.
         NyanOptionItem(
@@ -471,6 +466,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final mode = await showNyanOptionSheet<PageTurnMode>(
       context: context,
       title: loc.pageTurnMode,
+      subtitle: loc.pageTurnModeSubtitle,
       options: [
         NyanOptionItem(
           value: PageTurnMode.tap,
@@ -498,6 +494,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final interval = await showNyanOptionSheet<int>(
       context: context,
       title: loc.reminderInterval,
+      subtitle: loc.reminderIntervalSubtitle,
       options: _kReminderIntervals
           .map(
             (m) => NyanOptionItem(

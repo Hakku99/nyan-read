@@ -18,6 +18,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themePreset => '预设主题';
 
   @override
+  String get themePresetSubtitle => '阅读时的 Nyan Read 外观';
+
+  @override
   String get readingSettings => '阅读设置';
 
   @override
@@ -43,6 +46,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pageTurnMode => '翻页模式';
+
+  @override
+  String get pageTurnModeSubtitle => '阅读时翻页的方向';
 
   @override
   String get pageTurnModeTap => '点击翻页';
@@ -108,6 +114,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminderInterval => '提醒间隔';
 
   @override
+  String get reminderIntervalSubtitle => '多久提醒你回来阅读一次';
+
+  @override
   String reminderMinutes(int minutes) {
     return '$minutes 分钟';
   }
@@ -134,7 +143,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deleteFilesOnRemove => '删除时移除文件';
 
   @override
-  String get deleteFilesOnRemoveSubtitle => '也会一起删除设备里的原始文件';
+  String get deleteFilesOnRemoveSubtitle => '删除书籍时一并移除原始文件';
 
   @override
   String get lockPrivateShelf => '锁定私密书架';
@@ -201,6 +210,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get language => '语言';
+
+  @override
+  String get languageSubtitle => '应用界面语言';
 
   @override
   String get bookDetails => '书籍详情';

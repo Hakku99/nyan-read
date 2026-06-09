@@ -25,7 +25,6 @@ import '../../l10n/app_localizations.dart';
 import 'epub_cover_extractor.dart';
 
 /// Rhythm between page sections — matches [SettingsPage] list gaps.
-const double _kBookDetailsSectionGap = NyanSpacing.space24;
 
 /// Hero cover dimensions per BookDetailsScreen.jsx spec (120×156 px).
 const double _kCoverSlotWidth = 120;
@@ -286,8 +285,6 @@ class BookDetailsPage extends StatelessWidget {
                           message: BookSourceAccess.unavailableMessage,
                         ),
                       ],
-                      const SizedBox(height: _kBookDetailsSectionGap),
-
                       // ── Overview ──────────────────────────────────────────
                       NyanSectionHeader(
                         title: loc.bookDetailsOverviewSection,
@@ -318,8 +315,6 @@ class BookDetailsPage extends StatelessWidget {
                             _DetailRow(label: loc.added, value: addedAtShort),
                         ],
                       ),
-                      const SizedBox(height: _kBookDetailsSectionGap),
-
                       // ── Source ────────────────────────────────────────────
                       NyanSectionHeader(
                         title: loc.bookDetailsSourceSection,
@@ -355,8 +350,6 @@ class BookDetailsPage extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: _kBookDetailsSectionGap),
-
                       // ── Highlights & Notes ────────────────────────────────
                       NyanSectionHeader(
                         title: loc.highlightsAndNotes,

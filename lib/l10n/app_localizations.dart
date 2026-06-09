@@ -116,6 +116,12 @@ abstract class AppLocalizations {
   /// **'Theme Preset'**
   String get themePreset;
 
+  /// No description provided for @themePresetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How Nyan Read looks while you read.'**
+  String get themePresetSubtitle;
+
   /// No description provided for @readingSettings.
   ///
   /// In en, this message translates to:
@@ -169,6 +175,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Page Turn Mode'**
   String get pageTurnMode;
+
+  /// No description provided for @pageTurnModeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The direction pages move as you read.'**
+  String get pageTurnModeSubtitle;
 
   /// No description provided for @pageTurnModeTap.
   ///
@@ -296,6 +308,12 @@ abstract class AppLocalizations {
   /// **'Reminder Interval'**
   String get reminderInterval;
 
+  /// No description provided for @reminderIntervalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How often to nudge you back to reading.'**
+  String get reminderIntervalSubtitle;
+
   /// No description provided for @reminderMinutes.
   ///
   /// In en, this message translates to:
@@ -347,7 +365,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteFilesOnRemoveSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Original files will also be removed from your device.'**
+  /// **'Remove source files when deleting a book'**
   String get deleteFilesOnRemoveSubtitle;
 
   /// No description provided for @lockPrivateShelf.
@@ -481,6 +499,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language'**
   String get language;
+
+  /// No description provided for @languageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App display language.'**
+  String get languageSubtitle;
 
   /// No description provided for @bookDetails.
   ///

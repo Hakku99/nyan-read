@@ -30,15 +30,19 @@ class NyanPageHeader extends StatelessWidget {
     final nyanTheme = context.nyanTheme;
 
     return Padding(
+      // Spec (_chrome.jsx PageHdr): padding "16px 12px 12px" = t:16 h:12 b:12.
       padding: padding ??
           const EdgeInsets.fromLTRB(
-            NyanSpacing.space16,
-            NyanSpacing.space16,
+            NyanSpacing.space12,
             NyanSpacing.space16,
             NyanSpacing.space12,
+            NyanSpacing.space12,
           ),
+      // Spec (_chrome.jsx PageHdr): alignItems = subtitle ? flex-start : center.
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: subtitle != null
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.center,
         children: [
           if (leading != null) ...[
             leading!,
@@ -52,7 +56,8 @@ class NyanPageHeader extends StatelessWidget {
                   title,
                   style: theme.textTheme.titleLarge
                       ?.copyWith(
-                        fontSize: NyanTypography.title,
+                        // Spec (_chrome.jsx PageHdr): font "600 20px/1.2".
+                  fontSize: NyanTypography.section,
                         fontWeight: FontWeight.w600,
                         letterSpacing: -0.15,
                         color: nyanTheme.textPrimary,

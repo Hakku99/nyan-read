@@ -69,6 +69,10 @@ class NyanIcons {
 
   /// iOS-style share glyph (square with up arrow). Use [share] elsewhere.
   static const IconData shareIos = PhosphorIconsRegular.shareFat;
+
+  /// Export action — settings "Export Data" row (spec `bundle4.jsx`: icon="export").
+  // ignore: library_private_types_in_public_api
+  static const IconData exportData = PhosphorIconsRegular.export;
   static const IconData download = PhosphorIconsRegular.downloadSimple;
   static const IconData upload = PhosphorIconsRegular.uploadSimple;
   static const IconData save = PhosphorIconsRegular.floppyDisk;
@@ -87,7 +91,8 @@ class NyanIcons {
   static const IconData settings = PhosphorIconsRegular.gearSix;
   static const IconData tune = PhosphorIconsRegular.slidersHorizontal;
   static const IconData dashboard = PhosphorIconsRegular.squaresFour;
-  static const IconData adminPanel = PhosphorIconsRegular.shieldStar;
+  // Spec `bundle4.jsx` settings row: icon="wrench".
+  static const IconData adminPanel = PhosphorIconsRegular.wrench;
   static const IconData sparkle = PhosphorIconsRegular.sparkle;
   static const IconData info = PhosphorIconsRegular.info;
   static const IconData warning = PhosphorIconsRegular.warning;
@@ -139,6 +144,8 @@ class NyanIcons {
   static const IconData thermostat = PhosphorIconsRegular.thermometer;
 
   // ── Time ────────────────────────────────────────────────────────────────
+  // Spec `bundle4.jsx` reading reminder row: icon="bell".
+  static const IconData bell = PhosphorIconsRegular.bell;
   static const IconData alarm = PhosphorIconsRegular.alarm;
   static const IconData clock = PhosphorIconsRegular.clock;
   static const IconData inbox = PhosphorIconsRegular.tray;

@@ -8,6 +8,7 @@ import '../../../../core/theme/nyan_colors.dart';
 import '../../../../core/theme/nyan_spacing.dart';
 import '../../../../core/theme/nyan_typography.dart';
 import '../../../../core/ui/components/nyan_pill_button.dart';
+import '../../../../core/ui/components/nyan_switch.dart';
 import '../../../../core/ui/nyan_theme_context.dart';
 import '../../controllers/brightness_controller.dart';
 import 'reader_settings_common.dart';
@@ -89,7 +90,7 @@ class ReaderSettingsDisplayPanel extends StatelessWidget {
                           color: nyan.textSecondary,
                         ),
                       ),
-                      _NyanSwitch(
+                      NyanSwitch(
                         value: follow,
                         onChanged: (_) =>
                             brightnessController.toggleFollowSystem(),
@@ -225,62 +226,6 @@ class _PageTurnModeRow extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-/// Spec-matched toggle switch.
-///
-/// Spec `NyanSwitch` (`primitives.jsx`): 44×26pt container, `borderRadius: 999`,
-/// 20pt surface-white thumb with 3pt inset. Animated via [AnimatedAlign].
-class _NyanSwitch extends StatelessWidget {
-  const _NyanSwitch({required this.value, required this.onChanged});
-
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final nyan = context.nyanTheme;
-
-    return Semantics(
-      toggled: value,
-      child: GestureDetector(
-        onTap: () => onChanged(!value),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: 44,
-          height: 26,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            color: value ? nyan.primary : nyan.divider,
-          ),
-          child: AnimatedAlign(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            // Spec: thumb left 3px (off) → left 21px (on), thumb 20pt.
-            alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.all(3),
-              child: Container(
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: nyan.surface,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
