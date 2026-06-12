@@ -121,16 +121,25 @@ const BookListRow = ({ book }) => (
   </div>
 );
 
-const BookshelfHome = ({ dark, empty, view: initView, continueCollapsed, isPro = false, sort: initSort }) => {
+const SHELF_SORT_OPTIONS = [
+  { label: "Last read", hint: "Most recently opened first" },
+  { label: "Recently added", hint: "Newest imports first" },
+  { label: "Title", hint: "A → Z" },
+  { label: "Author", hint: "A → Z" },
+  { label: "Reading progress", hint: "Furthest along first" },
+];
+
+const BookshelfHome = ({ dark, empty, view: initView, continueCollapsed, isPro = false, sort: initSort, sortOpen: initSortOpen = false, sortBy: initSortBy = 0, sortAnimate = true }) => {
   const [tab, setTab] = useState(0);
   const [view, setView] = useState(initView || "grid");
-  const [sort, setSort] = useState(!!initSort);
+  const [sortOpen, setSortOpen] = useState(!!initSortOpen || !!initSort);
+  const [sortBy, setSortBy] = useState(initSortBy);
   return (
     <Shell dark={dark}>
       {/* Shelf Toolbar — shared header action cluster (search · sort · view · privacy) */}
       <ShelfToolbar
         view={view} onToggleView={() => setView(v => v === "grid" ? "list" : "grid")}
-        sort={sort} onToggleSort={() => setSort(s => !s)}
+        sort={sortOpen} onToggleSort={() => setSortOpen(s => !s)}
         isPro={isPro}
         onSearch={() => {}}
       />
@@ -183,6 +192,18 @@ const BookshelfHome = ({ dark, empty, view: initView, continueCollapsed, isPro =
           <i className="ph ph-plus" style={{ fontSize: 24, color: "var(--nyan-surface)" }} />
         </button>
       </div>
+      {/* Sort-by option sheet — opens from the toolbar Sort tool */}
+      {sortOpen && (
+        <NyanOptionSheet
+          title="Sort shelf by"
+          subtitle="Applies to the current shelf"
+          options={SHELF_SORT_OPTIONS}
+          selected={sortBy}
+          animateIn={sortAnimate}
+          onSelect={(i) => setSortBy(i)}
+          onClose={() => setSortOpen(false)}
+        />
+      )}
     </Shell>
   );
 };

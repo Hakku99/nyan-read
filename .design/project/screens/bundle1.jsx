@@ -175,16 +175,29 @@
       const [ci,      setCi]      = useState(initColor);
       const [note,    setNote]    = useState(initNote);
       const [focused, setFocused] = useState(false);
+      const [deleted, setDeleted] = useState(false);
+      const restoreRef = useRef("");
       const sel = HL_SWATCHES[ci];
+
+      const deleteNote = () => {
+        restoreRef.current = note;
+        setNote("");
+        setFocused(false);
+        setDeleted(true);
+      };
+      const undoDelete = () => {
+        setNote(restoreRef.current);
+        setDeleted(false);
+      };
 
       const inputBorder = focused
         ? "1px solid color-mix(in srgb, var(--nyan-primary) 30%, transparent)"
         : "1px solid color-mix(in srgb, var(--nyan-divider) 42%, transparent)";
 
       return (
+        <div style={{ position: "relative", width: "100%", maxWidth: 350 }}>
         <div style={{
           width: "100%",
-          maxWidth: 350,
           background: "var(--nyan-surface)",
           borderRadius: "var(--r-dock)",
           border: "1px solid var(--chrome-edge)",
@@ -210,7 +223,7 @@
               Edit Note
             </div>
             {/* Delete — plain icon button (no boxed chrome), One Paper style */}
-            <button style={{ all: "unset", cursor: "pointer", width: 40, height: 40, borderRadius: "var(--r-control)", display: "grid", placeItems: "center" }}>
+            <button onClick={deleteNote} aria-label="Delete note" style={{ all: "unset", cursor: "pointer", width: 40, height: 40, borderRadius: "var(--r-control)", display: "grid", placeItems: "center" }}>
               <i className="ph ph-trash" style={{ fontSize: 19, color: "var(--nyan-text-muted)" }} />
             </button>
           </div>
@@ -311,6 +324,20 @@
             <NyanPrimaryButton label="Cancel" variant="ghost" size="lg" />
             <NyanPrimaryButton label="Save" variant="primary" size="lg" />
           </div>
+        </div>
+
+        {/* ── Deletion notification — non-blocking toast, delete → undo ── */}
+        {deleted && (
+          <div style={{ position: "absolute", left: 0, right: 0, top: "calc(100% + 12px)" }}>
+            <NyanResponse
+              status="success"
+              title="Note deleted"
+              description="The highlight colour is kept on the passage."
+              action={{ label: "Undo", onPress: undoDelete }}
+              onDismiss={() => setDeleted(false)}
+            />
+          </div>
+        )}
         </div>
       );
     };

@@ -10,8 +10,8 @@ If creating visual artifacts (slides, mocks, throwaway prototypes, etc), copy as
 
 1. `README.md` — product context, voice & tone, visual foundations, iconography.
 2. `colors_and_type.css` — all CSS variables (colors, type, spacing, radii, shadows) plus base classes (`.nyan-display`, `.nyan-title`, etc.). Include this in every HTML output.
-3. `components/` — drop-in React components mirroring the Flutter source, split into `primitives.jsx`, `headers.jsx`, `surfaces.jsx`, `cards.jsx`, `reader.jsx` (load in that order). See `components/README.md` for the full API and the Flutter widget map.Card`, `NyanBookmarkCard`, `PillButton`, etc.).
-4. `mocks/UNN-*.html` + `screens/*.jsx` — 21 assembled screen mocks to crib patterns from.
+3. `components/` — drop-in React components mirroring the Flutter source, one file per component under `primitives/`, `navigation/`, `surfaces/`, `cards/`, `reader/`. **Don't load the `.jsx` files individually** — the design-system compiler bundles them into `_ds_bundle.js`; load that one file and read components off `window.<Namespace>` (e.g. `const { NyanBookGridCard, PillButton } = window.NyanReadDesignSystem` — the exact namespace is printed by the compiler). Each component ships a sibling `.d.ts` documenting its props; see `components/README.md` for the full API and the Flutter widget map.
+4. `mocks/UNN-*.html` + `screens/*.jsx` — 21 assembled screen mocks to crib patterns from. Each mock loads `_ds_bundle.js` and flattens the namespace onto `window`.
 5. `assets/images/nyan_read_logo*.png` — the only mascot art used in-product.
 6. `assets/fonts/NotoSansSC-*.ttf` (UI, 400/500/600) bundled locally. Source Han Serif SC (reading serif) is currently **missing** — falls back to platform CJK serif. See README font flag.
 

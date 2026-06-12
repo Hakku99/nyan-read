@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- @dsCard group="Screens" name="U9 — Bookshelf Home" subtitle="Grid/list, collapsible Continue Reading, empty · 5 states" viewport="2150x960" -->
+<!-- @dsCard group="Screens" name="U9 — Bookshelf Home" subtitle="Grid/list, sort-by sheet, collapsible Continue Reading, empty · 6 states" viewport="2560x960" -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -29,14 +29,11 @@
 <div class="screen-head">
   <div class="screen-eyebrow">Nyan Read · Screen Mock</div>
   <h1>U9 · Bookshelf Home Screen</h1>
-  <p>Grid / list view toggle, sort, and (in Pro mode) a privacy-shelf unlock — all in the shared Shelf Toolbar beside the title. Collapsible Continue Reading card (tap the caret); frame 2 shows it collapsed. Empty state on frame 5.</p>
+  <p>Grid / list view toggle, sort, and (in Pro mode) a privacy-shelf unlock — all in the shared Shelf Toolbar beside the title. Tapping Sort opens the sort-by option sheet (frame 2, "Title" selected). Collapsible Continue Reading card (tap the caret); frame 3 shows it collapsed. Empty state on the last cream frame.</p>
 </div>
 <div id="root"></div>
-<script type="text/babel" src="../components/primitives.jsx"></script>
-<script type="text/babel" src="../components/headers.jsx"></script>
-<script type="text/babel" src="../components/surfaces.jsx"></script>
-<script type="text/babel" src="../components/cards.jsx"></script>
-<script type="text/babel" src="../components/reader.jsx"></script>
+<script src="../_ds_bundle.js"></script>
+<script>(function () { var k = Object.keys(window).filter(function (n) { return n.indexOf("NyanReadDesignSystem_") === 0; })[0]; if (k) { Object.assign(window, window[k]); } })();</script>
 <script type="text/babel" src="../screens/_chrome.jsx"></script>
 <script type="text/babel" src="../screens/bundle3.jsx"></script>
   <script type="text/babel">
@@ -53,6 +50,7 @@ function App() {
   return (
     <div className="screen-wrap">
       <Frame label="Cream · grid view" w={390} h={760}><BookshelfHome dark={false} empty={false} view="grid" /></Frame>
+      <Frame label="Cream · Sort-by options sheet" w={390} h={760}><BookshelfHome dark={false} empty={false} view="grid" sortOpen={true} sortBy={2} sortAnimate={false} /></Frame>
       <Frame label="Cream · Continue Reading collapsed" w={390} h={760}><BookshelfHome dark={false} empty={false} view="grid" continueCollapsed={true} /></Frame>
       <Frame label="Cream · list view" w={390} h={760}><BookshelfHome dark={false} empty={false} view="list" /></Frame>
       <Frame label="Cream · Pro (privacy unlock)" w={390} h={760}><BookshelfHome dark={false} empty={false} view="grid" isPro={true} /></Frame>

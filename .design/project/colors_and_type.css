@@ -154,6 +154,7 @@
   --r-control:      14px;   /* segmented-control track + tinted list-row icon chip */
   --r-card-nested:  16px;   /* card nested inside a sheet (concentric) */
   --r-dock:         24px;   /* resting dock / floating bar */
+  --r-panel:        24px;   /* centered dialog / confirm card (== --radius-panel) */
   --r-sheet:        28px;   /* dock grown into a sheet (== --radius-sheet) */
 
   --ease-paper:     cubic-bezier(0.33, 0.9, 0.36, 1); /* @kind other */  /* paper-soft motion */

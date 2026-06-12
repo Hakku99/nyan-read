@@ -3,6 +3,38 @@
 > **喵阅 Nyan Read** — a fully-offline Flutter e-book reader for TXT / EPUB / PDF.
 > Source: <https://github.com/Hakku99/nyan-read>
 > This design system distills its visual language so agents and designers can produce on-brand mocks, slides, prototypes, and production-aligned UI without re-reading the codebase every time.
+>
+> **Status:** 43 components compiled to `_ds_bundle.js` — primitives (11) · navigation (2) · surfaces (10) · cards (4) · reader (14, incl. the internal `Knob` / `DisplayPanel` / `TextPanel` / `ThemePanel` sub-panels of `ReaderSettingsBody`) · security (2) — each with a `.d.ts` prop contract. Baseline states — ≥44px tap targets, `disabled`/`loading`, slider/switch/icon keyboard + ARIA, localizable copy props, animated sheet enter/exit — are documented under *How to consume this design system → Component states & accessibility*.
+
+---
+
+## How to consume this design system
+
+This project **is** a compiled design system. The compiler reads every `components/**/<Name>.jsx` (each paired with a `<Name>.d.ts` prop contract) and bundles them into **`_ds_bundle.js`**, exposed on a single window namespace.
+
+```html
+<link rel="stylesheet" href="colors_and_type.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<!-- React 18 + ReactDOM UMD … -->
+<script src="_ds_bundle.js"></script>
+<script>
+  // namespace is printed by the compiler; it starts with NyanReadDesignSystem_
+  const NS = window[Object.keys(window).find(k => k.startsWith("NyanReadDesignSystem_"))];
+  const { NyanBookGridCard, PillButton, OnePaperDock } = NS;
+</script>
+```
+
+**Never** load the individual `components/**/*.jsx` files with `<script>` — their `export`s are unreachable that way, and the compiler already bundles them. The 21 `mocks/*.html` do exactly the above (then flatten `NS` onto `window`); copy one as a starting point.
+
+### Component states & accessibility (baseline every component honors)
+
+- **Tap targets are ≥ 44px.** Interactive controls (`NyanSwitch`, `NyanPrimaryButton md`, the `DockFooter` chapter steppers, `TextPanel` font-size steppers, `ShelfToolBtn`) all clear the 44px `minTapTarget`. Don't shrink them.
+- **`disabled` / `loading`** are first-class on the buttons: `NyanPrimaryButton` takes both (`loading` swaps the icon for a spinner and sets `aria-busy`); `PillButton` and `NyanSwitch` take `disabled`. Disabled controls dim to 40% and block their handler — never gate interaction by hiding the control.
+- **Keyboard + ARIA.** `NyanSlider` is `role="slider"`, focusable, and responds to Arrow / Home / End / PageUp / PageDown (respecting `step`); `NyanSwitch` is `role="switch"`; `Icon` becomes `role="button"` + focusable (Enter / Space) the moment you pass `onClick`. Pass `aria-label` to icon-only controls.
+- **No raw hex, no inline SVG glyphs.** Checkmarks and all iconography go through `Icon` (`Icon name="check"`), which reads `--nyan-surface` / ink tokens. `Icon`'s `weight` prop selects the Phosphor weight (`regular` default, `fill`, `bold`, …).
+- **Localizable copy.** User-facing strings are props with English defaults, never hardcoded mid-component: `DockFooter` takes a `labels` object (incl. `chapterStatus(i, n)`), `NyanContinueReadingCard` takes `eyebrow` + `continueLabel`. Read each component's `.d.ts` for the full prop list.
+- **Sheets animate both ways.** `NyanBottomSheet` stays mounted through a slide-down + fade-out exit; drive it with `open` and let it unmount itself.
 
 ---
 
@@ -35,7 +67,7 @@ The product is bilingual — Simplified Chinese (`zh`) and English (`en`) live i
   - `lib/modules/{bookshelf, reader, settings}/` — the screens we modeled.
   - `lib/l10n/app_localizations_en.dart` — source of truth for English copy and tone.
   - `assets/images/nyan_read_logo.png`, `nyan_read_logo_transparent.png`, `splash_screen.png` — official brand assets (copied here under `assets/`).
-  - `assets/fonts/SourceHanSerifSC-Regular.otf` + `SemiBold.otf` — reading-mode serif (copied here under `assets/fonts/`).
+  - `assets/fonts/SourceHanSerifSC-Regular.otf` + `Medium.otf` — reading-mode serif (declared in `colors_and_type.css`; see the *Fonts* section for why they aren't bundled).
 
 > **Reader: if you can access the GitHub repo above, browse it.** The Dart source has hundreds of small design decisions (animation timings, optical micro-adjustments, recessed-surface tones) that this system summarizes but does not exhaustively reproduce. When in doubt, the Dart files are the spec.
 
@@ -44,58 +76,79 @@ The product is bilingual — Simplified Chinese (`zh`) and English (`en`) live i
 ## Index — what's in this folder
 
 ```
-README.md                ← you are here
+README.md                ← you are here (overall guidance)
 SKILL.md                 ← Claude Code / agent-skill descriptor
+AUDIT - E-book Readiness & Code Quality.md   ← gap analysis vs. a Local E-books Reader
+HANDOFF-flutter.md       ← notes for porting these mocks back to the Flutter app
 colors_and_type.css      ← all CSS vars (colors, type, spacing, radii, shadows) + base classes
 
+_ds_bundle.js            ← COMPILER OUTPUT — every component on one window namespace (load THIS)
+_ds_manifest.json        ← compiler output — cards, components, tokens index
+_adherence.oxlintrc.json ← compiler output — lint rules
+
 assets/
-  fonts/SourceHanSerifSC-*.otf   ← reading-mode serif (Adobe, OFL)
-  images/nyan_read_logo.png      ← square cream-card logo
+  fonts/NotoSansSC-*.ttf           ← UI face (bundled, offline)
+  fonts/SourceHanSerifSC-*.otf     ← reading serif (declared, NOT bundled — see Fonts)
+  images/nyan_read_logo.png        ← square cream-card logo
   images/nyan_read_logo_transparent.png  ← transparent canvas, for overlays
-  images/splash_screen.png       ← splash artwork
+  images/splash_screen.png         ← splash artwork
 
-preview/                  ← Design-system cards rendered for the review pane
-  type-scale.html
-  type-weights.html
-  font-families.html
-  palette-cream-core.html
-  palette-cream-text.html
-  palette-sumi-core.html
-  palette-highlights.html
-  palette-reader-canvas.html
-  radii.html
-  spacing.html
-  shadows.html
-  buttons.html
-  pill-segmented.html
-  segmented-tab.html
-  cards.html
-  bookmark-card.html
-  continue-reading.html
-  shelf-grid.html
-  list-row.html
-  bottom-sheet.html
-  section-header.html
-  empty-state.html
-  brand-logo.html
-  iconography.html
+brand/                    ← brand-mark component + its @dsCard (27 Brand cards total w/ preview/)
 
-components/                ← component library (load in this order)
+preview/                  ← @dsCard token/brand cards for the Design System review tab
+  (type, palette, radii, spacing, shadows, brand-logo, iconography, plus one
+   card per surface: buttons, pill-segmented, cards, bottom-sheet, option-sheet,
+   response-feedback, list-row, shelf-grid, shelf-toolbar, empty-state, …)
+  Component @dsCards live next to their source under components/<group>/*.html.
+
+components/                ← component library — one file per component, compiled into _ds_bundle.js
   README.md
-  primitives.jsx           ← Icon, buttons, switch, slider, FAB
-  headers.jsx              ← page / section headers, segmented tabs
-  surfaces.jsx             ← info card, bottom sheet, response toast, empty state
-  cards.jsx                ← book grid / continue-reading / bookmark cards, list rows
-  reader.jsx               ← One-Paper dock, reader paragraph
+  primitives/              ← Icon, NyanPrimaryButton, PillButton, NyanSwitch, SegmentedTabControl, NyanSlider, SearchField, TextField, Checkbox, ProgressBar, Skeleton
+  navigation/             ← NyanPageHeader, NyanSectionHeader
+  surfaces/               ← info card, list row, row group, empty state, bottom sheet, FAB, response toast, option sheet, dialog
+  cards/                  ← book grid / continue-reading / bookmark cards, book list row
+  reader/                 ← One-Paper dock, settings panels, chapter list, reader paragraph, text-selection menu, highlight swatches, TTS player, PDF controls, in-book search
+  security/               ← PinDots, PinPad (the privacy-shelf gate)
+  (each <Name>.jsx has a sibling <Name>.d.ts prop contract + a @dsCard *.html)
 
-screens/                  ← full-screen compositions assembled from components/*
-  _chrome.jsx              ← shared phone-frame + overlay wrappers
-  bundle1.jsx … bundle4.jsx
+screens/                  ← full-screen compositions assembled from the bundle
+  _chrome.jsx              ← gallery scaffolding shared by every screen:
+                             Shell / ReaderBg / ThemeWrap wrappers, the terse
+                             PageHdr / SectionHdr / RowGroup / ListRow helpers,
+                             ShelfToolbar, and NyanSplash. ONE definition each;
+                             NyanToggle delegates to the kit NyanSwitch.
+  bundle1.jsx · bundle2-screens.jsx · bundle3.jsx · bundle4.jsx
+                             (each self-exports to window via Object.assign;
+                              bundle2's SplashScreen is a thin <NyanSplash/> wrapper)
+
+mocks/                    ← 21 assembled screen mocks (UNN-*.html); each loads
+                             _ds_bundle.js, flattens the namespace, then a screens/ bundle
+
+prototype/                ← working multi-screen reader prototype (NOT a spec mock)
+  Nyan Reader.html         ← phone-framed, navigable: Bookshelf → Reader →
+                             selection/highlight, One Paper dock (chapters ·
+                             settings · TTS), confirm dialog, privacy-PIN gate.
+  app.jsx                  ← the prototype's screen logic; assembles the kit
+                             (incl. every P2 component) into one real flow and
+                             persists theme / font / view / chapter to localStorage.
 ```
 
-Each `mocks/UNN-*.html` loads `colors_and_type.css`, the five `components/*.jsx`
-files, and the relevant `screens/*.jsx` — so every screen is an editable file
-rather than HTML-embedded script.
+Each `mocks/UNN-*.html` loads `colors_and_type.css` and the compiled
+`_ds_bundle.js` (then flattens the namespace onto `window`), plus the relevant
+`screens/*.jsx` — so every screen is an editable file rather than HTML-embedded
+script. Never load the per-component `.jsx` files directly; the compiler bundles
+them.
+
+### Two layers, on purpose
+The **kit** (`components/<group>/*.jsx`, each with a `.d.ts` contract) is the
+consumer-facing API — `NyanPageHeader`, `NyanSectionHeader`, `NyanRowGroup`,
+`NyanListRow`, `NyanSwitch`, … — and is what the Flutter port mirrors. The
+**gallery scaffolding** in `screens/_chrome.jsx` (`PageHdr`, `SectionHdr`,
+`RowGroup`, `ListRow`) gives the screen mocks terse call sites and intentionally
+uses its own type ramp (e.g. the 11px `.nyan-caption` eyebrow vs. the kit's 13px
+`.nyan-section-header`). These are **sibling components for two layers, not
+duplicates** — each is defined exactly once. Do not collapse them; doing so
+regresses either the screens' typography or the kit's contracted styling.
 
 ---
 
@@ -144,6 +197,12 @@ The product copy is **bilingual** and the English (which agents will mostly writ
 | File copy success | `File path copied to clipboard` |
 
 When writing new copy, **read three or four of those out loud** before you commit. If yours sounds louder, more clinical, or more "SaaS," rewrite it.
+
+> **Want a working reference, not a static spec?** `prototype/Nyan Reader.html`
+> wires the whole kit into one navigable phone app — open a book, change the
+> theme live, highlight a line, step chapters from the dock, play read-aloud,
+> and unlock the privacy shelf (PIN `1234`). It's the fastest way to see how the
+> components compose into the real product before you build your own screen.
 
 ---
 
@@ -223,8 +282,8 @@ A **concentric family**, scaling with elevation: `--r-chip 12` (option chips, ne
 
 The reader's chrome is the spine of the system. It used to read like two apps stitched together — a flat, edge-to-edge bottom control bar fighting a floating, high-radius settings card. **One Paper** unifies them: the control bar and the settings/chapters sheet are *the same object at two sizes*.
 
-- **The dock is the collapsed sheet.** A single floating paper panel sits inset at the bottom (`--r-dock 24`). Tapping **Settings** or **Chapters** doesn't swap views — the same panel **grows upward** into a sheet (radius eases to `--r-sheet 28`, `max-height` animates over `--dur-grow`), and the **dock footer stays pinned** at its base with the tapped action lit in matcha. This is implemented once as `OnePaperDock` + `DockFooter` in `components.jsx`; the live reader and every spec mock render the same component.
-- **The dock footer** carries, in order: a **chapter stepper** (`‹ ›` carets) flanking a thin progress bar, then the **three actions** — Chapters / Bookmarks / Settings. Chapter stepping lives here and nowhere else; there is no standalone progress card.
+- **The dock is the collapsed sheet.** A single floating paper panel sits inset at the bottom (`--r-dock 24`). Tapping **Settings** or **Chapters** doesn't swap views — the same panel **grows upward** into a sheet (radius eases to `--r-sheet 28`, `max-height` animates over `--dur-grow`), and the **dock footer stays pinned** at its base with the tapped action lit in matcha. This is implemented once as `OnePaperDock` + `DockFooter` (under `components/reader/`); the live reader and every spec mock render the same component.
+- **The dock footer** carries, in order: a **chapter stepper** (`‹ ›` carets) flanking a thin progress bar, then the **four actions** — Chapters / Bookmarks / Highlights / Settings. Chapter stepping lives here and nowhere else; there is no standalone progress card.
 - **Settings body is shared.** The Display / Text / Theme controls are one component (`ReaderSettingsBody`) rendered inside the grown dock — the same body the standalone preview sheet uses.
 - **Depth response** when the dock grows: the page recedes + dims + blurs (see *Transparency & blur*). Tapping the dimmed page or the grabber collapses it back to a dock.
 - **Brightness** is not in the dock. It has two One Paper affordances: an **edge gesture** (vertical drag on the left third of the page, surfacing a slim floating capsule) for immersive use, and a **top-bar sun popover** (one inline `NyanSlider`, no full sheet) for discoverability.
@@ -307,19 +366,19 @@ The new values stay in the **warm-olive / warm-brown** hue family — we darkene
 
 ---
 
-
+## Fonts
 
 The UI face is bundled and works fully offline. The reading-mode serif is **not** — and likely won't be in this design system, for reasons worth documenting:
 
 | Family | Status |
 |---|---|
 | **Noto Sans SC** (UI, weights 400/500/600) | ✅ Bundled — `assets/fonts/NotoSansSC-{Regular,Medium,SemiBold}.ttf` |
-| **Source Han Serif SC** (reading serif, 400/600) | ⚠️ **Substitution flag** — falls back to Songti SC (macOS/iOS) → STSong / SimSun (Windows) → Georgia (web). |
+| **Source Han Serif SC** (reading serif, 400/500) | ⚠️ **Substitution flag** — the `.otf` files are declared in `colors_and_type.css` but not present in `assets/fonts/`; falls back to Songti SC (macOS/iOS) → STSong / SimSun (Windows) → Georgia (web) until they're uploaded. |
 
 ### Why the serif isn't bundled
 
 1. **The upstream Nyan Read repo doesn't ship the font either.** Its own `assets/fonts/README.md` states *"字体文件未纳入 Git 仓库（体积原因）"* — files are git-ignored; the maintainer instructs contributors to download them from Adobe manually. The 206 KB file in the repo's font folder is a placeholder (HTML stub), not a real OTF.
-2. **Adobe's official files are 24 MB each** — `SourceHanSerifSC-Regular.otf` (24,543,332 B) + `SemiBold.otf` (24,700,532 B). Bundling ~48 MB of fonts into a design-system project is a non-starter.
+2. **Adobe's official files are ~24 MB each** — `SourceHanSerifSC-Regular.otf` + `Medium.otf`. Bundling that into a design-system project is a non-starter.
 3. **The right fix is subsetting**, not bundling. The upstream repo ships `scripts/subset_fonts.py` which uses `fonttools` + GB2312 to produce ~2 MB subsets. If serif fidelity matters for your use case, run that script locally and upload the resulting `assets/fonts/subset/SourceHanSerifSC-*.otf` here.
 
 Until then, the fallback chain in `--font-serif` produces a *visually convincing* CJK serif on every major platform — same letterforms, slightly different metrics. The reader-canvas preview, the reader Theme picker's `Aa 永` specimens, and the `font-families` card all render the substitution gracefully.
@@ -330,7 +389,7 @@ Until then, the fallback chain in `--font-serif` produces a *visually convincing
 
 1. **Always** include `colors_and_type.css` at the top of any HTML you make.
 2. **Read tokens, never invent.** If you need a new color/shadow/radius/spacing, stop and ask — adding one is a design-system change, not a feature.
-3. For component implementations, look first in `components/` (split into `primitives` / `headers` / `surfaces` / `cards` / `reader`). It contains plain-JSX recreations of: `NyanPrimaryButton`, `NyanInfoCard`, `NyanBookGridCard`, `NyanContinueReadingCard`, `SegmentedTabControl`, `NyanBookmarkCard`, `NyanSectionHeader`, `NyanPageHeader`, `NyanEmptyState`, `NyanActionSheetRow`, `NyanBottomSheet`, `PillButton` (the squared outline-on-select chip), `NyanListRow`, `NyanResponse` (the shared action-feedback toast — completed / failed / skipped / in-progress), and the **One Paper reader chrome**: `OnePaperDock` + `DockFooter` (dock that grows into a sheet, with the chapter stepper + 3 actions), `ReaderSettingsBody` (Display/Text/Theme), and `ReaderChapterList`. Build reader-surface mocks by composing these, not by hand-rolling a sheet.
+3. For component implementations, look in `components/` — one file per component under `primitives/` · `navigation/` · `surfaces/` · `cards/` · `reader/`, each with a sibling `.d.ts` prop contract. **Load the compiled `_ds_bundle.js`, not the individual `.jsx` files**, and read components off `window.<Namespace>` (see `components/README.md`). The kit covers: `NyanPrimaryButton`, `NyanInfoCard`, `NyanBookGridCard`, `NyanContinueReadingCard`, `SegmentedTabControl`, `NyanBookmarkCard`, `NyanSectionHeader`, `NyanPageHeader`, `NyanEmptyState`, `NyanActionSheetRow`, `NyanBottomSheet`, `NyanOptionSheet`, `PillButton` (the squared outline-on-select chip), `NyanListRow`, `NyanRowGroup`, `NyanFAB`, `NyanResponse` (the shared action-feedback toast), the form/feedback primitives `SearchField`, `TextField`, `Checkbox`, `ProgressBar`, `Skeleton`, and `NyanDialog` (confirm), the list-card `BookListRow`, and the **One Paper reader chrome**: `OnePaperDock` + `DockFooter` (dock that grows into a sheet, with the chapter stepper + 4 actions), `ReaderSettingsBody` (Display/Text/Theme), `ReaderChapterList`, `ReaderParagraph`, `TextSelectionMenu` + `HighlightSwatchRow`, `TTSPlayer`, `InBookSearch`, `PdfControls`, plus the privacy gate `PinDots` + `PinPad`. Build reader-surface mocks by composing these, not by hand-rolling a sheet.
 4. **Pages are mobile-first.** Default to a 390 × 844 canvas (iPhone-ish) wrapped in a phone frame for any mock you produce; the kit shows how.
 5. When in doubt about voice: read the *Sample copy* table again.
 

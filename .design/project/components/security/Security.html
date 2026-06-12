@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Components" name="Privacy PIN" subtitle="PinDots + PinPad — the privacy-shelf gate" viewport="420x560" -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Privacy PIN — Nyan Read</title>
+  <link rel="stylesheet" href="../../colors_and_type.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <style>html, body { margin: 0; } body { background: var(--nyan-bg); }</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="../../_ds_bundle.js"></script>
+<script>
+(function () {
+  var NS = window[Object.keys(window).filter(function (k) { return k.indexOf("NyanReadDesignSystem_") === 0; })[0]];
+  var h = React.createElement;
+  function Demo() {
+    var digits = React.useState([]);
+    var err = React.useState(false);
+    var fg = "#E8E1D5";
+    function add(d) { digits[1](function (p) { return p.length < 4 ? p.concat(d) : p; }); }
+    function del() { digits[1](function (p) { return p.slice(0, -1); }); err[1](false); }
+    React.useEffect(function () {
+      if (digits[0].length === 4) { var t = setTimeout(function () { err[1](true); digits[1]([]); }, 260); return function () { clearTimeout(t); }; }
+    }, [digits[0].length]);
+    return h("div", { "data-theme": "sumi", style: { height: 560, background: "#1D211E", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 0 } },
+      h("div", { style: { width: 56, height: 56, borderRadius: "var(--r-card-nested)", background: "color-mix(in srgb, #E8E1D5 12%, transparent)", display: "grid", placeItems: "center", marginBottom: 22 } },
+        h(NS.Icon, { name: "lock", size: 26, color: fg })),
+      h("div", { style: { font: "500 20px/1.2 var(--font-ui)", color: fg, letterSpacing: "0.4px", marginBottom: err[0] ? 16 : 40 } }, "Enter PIN"),
+      err[0] && h("div", { style: { font: "400 13px/1.3 var(--font-ui)", color: "color-mix(in srgb, #E8E1D5 52%, transparent)", marginBottom: 20 } }, "Incorrect PIN — try again"),
+      h("div", { style: { marginBottom: 44 } }, h(NS.PinDots, { count: digits[0].length, hasError: err[0], dotColor: fg })),
+      h(NS.PinPad, { onDigit: add, onDelete: del, keyColor: fg }));
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(h(Demo));
+})();
+</script>
+</body>
+</html>

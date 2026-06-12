@@ -47,6 +47,7 @@ const ReaderBg = ({ dark, children }) => (
 const Shell = ({ dark, children, noPad }) => (
   <div data-theme={dark ? "sumi" : undefined}
     style={{ width: "100%", height: "100%", background: "var(--nyan-bg)",
+      position: "relative",
       display: "flex", flexDirection: "column", overflow: "hidden" }}>
     {children}
   </div>
@@ -118,7 +119,7 @@ const NyanToggle = ({ on, onChange }) => (
    Self-driving for galleries (internal state) or fully controllable by props. */
 const ShelfToolBtn = ({ icon, active, onClick, label }) => (
   <button onClick={onClick} title={label} aria-label={label} style={{
-    all: "unset", cursor: "pointer", width: 40, height: 40, borderRadius: "var(--r-control)",
+    all: "unset", cursor: "pointer", width: 44, height: 44, borderRadius: "var(--r-control)",
     background: active ? "color-mix(in srgb, var(--nyan-primary) 13%, var(--nyan-surface))" : "var(--nyan-surface)",
     border: active
       ? "1px solid color-mix(in srgb, var(--nyan-primary) 42%, transparent)"

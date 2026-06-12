@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"NyanReadDesignSystem_019e2f","components":[],"sourceHashes":{"brand/nyan-mark.jsx":"dc3409626c1d","components/cards.jsx":"ec7121009712","components/headers.jsx":"8ceb9085a695","components/primitives.jsx":"56c8853d51db","components/reader.jsx":"af5c80faf8f4","components/surfaces.jsx":"801189ea9bbe","screens/bundle1.jsx":"f9ad6853de1b","screens/bundle2-screens.jsx":"1b00c01ddca1","screens/bundle3.jsx":"58e9e5fa309d","screens/bundle4.jsx":"2ad01f02e7d5"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"NyanReadDesignSystem_019e2f","components":[{"name":"BookListRow","sourcePath":"components/cards/BookListRow.jsx"},{"name":"NyanBookGridCard","sourcePath":"components/cards/NyanBookGridCard.jsx"},{"name":"NyanBookmarkCard","sourcePath":"components/cards/NyanBookmarkCard.jsx"},{"name":"NyanContinueReadingCard","sourcePath":"components/cards/NyanContinueReadingCard.jsx"},{"name":"NyanPageHeader","sourcePath":"components/navigation/NyanPageHeader.jsx"},{"name":"NyanSectionHeader","sourcePath":"components/navigation/NyanSectionHeader.jsx"},{"name":"Checkbox","sourcePath":"components/primitives/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/primitives/Icon.jsx"},{"name":"NyanPrimaryButton","sourcePath":"components/primitives/NyanPrimaryButton.jsx"},{"name":"NyanSlider","sourcePath":"components/primitives/NyanSlider.jsx"},{"name":"NyanSwitch","sourcePath":"components/primitives/NyanSwitch.jsx"},{"name":"PillButton","sourcePath":"components/primitives/PillButton.jsx"},{"name":"ProgressBar","sourcePath":"components/primitives/ProgressBar.jsx"},{"name":"SearchField","sourcePath":"components/primitives/SearchField.jsx"},{"name":"SegmentedTabControl","sourcePath":"components/primitives/SegmentedTabControl.jsx"},{"name":"Skeleton","sourcePath":"components/primitives/Skeleton.jsx"},{"name":"TextField","sourcePath":"components/primitives/TextField.jsx"},{"name":"DisplayPanel","sourcePath":"components/reader/DisplayPanel.jsx"},{"name":"DockFooter","sourcePath":"components/reader/DockFooter.jsx"},{"name":"HighlightSwatchRow","sourcePath":"components/reader/HighlightSwatchRow.jsx"},{"name":"InBookSearch","sourcePath":"components/reader/InBookSearch.jsx"},{"name":"Knob","sourcePath":"components/reader/Knob.jsx"},{"name":"OnePaperDock","sourcePath":"components/reader/OnePaperDock.jsx"},{"name":"PdfControls","sourcePath":"components/reader/PdfControls.jsx"},{"name":"ReaderChapterList","sourcePath":"components/reader/ReaderChapterList.jsx"},{"name":"ReaderParagraph","sourcePath":"components/reader/ReaderParagraph.jsx"},{"name":"ReaderSettingsBody","sourcePath":"components/reader/ReaderSettingsBody.jsx"},{"name":"TTSPlayer","sourcePath":"components/reader/TTSPlayer.jsx"},{"name":"TextPanel","sourcePath":"components/reader/TextPanel.jsx"},{"name":"TextSelectionMenu","sourcePath":"components/reader/TextSelectionMenu.jsx"},{"name":"ThemePanel","sourcePath":"components/reader/ThemePanel.jsx"},{"name":"PinDots","sourcePath":"components/security/PinDots.jsx"},{"name":"PinPad","sourcePath":"components/security/PinPad.jsx"},{"name":"NyanActionSheetRow","sourcePath":"components/surfaces/NyanActionSheetRow.jsx"},{"name":"NyanBottomSheet","sourcePath":"components/surfaces/NyanBottomSheet.jsx"},{"name":"NyanDialog","sourcePath":"components/surfaces/NyanDialog.jsx"},{"name":"NyanEmptyState","sourcePath":"components/surfaces/NyanEmptyState.jsx"},{"name":"NyanFAB","sourcePath":"components/surfaces/NyanFAB.jsx"},{"name":"NyanInfoCard","sourcePath":"components/surfaces/NyanInfoCard.jsx"},{"name":"NyanListRow","sourcePath":"components/surfaces/NyanListRow.jsx"},{"name":"NyanOptionSheet","sourcePath":"components/surfaces/NyanOptionSheet.jsx"},{"name":"NyanResponse","sourcePath":"components/surfaces/NyanResponse.jsx"},{"name":"NyanRowGroup","sourcePath":"components/surfaces/NyanRowGroup.jsx"}],"sourceHashes":{"brand/nyan-mark.jsx":"dc3409626c1d","components/cards/BookListRow.jsx":"1c9a64ad04a7","components/cards/NyanBookGridCard.jsx":"e42b6c6b9c4b","components/cards/NyanBookmarkCard.jsx":"43737516a9e3","components/cards/NyanContinueReadingCard.jsx":"a8e8f2101577","components/navigation/NyanPageHeader.jsx":"15d362ad06f2","components/navigation/NyanSectionHeader.jsx":"a2e31fc2700e","components/primitives/Checkbox.jsx":"a45a8ce73268","components/primitives/Icon.jsx":"3700fcab2dda","components/primitives/NyanPrimaryButton.jsx":"a2d12459f656","components/primitives/NyanSlider.jsx":"a21d05bfa5fa","components/primitives/NyanSwitch.jsx":"bc4c42d8cf48","components/primitives/PillButton.jsx":"5c71a9024fd6","components/primitives/ProgressBar.jsx":"5cb3a5de9b70","components/primitives/SearchField.jsx":"5bf5d520dec0","components/primitives/SegmentedTabControl.jsx":"6b51c1d2a1db","components/primitives/Skeleton.jsx":"4d81823d1a03","components/primitives/TextField.jsx":"d7c7fad507f3","components/reader/DisplayPanel.jsx":"f650d0f3d177","components/reader/DockFooter.jsx":"4ae790e3fcf4","components/reader/HighlightSwatchRow.jsx":"b4e26de2b0da","components/reader/InBookSearch.jsx":"498631f506e9","components/reader/Knob.jsx":"fbcee9bbe400","components/reader/OnePaperDock.jsx":"b80bf5c5eecb","components/reader/PdfControls.jsx":"9a4d717f55a1","components/reader/ReaderChapterList.jsx":"4c74b797cc42","components/reader/ReaderParagraph.jsx":"f28b79a1bee6","components/reader/ReaderSettingsBody.jsx":"4956c82986c5","components/reader/TTSPlayer.jsx":"beaabf507734","components/reader/TextPanel.jsx":"aeb9bf8d037c","components/reader/TextSelectionMenu.jsx":"ea57210bdd3e","components/reader/ThemePanel.jsx":"56c713f3cc96","components/security/PinDots.jsx":"b3b2c1346ede","components/security/PinPad.jsx":"7bd58ce93912","components/surfaces/NyanActionSheetRow.jsx":"b37e872c7f4a","components/surfaces/NyanBottomSheet.jsx":"1887a0a174ee","components/surfaces/NyanDialog.jsx":"7b689e35f6d6","components/surfaces/NyanEmptyState.jsx":"ca8380515877","components/surfaces/NyanFAB.jsx":"2c8fc01dbdfe","components/surfaces/NyanInfoCard.jsx":"934a030de5b6","components/surfaces/NyanListRow.jsx":"5a279c72d2d7","components/surfaces/NyanOptionSheet.jsx":"3f1336ef378b","components/surfaces/NyanResponse.jsx":"20cc95129368","components/surfaces/NyanRowGroup.jsx":"ac9e1dbb9e9a","prototype/app.jsx":"e977c7914f4c","screens/bundle1.jsx":"463954c7c3fc","screens/bundle2-screens.jsx":"1b00c01ddca1","screens/bundle3.jsx":"b9bbb2de22b7","screens/bundle4.jsx":"2ad01f02e7d5"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -196,309 +196,13 @@ const NyanMark = ({
 window.NyanMark = NyanMark;
 })(); } catch (e) { __ds_ns.__errors.push({ path: "brand/nyan-mark.jsx", error: String((e && e.message) || e) }); }
 
-// components/cards.jsx
+// components/cards/NyanBookmarkCard.jsx
 try { (() => {
 /* ============================================================================
-   Nyan Read — Cards — book & content cards
-   ----------------------------------------------------------------------------
-   Book grid card, collapsible Continue Reading card, bookmark card.
-   Part of the split component library. Exports go to window so other Babel
-   <script> blocks (galleries, screens, the live prototype) can use them.
+   Nyan Read — NyanBookmarkCard
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanBookmarkCard.
+   Props contract: ./NyanBookmarkCard.d.ts
    ============================================================================ */
-
-const {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo
-} = React;
-
-/* ── Book grid card (NyanBookGridCard) ───────────────────────────────────
-   Source of truth: U9 Bookshelf Home, Cream · grid view (screens/bundle3.jsx
-   `BookCard`). A chromeless column — NOT a bordered tile: a tall 120:156 cover
-   wash carrying the format chip, a thin progress bar shown only once started,
-   then a 2-line title + single-line author. `selectionMode` adds the top-left
-   check + selected ring used by U21 multi-select.
-   Accepts either `book.pct` (0–100) or `book.progress` (0–1). */
-const NyanBookGridCard = ({
-  book,
-  selected = false,
-  selectionMode = false,
-  onPress,
-  onLongPress
-}) => {
-  const longPressTimer = useRef(null);
-  const start = () => {
-    longPressTimer.current = setTimeout(() => onLongPress?.(), 400);
-  };
-  const cancel = () => clearTimeout(longPressTimer.current);
-  const pct = book.pct != null ? book.pct : Math.round((book.progress || 0) * 100);
-  return /*#__PURE__*/React.createElement("div", {
-    onClick: onPress,
-    onMouseDown: start,
-    onMouseUp: cancel,
-    onMouseLeave: cancel,
-    onTouchStart: start,
-    onTouchEnd: cancel,
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 6,
-      cursor: "pointer",
-      userSelect: "none"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: "relative",
-      width: "100%",
-      aspectRatio: "120 / 156",
-      borderRadius: 12,
-      background: "color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface))",
-      border: selected ? "2px solid var(--nyan-primary)" : "0.5px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent)",
-      boxShadow: selected ? "0 0 0 3px color-mix(in srgb, var(--nyan-primary) 16%, transparent)" : "none",
-      display: "grid",
-      placeItems: "center",
-      overflow: "hidden",
-      transition: "box-shadow 140ms ease, border-color 140ms ease"
-    }
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "menu_book",
-    size: 26,
-    color: "var(--nyan-primary)"
-  }), book.fmt && /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: "absolute",
-      top: 6,
-      right: 6,
-      height: 17,
-      padding: "0 6px",
-      borderRadius: 999,
-      background: "color-mix(in srgb, var(--nyan-surface) 88%, transparent)",
-      border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent)",
-      display: "flex",
-      alignItems: "center"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      font: "600 9px/1 var(--font-ui)",
-      color: "var(--nyan-primary-deep)"
-    }
-  }, book.fmt)), selectionMode && /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: "absolute",
-      top: 6,
-      left: 6,
-      width: 22,
-      height: 22,
-      borderRadius: "50%",
-      display: "grid",
-      placeItems: "center",
-      background: selected ? "var(--nyan-select-fill)" : "color-mix(in srgb, var(--nyan-surface) 80%, transparent)",
-      border: selected ? "1.5px solid var(--nyan-select-fill)" : "1.5px solid color-mix(in srgb, var(--nyan-text) 30%, transparent)",
-      boxShadow: selected ? "0 1px 4px color-mix(in srgb, var(--nyan-select-fill) 40%, transparent)" : "none"
-    }
-  }, selected && /*#__PURE__*/React.createElement("svg", {
-    width: 14,
-    height: 14,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "#FFFFFF",
-    strokeWidth: "3.4",
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    style: {
-      display: "block"
-    }
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M5 12.5 L10 17.5 L19 7"
-  })))), pct > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: 3,
-      borderRadius: 999,
-      background: "color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface))",
-      overflow: "hidden"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: `${pct}%`,
-      height: "100%",
-      borderRadius: 999,
-      background: "var(--nyan-primary)"
-    }
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      font: "600 12.5px/1.25 var(--font-ui)",
-      color: "var(--nyan-text)",
-      overflow: "hidden",
-      display: "-webkit-box",
-      WebkitLineClamp: 2,
-      WebkitBoxOrient: "vertical"
-    }
-  }, book.title), book.author && /*#__PURE__*/React.createElement("div", {
-    style: {
-      font: "400 11px/1.3 var(--font-ui)",
-      color: "var(--nyan-text-muted)",
-      marginTop: 2,
-      whiteSpace: "nowrap",
-      overflow: "hidden",
-      textOverflow: "ellipsis"
-    }
-  }, book.author)));
-};
-
-/* ── Continue reading card (NyanContinueReadingCard) ───────────────────────
-   Latest design (U9): collapsible. Header (book glyph + "Continue Reading"
-   eyebrow + caret) is always visible and toggles the body. Expanded shows a
-   cover, title/author, a progress row, and a full-width matcha CTA that
-   enters the book. Collapsed shrinks to a slim row carrying title + percent. */
-const NyanContinueReadingCard = ({
-  book,
-  onContinue,
-  collapsed = false,
-  onToggleCollapse
-}) => {
-  const pct = Math.round(book.progress * 100);
-  return /*#__PURE__*/React.createElement(NyanInfoCard, {
-    padding: 0
-  }, /*#__PURE__*/React.createElement("div", {
-    onClick: onToggleCollapse,
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      padding: collapsed ? "11px 14px" : "12px 14px 8px",
-      cursor: onToggleCollapse ? "pointer" : "default"
-    }
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "menu_book",
-    size: 15,
-    color: "var(--nyan-primary)"
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minWidth: 0
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      font: "500 11px/1.2 var(--font-ui)",
-      color: "var(--nyan-text-muted)",
-      letterSpacing: "0.2px"
-    }
-  }, "Continue Reading"), collapsed && /*#__PURE__*/React.createElement("div", {
-    style: {
-      font: "600 13px/1.3 var(--font-ui)",
-      color: "var(--nyan-text)",
-      marginTop: 2,
-      whiteSpace: "nowrap",
-      overflow: "hidden",
-      textOverflow: "ellipsis"
-    }
-  }, book.title)), collapsed && /*#__PURE__*/React.createElement("span", {
-    style: {
-      font: "600 11px/1 var(--font-ui)",
-      color: "var(--nyan-primary-deep)",
-      flexShrink: 0
-    }
-  }, pct, "%"), onToggleCollapse && /*#__PURE__*/React.createElement(Icon, {
-    name: "keyboard_arrow_down",
-    size: 18,
-    color: "var(--nyan-text-muted)",
-    style: {
-      flexShrink: 0,
-      transform: collapsed ? "none" : "rotate(180deg)",
-      transition: "transform 200ms var(--ease-paper)"
-    }
-  })), !collapsed && /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: "0 14px 14px"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 56,
-      height: 72,
-      borderRadius: 14,
-      background: "color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface-muted))",
-      border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent)",
-      flexShrink: 0,
-      display: "grid",
-      placeItems: "center"
-    }
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "menu_book",
-    size: 22,
-    color: "var(--nyan-primary)"
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minWidth: 0,
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      font: "600 15px/1.3 var(--font-ui)",
-      color: "var(--nyan-text)",
-      letterSpacing: "-0.1px",
-      overflow: "hidden",
-      display: "-webkit-box",
-      WebkitLineClamp: 2,
-      WebkitBoxOrient: "vertical"
-    }
-  }, book.title), book.author && /*#__PURE__*/React.createElement("div", {
-    style: {
-      font: "400 12px/1.3 var(--font-ui)",
-      color: "var(--nyan-text-muted)",
-      marginTop: 2,
-      whiteSpace: "nowrap",
-      overflow: "hidden",
-      textOverflow: "ellipsis"
-    }
-  }, book.author)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      height: 4,
-      borderRadius: 999,
-      background: "color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface-muted))",
-      overflow: "hidden"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: `${pct}%`,
-      height: "100%",
-      borderRadius: 999,
-      background: "var(--nyan-primary)"
-    }
-  })), /*#__PURE__*/React.createElement("span", {
-    style: {
-      font: "600 11px/1 var(--font-ui)",
-      color: "var(--nyan-primary-deep)",
-      flexShrink: 0
-    }
-  }, pct, "%")))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 12
-    }
-  }, /*#__PURE__*/React.createElement(NyanPrimaryButton, {
-    label: "Continue Reading",
-    icon: "menu_book",
-    expanded: true,
-    onPress: onContinue
-  }))));
-};
 
 /* ── Bookmark card ─────────────────────────────────────────────────────────
    Source of truth: U12 Bookmark List (screens/bundle3.jsx `BookmarkCard`).
@@ -569,32 +273,16 @@ const NyanBookmarkCard = ({
     flex: 1
   }
 }, note)));
+Object.assign(__ds_scope, { NyanBookmarkCard });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/cards/NyanBookmarkCard.jsx", error: String((e && e.message) || e) }); }
 
-/* ── Exports ─────────────────────────────────────────────────────────────── */
-Object.assign(window, {
-  NyanBookGridCard,
-  NyanContinueReadingCard,
-  NyanBookmarkCard
-});
-})(); } catch (e) { __ds_ns.__errors.push({ path: "components/cards.jsx", error: String((e && e.message) || e) }); }
-
-// components/headers.jsx
+// components/navigation/NyanSectionHeader.jsx
 try { (() => {
 /* ============================================================================
-   Nyan Read — Headers
-   ----------------------------------------------------------------------------
-   Page header (title + subtitle + actions) and the olive section caption.
-   Part of the split component library. Exports go to window so other Babel
-   <script> blocks (galleries, screens, the live prototype) can use them.
+   Nyan Read — NyanSectionHeader
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanSectionHeader.
+   Props contract: ./NyanSectionHeader.d.ts
    ============================================================================ */
-
-const {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo
-} = React;
 
 /* ── Section header (olive caption + optional dot) ───────────────────────── */
 const NyanSectionHeader = ({
@@ -622,77 +310,90 @@ const NyanSectionHeader = ({
     textTransform: "uppercase"
   }
 }, title));
+Object.assign(__ds_scope, { NyanSectionHeader });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/navigation/NyanSectionHeader.jsx", error: String((e && e.message) || e) }); }
 
-/* ── Page header ─────────────────────────────────────────────────────────── */
-const NyanPageHeader = ({
-  title,
-  subtitle,
-  leading,
-  actions,
-  style
-}) => /*#__PURE__*/React.createElement("div", {
-  style: {
-    padding: "16px 16px 12px",
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 12,
-    ...style
-  }
-}, leading, /*#__PURE__*/React.createElement("div", {
-  style: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    minWidth: 0
-  }
-}, /*#__PURE__*/React.createElement("div", {
-  className: "nyan-title",
-  style: {
-    letterSpacing: "-0.15px"
-  }
-}, title), subtitle && /*#__PURE__*/React.createElement("div", {
-  className: "nyan-meta",
-  style: {
-    marginTop: 4,
-    color: "var(--nyan-text-muted)",
-    lineHeight: 1.35
-  }
-}, subtitle)), actions && /*#__PURE__*/React.createElement("div", {
-  style: {
-    display: "flex",
-    gap: 4
-  }
-}, actions));
-
-/* ── Exports ─────────────────────────────────────────────────────────────── */
-Object.assign(window, {
-  NyanSectionHeader,
-  NyanPageHeader
-});
-})(); } catch (e) { __ds_ns.__errors.push({ path: "components/headers.jsx", error: String((e && e.message) || e) }); }
-
-// components/primitives.jsx
+// components/primitives/Checkbox.jsx
 try { (() => {
 /* ============================================================================
-   Nyan Read — Primitives — inputs & controls
-   ----------------------------------------------------------------------------
-   Icon, buttons, switch, segmented control, slider. The atoms everything else is built from.
-   Part of the split component library. Exports go to window so other Babel
-   <script> blocks (galleries, screens, the live prototype) can use them.
+   Nyan Read — Checkbox
+   Compiled into the DS bundle; consume as window.<Namespace>.Checkbox.
+   Props contract: ./Checkbox.d.ts
    ============================================================================ */
 
-const {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo
-} = React;
+/* ── Checkbox ─────────────────────────────────────────────────────────────────
+   Square select control (multi-select lists, settings opt-ins). Checked = matcha
+   fill + cream tick; unchecked = hairline ring on surface. The hit area is padded
+   to a full 44px square so it clears the minimum tap target while the visible box
+   stays 22px. Space / Enter toggle. */
+const Checkbox = ({
+  checked = false,
+  onChange,
+  disabled = false,
+  size = 22,
+  "aria-label": ariaLabel
+}) => /*#__PURE__*/React.createElement("button", {
+  type: "button",
+  role: "checkbox",
+  "aria-checked": checked,
+  "aria-label": ariaLabel,
+  "aria-disabled": disabled || undefined,
+  onClick: () => !disabled && onChange && onChange(!checked),
+  style: {
+    all: "unset",
+    boxSizing: "border-box",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 44,
+    minHeight: 44,
+    cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.4 : 1,
+    flexShrink: 0
+  }
+}, /*#__PURE__*/React.createElement("span", {
+  style: {
+    width: size,
+    height: size,
+    borderRadius: 7,
+    background: checked ? "var(--nyan-primary)" : "var(--nyan-surface)",
+    border: checked ? "1.5px solid var(--nyan-primary)" : "1.5px solid color-mix(in srgb, var(--nyan-text) 28%, transparent)",
+    display: "grid",
+    placeItems: "center",
+    transition: "background 140ms var(--ease-paper), border-color 140ms var(--ease-paper)"
+  }
+}, checked && /*#__PURE__*/React.createElement("svg", {
+  width: Math.round(size * 0.62),
+  height: Math.round(size * 0.62),
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "var(--nyan-surface)",
+  strokeWidth: "3.4",
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  style: {
+    display: "block"
+  }
+}, /*#__PURE__*/React.createElement("path", {
+  d: "M5 12.5 L10 17.5 L19 7"
+}))));
+Object.assign(__ds_scope, { Checkbox });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/primitives/Checkbox.jsx", error: String((e && e.message) || e) }); }
+
+// components/primitives/Icon.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — Icon
+   Compiled into the DS bundle; consume as window.<Namespace>.Icon.
+   Props contract: ./Icon.d.ts
+   ============================================================================ */
 
 /* ── Icon shortcut ───────────────────────────────────────────────────────
-   Renders Phosphor Regular icons. Accepts Material-style names (menu_book,
-   bookmark, chevron_right, ...) and maps them to Phosphor's kebab-case
-   equivalents — so callers stay legible and source-aligned.
+   Renders Phosphor icons (Regular by default). Accepts Material-style names
+   (menu_book, bookmark, chevron_right, ...) and maps them to Phosphor's
+   kebab-case equivalents — so callers stay legible and source-aligned.
+   `weight` ("regular" | "fill" | "bold" | ...) picks the Phosphor weight class;
+   pass an `onClick` to get button semantics (role, focus, Enter/Space).
    See preview/iconography.html for rationale on the Phosphor swap. */
 const MATERIAL_TO_PHOSPHOR = {
   menu_book: "book-open",
@@ -741,14 +442,30 @@ const Icon = ({
   name,
   size = 20,
   color,
+  weight,
   style,
-  onClick
+  onClick,
+  "aria-label": ariaLabel
 }) => {
   const phName = MATERIAL_TO_PHOSPHOR[name] || name.replace(/_/g, "-");
-  const baseClass = name === "bookmark" ? "ph-fill" : "ph";
+  // weight overrides the default; `bookmark` keeps its historical filled look.
+  const resolvedWeight = weight || (name === "bookmark" ? "fill" : "regular");
+  const baseClass = resolvedWeight === "regular" ? "ph" : `ph-${resolvedWeight}`;
+  const interactive = typeof onClick === "function";
+  const onKeyDown = interactive ? e => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick(e);
+    }
+  } : undefined;
   return /*#__PURE__*/React.createElement("i", {
     className: `${baseClass} ph-${phName}`,
     onClick: onClick,
+    onKeyDown: onKeyDown,
+    role: interactive ? "button" : "img",
+    tabIndex: interactive ? 0 : undefined,
+    "aria-label": ariaLabel,
+    "aria-hidden": !interactive && !ariaLabel ? "true" : undefined,
     style: {
       fontSize: size,
       color: color || "var(--nyan-text)",
@@ -756,10 +473,248 @@ const Icon = ({
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
+      cursor: interactive ? "pointer" : undefined,
       ...style
     }
   });
 };
+Object.assign(__ds_scope, { Icon });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/primitives/Icon.jsx", error: String((e && e.message) || e) }); }
+
+// components/cards/NyanBookGridCard.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanBookGridCard
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanBookGridCard.
+   Props contract: ./NyanBookGridCard.d.ts
+   ============================================================================ */
+
+const {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo
+} = React;
+
+/* ── Book grid card (NyanBookGridCard) ───────────────────────────────────
+   Source of truth: U9 Bookshelf Home, Cream · grid view (screens/bundle3.jsx
+   `BookCard`). A chromeless column — NOT a bordered tile: a tall 120:156 cover
+   wash carrying the format chip, a thin progress bar shown only once started,
+   then a 2-line title + single-line author. `selectionMode` adds the top-left
+   check + selected ring used by U21 multi-select.
+   Accepts either `book.pct` (0–100) or `book.progress` (0–1). */
+const NyanBookGridCard = ({
+  book,
+  selected = false,
+  selectionMode = false,
+  onPress,
+  onLongPress
+}) => {
+  const longPressTimer = useRef(null);
+  const start = () => {
+    longPressTimer.current = setTimeout(() => onLongPress?.(), 400);
+  };
+  const cancel = () => clearTimeout(longPressTimer.current);
+  const pct = book.pct != null ? book.pct : Math.round((book.progress || 0) * 100);
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onPress,
+    onMouseDown: start,
+    onMouseUp: cancel,
+    onMouseLeave: cancel,
+    onTouchStart: start,
+    onTouchEnd: cancel,
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+      cursor: "pointer",
+      userSelect: "none"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      width: "100%",
+      aspectRatio: "120 / 156",
+      borderRadius: 12,
+      background: "color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface))",
+      border: selected ? "2px solid var(--nyan-primary)" : "0.5px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent)",
+      boxShadow: selected ? "0 0 0 3px color-mix(in srgb, var(--nyan-primary) 16%, transparent)" : "none",
+      display: "grid",
+      placeItems: "center",
+      overflow: "hidden",
+      transition: "box-shadow 140ms ease, border-color 140ms ease"
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "menu_book",
+    size: 26,
+    color: "var(--nyan-primary)"
+  }), book.fmt && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      top: 6,
+      right: 6,
+      height: 17,
+      padding: "0 6px",
+      borderRadius: 999,
+      background: "color-mix(in srgb, var(--nyan-surface) 88%, transparent)",
+      border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent)",
+      display: "flex",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "600 9px/1 var(--font-ui)",
+      color: "var(--nyan-primary-deep)"
+    }
+  }, book.fmt)), selectionMode && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      top: 6,
+      left: 6,
+      width: 22,
+      height: 22,
+      borderRadius: "50%",
+      display: "grid",
+      placeItems: "center",
+      background: selected ? "var(--nyan-select-fill)" : "color-mix(in srgb, var(--nyan-surface) 80%, transparent)",
+      border: selected ? "1.5px solid var(--nyan-select-fill)" : "1.5px solid color-mix(in srgb, var(--nyan-text) 30%, transparent)",
+      boxShadow: selected ? "0 1px 4px color-mix(in srgb, var(--nyan-select-fill) 40%, transparent)" : "none"
+    }
+  }, selected && /*#__PURE__*/React.createElement("svg", {
+    width: 13,
+    height: 13,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "var(--nyan-surface)",
+    strokeWidth: "3.4",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      display: "block"
+    }
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M5 12.5 L10 17.5 L19 7"
+  })))), pct > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 3,
+      borderRadius: 999,
+      background: "color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface))",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: `${pct}%`,
+      height: "100%",
+      borderRadius: 999,
+      background: "var(--nyan-primary)"
+    }
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "600 12.5px/1.25 var(--font-ui)",
+      color: "var(--nyan-text)",
+      overflow: "hidden",
+      display: "-webkit-box",
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: "vertical"
+    }
+  }, book.title), book.author && /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "400 11px/1.3 var(--font-ui)",
+      color: "var(--nyan-text-muted)",
+      marginTop: 2,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, book.author)));
+};
+Object.assign(__ds_scope, { NyanBookGridCard });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/cards/NyanBookGridCard.jsx", error: String((e && e.message) || e) }); }
+
+// components/navigation/NyanPageHeader.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanPageHeader
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanPageHeader.
+   Props contract: ./NyanPageHeader.d.ts
+   ============================================================================ */
+
+/* ── Page header ─────────────────────────────────────────────────────────────
+   Title + optional subtitle, a leading slot, and a trailing actions row.
+   `back` is a convenience that renders the standard 40px arrow-left button in
+   the leading slot (ignored when an explicit `leading` node is passed). */
+const NyanPageHeader = ({
+  title,
+  subtitle,
+  leading,
+  actions,
+  back = false,
+  onBack,
+  style
+}) => {
+  const lead = leading || (back ? /*#__PURE__*/React.createElement("button", {
+    onClick: onBack,
+    "aria-label": "Back",
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      width: 40,
+      height: 40,
+      borderRadius: "var(--r-control)",
+      display: "grid",
+      placeItems: "center",
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "arrow_back",
+    size: 21,
+    color: "var(--nyan-text)"
+  })) : null);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "16px 16px 12px",
+      display: "flex",
+      alignItems: subtitle ? "flex-start" : "center",
+      gap: 12,
+      ...style
+    }
+  }, lead, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      display: "flex",
+      flexDirection: "column",
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "nyan-title",
+    style: {
+      letterSpacing: "-0.15px"
+    }
+  }, title), subtitle && /*#__PURE__*/React.createElement("div", {
+    className: "nyan-meta",
+    style: {
+      marginTop: 4,
+      color: "var(--nyan-text-muted)",
+      lineHeight: 1.35
+    }
+  }, subtitle)), actions && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 4
+    }
+  }, actions));
+};
+Object.assign(__ds_scope, { NyanPageHeader });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/navigation/NyanPageHeader.jsx", error: String((e && e.message) || e) }); }
+
+// components/primitives/NyanPrimaryButton.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanPrimaryButton
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanPrimaryButton.
+   Props contract: ./NyanPrimaryButton.d.ts
+   ============================================================================ */
 
 /* ── Primary button (NyanPrimaryButton) ──────────────────────────────────
    Heights are LOCKED, never grown by padding. Choose by `size`:
@@ -774,6 +729,8 @@ const NyanPrimaryButton = ({
   expanded = false,
   variant = "primary",
   size = "md",
+  disabled = false,
+  loading = false,
   style
 }) => {
   const height = size === "sm" ? 36 : size === "lg" ? 52 : 44;
@@ -782,11 +739,14 @@ const NyanPrimaryButton = ({
   const iconSz = size === "sm" ? 16 : 18;
   const bg = variant === "deep" ? "var(--nyan-primary-deep)" : variant === "ghost" ? "transparent" : "var(--nyan-primary)";
   const fg = variant === "ghost" ? "var(--nyan-primary-deep)" : "var(--nyan-surface)";
+  const inert = disabled || loading;
   return /*#__PURE__*/React.createElement("button", {
-    onClick: onPress,
+    onClick: inert ? undefined : onPress,
+    disabled: inert,
+    "aria-busy": loading || undefined,
     style: {
       all: "unset",
-      cursor: "pointer",
+      cursor: inert ? "default" : "pointer",
       boxSizing: "border-box",
       height,
       padding: `0 ${padX}px`,
@@ -801,9 +761,21 @@ const NyanPrimaryButton = ({
       width: expanded ? "100%" : "auto",
       textAlign: "center",
       flexShrink: 0,
+      opacity: disabled ? 0.4 : 1,
       ...style
     }
-  }, icon && /*#__PURE__*/React.createElement(Icon, {
+  }, loading ? /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": "true",
+    style: {
+      width: iconSz,
+      height: iconSz,
+      borderRadius: "50%",
+      border: `2px solid ${fg}`,
+      borderTopColor: "transparent",
+      display: "inline-block",
+      animation: "nyanBtnSpin 600ms linear infinite"
+    }
+  }) : icon && /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: icon,
     size: iconSz,
     color: fg
@@ -814,8 +786,201 @@ const NyanPrimaryButton = ({
       textOverflow: "ellipsis",
       minWidth: 0
     }
-  }, label));
+  }, label), /*#__PURE__*/React.createElement("style", null, "@keyframes nyanBtnSpin { to { transform: rotate(360deg); } }"));
 };
+Object.assign(__ds_scope, { NyanPrimaryButton });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/primitives/NyanPrimaryButton.jsx", error: String((e && e.message) || e) }); }
+
+// components/primitives/NyanSlider.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanSlider
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanSlider.
+   Props contract: ./NyanSlider.d.ts
+   ============================================================================ */
+
+const {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo
+} = React;
+
+/* ── Slider (used in reader settings) ───────────────────────────────────── */
+const NyanSlider = ({
+  value,
+  min = 0,
+  max = 100,
+  step = 1,
+  onChange,
+  color = "var(--nyan-primary-deep)",
+  "aria-label": ariaLabel,
+  disabled = false
+}) => {
+  const trackRef = useRef(null);
+  const onPointer = e => {
+    const rect = trackRef.current.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const pct = Math.max(0, Math.min(1, x / rect.width));
+    const raw = min + pct * (max - min);
+    const snapped = Math.round(raw / step) * step;
+    onChange(Math.max(min, Math.min(max, snapped)));
+  };
+  const [dragging, setDragging] = useState(false);
+  useEffect(() => {
+    if (!dragging) return;
+    const move = e => onPointer(e);
+    const up = () => setDragging(false);
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+    window.addEventListener("touchmove", move);
+    window.addEventListener("touchend", up);
+    return () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+      window.removeEventListener("touchmove", move);
+      window.removeEventListener("touchend", up);
+    };
+  }, [dragging]);
+  const onKeyDown = e => {
+    if (disabled) return;
+    let next = value;
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") next = value + step;else if (e.key === "ArrowLeft" || e.key === "ArrowDown") next = value - step;else if (e.key === "Home") next = min;else if (e.key === "End") next = max;else if (e.key === "PageUp") next = value + step * 10;else if (e.key === "PageDown") next = value - step * 10;else return;
+    e.preventDefault();
+    onChange(Math.max(min, Math.min(max, next)));
+  };
+  const pct = (value - min) / (max - min) * 100;
+  return /*#__PURE__*/React.createElement("div", {
+    ref: trackRef,
+    role: "slider",
+    tabIndex: disabled ? -1 : 0,
+    "aria-valuemin": min,
+    "aria-valuemax": max,
+    "aria-valuenow": value,
+    "aria-label": ariaLabel,
+    "aria-disabled": disabled || undefined,
+    onKeyDown: onKeyDown,
+    onMouseDown: disabled ? undefined : e => {
+      setDragging(true);
+      onPointer(e);
+    },
+    onTouchStart: disabled ? undefined : e => {
+      setDragging(true);
+      onPointer(e);
+    },
+    style: {
+      position: "relative",
+      height: 24,
+      display: "flex",
+      alignItems: "center",
+      cursor: disabled ? "default" : "pointer",
+      touchAction: "none",
+      opacity: disabled ? 0.4 : 1,
+      outline: "none"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      height: 6,
+      background: "color-mix(in srgb, var(--nyan-text) 12%, transparent)",
+      borderRadius: 999
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      left: 0,
+      width: `${pct}%`,
+      height: 6,
+      background: color,
+      borderRadius: 999
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      left: `calc(${pct}% - 10px)`,
+      width: 20,
+      height: 20,
+      background: "var(--nyan-surface)",
+      borderRadius: "50%",
+      boxShadow: `0 1px 4px color-mix(in srgb, var(--shadow-color) 28%, transparent), 0 0 0 1.5px color-mix(in srgb, ${color} 60%, transparent)`
+    }
+  }));
+};
+Object.assign(__ds_scope, { NyanSlider });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/primitives/NyanSlider.jsx", error: String((e && e.message) || e) }); }
+
+// components/primitives/NyanSwitch.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanSwitch
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanSwitch.
+   Props contract: ./NyanSwitch.d.ts
+   ============================================================================ */
+
+/* ── Switch (Material-ish, Nyan-tinted) ──────────────────────────────────────
+   The visible track is 44×26, but the hit area is padded out to a full 44px
+   square so it clears the minimum tap target. Keyboard: Space / Enter toggle. */
+const NyanSwitch = ({
+  value,
+  onChange,
+  disabled = false,
+  "aria-label": ariaLabel
+}) => /*#__PURE__*/React.createElement("button", {
+  type: "button",
+  role: "switch",
+  "aria-checked": value,
+  "aria-label": ariaLabel,
+  "aria-disabled": disabled || undefined,
+  onClick: () => !disabled && onChange(!value),
+  style: {
+    all: "unset",
+    boxSizing: "border-box",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 44,
+    minHeight: 44,
+    cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.4 : 1,
+    flexShrink: 0
+  }
+}, /*#__PURE__*/React.createElement("span", {
+  style: {
+    width: 44,
+    height: 26,
+    borderRadius: 999,
+    background: value ? "var(--nyan-primary)" : "var(--nyan-divider)",
+    position: "relative",
+    transition: "background 150ms ease",
+    display: "block",
+    flexShrink: 0
+  }
+}, /*#__PURE__*/React.createElement("span", {
+  style: {
+    position: "absolute",
+    top: 3,
+    left: value ? 21 : 3,
+    width: 20,
+    height: 20,
+    background: "var(--nyan-surface)",
+    borderRadius: "50%",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+    transition: "left 200ms ease"
+  }
+})));
+Object.assign(__ds_scope, { NyanSwitch });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/primitives/NyanSwitch.jsx", error: String((e && e.message) || e) }); }
+
+// components/primitives/PillButton.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — PillButton
+   Compiled into the DS bundle; consume as window.<Namespace>.PillButton.
+   Props contract: ./PillButton.d.ts
+   ============================================================================ */
 
 /* ── Pill chip — the outline-on-select signature ──────────────────────────
    One option-chip treatment for the whole system (warmth, line-height, font,
@@ -828,12 +993,15 @@ const PillButton = ({
   selected,
   onPress,
   icon,
+  disabled = false,
   style
 }) => /*#__PURE__*/React.createElement("button", {
-  onClick: onPress,
+  onClick: disabled ? undefined : onPress,
+  disabled: disabled,
+  "aria-pressed": selected,
   style: {
     all: "unset",
-    cursor: "pointer",
+    cursor: disabled ? "default" : "pointer",
     boxSizing: "border-box",
     padding: "9px 16px",
     minWidth: 0,
@@ -847,44 +1015,289 @@ const PillButton = ({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
+    opacity: disabled ? 0.4 : 1,
     transition: "color 160ms var(--ease-paper), border-color 160ms var(--ease-paper), background 160ms var(--ease-paper)",
     ...style
   }
-}, icon && /*#__PURE__*/React.createElement(Icon, {
+}, icon && /*#__PURE__*/React.createElement(__ds_scope.Icon, {
   name: icon,
   size: 16,
   color: selected ? "var(--nyan-primary-deep)" : "var(--nyan-text-secondary)"
 }), label);
+Object.assign(__ds_scope, { PillButton });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/primitives/PillButton.jsx", error: String((e && e.message) || e) }); }
 
-/* ── Switch (Material-ish, Nyan-tinted) ──────────────────────────────────── */
-const NyanSwitch = ({
-  value,
-  onChange
-}) => /*#__PURE__*/React.createElement("div", {
-  onClick: () => onChange(!value),
-  style: {
-    width: 44,
-    height: 26,
-    borderRadius: 999,
-    background: value ? "var(--nyan-primary)" : "color-mix(in srgb, var(--nyan-divider) 100%, transparent)",
-    position: "relative",
-    cursor: "pointer",
-    transition: "background 150ms ease",
-    flexShrink: 0
-  }
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    position: "absolute",
-    top: 3,
-    left: value ? 21 : 3,
-    width: 20,
-    height: 20,
-    background: "var(--nyan-surface)",
-    borderRadius: "50%",
-    boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
-    transition: "left 200ms ease"
-  }
-}));
+// components/primitives/ProgressBar.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — ProgressBar
+   Compiled into the DS bundle; consume as window.<Namespace>.ProgressBar.
+   Props contract: ./ProgressBar.d.ts
+   ============================================================================ */
+
+/* ── Progress bar ────────────────────────────────────────────────────────────
+   The ONE reading-progress track for the whole system — replaces the five
+   inline copies that lived in BookCard / BookListRow / ContinueCard / ImportRow
+   / the dock. A matcha fill on a matcha-tint trough. `value` is 0–1; pass a
+   `label` ("42%") to show a trailing tabular-nums caption. `height` defaults to
+   the 3px shelf thickness; the dock uses 4–6. */
+const ProgressBar = ({
+  value = 0,
+  height = 3,
+  label,
+  color = "var(--nyan-primary)",
+  style
+}) => {
+  const pct = Math.max(0, Math.min(100, Math.round(value * 100)));
+  const track = /*#__PURE__*/React.createElement("div", {
+    role: "progressbar",
+    "aria-valuenow": pct,
+    "aria-valuemin": 0,
+    "aria-valuemax": 100,
+    style: {
+      flex: 1,
+      height,
+      borderRadius: 999,
+      background: `color-mix(in srgb, ${color} 16%, var(--nyan-surface-muted))`,
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: `${pct}%`,
+      height: "100%",
+      borderRadius: 999,
+      background: color,
+      transition: "width 320ms var(--ease-paper)"
+    }
+  }));
+  if (label == null) return /*#__PURE__*/React.createElement("div", {
+    style: style
+  }, track);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      ...style
+    }
+  }, track, /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "600 11px/1 var(--font-ui)",
+      color: "var(--nyan-primary-deep)",
+      fontVariantNumeric: "tabular-nums",
+      flexShrink: 0
+    }
+  }, label === true ? `${pct}%` : label));
+};
+Object.assign(__ds_scope, { ProgressBar });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/primitives/ProgressBar.jsx", error: String((e && e.message) || e) }); }
+
+// components/cards/BookListRow.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — BookListRow
+   Compiled into the DS bundle; consume as window.<Namespace>.BookListRow.
+   Props contract: ./BookListRow.d.ts
+   ============================================================================ */
+
+/* ── Book list row (BookListRow) ──────────────────────────────────────────────
+   Source of truth: U9 / U6 list view (screens/bundle3.jsx). The list-view counter-
+   part to NyanBookGridCard — a small 44×58 cover, title + author, an inline
+   progress bar once started, a format chip, and a trailing chevron. Drop several
+   inside a NyanRowGroup for the hairline-separated shelf list. 44px min height.
+   Accepts either book.pct (0–100) or book.progress (0–1). */
+const BookListRow = ({
+  book,
+  onPress
+}) => {
+  const pct = book.pct != null ? book.pct : Math.round((book.progress || 0) * 100);
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onPress,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+      padding: "10px 12px",
+      minHeight: 44,
+      cursor: onPress ? "pointer" : "default"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 44,
+      height: 58,
+      flexShrink: 0,
+      borderRadius: "var(--r-chip)",
+      background: "color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface))",
+      border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent)",
+      display: "grid",
+      placeItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "menu_book",
+    size: 20,
+    color: "var(--nyan-primary)"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "600 14px/1.25 var(--font-ui)",
+      color: "var(--nyan-text)",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, book.title), book.author && /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "400 12px/1.3 var(--font-ui)",
+      color: "var(--nyan-text-muted)",
+      marginTop: 1,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, book.author), pct > 0 && /*#__PURE__*/React.createElement(__ds_scope.ProgressBar, {
+    value: pct / 100,
+    label: `${pct}%`,
+    style: {
+      marginTop: 7
+    }
+  })), book.fmt && /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 18,
+      padding: "0 7px",
+      flexShrink: 0,
+      borderRadius: 999,
+      background: "var(--nyan-surface-muted)",
+      border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent)",
+      display: "flex",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "600 9px/1 var(--font-ui)",
+      color: "var(--nyan-primary-deep)"
+    }
+  }, book.fmt)), /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "chevron_right",
+    size: 15,
+    color: "var(--nyan-text-muted)",
+    style: {
+      flexShrink: 0
+    }
+  }));
+};
+Object.assign(__ds_scope, { BookListRow });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/cards/BookListRow.jsx", error: String((e && e.message) || e) }); }
+
+// components/primitives/SearchField.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — SearchField
+   Compiled into the DS bundle; consume as window.<Namespace>.SearchField.
+   Props contract: ./SearchField.d.ts
+   ============================================================================ */
+
+const {
+  useRef
+} = React;
+
+/* ── Search field ────────────────────────────────────────────────────────────
+   The shelf / in-book search input. A real <input> (not a faux caret div): the
+   leading glass tints matcha once there's a query, and a clear button appears.
+   Controlled — pass `value` + `onChange`. 44px tall, --r-control radius, with the
+   matcha focus ring shared by every focusable surface. */
+const SearchField = ({
+  value = "",
+  onChange,
+  onClear,
+  onSubmit,
+  placeholder = "Search title or author",
+  autoFocus = false,
+  style
+}) => {
+  const ref = useRef(null);
+  const has = value.length > 0;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      height: 44,
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      padding: "0 12px",
+      borderRadius: "var(--r-control)",
+      background: "var(--nyan-surface)",
+      border: "1.5px solid color-mix(in srgb, var(--nyan-divider) 50%, transparent)",
+      transition: "border-color 140ms var(--ease-paper), box-shadow 140ms var(--ease-paper)",
+      ...style
+    },
+    onFocusCapture: e => {
+      e.currentTarget.style.borderColor = "var(--nyan-primary)";
+      e.currentTarget.style.boxShadow = "0 0 0 3px color-mix(in srgb, var(--nyan-primary) 12%, transparent)";
+    },
+    onBlurCapture: e => {
+      e.currentTarget.style.borderColor = "color-mix(in srgb, var(--nyan-divider) 50%, transparent)";
+      e.currentTarget.style.boxShadow = "none";
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "search",
+    size: 18,
+    color: has ? "var(--nyan-primary)" : "var(--nyan-text-muted)",
+    style: {
+      flexShrink: 0
+    }
+  }), /*#__PURE__*/React.createElement("input", {
+    ref: ref,
+    value: value,
+    autoFocus: autoFocus,
+    placeholder: placeholder,
+    onChange: e => onChange && onChange(e.target.value),
+    onKeyDown: e => {
+      if (e.key === "Enter" && onSubmit) onSubmit(value);
+    },
+    style: {
+      all: "unset",
+      flex: 1,
+      minWidth: 0,
+      font: "400 15px/1 var(--font-ui)",
+      color: "var(--nyan-text)"
+    }
+  }), has && /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      onClear ? onClear() : onChange && onChange("");
+      ref.current && ref.current.focus();
+    },
+    "aria-label": "Clear search",
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      width: 22,
+      height: 22,
+      borderRadius: "50%",
+      background: "color-mix(in srgb, var(--nyan-text) 12%, transparent)",
+      display: "grid",
+      placeItems: "center",
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "close",
+    size: 12,
+    color: "var(--nyan-surface)"
+  })));
+};
+Object.assign(__ds_scope, { SearchField });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/primitives/SearchField.jsx", error: String((e && e.message) || e) }); }
+
+// components/primitives/SegmentedTabControl.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — SegmentedTabControl
+   Compiled into the DS bundle; consume as window.<Namespace>.SegmentedTabControl.
+   Props contract: ./SegmentedTabControl.d.ts
+   ============================================================================ */
 
 /* ── Segmented tab control (NyanSegmentedTabControl) ─────────────────────────
    ONE recessed-track style for the whole system — top-level views AND sort.
@@ -941,7 +1354,7 @@ const SegmentedTabControl = ({
         padding: "0 4px",
         textAlign: "center"
       }
-    }, t.icon && /*#__PURE__*/React.createElement(Icon, {
+    }, t.icon && /*#__PURE__*/React.createElement(__ds_scope.Icon, {
       name: t.icon,
       size: 16,
       color: color
@@ -954,144 +1367,547 @@ const SegmentedTabControl = ({
     }, t.label));
   }));
 };
+Object.assign(__ds_scope, { SegmentedTabControl });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/primitives/SegmentedTabControl.jsx", error: String((e && e.message) || e) }); }
 
-/* ── Slider (used in reader settings) ───────────────────────────────────── */
-const NyanSlider = ({
-  value,
-  min = 0,
-  max = 100,
-  onChange,
-  color = "var(--nyan-primary-deep)"
-}) => {
-  const trackRef = useRef(null);
-  const onPointer = e => {
-    const rect = trackRef.current.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const pct = Math.max(0, Math.min(1, x / rect.width));
-    onChange(Math.round(min + pct * (max - min)));
-  };
-  const [dragging, setDragging] = useState(false);
-  useEffect(() => {
-    if (!dragging) return;
-    const move = e => onPointer(e);
-    const up = () => setDragging(false);
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", up);
-    window.addEventListener("touchmove", move);
-    window.addEventListener("touchend", up);
-    return () => {
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mouseup", up);
-      window.removeEventListener("touchmove", move);
-      window.removeEventListener("touchend", up);
-    };
-  }, [dragging]);
-  const pct = (value - min) / (max - min) * 100;
-  return /*#__PURE__*/React.createElement("div", {
-    ref: trackRef,
-    onMouseDown: e => {
-      setDragging(true);
-      onPointer(e);
-    },
-    onTouchStart: e => {
-      setDragging(true);
-      onPointer(e);
-    },
-    style: {
-      position: "relative",
-      height: 24,
-      display: "flex",
-      alignItems: "center",
-      cursor: "pointer",
-      touchAction: "none"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: "absolute",
-      left: 0,
-      right: 0,
-      height: 6,
-      background: "color-mix(in srgb, var(--nyan-text) 12%, transparent)",
-      borderRadius: 999
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: "absolute",
-      left: 0,
-      width: `${pct}%`,
-      height: 6,
-      background: color,
-      borderRadius: 999
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: "absolute",
-      left: `calc(${pct}% - 10px)`,
-      width: 20,
-      height: 20,
-      background: "var(--nyan-surface)",
-      borderRadius: "50%",
-      boxShadow: `0 1px 4px color-mix(in srgb, var(--shadow-color) 28%, transparent), 0 0 0 1.5px color-mix(in srgb, ${color} 60%, transparent)`
-    }
-  }));
-};
-
-/* ── Exports ─────────────────────────────────────────────────────────────── */
-Object.assign(window, {
-  Icon,
-  NyanPrimaryButton,
-  PillButton,
-  NyanSwitch,
-  SegmentedTabControl,
-  NyanSlider
-});
-})(); } catch (e) { __ds_ns.__errors.push({ path: "components/primitives.jsx", error: String((e && e.message) || e) }); }
-
-// components/reader.jsx
+// components/primitives/Skeleton.jsx
 try { (() => {
-function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /* ============================================================================
-   Nyan Read — Reader chrome — One Paper dock & settings body
-   ----------------------------------------------------------------------------
-   The reader paragraph, settings knobs/panels, shared ReaderSettingsBody, chapter list, dock footer, and the OnePaperDock shell (dock that grows into a sheet).
-   Part of the split component library. Exports go to window so other Babel
-   <script> blocks (galleries, screens, the live prototype) can use them.
+   Nyan Read — Skeleton
+   Compiled into the DS bundle; consume as window.<Namespace>.Skeleton.
+   Props contract: ./Skeleton.d.ts
+   ============================================================================ */
+
+/* ── Skeleton ─────────────────────────────────────────────────────────────────
+   Loading placeholder — a calm paper shimmer (NOT a grey Material block). Used
+   while a book imports, a cover renders, or a list hydrates. `variant` picks the
+   shape: "text" (a line, height tracks font), "cover" (a 120:156 book cover),
+   "circle", or "block". Compose several to mock a whole row. The shimmer respects
+   prefers-reduced-motion. */
+const Skeleton = ({
+  variant = "text",
+  width,
+  height,
+  radius,
+  style
+}) => {
+  const presets = {
+    text: {
+      width: width || "100%",
+      height: height || 12,
+      radius: radius != null ? radius : 6
+    },
+    cover: {
+      width: width || "100%",
+      height: height,
+      radius: radius != null ? radius : 12,
+      aspect: "120 / 156"
+    },
+    circle: {
+      width: width || 40,
+      height: height || 40,
+      radius: "50%"
+    },
+    block: {
+      width: width || "100%",
+      height: height || 80,
+      radius: radius != null ? radius : "var(--r-card-nested)"
+    }
+  };
+  const p = presets[variant] || presets.text;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: p.width,
+      height: p.height,
+      aspectRatio: p.aspect,
+      borderRadius: p.radius,
+      background: "linear-gradient(100deg, color-mix(in srgb, var(--nyan-primary) 7%, var(--nyan-surface-muted)) 30%, color-mix(in srgb, var(--nyan-primary) 13%, var(--nyan-surface)) 50%, color-mix(in srgb, var(--nyan-primary) 7%, var(--nyan-surface-muted)) 70%)",
+      backgroundSize: "200% 100%",
+      animation: "nyanSkeleton 1400ms ease-in-out infinite",
+      ...style
+    }
+  }, /*#__PURE__*/React.createElement("style", null, "@keyframes nyanSkeleton { from { background-position: 200% 0; } to { background-position: -200% 0; } } @media (prefers-reduced-motion: reduce) { @keyframes nyanSkeleton { from, to { background-position: 0 0; } } }"));
+};
+Object.assign(__ds_scope, { Skeleton });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/primitives/Skeleton.jsx", error: String((e && e.message) || e) }); }
+
+// components/primitives/TextField.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — TextField
+   Compiled into the DS bundle; consume as window.<Namespace>.TextField.
+   Props contract: ./TextField.d.ts
    ============================================================================ */
 
 const {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo
+  useState
 } = React;
 
-/* ── Reading text body (inside reader canvas) ───────────────────────────── */
-const ReaderParagraph = ({
-  children,
-  serif = false,
-  fontSize = 18,
-  lineHeight = 1.75,
-  color
-}) => /*#__PURE__*/React.createElement("p", {
-  style: {
-    font: `400 ${fontSize}px/${lineHeight} ${serif ? "var(--font-serif)" : "var(--font-ui)"}`,
-    color: color || "var(--reader-ink)",
-    margin: "0 0 1.2em 0",
-    textIndent: "2em",
-    textAlign: "justify",
-    textWrap: "pretty"
-  }
-}, children);
+/* ── Text field ───────────────────────────────────────────────────────────────
+   The general single-line / multi-line text input (rename a book, write a note,
+   go-to-page). Optional label above, optional leading icon, matcha focus ring,
+   and an error state in the warm-clay error tones. Multiline renders a <textarea>.
+   Controlled — pass `value` + `onChange`. */
+const TextField = ({
+  value = "",
+  onChange,
+  label,
+  placeholder,
+  icon,
+  multiline = false,
+  rows = 3,
+  error,
+  disabled = false,
+  onSubmit,
+  style
+}) => {
+  const [focused, setFocused] = useState(false);
+  const ringColor = error ? "var(--error-primary)" : "var(--nyan-primary)";
+  const borderColor = error ? "color-mix(in srgb, var(--error-primary) 55%, transparent)" : focused ? ringColor : "color-mix(in srgb, var(--nyan-divider) 55%, transparent)";
+  const common = {
+    all: "unset",
+    flex: 1,
+    minWidth: 0,
+    boxSizing: "border-box",
+    font: "400 15px/1.5 var(--font-ui)",
+    color: "var(--nyan-text)",
+    width: "100%"
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+      ...style
+    }
+  }, label && /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "500 12px/1 var(--font-ui)",
+      color: "var(--nyan-text-secondary)",
+      letterSpacing: "0.1px"
+    }
+  }, label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: multiline ? "flex-start" : "center",
+      gap: 9,
+      padding: multiline ? "11px 12px" : "0 12px",
+      minHeight: 44,
+      background: disabled ? "var(--nyan-surface-muted)" : "var(--nyan-surface)",
+      borderRadius: "var(--r-control)",
+      border: `1.5px solid ${borderColor}`,
+      boxShadow: focused && !error ? `0 0 0 3px color-mix(in srgb, ${ringColor} 12%, transparent)` : "none",
+      transition: "border-color 140ms var(--ease-paper), box-shadow 140ms var(--ease-paper)",
+      opacity: disabled ? 0.55 : 1
+    }
+  }, icon && /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: icon,
+    size: 18,
+    color: focused ? ringColor : "var(--nyan-text-muted)",
+    style: {
+      flexShrink: 0,
+      marginTop: multiline ? 3 : 0
+    }
+  }), multiline ? /*#__PURE__*/React.createElement("textarea", {
+    value: value,
+    rows: rows,
+    placeholder: placeholder,
+    disabled: disabled,
+    onFocus: () => setFocused(true),
+    onBlur: () => setFocused(false),
+    onChange: e => onChange && onChange(e.target.value),
+    style: {
+      ...common,
+      resize: "none"
+    }
+  }) : /*#__PURE__*/React.createElement("input", {
+    value: value,
+    placeholder: placeholder,
+    disabled: disabled,
+    onFocus: () => setFocused(true),
+    onBlur: () => setFocused(false),
+    onChange: e => onChange && onChange(e.target.value),
+    onKeyDown: e => {
+      if (e.key === "Enter" && onSubmit) onSubmit(value);
+    },
+    style: common
+  })), error && typeof error === "string" && /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "400 12px/1.3 var(--font-ui)",
+      color: "var(--error-primary)"
+    }
+  }, error));
+};
+Object.assign(__ds_scope, { TextField });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/primitives/TextField.jsx", error: String((e && e.message) || e) }); }
 
-/* ════════════════════════════════════════════════════════════════════════
-   ONE PAPER · shared reader chrome
-   --------------------------------------------------------------------------
-   The dock that grows into a sheet, the dock footer (progress + chapter
-   stepper + 3 actions), and the reader sheet bodies. Extracted here so the
-   live kit reader AND the spec bundles render the EXACT same chrome — one
-   source of truth, no drift.
-   ════════════════════════════════════════════════════════════════════════ */
+// components/reader/DockFooter.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — DockFooter
+   Compiled into the DS bundle; consume as window.<Namespace>.DockFooter.
+   Props contract: ./DockFooter.d.ts
+   ============================================================================ */
+
+/* Dock footer — the persistent base of the One Paper panel:
+   a chapter stepper flanking the progress bar, then the 3 actions.
+   Stepper carets are the ONLY chapter-nav affordance in the model. */
+
+const DockFooter = ({
+  chapterIndex,
+  chapterCount,
+  progress,
+  activeAction,
+  onAction,
+  onPrevChapter,
+  onNextChapter,
+  sheetOpen,
+  actions,
+  labels
+}) => {
+  const L = {
+    chapters: "Chapters",
+    bookmarks: "Bookmarks",
+    highlights: "Highlights",
+    settings: "Settings",
+    prevChapter: "Previous chapter",
+    nextChapter: "Next chapter",
+    // (index, count) => string
+    chapterStatus: (i, n) => `Chapter ${i + 1} of ${n}`,
+    ...labels
+  };
+  const acts = actions || [{
+    key: "chapters",
+    icon: "format_list_bulleted",
+    label: L.chapters
+  }, {
+    key: "bookmarks",
+    icon: "bookmark_border",
+    label: L.bookmarks
+  }, {
+    key: "highlights",
+    icon: "highlighter",
+    label: L.highlights
+  }, {
+    key: "settings",
+    icon: "title",
+    label: L.settings
+  }];
+  const atStart = chapterIndex <= 0;
+  const atEnd = chapterIndex >= chapterCount - 1;
+  const step = disabled => ({
+    all: "unset",
+    cursor: disabled ? "default" : "pointer",
+    width: 44,
+    height: 44,
+    flex: "none",
+    borderRadius: "var(--r-chip)",
+    display: "grid",
+    placeItems: "center",
+    opacity: disabled ? 0.32 : 1
+  });
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      borderTop: sheetOpen ? "1px solid var(--nyan-divider)" : "1px solid transparent",
+      transition: "border-color 200ms var(--ease-paper)"
+    }
+  }, !sheetOpen && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      padding: "11px 10px 3px"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: atStart ? undefined : onPrevChapter,
+    disabled: atStart,
+    "aria-label": L.prevChapter,
+    style: step(atStart),
+    title: L.prevChapter
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "chevron_left",
+    size: 20,
+    color: "var(--nyan-text-secondary)"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "400 12px/1 var(--font-ui)",
+      color: "var(--nyan-text-muted)"
+    }
+  }, L.chapterStatus(chapterIndex, chapterCount)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "500 12px/1 var(--font-mono)",
+      color: "var(--nyan-text-secondary)"
+    }
+  }, Math.round(progress * 100), "%")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 4,
+      borderRadius: 999,
+      background: "color-mix(in srgb, var(--nyan-text) 11%, transparent)",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: `${progress * 100}%`,
+      height: "100%",
+      background: "var(--nyan-primary)",
+      borderRadius: 999
+    }
+  }))), /*#__PURE__*/React.createElement("button", {
+    onClick: atEnd ? undefined : onNextChapter,
+    disabled: atEnd,
+    "aria-label": L.nextChapter,
+    style: step(atEnd),
+    title: L.nextChapter
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "chevron_right",
+    size: 20,
+    color: "var(--nyan-text-secondary)"
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      padding: sheetOpen ? "6px 8px 10px" : "8px 8px 12px"
+    }
+  }, acts.map(a => {
+    const on = a.key === activeAction;
+    return /*#__PURE__*/React.createElement("button", {
+      key: a.key,
+      onClick: () => onAction && onAction(a.key),
+      style: {
+        all: "unset",
+        cursor: "pointer",
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 5,
+        padding: "8px 4px",
+        borderRadius: 14,
+        background: on ? "color-mix(in srgb, var(--nyan-primary) 12%, transparent)" : "transparent",
+        color: on ? "var(--nyan-primary-deep)" : "var(--nyan-text-secondary)",
+        transition: "background 160ms var(--ease-paper)"
+      }
+    }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+      name: a.icon,
+      size: 24,
+      color: on ? "var(--nyan-primary-deep)" : "var(--nyan-text-secondary)"
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        font: `${on ? 600 : 500} 12px/1 var(--font-ui)`
+      }
+    }, a.label));
+  })));
+};
+Object.assign(__ds_scope, { DockFooter });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/DockFooter.jsx", error: String((e && e.message) || e) }); }
+
+// components/reader/HighlightSwatchRow.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — HighlightSwatchRow
+   Compiled into the DS bundle; consume as window.<Namespace>.HighlightSwatchRow.
+   Props contract: ./HighlightSwatchRow.d.ts
+   ============================================================================ */
+
+/* ── Highlight swatch row ─────────────────────────────────────────────────────
+   The five-pen colour picker shared by the text-selection menu (U5) and the
+   highlight-note dialog (U2 / U13). Tokenised to the highlight pen palette
+   (--hl-yellow … --hl-orange) — never raw hex. The selected pen gets a matcha
+   ring + lift. Pass `selected` (a pen id or index) and `onSelect`. */
+const NYAN_HL_PENS = [{
+  id: "yellow",
+  color: "var(--hl-yellow)",
+  label: "Yellow"
+}, {
+  id: "green",
+  color: "var(--hl-green)",
+  label: "Green"
+}, {
+  id: "blue",
+  color: "var(--hl-blue)",
+  label: "Blue"
+}, {
+  id: "pink",
+  color: "var(--hl-pink)",
+  label: "Pink"
+}, {
+  id: "orange",
+  color: "var(--hl-orange)",
+  label: "Orange"
+}];
+const HighlightSwatchRow = ({
+  pens = NYAN_HL_PENS,
+  selected,
+  onSelect,
+  size = 22,
+  gap = 4,
+  style
+}) => /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap,
+    ...style
+  }
+}, pens.map((p, i) => {
+  const isSel = selected != null && (selected === p.id || selected === i);
+  return /*#__PURE__*/React.createElement("button", {
+    key: p.id || i,
+    onClick: () => onSelect && onSelect(p.id ?? i, p),
+    title: p.label,
+    "aria-label": p.label,
+    "aria-pressed": isSel,
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      width: size + 10,
+      height: size + 10,
+      borderRadius: "50%",
+      display: "grid",
+      placeItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: size,
+      height: size,
+      borderRadius: "50%",
+      background: p.color,
+      border: isSel ? "2px solid var(--nyan-primary-deep)" : "1.5px solid color-mix(in srgb, var(--nyan-surface) 80%, transparent)",
+      boxShadow: isSel ? "0 0 0 2px var(--nyan-surface), 0 1px 4px color-mix(in srgb, var(--shadow-color) 30%, transparent)" : "0 1px 3px rgba(0,0,0,0.10)",
+      transition: "box-shadow 140ms var(--ease-paper), border-color 140ms var(--ease-paper)"
+    }
+  }));
+}));
+Object.assign(__ds_scope, { HighlightSwatchRow });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/HighlightSwatchRow.jsx", error: String((e && e.message) || e) }); }
+
+// components/reader/InBookSearch.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — InBookSearch
+   Compiled into the DS bundle; consume as window.<Namespace>.InBookSearch.
+   Props contract: ./InBookSearch.d.ts
+   ============================================================================ */
+
+/* ── In-book search bar ───────────────────────────────────────────────────────
+   The find-in-book header strip: back, the shared SearchField, and a match
+   stepper ("3 / 17" with ‹ ›) that appears once there are hits. A One Paper bar —
+   surface, chrome-edge hairline, lightCard — meant to dock at the top of the
+   reader. Caller owns the query + match cursor; this is the chrome around them. */
+const InBookSearch = ({
+  value = "",
+  onChange,
+  onClose,
+  matchIndex = 0,
+  matchCount = 0,
+  onPrevMatch,
+  onNextMatch,
+  style
+}) => {
+  const hasMatches = matchCount > 0;
+  const stepBtn = disabled => ({
+    all: "unset",
+    cursor: disabled ? "default" : "pointer",
+    width: 36,
+    height: 36,
+    borderRadius: "var(--r-chip)",
+    display: "grid",
+    placeItems: "center",
+    opacity: disabled ? 0.32 : 1
+  });
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "10px 12px",
+      background: "var(--nyan-surface)",
+      borderBottom: "1px solid var(--chrome-edge)",
+      boxShadow: "var(--shadow-subtle)",
+      ...style
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    "aria-label": "Close search",
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      width: 40,
+      height: 40,
+      borderRadius: "var(--r-control)",
+      display: "grid",
+      placeItems: "center",
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "arrow_back",
+    size: 21,
+    color: "var(--nyan-text)"
+  })), /*#__PURE__*/React.createElement(__ds_scope.SearchField, {
+    value: value,
+    onChange: onChange,
+    placeholder: "Find in book",
+    autoFocus: true
+  }), hasMatches ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 2,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "500 12px/1 var(--font-mono)",
+      color: "var(--nyan-text-secondary)",
+      fontVariantNumeric: "tabular-nums",
+      minWidth: 42,
+      textAlign: "center"
+    }
+  }, matchIndex + 1, " / ", matchCount), /*#__PURE__*/React.createElement("button", {
+    onClick: onPrevMatch,
+    "aria-label": "Previous match",
+    style: stepBtn(false)
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "keyboard_arrow_up",
+    size: 18,
+    color: "var(--nyan-text-secondary)"
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: onNextMatch,
+    "aria-label": "Next match",
+    style: stepBtn(false)
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "keyboard_arrow_down",
+    size: 18,
+    color: "var(--nyan-text-secondary)"
+  }))) : value ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "400 12px/1 var(--font-ui)",
+      color: "var(--nyan-text-muted)",
+      flexShrink: 0,
+      paddingRight: 4
+    }
+  }, "No matches") : null);
+};
+Object.assign(__ds_scope, { InBookSearch });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/InBookSearch.jsx", error: String((e && e.message) || e) }); }
+
+// components/reader/Knob.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — Knob
+   Compiled into the DS bundle; consume as window.<Namespace>.Knob.
+   Props contract: ./Knob.d.ts
+   ============================================================================ */
 
 /* Concentric nested card — recessed muted fill at radius 16, one step inside
    the radius-28 sheet (arc parallel to the parent). The only knob style. */
@@ -1121,6 +1937,17 @@ const Knob = ({
 }, label), hint && /*#__PURE__*/React.createElement("div", {
   className: "nyan-meta"
 }, hint)), children);
+Object.assign(__ds_scope, { Knob });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/Knob.jsx", error: String((e && e.message) || e) }); }
+
+// components/reader/DisplayPanel.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — DisplayPanel
+   Compiled into the DS bundle; consume as window.<Namespace>.DisplayPanel.
+   Props contract: ./DisplayPanel.d.ts
+   ============================================================================ */
+
 const DisplayPanel = ({
   t,
   setT
@@ -1130,10 +1957,10 @@ const DisplayPanel = ({
     flexDirection: "column",
     gap: 12
   }
-}, /*#__PURE__*/React.createElement(Knob, {
+}, /*#__PURE__*/React.createElement(__ds_scope.Knob, {
   label: "Brightness",
   hint: "Adjust the reading light"
-}, /*#__PURE__*/React.createElement(NyanSlider, {
+}, /*#__PURE__*/React.createElement(__ds_scope.NyanSlider, {
   value: t.brightness,
   min: 0,
   max: 100,
@@ -1150,16 +1977,16 @@ const DisplayPanel = ({
   }
 }, /*#__PURE__*/React.createElement("div", {
   className: "nyan-meta"
-}, "Follow system brightness"), /*#__PURE__*/React.createElement(NyanSwitch, {
+}, "Follow system brightness"), /*#__PURE__*/React.createElement(__ds_scope.NyanSwitch, {
   value: t.autoBrightness,
   onChange: v => setT({
     ...t,
     autoBrightness: v
   })
-}))), /*#__PURE__*/React.createElement(Knob, {
+}))), /*#__PURE__*/React.createElement(__ds_scope.Knob, {
   label: "Warmth",
   hint: "Reduce glare at night"
-}, /*#__PURE__*/React.createElement(NyanSlider, {
+}, /*#__PURE__*/React.createElement(__ds_scope.NyanSlider, {
   value: {
     low: 10,
     medium: 50,
@@ -1176,7 +2003,7 @@ const DisplayPanel = ({
     gap: 8,
     marginTop: 12
   }
-}, ["low", "medium", "high"].map(w => /*#__PURE__*/React.createElement(PillButton, {
+}, ["low", "medium", "high"].map(w => /*#__PURE__*/React.createElement(__ds_scope.PillButton, {
   key: w,
   label: w[0].toUpperCase() + w.slice(1),
   selected: t.warmth === w,
@@ -1187,14 +2014,14 @@ const DisplayPanel = ({
   style: {
     flex: 1
   }
-})))), /*#__PURE__*/React.createElement(Knob, {
+})))), /*#__PURE__*/React.createElement(__ds_scope.Knob, {
   label: "Page Turn Mode"
 }, /*#__PURE__*/React.createElement("div", {
   style: {
     display: "flex",
     gap: 8
   }
-}, ["tap", "swipe", "disabled"].map(m => /*#__PURE__*/React.createElement(PillButton, {
+}, ["tap", "swipe", "disabled"].map(m => /*#__PURE__*/React.createElement(__ds_scope.PillButton, {
   key: m,
   label: m[0].toUpperCase() + m.slice(1),
   selected: t.pageTurn === m,
@@ -1206,443 +2033,17 @@ const DisplayPanel = ({
     flex: 1
   }
 })))));
-const TextPanel = ({
-  t,
-  setT
-}) => /*#__PURE__*/React.createElement("div", {
-  style: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 12
-  }
-}, /*#__PURE__*/React.createElement(Knob, {
-  label: "Font Size",
-  hint: "Larger or smaller"
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12
-  }
-}, /*#__PURE__*/React.createElement("button", {
-  onClick: () => setT({
-    ...t,
-    fontSize: Math.max(12, t.fontSize - 1)
-  }),
-  style: stepBtn
-}, /*#__PURE__*/React.createElement(Icon, {
-  name: "remove",
-  size: 17,
-  color: "var(--nyan-text)"
-})), /*#__PURE__*/React.createElement("div", {
-  style: {
-    flex: 1
-  }
-}, /*#__PURE__*/React.createElement(NyanSlider, {
-  value: t.fontSize,
-  min: 12,
-  max: 28,
-  onChange: v => setT({
-    ...t,
-    fontSize: v
-  })
-})), /*#__PURE__*/React.createElement("button", {
-  onClick: () => setT({
-    ...t,
-    fontSize: Math.min(28, t.fontSize + 1)
-  }),
-  style: stepBtn
-}, /*#__PURE__*/React.createElement(Icon, {
-  name: "add",
-  size: 17,
-  color: "var(--nyan-text)"
-})), /*#__PURE__*/React.createElement("div", {
-  style: {
-    font: "500 13px/1 var(--font-mono)",
-    color: "var(--nyan-text-secondary)",
-    minWidth: 34,
-    textAlign: "right"
-  }
-}, t.fontSize, "pt"))), /*#__PURE__*/React.createElement(Knob, {
-  label: "Line Height",
-  hint: "Line spacing rhythm"
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    display: "flex",
-    gap: 8
-  }
-}, [["Compact", 1.45], ["Standard", 1.75], ["Comfortable", 2.05]].map(([lbl, val]) => /*#__PURE__*/React.createElement(PillButton, {
-  key: lbl,
-  label: lbl,
-  selected: Math.abs(t.lineHeight - val) < 0.05,
-  onPress: () => setT({
-    ...t,
-    lineHeight: val
-  }),
-  style: {
-    flex: 1,
-    minWidth: 0,
-    padding: "9px 6px",
-    whiteSpace: "nowrap"
-  }
-})))), /*#__PURE__*/React.createElement(Knob, {
-  label: "Font Family"
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    display: "flex",
-    gap: 8
-  }
-}, /*#__PURE__*/React.createElement(PillButton, {
-  label: "Sans",
-  selected: !t.serif,
-  onPress: () => setT({
-    ...t,
-    serif: false
-  }),
-  style: {
-    flex: 1
-  }
-}), /*#__PURE__*/React.createElement(PillButton, {
-  label: "Serif",
-  selected: t.serif,
-  onPress: () => setT({
-    ...t,
-    serif: true
-  }),
-  style: {
-    flex: 1
-  }
-})), /*#__PURE__*/React.createElement("div", {
-  style: {
-    marginTop: 12,
-    padding: 14,
-    background: "var(--nyan-surface)",
-    borderRadius: "var(--r-chip)",
-    font: `400 ${t.fontSize}px/${t.lineHeight} ${t.serif ? "var(--font-serif)" : "var(--font-ui)"}`,
-    color: "var(--nyan-text)"
-  }
-}, "The cat sat on the threshold for a long while. \u55B5\u9605")));
-const ThemePanel = ({
-  t,
-  setT
-}) => {
-  const swatches = [{
-    id: "cream",
-    name: "Cream",
-    preview: "#FFFCF5",
-    ink: "#4A453E"
-  }, {
-    id: "sepia",
-    name: "Sepia",
-    preview: "#F5ECD8",
-    ink: "#5C4F3F"
-  }, {
-    id: "sumi",
-    name: "Sumi",
-    preview: "#302D2B",
-    ink: "#E5DED3"
-  }, {
-    id: "charcoal",
-    name: "Charcoal",
-    preview: "#1B1A19",
-    ink: "#F1EBDD"
-  }];
-  return /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 12
-    }
-  }, /*#__PURE__*/React.createElement(Knob, {
-    label: "Reading Theme"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 10
-    }
-  }, swatches.map(s => {
-    const selected = t.readerTheme === s.id;
-    return /*#__PURE__*/React.createElement("div", {
-      key: s.id,
-      onClick: () => setT({
-        ...t,
-        readerTheme: s.id
-      }),
-      style: {
-        cursor: "pointer",
-        padding: 12,
-        background: s.preview,
-        borderRadius: "var(--r-card-nested)",
-        border: selected ? "1.5px solid var(--nyan-primary)" : "1.5px solid transparent",
-        position: "relative",
-        height: 74,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        font: "600 14px/1 var(--font-ui)",
-        color: s.ink
-      }
-    }, s.name), /*#__PURE__*/React.createElement("div", {
-      style: {
-        font: "400 13px/1 var(--font-serif)",
-        color: s.ink,
-        opacity: 0.72
-      }
-    }, "Aa \u6C38"), selected && /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: "absolute",
-        top: 8,
-        right: 8,
-        width: 22,
-        height: 22,
-        borderRadius: "50%",
-        background: "var(--nyan-primary)",
-        display: "grid",
-        placeItems: "center"
-      }
-    }, /*#__PURE__*/React.createElement(Icon, {
-      name: "check",
-      size: 13,
-      color: "var(--nyan-surface)"
-    })));
-  }))));
-};
+Object.assign(__ds_scope, { DisplayPanel });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/DisplayPanel.jsx", error: String((e && e.message) || e) }); }
 
-/* Chromeless settings body: tab switcher + active panel. The dock supplies the
-   surface, grabber, header, and footer — this is just the controls. */
-
-const ReaderSettingsBody = ({
-  t,
-  setT,
-  tab,
-  setTab
-}) => /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(SegmentedTabControl, {
-  style: "subtle",
-  selected: tab,
-  onChange: setTab,
-  tabs: [{
-    label: "Display"
-  }, {
-    label: "Text"
-  }, {
-    label: "Theme"
-  }]
-}), /*#__PURE__*/React.createElement("div", {
-  style: {
-    paddingTop: 14
-  }
-}, tab === 0 && /*#__PURE__*/React.createElement(DisplayPanel, {
-  t: t,
-  setT: setT
-}), tab === 1 && /*#__PURE__*/React.createElement(TextPanel, {
-  t: t,
-  setT: setT
-}), tab === 2 && /*#__PURE__*/React.createElement(ThemePanel, {
-  t: t,
-  setT: setT
-})));
-
-/* Chapter list — current chapter = matcha badge + primary-deep title + play. */
-
-const ReaderChapterList = ({
-  chapters,
-  currentIndex,
-  ascending = true,
-  onSelect
-}) => {
-  const order = chapters.map((c, i) => [c, i]);
-  const rows = ascending ? order : order.slice().reverse();
-  return /*#__PURE__*/React.createElement("div", null, rows.map(([title, i]) => {
-    const cur = i === currentIndex;
-    return /*#__PURE__*/React.createElement("div", {
-      key: i,
-      "data-current": cur ? "true" : undefined,
-      onClick: () => onSelect && onSelect(i),
-      style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
-        padding: "12px 8px",
-        borderRadius: "var(--r-chip)",
-        cursor: "pointer",
-        background: cur ? "color-mix(in srgb, var(--nyan-primary) 12%, transparent)" : "transparent"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 30,
-        height: 30,
-        flex: "none",
-        borderRadius: "var(--r-chip)",
-        display: "grid",
-        placeItems: "center",
-        background: cur ? "var(--nyan-primary)" : "var(--nyan-surface-muted)",
-        color: cur ? "var(--nyan-surface)" : "var(--nyan-text-muted)",
-        font: `${cur ? 600 : 500} 13px/1 var(--font-mono)`
-      }
-    }, i + 1), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        minWidth: 0,
-        font: `${cur ? 500 : 400} 15px/1.35 var(--font-ui)`,
-        color: cur ? "var(--nyan-primary-deep)" : "var(--nyan-text)"
-      }
-    }, title), cur && /*#__PURE__*/React.createElement("i", {
-      className: "ph-fill ph-play",
-      style: {
-        color: "var(--nyan-primary)",
-        fontSize: 16
-      }
-    }));
-  }));
-};
-
-/* Dock footer — the persistent base of the One Paper panel:
-   a chapter stepper flanking the progress bar, then the 3 actions.
-   Stepper carets are the ONLY chapter-nav affordance in the model. */
-
-const DockFooter = ({
-  chapterIndex,
-  chapterCount,
-  progress,
-  activeAction,
-  onAction,
-  onPrevChapter,
-  onNextChapter,
-  sheetOpen,
-  actions
-}) => {
-  const acts = actions || [{
-    key: "chapters",
-    icon: "format_list_bulleted",
-    label: "Chapters"
-  }, {
-    key: "bookmarks",
-    icon: "bookmark_border",
-    label: "Bookmarks"
-  }, {
-    key: "highlights",
-    icon: "highlighter",
-    label: "Highlights"
-  }, {
-    key: "settings",
-    icon: "title",
-    label: "Settings"
-  }];
-  const atStart = chapterIndex <= 0;
-  const atEnd = chapterIndex >= chapterCount - 1;
-  const step = disabled => ({
-    all: "unset",
-    cursor: disabled ? "default" : "pointer",
-    width: 36,
-    height: 36,
-    flex: "none",
-    borderRadius: "var(--r-chip)",
-    display: "grid",
-    placeItems: "center",
-    opacity: disabled ? 0.32 : 1
-  });
-  return /*#__PURE__*/React.createElement("div", {
-    style: {
-      borderTop: sheetOpen ? "1px solid var(--nyan-divider)" : "1px solid transparent",
-      transition: "border-color 200ms var(--ease-paper)"
-    }
-  }, !sheetOpen && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 6,
-      padding: "11px 10px 3px"
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: atStart ? undefined : onPrevChapter,
-    style: step(atStart),
-    title: "Previous chapter"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "chevron_left",
-    size: 20,
-    color: "var(--nyan-text-secondary)"
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      font: "400 12px/1 var(--font-ui)",
-      color: "var(--nyan-text-muted)"
-    }
-  }, "Chapter ", chapterIndex + 1, " of ", chapterCount), /*#__PURE__*/React.createElement("span", {
-    style: {
-      font: "500 12px/1 var(--font-mono)",
-      color: "var(--nyan-text-secondary)"
-    }
-  }, Math.round(progress * 100), "%")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: 4,
-      borderRadius: 999,
-      background: "color-mix(in srgb, var(--nyan-text) 11%, transparent)",
-      overflow: "hidden"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: `${progress * 100}%`,
-      height: "100%",
-      background: "var(--nyan-primary)",
-      borderRadius: 999
-    }
-  }))), /*#__PURE__*/React.createElement("button", {
-    onClick: atEnd ? undefined : onNextChapter,
-    style: step(atEnd),
-    title: "Next chapter"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "chevron_right",
-    size: 20,
-    color: "var(--nyan-text-secondary)"
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      padding: sheetOpen ? "6px 8px 10px" : "8px 8px 12px"
-    }
-  }, acts.map(a => {
-    const on = a.key === activeAction;
-    return /*#__PURE__*/React.createElement("button", {
-      key: a.key,
-      onClick: () => onAction && onAction(a.key),
-      style: {
-        all: "unset",
-        cursor: "pointer",
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 5,
-        padding: "8px 4px",
-        borderRadius: 14,
-        background: on ? "color-mix(in srgb, var(--nyan-primary) 12%, transparent)" : "transparent",
-        color: on ? "var(--nyan-primary-deep)" : "var(--nyan-text-secondary)",
-        transition: "background 160ms var(--ease-paper)"
-      }
-    }, /*#__PURE__*/React.createElement(Icon, {
-      name: a.icon,
-      size: 24,
-      color: on ? "var(--nyan-primary-deep)" : "var(--nyan-text-secondary)"
-    }), /*#__PURE__*/React.createElement("span", {
-      style: {
-        font: `${on ? 600 : 500} 12px/1 var(--font-ui)`
-      }
-    }, a.label));
-  })));
-};
+// components/reader/OnePaperDock.jsx
+try { (() => {
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+/* ============================================================================
+   Nyan Read — OnePaperDock
+   Compiled into the DS bundle; consume as window.<Namespace>.OnePaperDock.
+   Props contract: ./OnePaperDock.d.ts
+   ============================================================================ */
 
 /* OnePaperDock — the floating panel that is a DOCK when collapsed and a SHEET
    when grown. Same width, inset, surface, shadow either way; radius eases
@@ -1713,52 +2114,1396 @@ const OnePaperDock = ({
   }
 }, title), meta && /*#__PURE__*/React.createElement("div", {
   className: "nyan-meta"
-}, meta)), children)), /*#__PURE__*/React.createElement(DockFooter, _extends({
+}, meta)), children)), /*#__PURE__*/React.createElement(__ds_scope.DockFooter, _extends({
   sheetOpen: sheetOpen
 }, footer)));
+Object.assign(__ds_scope, { OnePaperDock });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/OnePaperDock.jsx", error: String((e && e.message) || e) }); }
+
+// components/reader/PdfControls.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — PdfControls
+   Compiled into the DS bundle; consume as window.<Namespace>.PdfControls.
+   Props contract: ./PdfControls.d.ts
+   ============================================================================ */
+
+/* ── PDF controls ─────────────────────────────────────────────────────────────
+   The PDF-only transport the reflowable reader doesn't need: a zoom stepper and a
+   "page X of N" jump control. A floating One Paper pill — inset, rounded, lightCard
+   — meant to sit above the dock on PDF books. Steppers are 44px; the page field is
+   a tap target that opens a go-to-page prompt (caller handles `onGoToPage`). */
+const PdfControls = ({
+  page = 1,
+  pageCount = 1,
+  zoom = 1,
+  minZoom = 0.5,
+  maxZoom = 3,
+  zoomStep = 0.25,
+  onZoom,
+  onPage,
+  onGoToPage,
+  style
+}) => {
+  const stepBtn = disabled => ({
+    all: "unset",
+    cursor: disabled ? "default" : "pointer",
+    width: 44,
+    height: 44,
+    borderRadius: "var(--r-chip)",
+    display: "grid",
+    placeItems: "center",
+    opacity: disabled ? 0.34 : 1
+  });
+  const zPct = Math.round(zoom * 100);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 2,
+      background: "var(--nyan-surface)",
+      borderRadius: 999,
+      border: "1px solid var(--chrome-edge)",
+      boxShadow: "var(--shadow-light-card)",
+      padding: "4px 6px",
+      ...style
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => zoom > minZoom && onZoom && onZoom(Math.max(minZoom, +(zoom - zoomStep).toFixed(2))),
+    disabled: zoom <= minZoom,
+    "aria-label": "Zoom out",
+    style: stepBtn(zoom <= minZoom)
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "remove",
+    size: 18,
+    color: "var(--nyan-text)"
+  })), /*#__PURE__*/React.createElement("span", {
+    style: {
+      minWidth: 46,
+      textAlign: "center",
+      font: "500 13px/1 var(--font-mono)",
+      color: "var(--nyan-text-secondary)",
+      fontVariantNumeric: "tabular-nums"
+    }
+  }, zPct, "%"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => zoom < maxZoom && onZoom && onZoom(Math.min(maxZoom, +(zoom + zoomStep).toFixed(2))),
+    disabled: zoom >= maxZoom,
+    "aria-label": "Zoom in",
+    style: stepBtn(zoom >= maxZoom)
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "add",
+    size: 18,
+    color: "var(--nyan-text)"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "0.72px",
+      height: 24,
+      background: "color-mix(in srgb, var(--nyan-divider) 55%, transparent)",
+      margin: "0 4px",
+      flexShrink: 0
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => page > 1 && onPage && onPage(page - 1),
+    disabled: page <= 1,
+    "aria-label": "Previous page",
+    style: stepBtn(page <= 1)
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "chevron_left",
+    size: 20,
+    color: "var(--nyan-text-secondary)"
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: onGoToPage,
+    "aria-label": "Go to page",
+    style: {
+      all: "unset",
+      cursor: onGoToPage ? "pointer" : "default",
+      height: 44,
+      padding: "0 10px",
+      borderRadius: "var(--r-chip)",
+      display: "grid",
+      placeItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "500 13px/1 var(--font-ui)",
+      color: "var(--nyan-text)",
+      fontVariantNumeric: "tabular-nums"
+    }
+  }, page, " ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--nyan-text-muted)"
+    }
+  }, "/ ", pageCount))), /*#__PURE__*/React.createElement("button", {
+    onClick: () => page < pageCount && onPage && onPage(page + 1),
+    disabled: page >= pageCount,
+    "aria-label": "Next page",
+    style: stepBtn(page >= pageCount)
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "chevron_right",
+    size: 20,
+    color: "var(--nyan-text-secondary)"
+  })));
+};
+Object.assign(__ds_scope, { PdfControls });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/PdfControls.jsx", error: String((e && e.message) || e) }); }
+
+// components/reader/ReaderChapterList.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — ReaderChapterList
+   Compiled into the DS bundle; consume as window.<Namespace>.ReaderChapterList.
+   Props contract: ./ReaderChapterList.d.ts
+   ============================================================================ */
+
+/* Chapter list — current chapter = matcha badge + primary-deep title + play. */
+
+const ReaderChapterList = ({
+  chapters,
+  currentIndex,
+  ascending = true,
+  onSelect
+}) => {
+  const order = chapters.map((c, i) => [c, i]);
+  const rows = ascending ? order : order.slice().reverse();
+  return /*#__PURE__*/React.createElement("div", null, rows.map(([title, i]) => {
+    const cur = i === currentIndex;
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      "data-current": cur ? "true" : undefined,
+      onClick: () => onSelect && onSelect(i),
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        padding: "12px 8px",
+        borderRadius: "var(--r-chip)",
+        cursor: "pointer",
+        background: cur ? "color-mix(in srgb, var(--nyan-primary) 12%, transparent)" : "transparent"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 30,
+        height: 30,
+        flex: "none",
+        borderRadius: "var(--r-chip)",
+        display: "grid",
+        placeItems: "center",
+        background: cur ? "var(--nyan-primary)" : "var(--nyan-surface-muted)",
+        color: cur ? "var(--nyan-surface)" : "var(--nyan-text-muted)",
+        font: `${cur ? 600 : 500} 13px/1 var(--font-mono)`
+      }
+    }, i + 1), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0,
+        font: `${cur ? 500 : 400} 15px/1.35 var(--font-ui)`,
+        color: cur ? "var(--nyan-primary-deep)" : "var(--nyan-text)"
+      }
+    }, title), cur && /*#__PURE__*/React.createElement("i", {
+      className: "ph-fill ph-play",
+      style: {
+        color: "var(--nyan-primary)",
+        fontSize: 16
+      }
+    }));
+  }));
+};
+Object.assign(__ds_scope, { ReaderChapterList });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/ReaderChapterList.jsx", error: String((e && e.message) || e) }); }
+
+// components/reader/ReaderParagraph.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — ReaderParagraph
+   Compiled into the DS bundle; consume as window.<Namespace>.ReaderParagraph.
+   Props contract: ./ReaderParagraph.d.ts
+   ============================================================================ */
+
+/* ── Reading text body (inside reader canvas) ───────────────────────────── */
+const ReaderParagraph = ({
+  children,
+  serif = false,
+  fontSize = 18,
+  lineHeight = 1.75,
+  color
+}) => /*#__PURE__*/React.createElement("p", {
+  style: {
+    font: `400 ${fontSize}px/${lineHeight} ${serif ? "var(--font-serif)" : "var(--font-ui)"}`,
+    color: color || "var(--reader-ink)",
+    margin: "0 0 1.2em 0",
+    textIndent: "2em",
+    textAlign: "justify",
+    textWrap: "pretty"
+  }
+}, children);
+Object.assign(__ds_scope, { ReaderParagraph });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/ReaderParagraph.jsx", error: String((e && e.message) || e) }); }
+
+// components/reader/TTSPlayer.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — TTSPlayer
+   Compiled into the DS bundle; consume as window.<Namespace>.TTSPlayer.
+   Props contract: ./TTSPlayer.d.ts
+   ============================================================================ */
+
+const {
+  useRef
+} = React;
+
+/* ── Read-aloud player (U17) ──────────────────────────────────────────────────
+   The Read Aloud transport, designed to drop inside a NyanBottomSheet. Header
+   (title + chapter + voice chip), a draggable progress scrubber with times, a
+   speed segmented control, and the play / skip transport. Fully controlled — the
+   caller owns playing / progress / speed and the speech engine; this is the UI. */
+const TTS_SPEEDS = ["0.75×", "1.0×", "1.25×", "1.5×"];
+const TTSPlayer = ({
+  title = "Read Aloud",
+  chapter,
+  voice = "System Voice",
+  playing = false,
+  onTogglePlay,
+  onSkipBack,
+  onSkipForward,
+  progress = 0,
+  onSeek,
+  elapsed = "0:00",
+  remaining = "0:00",
+  speeds = TTS_SPEEDS,
+  speedIndex = 1,
+  onSpeed,
+  onVoice,
+  style
+}) => {
+  const trackRef = useRef(null);
+  const pct = Math.round(progress * 100);
+  const seek = clientX => {
+    if (!trackRef.current || !onSeek) return;
+    const r = trackRef.current.getBoundingClientRect();
+    onSeek(Math.max(0, Math.min(1, (clientX - r.left) / r.width)));
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "4px 20px 8px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 16,
+      ...style
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "600 17px/1.2 var(--font-ui)",
+      color: "var(--nyan-text)",
+      letterSpacing: "-0.1px"
+    }
+  }, title), chapter && /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "400 13px/1.3 var(--font-ui)",
+      color: "var(--nyan-text-secondary)",
+      marginTop: 2,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, chapter)), /*#__PURE__*/React.createElement("button", {
+    onClick: onVoice,
+    style: {
+      all: "unset",
+      cursor: onVoice ? "pointer" : "default",
+      height: 34,
+      padding: "0 12px",
+      borderRadius: 999,
+      background: "color-mix(in srgb, var(--nyan-primary) 10%, var(--nyan-surface-muted))",
+      border: "1px solid color-mix(in srgb, var(--nyan-primary) 18%, transparent)",
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "user-sound",
+    size: 14,
+    color: "var(--nyan-primary)"
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "500 13px/1 var(--font-ui)",
+      color: "var(--nyan-primary-deep)"
+    }
+  }, voice))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    ref: trackRef,
+    onMouseDown: e => {
+      seek(e.clientX);
+      const mv = ev => seek(ev.clientX);
+      const up = () => {
+        window.removeEventListener("mousemove", mv);
+        window.removeEventListener("mouseup", up);
+      };
+      window.addEventListener("mousemove", mv);
+      window.addEventListener("mouseup", up);
+    },
+    style: {
+      position: "relative",
+      height: 14,
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      height: 6,
+      borderRadius: 8,
+      background: "color-mix(in srgb, var(--nyan-divider) 30%, var(--nyan-surface-muted))"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      left: 0,
+      height: 6,
+      width: `${pct}%`,
+      borderRadius: 8,
+      background: "var(--nyan-primary)"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      left: `calc(${pct}% - 7px)`,
+      width: 14,
+      height: 14,
+      borderRadius: 8,
+      background: "var(--nyan-primary)",
+      border: "1.2px solid color-mix(in srgb, var(--nyan-surface) 82%, transparent)"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "400 12px/1 var(--font-ui)",
+      color: "var(--nyan-text-muted)",
+      fontVariantNumeric: "tabular-nums"
+    }
+  }, elapsed), /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "400 12px/1 var(--font-ui)",
+      color: "var(--nyan-text-muted)",
+      fontVariantNumeric: "tabular-nums"
+    }
+  }, remaining))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      background: "var(--nyan-surface-muted)",
+      borderRadius: 14,
+      padding: 3,
+      gap: 2
+    }
+  }, speeds.map((s, i) => /*#__PURE__*/React.createElement("button", {
+    key: s,
+    onClick: () => onSpeed && onSpeed(i),
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      flex: 1,
+      height: 32,
+      borderRadius: 11,
+      background: speedIndex === i ? "var(--nyan-surface)" : "transparent",
+      boxShadow: speedIndex === i ? "var(--shadow-subtle)" : "none",
+      font: `${speedIndex === i ? 600 : 500} 13px/1 var(--font-ui)`,
+      color: speedIndex === i ? "var(--nyan-text)" : "var(--nyan-text-muted)",
+      display: "grid",
+      placeItems: "center",
+      transition: "background 160ms ease"
+    }
+  }, s))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 22
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onSkipBack,
+    "aria-label": "Skip back",
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      width: 44,
+      height: 44,
+      borderRadius: "50%",
+      display: "grid",
+      placeItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "skip-back",
+    size: 24,
+    color: "var(--nyan-text-secondary)"
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: onTogglePlay,
+    "aria-label": playing ? "Pause" : "Play",
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      width: 60,
+      height: 60,
+      borderRadius: "50%",
+      background: "var(--nyan-primary)",
+      display: "grid",
+      placeItems: "center",
+      boxShadow: "var(--shadow-light-card)"
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: playing ? "pause" : "play",
+    size: 26,
+    color: "var(--nyan-surface)",
+    weight: "fill"
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: onSkipForward,
+    "aria-label": "Skip forward",
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      width: 44,
+      height: 44,
+      borderRadius: "50%",
+      display: "grid",
+      placeItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "skip-forward",
+    size: 24,
+    color: "var(--nyan-text-secondary)"
+  }))));
+};
+Object.assign(__ds_scope, { TTSPlayer });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/TTSPlayer.jsx", error: String((e && e.message) || e) }); }
+
+// components/reader/TextPanel.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — TextPanel
+   Compiled into the DS bundle; consume as window.<Namespace>.TextPanel.
+   Props contract: ./TextPanel.d.ts
+   ============================================================================ */
+
+/* shared stepper button style (font-size − / + ) */
 const stepBtn = {
   all: "unset",
   cursor: "pointer",
-  width: 34,
-  height: 34,
+  width: 44,
+  height: 44,
   borderRadius: "var(--r-chip)",
   border: "1px solid var(--nyan-divider)",
   display: "grid",
   placeItems: "center",
   background: "var(--nyan-surface)"
 };
+const TextPanel = ({
+  t,
+  setT
+}) => /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12
+  }
+}, /*#__PURE__*/React.createElement(__ds_scope.Knob, {
+  label: "Font Size",
+  hint: "Larger or smaller"
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12
+  }
+}, /*#__PURE__*/React.createElement("button", {
+  onClick: () => setT({
+    ...t,
+    fontSize: Math.max(12, t.fontSize - 1)
+  }),
+  style: stepBtn
+}, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+  name: "remove",
+  size: 17,
+  color: "var(--nyan-text)"
+})), /*#__PURE__*/React.createElement("div", {
+  style: {
+    flex: 1
+  }
+}, /*#__PURE__*/React.createElement(__ds_scope.NyanSlider, {
+  value: t.fontSize,
+  min: 12,
+  max: 28,
+  onChange: v => setT({
+    ...t,
+    fontSize: v
+  })
+})), /*#__PURE__*/React.createElement("button", {
+  onClick: () => setT({
+    ...t,
+    fontSize: Math.min(28, t.fontSize + 1)
+  }),
+  style: stepBtn
+}, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+  name: "add",
+  size: 17,
+  color: "var(--nyan-text)"
+})), /*#__PURE__*/React.createElement("div", {
+  style: {
+    font: "500 13px/1 var(--font-mono)",
+    color: "var(--nyan-text-secondary)",
+    minWidth: 34,
+    textAlign: "right"
+  }
+}, t.fontSize, "pt"))), /*#__PURE__*/React.createElement(__ds_scope.Knob, {
+  label: "Line Height",
+  hint: "Line spacing rhythm"
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    gap: 8
+  }
+}, [["Compact", 1.45], ["Standard", 1.75], ["Comfortable", 2.05]].map(([lbl, val]) => /*#__PURE__*/React.createElement(__ds_scope.PillButton, {
+  key: lbl,
+  label: lbl,
+  selected: Math.abs(t.lineHeight - val) < 0.05,
+  onPress: () => setT({
+    ...t,
+    lineHeight: val
+  }),
+  style: {
+    flex: 1,
+    minWidth: 0,
+    padding: "9px 6px",
+    whiteSpace: "nowrap"
+  }
+})))), /*#__PURE__*/React.createElement(__ds_scope.Knob, {
+  label: "Font Family"
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    gap: 8
+  }
+}, /*#__PURE__*/React.createElement(__ds_scope.PillButton, {
+  label: "Sans",
+  selected: !t.serif,
+  onPress: () => setT({
+    ...t,
+    serif: false
+  }),
+  style: {
+    flex: 1
+  }
+}), /*#__PURE__*/React.createElement(__ds_scope.PillButton, {
+  label: "Serif",
+  selected: t.serif,
+  onPress: () => setT({
+    ...t,
+    serif: true
+  }),
+  style: {
+    flex: 1
+  }
+})), /*#__PURE__*/React.createElement("div", {
+  style: {
+    marginTop: 12,
+    padding: 14,
+    background: "var(--nyan-surface)",
+    borderRadius: "var(--r-chip)",
+    font: `400 ${t.fontSize}px/${t.lineHeight} ${t.serif ? "var(--font-serif)" : "var(--font-ui)"}`,
+    color: "var(--nyan-text)"
+  }
+}, "The cat sat on the threshold for a long while. \u55B5\u9605")));
+Object.assign(__ds_scope, { TextPanel });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/TextPanel.jsx", error: String((e && e.message) || e) }); }
 
-/* ── Exports ─────────────────────────────────────────────────────────────── */
-Object.assign(window, {
-  ReaderParagraph,
-  Knob,
-  DisplayPanel,
-  TextPanel,
-  ThemePanel,
-  ReaderSettingsBody,
-  ReaderChapterList,
-  DockFooter,
-  OnePaperDock
-});
-})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader.jsx", error: String((e && e.message) || e) }); }
-
-// components/surfaces.jsx
+// components/reader/TextSelectionMenu.jsx
 try { (() => {
 /* ============================================================================
-   Nyan Read — Surfaces — containers & sheets
-   ----------------------------------------------------------------------------
-   Info card, list rows, grouped row stack, empty state, bottom sheet, action-sheet row, FAB.
-   Part of the split component library. Exports go to window so other Babel
-   <script> blocks (galleries, screens, the live prototype) can use them.
+   Nyan Read — TextSelectionMenu
+   Compiled into the DS bundle; consume as window.<Namespace>.TextSelectionMenu.
+   Props contract: ./TextSelectionMenu.d.ts
+   ============================================================================ */
+
+/* ── Text selection menu (U5) ─────────────────────────────────────────────────
+   The floating action bar that appears over a text selection: labelled action
+   buttons (Copy / Search / …), a hairline divider, then the highlight pen row.
+   A One Paper card — --nyan-surface, chrome-edge hairline, light-card lift — NOT
+   Material elevation+grey. Caller positions it; this renders the bar only. */
+const TextSelectionMenu = ({
+  actions,
+  onAction,
+  selectedPen,
+  onSelectPen,
+  pens,
+  style
+}) => {
+  const acts = actions || [{
+    key: "copy",
+    icon: "content_copy",
+    label: "Copy"
+  }, {
+    key: "search",
+    icon: "search",
+    label: "Search"
+  }];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      background: "var(--nyan-surface)",
+      borderRadius: "var(--r-card)",
+      border: "1px solid var(--chrome-edge)",
+      boxShadow: "var(--shadow-light-card)",
+      padding: "6px 8px",
+      gap: 4,
+      ...style
+    }
+  }, acts.map(a => /*#__PURE__*/React.createElement("button", {
+    key: a.key,
+    onClick: () => onAction && onAction(a.key),
+    "aria-label": a.label,
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 3,
+      padding: "6px 10px",
+      borderRadius: "var(--r-chip)"
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: a.icon,
+    size: 18,
+    color: "var(--nyan-primary)"
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "400 10px/1 var(--font-ui)",
+      color: "var(--nyan-text-muted)"
+    }
+  }, a.label))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "0.72px",
+      height: 32,
+      background: "color-mix(in srgb, var(--nyan-divider) 60%, transparent)",
+      flexShrink: 0,
+      margin: "0 2px"
+    }
+  }), /*#__PURE__*/React.createElement(__ds_scope.HighlightSwatchRow, {
+    pens: pens,
+    selected: selectedPen,
+    onSelect: onSelectPen,
+    size: 22
+  }));
+};
+Object.assign(__ds_scope, { TextSelectionMenu });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/TextSelectionMenu.jsx", error: String((e && e.message) || e) }); }
+
+// components/reader/ThemePanel.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — ThemePanel
+   Compiled into the DS bundle; consume as window.<Namespace>.ThemePanel.
+   Props contract: ./ThemePanel.d.ts
+   ============================================================================ */
+
+const ThemePanel = ({
+  t,
+  setT
+}) => {
+  const swatches = [{
+    id: "cream",
+    name: "Cream",
+    preview: "var(--reader-bg-cream)",
+    ink: "var(--reader-ink)"
+  }, {
+    id: "sepia",
+    name: "Sepia",
+    preview: "var(--reader-bg-sepia)",
+    ink: "var(--reader-ink-sepia)"
+  }, {
+    id: "sumi",
+    name: "Sumi",
+    preview: "var(--reader-bg-sumi)",
+    ink: "var(--reader-ink-sumi)"
+  }, {
+    id: "charcoal",
+    name: "Charcoal",
+    preview: "var(--reader-bg-charcoal)",
+    ink: "var(--reader-ink-charcoal)"
+  }];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Knob, {
+    label: "Reading Theme"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 10
+    }
+  }, swatches.map(s => {
+    const selected = t.readerTheme === s.id;
+    return /*#__PURE__*/React.createElement("div", {
+      key: s.id,
+      onClick: () => setT({
+        ...t,
+        readerTheme: s.id
+      }),
+      style: {
+        cursor: "pointer",
+        padding: 12,
+        background: s.preview,
+        borderRadius: "var(--r-card-nested)",
+        border: selected ? "1.5px solid var(--nyan-primary)" : "1.5px solid transparent",
+        position: "relative",
+        height: 74,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        font: "600 14px/1 var(--font-ui)",
+        color: s.ink
+      }
+    }, s.name), /*#__PURE__*/React.createElement("div", {
+      style: {
+        font: "400 13px/1 var(--font-serif)",
+        color: s.ink,
+        opacity: 0.72
+      }
+    }, "Aa \u6C38"), selected && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        top: 8,
+        right: 8,
+        width: 22,
+        height: 22,
+        borderRadius: "50%",
+        background: "var(--nyan-primary)",
+        display: "grid",
+        placeItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+      name: "check",
+      size: 13,
+      color: "var(--nyan-surface)"
+    })));
+  }))));
+};
+Object.assign(__ds_scope, { ThemePanel });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/ThemePanel.jsx", error: String((e && e.message) || e) }); }
+
+// components/reader/ReaderSettingsBody.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — ReaderSettingsBody
+   Compiled into the DS bundle; consume as window.<Namespace>.ReaderSettingsBody.
+   Props contract: ./ReaderSettingsBody.d.ts
+   ============================================================================ */
+
+/* Chromeless settings body: tab switcher + active panel. The dock supplies the
+   surface, grabber, header, and footer — this is just the controls. */
+
+const ReaderSettingsBody = ({
+  t,
+  setT,
+  tab,
+  setTab
+}) => /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(__ds_scope.SegmentedTabControl, {
+  style: "subtle",
+  selected: tab,
+  onChange: setTab,
+  tabs: [{
+    label: "Display"
+  }, {
+    label: "Text"
+  }, {
+    label: "Theme"
+  }]
+}), /*#__PURE__*/React.createElement("div", {
+  style: {
+    paddingTop: 14
+  }
+}, tab === 0 && /*#__PURE__*/React.createElement(__ds_scope.DisplayPanel, {
+  t: t,
+  setT: setT
+}), tab === 1 && /*#__PURE__*/React.createElement(__ds_scope.TextPanel, {
+  t: t,
+  setT: setT
+}), tab === 2 && /*#__PURE__*/React.createElement(__ds_scope.ThemePanel, {
+  t: t,
+  setT: setT
+})));
+Object.assign(__ds_scope, { ReaderSettingsBody });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/reader/ReaderSettingsBody.jsx", error: String((e && e.message) || e) }); }
+
+// components/security/PinDots.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — PinDots
+   Compiled into the DS bundle; consume as window.<Namespace>.PinDots.
+   Props contract: ./PinDots.d.ts
+   ============================================================================ */
+
+/* ── PIN dots (U16) ───────────────────────────────────────────────────────────
+   The filled/empty progress dots above the PIN keypad. Shakes on error. `dotColor`
+   adapts to the takeover theme (cream on the ink-night gate, ink on the warm-paper
+   gate) so the same component serves both. */
+const PinDots = ({
+  count = 0,
+  length = 4,
+  hasError = false,
+  dotColor = "var(--nyan-text)",
+  gap = 20,
+  size = 16
+}) => /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    gap,
+    justifyContent: "center",
+    animation: hasError ? "nyanPinShake 320ms ease" : "none"
+  }
+}, Array.from({
+  length
+}).map((_, i) => /*#__PURE__*/React.createElement("div", {
+  key: i,
+  style: {
+    width: size,
+    height: size,
+    borderRadius: "50%",
+    background: i < count ? dotColor : "transparent",
+    border: `1.5px solid color-mix(in srgb, ${dotColor} ${hasError ? 38 : 56}%, transparent)`,
+    transition: "background 120ms ease"
+  }
+})), /*#__PURE__*/React.createElement("style", null, "@keyframes nyanPinShake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(5px); } }"));
+Object.assign(__ds_scope, { PinDots });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/security/PinDots.jsx", error: String((e && e.message) || e) }); }
+
+// components/security/PinPad.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — PinPad
+   Compiled into the DS bundle; consume as window.<Namespace>.PinPad.
+   Props contract: ./PinPad.d.ts
+   ============================================================================ */
+
+/* ── PIN keypad (U16) ─────────────────────────────────────────────────────────
+   The numeric keypad for the privacy gate. 72px round keys with a tinted fill, a
+   backspace in the bottom-right, and an empty cell bottom-left. `keyColor` adapts
+   to the takeover theme. Pairs with PinDots above it. */
+const PinPad = ({
+  onDigit,
+  onDelete,
+  keyColor = "var(--nyan-text)",
+  keySize = 72,
+  gap = 16
+}) => {
+  const rows = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [null, 0, "del"]];
+  const key = {
+    all: "unset",
+    cursor: "pointer",
+    width: keySize,
+    height: keySize,
+    borderRadius: "50%",
+    background: `color-mix(in srgb, ${keyColor} 10%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${keyColor} 16%, transparent)`,
+    display: "grid",
+    placeItems: "center",
+    color: keyColor,
+    transition: "background 100ms ease"
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 12,
+      alignItems: "center"
+    }
+  }, rows.map((row, ri) => /*#__PURE__*/React.createElement("div", {
+    key: ri,
+    style: {
+      display: "flex",
+      gap
+    }
+  }, row.map((k, ki) => k === null ? /*#__PURE__*/React.createElement("div", {
+    key: `e${ki}`,
+    style: {
+      width: keySize,
+      height: keySize
+    }
+  }) : k === "del" ? /*#__PURE__*/React.createElement("button", {
+    key: "del",
+    onClick: onDelete,
+    "aria-label": "Delete",
+    style: key
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "backspace",
+    size: 24,
+    color: keyColor
+  })) : /*#__PURE__*/React.createElement("button", {
+    key: k,
+    onClick: () => onDigit && onDigit(k),
+    "aria-label": String(k),
+    style: {
+      ...key,
+      font: "400 26px/1 var(--font-ui)"
+    }
+  }, k)))));
+};
+Object.assign(__ds_scope, { PinPad });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/security/PinPad.jsx", error: String((e && e.message) || e) }); }
+
+// components/surfaces/NyanActionSheetRow.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanActionSheetRow
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanActionSheetRow.
+   Props contract: ./NyanActionSheetRow.d.ts
+   ============================================================================ */
+
+/* ── Action-sheet row (NyanActionSheetRow) ───────────────────────────────── */
+const NyanActionSheetRow = ({
+  icon,
+  title,
+  subtitle,
+  onPress,
+  showChevron = true
+}) => /*#__PURE__*/React.createElement("div", {
+  onClick: onPress,
+  style: {
+    padding: "12px 16px",
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    cursor: "pointer"
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    width: 36,
+    height: 36,
+    borderRadius: "var(--radius-small)",
+    background: "color-mix(in srgb, var(--nyan-primary) 9%, transparent)",
+    display: "grid",
+    placeItems: "center",
+    flexShrink: 0
+  }
+}, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+  name: icon,
+  size: 17,
+  color: "var(--nyan-primary)"
+})), /*#__PURE__*/React.createElement("div", {
+  style: {
+    flex: 1,
+    minWidth: 0
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    font: "600 16px/1.2 var(--font-ui)",
+    color: "var(--nyan-text)"
+  }
+}, title), /*#__PURE__*/React.createElement("div", {
+  className: "nyan-meta",
+  style: {
+    marginTop: 4
+  }
+}, subtitle)), showChevron && /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+  name: "chevron_right",
+  size: 18,
+  color: "color-mix(in srgb, var(--nyan-text-secondary) 44%, transparent)"
+}));
+Object.assign(__ds_scope, { NyanActionSheetRow });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/surfaces/NyanActionSheetRow.jsx", error: String((e && e.message) || e) }); }
+
+// components/surfaces/NyanBottomSheet.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanBottomSheet
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanBottomSheet.
+   Props contract: ./NyanBottomSheet.d.ts
    ============================================================================ */
 
 const {
   useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo
+  useEffect
 } = React;
+
+/* ── Bottom sheet — "One Paper": floating, inset, warm scrim + blur ──────── */
+const NyanBottomSheet = ({
+  open,
+  onClose,
+  children,
+  height
+}) => {
+  // Keep the sheet mounted through its exit animation: `render` lags `open`.
+  const [render, setRender] = useState(open);
+  const [closing, setClosing] = useState(false);
+  useEffect(() => {
+    if (open) {
+      setRender(true);
+      setClosing(false);
+      return;
+    }
+    if (!render) return;
+    setClosing(true);
+    const id = setTimeout(() => {
+      setRender(false);
+      setClosing(false);
+    }, 240);
+    return () => clearTimeout(id);
+  }, [open]);
+  if (!render) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      inset: 0,
+      zIndex: 50,
+      pointerEvents: "auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: onClose,
+    style: {
+      position: "absolute",
+      inset: 0,
+      background: "var(--scrim)",
+      backdropFilter: "blur(var(--scrim-blur))",
+      WebkitBackdropFilter: "blur(var(--scrim-blur))",
+      animation: closing ? "nyanFadeOut 220ms ease-in forwards" : "nyanFade 220ms ease-out"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      left: "var(--inset)",
+      right: "var(--inset)",
+      bottom: "var(--inset)",
+      background: "var(--nyan-surface-raised, var(--nyan-surface))",
+      borderRadius: "var(--r-sheet)",
+      border: "1px solid var(--chrome-edge)",
+      boxShadow: "var(--shadow-light-card)",
+      maxHeight: "calc(85% - 12px)",
+      height: height ? `calc(${height} - 12px)` : undefined,
+      display: "flex",
+      flexDirection: "column",
+      animation: closing ? "nyanSlideDown 240ms cubic-bezier(0.4,0,0.7,0.2) forwards" : "nyanSlideUp 280ms cubic-bezier(0.33,0.9,0.36,1)",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "12px 0 6px",
+      display: "flex",
+      justifyContent: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 40,
+      height: 5,
+      borderRadius: 999,
+      background: "var(--grabber)"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minHeight: 0,
+      overflow: "auto"
+    }
+  }, children)), /*#__PURE__*/React.createElement("style", null, `
+        @keyframes nyanFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes nyanFadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes nyanSlideUp { from { transform: translateY(120%); } to { transform: translateY(0); } }
+        @keyframes nyanSlideDown { from { transform: translateY(0); } to { transform: translateY(120%); } }
+      `));
+};
+Object.assign(__ds_scope, { NyanBottomSheet });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/surfaces/NyanBottomSheet.jsx", error: String((e && e.message) || e) }); }
+
+// components/surfaces/NyanDialog.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanDialog
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanDialog.
+   Props contract: ./NyanDialog.d.ts
+   ============================================================================ */
+
+const {
+  useState,
+  useEffect
+} = React;
+
+/* ── Dialog (NyanDialog) ──────────────────────────────────────────────────────
+   The centered confirm / alert dialog — the counterpart to NyanBottomSheet for
+   decisions that need a yes/no, not a panel. Warm-ink scrim + blur, a floating
+   --r-panel card, an optional tinted icon tile, title, message, and up to two
+   actions. `tone="danger"` swaps the icon tile + confirm button to the warm-clay
+   error tones (delete book, clear data). Mount/unmount is animated like the sheet. */
+const NyanDialog = ({
+  open,
+  onClose,
+  icon,
+  title,
+  message,
+  tone = "default",
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  onConfirm,
+  onCancel,
+  hideCancel = false,
+  children
+}) => {
+  const [render, setRender] = useState(open);
+  const [closing, setClosing] = useState(false);
+  useEffect(() => {
+    if (open) {
+      setRender(true);
+      setClosing(false);
+      return;
+    }
+    if (!render) return;
+    setClosing(true);
+    const id = setTimeout(() => {
+      setRender(false);
+      setClosing(false);
+    }, 200);
+    return () => clearTimeout(id);
+  }, [open]);
+  if (!render) return null;
+  const danger = tone === "danger";
+  const tileBg = danger ? "var(--error-bg)" : "color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface))";
+  const tileFg = danger ? "var(--error-primary)" : "var(--nyan-primary-deep)";
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      inset: 0,
+      zIndex: 60,
+      display: "grid",
+      placeItems: "center",
+      padding: 24
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: onClose,
+    style: {
+      position: "absolute",
+      inset: 0,
+      background: "var(--scrim)",
+      backdropFilter: "blur(var(--scrim-blur))",
+      WebkitBackdropFilter: "blur(var(--scrim-blur))",
+      animation: closing ? "nyanDlgFadeOut 180ms ease-in forwards" : "nyanDlgFade 200ms ease-out"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    role: "dialog",
+    "aria-modal": "true",
+    "aria-label": title,
+    style: {
+      position: "relative",
+      width: "100%",
+      maxWidth: 320,
+      background: "var(--nyan-surface-raised, var(--nyan-surface))",
+      borderRadius: "var(--r-panel)",
+      border: "1px solid var(--chrome-edge)",
+      boxShadow: "var(--shadow-light-card)",
+      padding: "22px 20px 18px",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      textAlign: "center",
+      gap: 12,
+      animation: closing ? "nyanDlgOut 180ms ease-in forwards" : "nyanDlgIn 240ms cubic-bezier(0.33,0.9,0.36,1)"
+    }
+  }, icon && /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 52,
+      height: 52,
+      borderRadius: "var(--r-card-nested)",
+      background: tileBg,
+      display: "grid",
+      placeItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: icon,
+    size: 26,
+    color: tileFg
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "600 18px/1.25 var(--font-ui)",
+      color: "var(--nyan-text)",
+      letterSpacing: "-0.1px"
+    }
+  }, title), message && /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "400 14px/1.45 var(--font-ui)",
+      color: "var(--nyan-text-secondary)"
+    }
+  }, message)), children, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      width: "100%",
+      marginTop: 4
+    }
+  }, !hideCancel && /*#__PURE__*/React.createElement(__ds_scope.NyanPrimaryButton, {
+    label: cancelLabel,
+    variant: "ghost",
+    expanded: true,
+    onPress: onCancel || onClose,
+    style: {
+      flex: 1,
+      background: "var(--nyan-surface-muted)",
+      color: "var(--nyan-text-secondary)"
+    }
+  }), /*#__PURE__*/React.createElement(__ds_scope.NyanPrimaryButton, {
+    label: confirmLabel,
+    expanded: true,
+    onPress: onConfirm,
+    style: {
+      flex: 1,
+      ...(danger ? {
+        background: "var(--error-primary)",
+        color: "var(--nyan-surface)"
+      } : null)
+    }
+  }))), /*#__PURE__*/React.createElement("style", null, `
+        @keyframes nyanDlgFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes nyanDlgFadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes nyanDlgIn { from { opacity: 0; transform: scale(0.94) translateY(8px); } to { opacity: 1; transform: none; } }
+        @keyframes nyanDlgOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(0.96); } }
+      `));
+};
+Object.assign(__ds_scope, { NyanDialog });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/surfaces/NyanDialog.jsx", error: String((e && e.message) || e) }); }
+
+// components/surfaces/NyanEmptyState.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanEmptyState
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanEmptyState.
+   Props contract: ./NyanEmptyState.d.ts
+   ============================================================================ */
+
+/* ── Empty state (NyanEmptyState) ────────────────────────────────────────── */
+const NyanEmptyState = ({
+  icon,
+  title,
+  description,
+  action
+}) => /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    textAlign: "center",
+    padding: "32px 24px",
+    gap: 16
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    padding: 14,
+    background: "color-mix(in srgb, var(--nyan-primary) 8%, transparent)",
+    borderRadius: "var(--radius-card)"
+  }
+}, typeof icon === "string" ? /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+  name: icon,
+  size: 34,
+  color: "color-mix(in srgb, var(--nyan-primary) 80%, transparent)"
+}) : icon), /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    maxWidth: 320
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  className: "nyan-section"
+}, title), description && /*#__PURE__*/React.createElement("div", {
+  style: {
+    font: "400 14px/1.5 var(--font-ui)",
+    color: "var(--nyan-text-secondary)",
+    whiteSpace: "pre-line"
+  }
+}, description)), action && /*#__PURE__*/React.createElement("div", {
+  style: {
+    marginTop: 4
+  }
+}, action));
+Object.assign(__ds_scope, { NyanEmptyState });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/surfaces/NyanEmptyState.jsx", error: String((e && e.message) || e) }); }
+
+// components/surfaces/NyanFAB.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanFAB
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanFAB.
+   Props contract: ./NyanFAB.d.ts
+   ============================================================================ */
+
+/* ── Floating action button ─────────────────────────────────────────────── */
+const NyanFAB = ({
+  icon = "add",
+  onPress,
+  style
+}) => /*#__PURE__*/React.createElement("button", {
+  onClick: onPress,
+  style: {
+    all: "unset",
+    cursor: "pointer",
+    width: 56,
+    height: 56,
+    background: "var(--nyan-primary-deep)",
+    color: "var(--nyan-surface)",
+    borderRadius: "var(--r-dock)",
+    display: "grid",
+    placeItems: "center",
+    boxShadow: "var(--shadow-light-card)",
+    position: "absolute",
+    right: "var(--inset)",
+    bottom: "var(--inset)",
+    ...style
+  }
+}, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+  name: icon,
+  size: 26,
+  color: "var(--nyan-surface)"
+}));
+Object.assign(__ds_scope, { NyanFAB });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/surfaces/NyanFAB.jsx", error: String((e && e.message) || e) }); }
+
+// components/surfaces/NyanInfoCard.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanInfoCard
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanInfoCard.
+   Props contract: ./NyanInfoCard.d.ts
+   ============================================================================ */
 
 /* ── Info card (NyanInfoCard) ────────────────────────────────────────────── */
 const NyanInfoCard = ({
@@ -1788,286 +3533,452 @@ const NyanInfoCard = ({
     }
   }, children);
 };
+Object.assign(__ds_scope, { NyanInfoCard });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/surfaces/NyanInfoCard.jsx", error: String((e && e.message) || e) }); }
 
-/* ── List row (NyanListRow / settings row) ───────────────────────────────── */
+// components/cards/NyanContinueReadingCard.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanContinueReadingCard
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanContinueReadingCard.
+   Props contract: ./NyanContinueReadingCard.d.ts
+   ============================================================================ */
+
+/* ── Continue reading card (NyanContinueReadingCard) ───────────────────────
+   Latest design (U9): collapsible. Header (book glyph + "Continue Reading"
+   eyebrow + caret) is always visible and toggles the body. Expanded shows a
+   cover, title/author, a progress row, and a full-width matcha CTA that
+   enters the book. Collapsed shrinks to a slim row carrying title + percent. */
+const NyanContinueReadingCard = ({
+  book,
+  onContinue,
+  collapsed = false,
+  onToggleCollapse,
+  eyebrow = "Continue Reading",
+  continueLabel = "Continue Reading"
+}) => {
+  const pct = Math.round(book.progress * 100);
+  return /*#__PURE__*/React.createElement(__ds_scope.NyanInfoCard, {
+    padding: 0
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: onToggleCollapse,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      padding: collapsed ? "11px 14px" : "12px 14px 8px",
+      cursor: onToggleCollapse ? "pointer" : "default"
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "menu_book",
+    size: 15,
+    color: "var(--nyan-primary)"
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "500 11px/1.2 var(--font-ui)",
+      color: "var(--nyan-text-muted)",
+      letterSpacing: "0.2px"
+    }
+  }, eyebrow), collapsed && /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "600 13px/1.3 var(--font-ui)",
+      color: "var(--nyan-text)",
+      marginTop: 2,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, book.title)), collapsed && /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "600 11px/1 var(--font-ui)",
+      color: "var(--nyan-primary-deep)",
+      flexShrink: 0
+    }
+  }, pct, "%"), onToggleCollapse && /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "keyboard_arrow_down",
+    size: 18,
+    color: "var(--nyan-text-muted)",
+    style: {
+      flexShrink: 0,
+      transform: collapsed ? "none" : "rotate(180deg)",
+      transition: "transform 200ms var(--ease-paper)"
+    }
+  })), !collapsed && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "0 14px 14px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 56,
+      height: 72,
+      borderRadius: 14,
+      background: "color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface-muted))",
+      border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent)",
+      flexShrink: 0,
+      display: "grid",
+      placeItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
+    name: "menu_book",
+    size: 22,
+    color: "var(--nyan-primary)"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "600 15px/1.3 var(--font-ui)",
+      color: "var(--nyan-text)",
+      letterSpacing: "-0.1px",
+      overflow: "hidden",
+      display: "-webkit-box",
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: "vertical"
+    }
+  }, book.title), book.author && /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "400 12px/1.3 var(--font-ui)",
+      color: "var(--nyan-text-muted)",
+      marginTop: 2,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, book.author)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      height: 4,
+      borderRadius: 999,
+      background: "color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface-muted))",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: `${pct}%`,
+      height: "100%",
+      borderRadius: 999,
+      background: "var(--nyan-primary)"
+    }
+  })), /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "600 11px/1 var(--font-ui)",
+      color: "var(--nyan-primary-deep)",
+      flexShrink: 0
+    }
+  }, pct, "%")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12
+    }
+  }, /*#__PURE__*/React.createElement(__ds_scope.NyanPrimaryButton, {
+    label: continueLabel,
+    icon: "menu_book",
+    expanded: true,
+    onPress: onContinue
+  }))));
+};
+Object.assign(__ds_scope, { NyanContinueReadingCard });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/cards/NyanContinueReadingCard.jsx", error: String((e && e.message) || e) }); }
+
+// components/surfaces/NyanListRow.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanListRow
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanListRow.
+   Props contract: ./NyanListRow.d.ts
+   ============================================================================ */
+
+/* ── List row (NyanListRow / settings row) ───────────────────────────────────
+   The single settings/details row for the whole system. A tinted icon tile,
+   title + optional subtitle, and a trailing slot. The chevron shows when the
+   row is actionable: pass `onPress` (auto-chevron) or force it with `chevron`.
+   `indent` drops the icon and insets the text — used for sub-rows nested under
+   a parent setting. `danger` renders title + icon in error tones. */
 const NyanListRow = ({
   icon,
   title,
   subtitle,
   trailing,
   onPress,
-  danger = false
+  danger = false,
+  indent = false,
+  chevron = false
 }) => {
   const fg = danger ? "var(--error-secondary)" : "var(--nyan-text)";
+  const accent = danger ? "var(--error-secondary)" : "var(--nyan-primary)";
+  const showChevron = chevron || onPress && trailing === undefined;
   return /*#__PURE__*/React.createElement("div", {
     onClick: onPress,
     style: {
       background: "var(--nyan-surface)",
-      padding: "14px 16px",
       display: "flex",
       alignItems: "center",
       gap: 12,
-      cursor: onPress ? "pointer" : "default",
-      minHeight: 56
+      padding: indent ? "12px 16px 12px 52px" : "12px 16px",
+      minHeight: 44,
+      cursor: onPress ? "pointer" : "default"
     }
-  }, icon && /*#__PURE__*/React.createElement("div", {
+  }, !indent && icon && /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 36,
-      height: 36,
-      borderRadius: "var(--radius-small)",
-      background: "color-mix(in srgb, var(--nyan-primary) 9%, transparent)",
+      width: 32,
+      height: 32,
+      borderRadius: "var(--r-chip)",
+      flexShrink: 0,
+      background: `color-mix(in srgb, ${accent} 9%, var(--nyan-surface-muted))`,
       display: "grid",
-      placeItems: "center",
-      flexShrink: 0
+      placeItems: "center"
     }
-  }, /*#__PURE__*/React.createElement(Icon, {
+  }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: icon,
-    size: 17,
-    color: danger ? "var(--error-secondary)" : "var(--nyan-primary)"
+    size: 16,
+    color: accent
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
-      display: "flex",
-      flexDirection: "column",
-      gap: 2,
       minWidth: 0
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      font: "600 16px/1.2 var(--font-ui)",
-      color: fg,
-      whiteSpace: "nowrap",
-      overflow: "hidden",
-      textOverflow: "ellipsis"
+      font: "500 15px/1.2 var(--font-ui)",
+      color: fg
     }
   }, title), subtitle && /*#__PURE__*/React.createElement("div", {
-    className: "nyan-meta"
-  }, subtitle)), trailing !== undefined ? trailing : onPress && /*#__PURE__*/React.createElement(Icon, {
+    style: {
+      font: "400 13px/1.3 var(--font-ui)",
+      color: "var(--nyan-text-secondary)",
+      marginTop: 2
+    }
+  }, subtitle)), trailing, showChevron && /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "chevron_right",
-    size: 18,
-    color: "color-mix(in srgb, var(--nyan-text-secondary) 44%, transparent)"
+    size: 16,
+    color: "var(--nyan-text-muted)",
+    style: {
+      flexShrink: 0
+    }
   }));
 };
+Object.assign(__ds_scope, { NyanListRow });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/surfaces/NyanListRow.jsx", error: String((e && e.message) || e) }); }
 
-/* ── Grouped card stack — rows separated by hairlines, single rounded shell  */
-const NyanRowGroup = ({
-  children,
-  style
-}) => {
-  const items = React.Children.toArray(children).filter(Boolean);
-  return /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "var(--nyan-surface)",
-      borderRadius: "var(--radius-input)",
-      border: "0.72px solid color-mix(in srgb, var(--nyan-divider) 16%, transparent)",
-      boxShadow: "var(--shadow-grouped)",
-      overflow: "hidden",
-      ...style
-    }
-  }, items.map((c, i) => /*#__PURE__*/React.createElement(React.Fragment, {
-    key: i
-  }, c, i < items.length - 1 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: 1,
-      background: "var(--nyan-divider)",
-      marginLeft: 64,
-      opacity: 0.5
-    }
-  }))));
-};
+// components/surfaces/NyanOptionSheet.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanOptionSheet
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanOptionSheet.
+   Props contract: ./NyanOptionSheet.d.ts
+   ============================================================================ */
 
-/* ── Empty state (NyanEmptyState) ────────────────────────────────────────── */
-const NyanEmptyState = ({
-  icon,
+/* ── Option picker sheet (NyanOptionSheet) ────────────────────────────────
+   The single bottom-sheet for "pick one of these" (theme preset, language,
+   page-turn mode, reminder interval) AND "do one of these" (export data).
+   Same floating-chrome doctrine as NyanBottomSheet: warm scrim + blur, inset
+   sheet, all four corners, one soft lift. Drops into any position:relative
+   frame as a sibling overlay.
+
+   Props:
+     title       sheet heading
+     subtitle    optional one-line description
+     options     array of string | { label, hint, swatch, icon }
+     selected    index of the chosen option (radio variant)
+     variant     "radio" (default — single-select list) | "action" (icon rows)
+     onSelect    (index) => void — fires when an option is tapped
+     onClose     dismiss handler (scrim tap + option select)                 */
+const NyanOptionSheet = ({
   title,
-  description,
-  action
+  subtitle,
+  options = [],
+  selected = 0,
+  variant = "radio",
+  onSelect,
+  onClose,
+  animateIn = true,
+  style
 }) => /*#__PURE__*/React.createElement("div", {
   style: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    textAlign: "center",
-    padding: "32px 24px",
-    gap: 16
+    position: "absolute",
+    inset: 0,
+    zIndex: 50,
+    ...style
+  }
+}, /*#__PURE__*/React.createElement("style", null, "@keyframes nyanFade { from { opacity: 0; } to { opacity: 1; } } @keyframes nyanSlideUp { from { transform: translateY(120%); } to { transform: translateY(0); } }"), /*#__PURE__*/React.createElement("div", {
+  onClick: onClose,
+  style: {
+    position: "absolute",
+    inset: 0,
+    background: "var(--scrim)",
+    backdropFilter: "blur(var(--scrim-blur))",
+    WebkitBackdropFilter: "blur(var(--scrim-blur))",
+    animation: animateIn ? "nyanFade 220ms ease-out" : "none"
+  }
+}), /*#__PURE__*/React.createElement("div", {
+  style: {
+    position: "absolute",
+    left: "var(--inset)",
+    right: "var(--inset)",
+    bottom: "var(--inset)",
+    background: "var(--nyan-surface)",
+    border: "1px solid var(--chrome-edge)",
+    borderRadius: "var(--r-sheet)",
+    boxShadow: "var(--shadow-light-card)",
+    overflow: "hidden",
+    animation: animateIn ? "nyanSlideUp 280ms cubic-bezier(0.33,0.9,0.36,1)" : "none"
   }
 }, /*#__PURE__*/React.createElement("div", {
   style: {
-    padding: 14,
-    background: "color-mix(in srgb, var(--nyan-primary) 8%, transparent)",
-    borderRadius: "var(--radius-card)"
-  }
-}, typeof icon === "string" ? /*#__PURE__*/React.createElement(Icon, {
-  name: icon,
-  size: 34,
-  color: "color-mix(in srgb, var(--nyan-primary) 80%, transparent)"
-}) : icon), /*#__PURE__*/React.createElement("div", {
-  style: {
+    paddingTop: 10,
     display: "flex",
-    flexDirection: "column",
-    gap: 8,
-    maxWidth: 320
+    justifyContent: "center"
   }
 }, /*#__PURE__*/React.createElement("div", {
-  className: "nyan-section"
-}, title), description && /*#__PURE__*/React.createElement("div", {
   style: {
-    font: "400 14px/1.5 var(--font-ui)",
+    width: 40,
+    height: 5,
+    borderRadius: 999,
+    background: "var(--grabber)"
+  }
+})), /*#__PURE__*/React.createElement("div", {
+  style: {
+    padding: "12px 20px 8px"
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    font: "600 18px/1.2 var(--font-ui)",
+    color: "var(--nyan-text)",
+    letterSpacing: "-0.1px"
+  }
+}, title), subtitle && /*#__PURE__*/React.createElement("div", {
+  style: {
+    font: "400 13px/1.38 var(--font-ui)",
     color: "var(--nyan-text-secondary)",
-    whiteSpace: "pre-line"
-  }
-}, description)), action && /*#__PURE__*/React.createElement("div", {
-  style: {
     marginTop: 4
   }
-}, action));
-
-/* ── Bottom sheet — "One Paper": floating, inset, warm scrim + blur ──────── */
-const NyanBottomSheet = ({
-  open,
-  onClose,
-  children,
-  height
-}) => {
-  if (!open) return null;
-  return /*#__PURE__*/React.createElement("div", {
+}, subtitle)), /*#__PURE__*/React.createElement("div", {
+  style: {
+    padding: "4px 12px 16px",
+    display: "flex",
+    flexDirection: "column"
+  }
+}, options.map((raw, i) => {
+  const o = typeof raw === "string" ? {
+    label: raw
+  } : raw;
+  const isSel = variant === "radio" && i === selected;
+  return /*#__PURE__*/React.createElement("button", {
+    key: i,
+    onClick: () => {
+      if (onSelect) onSelect(i);
+      if (onClose) onClose();
+    },
     style: {
-      position: "absolute",
-      inset: 0,
-      zIndex: 50,
-      pointerEvents: "auto"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    onClick: onClose,
-    style: {
-      position: "absolute",
-      inset: 0,
-      background: "var(--scrim)",
-      backdropFilter: "blur(var(--scrim-blur))",
-      WebkitBackdropFilter: "blur(var(--scrim-blur))",
-      animation: "nyanFade 220ms ease-out"
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: "absolute",
-      left: "var(--inset)",
-      right: "var(--inset)",
-      bottom: "var(--inset)",
-      background: "var(--nyan-surface-raised, var(--nyan-surface))",
-      borderRadius: "var(--r-sheet)",
-      border: "1px solid var(--chrome-edge)",
-      boxShadow: "var(--shadow-light-card)",
-      maxHeight: "calc(85% - 12px)",
-      height: height ? `calc(${height} - 12px)` : undefined,
+      all: "unset",
+      cursor: "pointer",
+      boxSizing: "border-box",
       display: "flex",
-      flexDirection: "column",
-      animation: "nyanSlideUp 280ms cubic-bezier(0.33,0.9,0.36,1)",
-      overflow: "hidden"
+      alignItems: "center",
+      gap: 12,
+      padding: "12px 12px",
+      minHeight: 56,
+      borderRadius: "var(--r-card-nested)",
+      background: isSel ? "color-mix(in srgb, var(--nyan-primary) 8%, transparent)" : "transparent"
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, o.swatch && /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: "12px 0 6px",
-      display: "flex",
-      justifyContent: "center"
+      width: 30,
+      height: 30,
+      borderRadius: "var(--r-chip)",
+      flexShrink: 0,
+      background: o.swatch,
+      border: "1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent)"
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }), o.icon && /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 40,
-      height: 5,
-      borderRadius: 999,
-      background: "var(--grabber)"
+      width: 36,
+      height: 36,
+      borderRadius: "var(--r-chip)",
+      flexShrink: 0,
+      background: "color-mix(in srgb, var(--nyan-primary) 10%, var(--nyan-surface-muted))",
+      display: "grid",
+      placeItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("i", {
+    className: `ph ph-${o.icon}`,
+    style: {
+      fontSize: 18,
+      color: "var(--nyan-primary)"
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
-      minHeight: 0,
-      overflow: "auto"
+      minWidth: 0
     }
-  }, children)), /*#__PURE__*/React.createElement("style", null, `
-        @keyframes nyanFade { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes nyanSlideUp { from { transform: translateY(120%); } to { transform: translateY(0); } }
-      `));
-};
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: `${isSel ? 600 : 500} 15px/1.2 var(--font-ui)`,
+      color: isSel ? "var(--nyan-primary-deep)" : "var(--nyan-text)"
+    }
+  }, o.label), o.hint && /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "400 12.5px/1.3 var(--font-ui)",
+      color: "var(--nyan-text-secondary)",
+      marginTop: 2
+    }
+  }, o.hint)), variant === "radio" ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 22,
+      height: 22,
+      borderRadius: "50%",
+      flexShrink: 0,
+      display: "grid",
+      placeItems: "center",
+      border: `2px solid ${isSel ? "var(--nyan-primary)" : "color-mix(in srgb, var(--nyan-divider) 80%, transparent)"}`
+    }
+  }, isSel && /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 11,
+      height: 11,
+      borderRadius: "50%",
+      background: "var(--nyan-primary)"
+    }
+  })) : /*#__PURE__*/React.createElement("i", {
+    className: "ph ph-caret-right",
+    style: {
+      fontSize: 16,
+      color: "var(--nyan-text-muted)",
+      flexShrink: 0
+    }
+  }));
+}))));
+Object.assign(__ds_scope, { NyanOptionSheet });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/surfaces/NyanOptionSheet.jsx", error: String((e && e.message) || e) }); }
 
-/* ── Action-sheet row (NyanActionSheetRow) ───────────────────────────────── */
-const NyanActionSheetRow = ({
-  icon,
-  title,
-  subtitle,
-  onPress,
-  showChevron = true
-}) => /*#__PURE__*/React.createElement("div", {
-  onClick: onPress,
-  style: {
-    padding: "12px 16px",
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    cursor: "pointer"
-  }
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    width: 36,
-    height: 36,
-    borderRadius: "var(--radius-small)",
-    background: "color-mix(in srgb, var(--nyan-primary) 9%, transparent)",
-    display: "grid",
-    placeItems: "center",
-    flexShrink: 0
-  }
-}, /*#__PURE__*/React.createElement(Icon, {
-  name: icon,
-  size: 17,
-  color: "var(--nyan-primary)"
-})), /*#__PURE__*/React.createElement("div", {
-  style: {
-    flex: 1,
-    minWidth: 0
-  }
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    font: "600 16px/1.2 var(--font-ui)",
-    color: "var(--nyan-text)"
-  }
-}, title), /*#__PURE__*/React.createElement("div", {
-  className: "nyan-meta",
-  style: {
-    marginTop: 4
-  }
-}, subtitle)), showChevron && /*#__PURE__*/React.createElement(Icon, {
-  name: "chevron_right",
-  size: 18,
-  color: "color-mix(in srgb, var(--nyan-text-secondary) 44%, transparent)"
-}));
-
-/* ── Floating action button ─────────────────────────────────────────────── */
-const NyanFAB = ({
-  icon = "add",
-  onPress,
-  style
-}) => /*#__PURE__*/React.createElement("button", {
-  onClick: onPress,
-  style: {
-    all: "unset",
-    cursor: "pointer",
-    width: 56,
-    height: 56,
-    background: "var(--nyan-primary-deep)",
-    color: "var(--nyan-surface)",
-    borderRadius: "var(--r-dock)",
-    display: "grid",
-    placeItems: "center",
-    boxShadow: "var(--shadow-light-card)",
-    position: "absolute",
-    right: "var(--inset)",
-    bottom: "var(--inset)",
-    ...style
-  }
-}, /*#__PURE__*/React.createElement(Icon, {
-  name: icon,
-  size: 26,
-  color: "var(--nyan-surface)"
-}));
+// components/surfaces/NyanResponse.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanResponse
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanResponse.
+   Props contract: ./NyanResponse.d.ts
+   ============================================================================ */
 
 /* ── Response feedback (NyanResponse) ─────────────────────────────────────
    The single shared "what just happened" surface — shown after any action
@@ -2226,223 +4137,719 @@ const NyanResponse = ({
   }
   return card;
 };
+Object.assign(__ds_scope, { NyanResponse });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/surfaces/NyanResponse.jsx", error: String((e && e.message) || e) }); }
 
-/* ── Option picker sheet (NyanOptionSheet) ────────────────────────────────
-   The single bottom-sheet for "pick one of these" (theme preset, language,
-   page-turn mode, reminder interval) AND "do one of these" (export data).
-   Same floating-chrome doctrine as NyanBottomSheet: warm scrim + blur, inset
-   sheet, all four corners, one soft lift. Drops into any position:relative
-   frame as a sibling overlay.
+// components/surfaces/NyanRowGroup.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — NyanRowGroup
+   Compiled into the DS bundle; consume as window.<Namespace>.NyanRowGroup.
+   Props contract: ./NyanRowGroup.d.ts
+   ============================================================================ */
 
-   Props:
-     title       sheet heading
-     subtitle    optional one-line description
-     options     array of string | { label, hint, swatch, icon }
-     selected    index of the chosen option (radio variant)
-     variant     "radio" (default — single-select list) | "action" (icon rows)
-     onClose     dismiss handler (scrim tap + ✕)                              */
-const NyanOptionSheet = ({
-  title,
-  subtitle,
-  options = [],
-  selected = 0,
-  variant = "radio",
-  onClose,
+/* ── Grouped card stack — rows separated by inset hairlines, single shell ──── */
+const NyanRowGroup = ({
+  children,
   style
-}) => /*#__PURE__*/React.createElement("div", {
-  style: {
-    position: "absolute",
-    inset: 0,
-    zIndex: 50,
-    ...style
-  }
-}, /*#__PURE__*/React.createElement("div", {
-  onClick: onClose,
-  style: {
-    position: "absolute",
-    inset: 0,
-    background: "var(--scrim)",
-    backdropFilter: "blur(var(--scrim-blur))",
-    WebkitBackdropFilter: "blur(var(--scrim-blur))",
-    animation: "nyanFade 220ms ease-out"
-  }
-}), /*#__PURE__*/React.createElement("div", {
-  style: {
-    position: "absolute",
-    left: "var(--inset)",
-    right: "var(--inset)",
-    bottom: "var(--inset)",
-    background: "var(--nyan-surface)",
-    border: "1px solid var(--chrome-edge)",
-    borderRadius: "var(--r-sheet)",
-    boxShadow: "var(--shadow-light-card)",
-    overflow: "hidden",
-    animation: "nyanSlideUp 280ms cubic-bezier(0.33,0.9,0.36,1)"
-  }
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    paddingTop: 10,
-    display: "flex",
-    justifyContent: "center"
-  }
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    width: 40,
-    height: 5,
-    borderRadius: 999,
-    background: "var(--grabber)"
-  }
-})), /*#__PURE__*/React.createElement("div", {
-  style: {
-    padding: "12px 20px 8px",
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 12
-  }
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    flex: 1,
-    minWidth: 0
-  }
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    font: "600 18px/1.2 var(--font-ui)",
-    color: "var(--nyan-text)",
-    letterSpacing: "-0.1px"
-  }
-}, title), subtitle && /*#__PURE__*/React.createElement("div", {
-  style: {
-    font: "400 13px/1.38 var(--font-ui)",
-    color: "var(--nyan-text-secondary)",
-    marginTop: 4
-  }
-}, subtitle)), /*#__PURE__*/React.createElement("button", {
-  onClick: onClose,
-  title: "Close",
-  style: {
-    all: "unset",
-    cursor: "pointer",
-    width: 32,
-    height: 32,
-    borderRadius: "var(--r-chip)",
-    display: "grid",
-    placeItems: "center",
-    flexShrink: 0,
-    marginTop: -2
-  }
-}, /*#__PURE__*/React.createElement("i", {
-  className: "ph ph-x",
-  style: {
-    fontSize: 16,
-    color: "var(--nyan-text-muted)"
-  }
-}))), /*#__PURE__*/React.createElement("div", {
-  style: {
-    padding: "4px 12px 16px",
-    display: "flex",
-    flexDirection: "column"
-  }
-}, options.map((raw, i) => {
-  const o = typeof raw === "string" ? {
-    label: raw
-  } : raw;
-  const isSel = variant === "radio" && i === selected;
-  return /*#__PURE__*/React.createElement("button", {
-    key: i,
-    onClick: onClose,
+}) => {
+  const items = React.Children.toArray(children).filter(Boolean);
+  return /*#__PURE__*/React.createElement("div", {
     style: {
-      all: "unset",
-      cursor: "pointer",
-      boxSizing: "border-box",
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-      padding: "12px 12px",
-      minHeight: 56,
+      background: "var(--nyan-surface)",
       borderRadius: "var(--r-card-nested)",
-      background: isSel ? "color-mix(in srgb, var(--nyan-primary) 8%, transparent)" : "transparent"
+      border: "1px solid var(--chrome-edge)",
+      boxShadow: "var(--shadow-grouped)",
+      overflow: "hidden",
+      ...style
     }
-  }, o.swatch && /*#__PURE__*/React.createElement("div", {
+  }, items.map((c, i) => /*#__PURE__*/React.createElement(React.Fragment, {
+    key: i
+  }, i > 0 && /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 30,
-      height: 30,
-      borderRadius: "var(--r-chip)",
-      flexShrink: 0,
-      background: o.swatch,
-      border: "1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent)"
+      height: "0.5px",
+      background: "color-mix(in srgb, var(--nyan-divider) 34%, transparent)",
+      margin: "0 16px"
     }
-  }), o.icon && /*#__PURE__*/React.createElement("div", {
+  }), c)));
+};
+Object.assign(__ds_scope, { NyanRowGroup });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/surfaces/NyanRowGroup.jsx", error: String((e && e.message) || e) }); }
+
+// prototype/app.jsx
+try { (() => {
+/* ============================================================================
+   Nyan Read — Interactive Reader Prototype (app)
+   Assembles the compiled design-system kit (incl. the new P2 components) into a
+   working multi-screen reader: Bookshelf → Reader → selection / highlight,
+   the One Paper dock (chapters · settings · TTS), a confirm dialog, and the
+   full-screen privacy-PIN gate. Everything reads from window.<Namespace>,
+   flattened onto window by the host page.
+   ============================================================================ */
+const {
+  useState,
+  useEffect,
+  useRef
+} = React;
+
+/* ── Sample content ─────────────────────────────────────────────────────── */
+const BOOKS = [{
+  id: 1,
+  title: "The Stillwater Diaries",
+  author: "Matsuno Eri",
+  fmt: "EPUB",
+  pct: 42
+}, {
+  id: 2,
+  title: "Borrowed Light",
+  author: "Yuen Lai-Ying",
+  fmt: "TXT",
+  pct: 0
+}, {
+  id: 3,
+  title: "A Long Slope Down",
+  author: "Park Hyun-joo",
+  fmt: "PDF",
+  pct: 88
+}, {
+  id: 4,
+  title: "Sand and Memoir",
+  author: "Aria Okonkwo",
+  fmt: "EPUB",
+  pct: 12
+}, {
+  id: 5,
+  title: "The Paper Garden",
+  author: "Lin Shuhua",
+  fmt: "EPUB",
+  pct: 0
+}, {
+  id: 6,
+  title: "Quiet as Kept",
+  author: "Devorah Reyes",
+  fmt: "TXT",
+  pct: 64
+}];
+const CHAPTERS = ["I · The Threshold", "II · A Cup of Still Water", "III · The Bell and the Rain", "IV · Lacquer and Alcove", "V · Wisteria", "VI · The Long Slope", "VII · Borrowed Light", "VIII · What the River Kept"];
+const PROSE = ["The cat sat on the threshold for a long while, watching the rain decide what kind of evening it would be. Inside, the kettle had gone quiet, and the lamp made a small amber country of the desk.", "She would sometimes say that of all the noises in the city, only the bell and the rain felt honest. The trams, the merchants, the cries of the gulls upriver — all of them were asking for something.", "He set the lacquer cup down on the low table and looked, again, at the calligraphy hanging in the alcove. It had been there so long he no longer read it; it had become a kind of weather.", "Some things are better held at arm's length, like a wet umbrella indoors. She turned the page the way one steps onto old wood — slowly, listening for what it would say."];
+
+/* readerTheme id → [background, ink, sumi-scope?] */
+const READER_THEME = {
+  cream: ["var(--reader-bg-cream)", "var(--reader-ink)", false],
+  sepia: ["var(--reader-bg-sepia)", "var(--reader-ink-sepia)", false],
+  sumi: ["var(--reader-bg-sumi)", "var(--reader-ink-sumi)", true],
+  charcoal: ["var(--reader-bg-charcoal)", "var(--reader-ink-charcoal)", true]
+};
+const DEFAULT_PREFS = {
+  brightness: 78,
+  autoBrightness: false,
+  warmth: "low",
+  pageTurn: "tap",
+  fontSize: 18,
+  lineHeight: 1.75,
+  serif: true,
+  readerTheme: "cream"
+};
+const STORE = "nyan-proto-v1";
+const load = () => {
+  try {
+    return JSON.parse(localStorage.getItem(STORE)) || {};
+  } catch (e) {
+    return {};
+  }
+};
+const save = patch => {
+  try {
+    localStorage.setItem(STORE, JSON.stringify({
+      ...load(),
+      ...patch
+    }));
+  } catch (e) {}
+};
+
+/* ── Bookshelf screen ───────────────────────────────────────────────────── */
+function Bookshelf({
+  onOpenBook,
+  onLock,
+  onImport
+}) {
+  const persisted = load();
+  const [query, setQuery] = useState("");
+  const [view, setView] = useState(persisted.view || "grid");
+  const [collapsed, setCollapsed] = useState(false);
+  const [confirmBook, setConfirmBook] = useState(null);
+  const [toast, setToast] = useState(null);
+  useEffect(() => {
+    save({
+      view
+    });
+  }, [view]);
+  const q = query.trim().toLowerCase();
+  const list = q ? BOOKS.filter(b => (b.title + " " + b.author).toLowerCase().includes(q)) : BOOKS;
+  const cont = BOOKS[0];
+  return /*#__PURE__*/React.createElement("div", {
+    className: "screen"
+  }, /*#__PURE__*/React.createElement(NyanPageHeader, {
+    title: "Bookshelf",
+    subtitle: `${BOOKS.length} books · sorted by recent`,
+    actions: /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 4
+      }
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "lock",
+      size: 20,
+      color: "var(--nyan-text)",
+      "aria-label": "Privacy shelf",
+      onClick: onLock
+    }))
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 36,
-      height: 36,
-      borderRadius: "var(--r-chip)",
-      flexShrink: 0,
-      background: "color-mix(in srgb, var(--nyan-primary) 10%, var(--nyan-surface-muted))",
-      display: "grid",
-      placeItems: "center"
+      padding: "0 16px 12px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 12
     }
-  }, /*#__PURE__*/React.createElement("i", {
-    className: `ph ph-${o.icon}`,
-    style: {
-      fontSize: 18,
-      color: "var(--nyan-primary)"
-    }
+  }, /*#__PURE__*/React.createElement(SearchField, {
+    value: query,
+    onChange: setQuery,
+    placeholder: "Search your shelf"
+  }), /*#__PURE__*/React.createElement(SegmentedTabControl, {
+    style: "subtle",
+    selected: view === "grid" ? 0 : 1,
+    onChange: i => setView(i === 0 ? "grid" : "list"),
+    tabs: [{
+      label: "Grid"
+    }, {
+      label: "List"
+    }]
   })), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
-      minWidth: 0
+      overflowY: "auto",
+      padding: "0 16px 96px"
+    }
+  }, !q && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement(NyanContinueReadingCard, {
+    book: {
+      title: cont.title,
+      author: cont.author,
+      progress: cont.pct / 100
+    },
+    collapsed: collapsed,
+    onToggleCollapse: () => setCollapsed(c => !c),
+    onContinue: () => onOpenBook(cont)
+  })), list.length === 0 ? /*#__PURE__*/React.createElement(NyanEmptyState, {
+    icon: "search",
+    title: `No books match “${query.trim()}”`,
+    description: "Try a different title or author name."
+  }) : view === "grid" ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr 1fr",
+      gap: "16px 12px"
+    }
+  }, list.map(b => /*#__PURE__*/React.createElement(NyanBookGridCard, {
+    key: b.id,
+    book: b,
+    onPress: () => onOpenBook(b),
+    onLongPress: () => setConfirmBook(b)
+  }))) : /*#__PURE__*/React.createElement(NyanRowGroup, null, list.map(b => /*#__PURE__*/React.createElement(BookListRow, {
+    key: b.id,
+    book: b,
+    onPress: () => onOpenBook(b)
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      right: 16,
+      bottom: 26,
+      zIndex: 20
+    }
+  }, /*#__PURE__*/React.createElement(NyanFAB, {
+    icon: "add",
+    onPress: () => {
+      onImport ? onImport() : setToast("import");
+    }
+  })), toast === "import" && /*#__PURE__*/React.createElement(NyanResponse, {
+    placement: "bottom",
+    status: "info",
+    title: "Import a book",
+    description: "Browse .txt, .epub or .pdf from your device.",
+    action: {
+      label: "Done",
+      onPress: () => setToast(null)
+    },
+    onDismiss: () => setToast(null)
+  }), /*#__PURE__*/React.createElement(NyanDialog, {
+    open: !!confirmBook,
+    tone: "danger",
+    icon: "delete",
+    title: "Delete this book?",
+    message: confirmBook ? `“${confirmBook.title}” will be removed from this device.` : "",
+    confirmLabel: "Delete",
+    onClose: () => setConfirmBook(null),
+    onCancel: () => setConfirmBook(null),
+    onConfirm: () => setConfirmBook(null)
+  }));
+}
+
+/* ── Reader screen ──────────────────────────────────────────────────────── */
+function Reader({
+  book,
+  onExit
+}) {
+  const persisted = load();
+  const [prefs, setPrefs] = useState({
+    ...DEFAULT_PREFS,
+    ...(persisted.prefs || {})
+  });
+  const [chapter, setChapter] = useState(persisted.chapter != null ? persisted.chapter : 1);
+  const [immersive, setImmersive] = useState(false); // true = chrome hidden
+  const [sheet, setSheet] = useState(null); // chapters | settings | highlights | bookmarks
+  const [tab, setTab] = useState(2); // settings tab (Theme default)
+  const [sel, setSel] = useState(null); // selected paragraph index
+  const [pen, setPen] = useState(null);
+  const [tts, setTts] = useState(false);
+  const [find, setFind] = useState(false);
+  const [findQ, setFindQ] = useState("");
+  const [toast, setToast] = useState(null);
+  const [playing, setPlaying] = useState(false);
+  const [ttsProg, setTtsProg] = useState(0.3);
+  const [speed, setSpeed] = useState(1);
+  useEffect(() => {
+    save({
+      prefs
+    });
+  }, [prefs]);
+  useEffect(() => {
+    save({
+      chapter
+    });
+  }, [chapter]);
+  const [bg, ink, sumi] = READER_THEME[prefs.readerTheme] || READER_THEME.cream;
+  const dim = prefs.autoBrightness ? 1 : 0.5 + prefs.brightness / 100 * 0.5;
+  const sheetOpen = !!sheet;
+  const sheetTitle = {
+    chapters: "Chapters",
+    settings: "Display",
+    highlights: "Highlights",
+    bookmarks: "Bookmarks"
+  }[sheet];
+  const closeAll = () => {
+    setSheet(null);
+    setSel(null);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    "data-theme": sumi ? "sumi" : undefined,
+    className: "screen",
+    style: {
+      background: bg,
+      paddingTop: 0,
+      position: "relative"
+    },
+    onClick: () => {
+      if (sel) setSel(null);else if (!sheetOpen && !tts && !find) setImmersive(v => !v);
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      font: `${isSel ? 600 : 500} 15px/1.2 var(--font-ui)`,
-      color: isSel ? "var(--nyan-primary-deep)" : "var(--nyan-text)"
+      position: "absolute",
+      inset: 0,
+      background: "#000",
+      opacity: 1 - dim,
+      pointerEvents: "none",
+      zIndex: 30,
+      transition: "opacity 200ms ease"
     }
-  }, o.label), o.hint && /*#__PURE__*/React.createElement("div", {
+  }), find ? /*#__PURE__*/React.createElement("div", {
     style: {
-      font: "400 12.5px/1.3 var(--font-ui)",
-      color: "var(--nyan-text-secondary)",
-      marginTop: 2
+      paddingTop: 50,
+      zIndex: 35,
+      position: "relative"
+    },
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement(InBookSearch, {
+    value: findQ,
+    onChange: setFindQ,
+    matchIndex: 2,
+    matchCount: findQ ? 17 : 0,
+    onClose: () => {
+      setFind(false);
+      setFindQ("");
     }
-  }, o.hint)), variant === "radio" ? /*#__PURE__*/React.createElement("div", {
+  })) : /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 22,
-      height: 22,
-      borderRadius: "50%",
-      flexShrink: 0,
+      paddingTop: 50,
+      padding: "50px 8px 8px",
+      display: "flex",
+      alignItems: "center",
+      gap: 4,
+      opacity: immersive ? 0 : 1,
+      transform: immersive ? "translateY(-8px)" : "none",
+      transition: "opacity 240ms var(--ease-paper), transform 240ms var(--ease-paper)",
+      pointerEvents: immersive ? "none" : "auto",
+      position: "relative",
+      zIndex: 35
+    },
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onExit,
+    "aria-label": "Back",
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      width: 40,
+      height: 40,
+      borderRadius: "var(--r-control)",
+      display: "grid",
+      placeItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "arrow_back",
+    size: 22,
+    color: ink
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0,
+      font: "600 14px/1.2 var(--font-ui)",
+      color: ink,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, book ? book.title : "The Stillwater Diaries"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setFind(true),
+    "aria-label": "Find in book",
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      width: 40,
+      height: 40,
+      borderRadius: "var(--r-control)",
+      display: "grid",
+      placeItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "search",
+    size: 21,
+    color: ink
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setTts(true),
+    "aria-label": "Read aloud",
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      width: 40,
+      height: 40,
+      borderRadius: "var(--r-control)",
+      display: "grid",
+      placeItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "user-sound",
+    size: 21,
+    color: ink
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflowY: "auto",
+      padding: "8px 26px 160px",
+      position: "relative",
+      zIndex: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "500 12px/1 var(--font-ui)",
+      letterSpacing: "1.5px",
+      textTransform: "uppercase",
+      color: ink,
+      opacity: 0.5,
+      margin: "8px 0 20px"
+    }
+  }, CHAPTERS[chapter]), PROSE.map((p, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    onClick: e => {
+      e.stopPropagation();
+      setSel(i === sel ? null : i);
+    },
+    style: {
+      cursor: "text",
+      borderRadius: 6,
+      background: pen && sel === i ? "transparent" : "transparent"
+    }
+  }, /*#__PURE__*/React.createElement(ReaderParagraph, {
+    serif: prefs.serif,
+    fontSize: prefs.fontSize,
+    lineHeight: prefs.lineHeight,
+    color: ink
+  }, p)))), sel != null && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 150,
+      display: "flex",
+      justifyContent: "center",
+      zIndex: 48
+    },
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement(TextSelectionMenu, {
+    selectedPen: pen,
+    onSelectPen: id => {
+      setPen(id);
+      setSel(null);
+      setToast("highlight");
+    },
+    onAction: k => {
+      setSel(null);
+      setToast(k);
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation()
+  }, /*#__PURE__*/React.createElement(OnePaperDock, {
+    visible: !immersive && !tts,
+    sheetOpen: sheetOpen,
+    title: sheetTitle,
+    meta: sheet === "chapters" ? `${chapter + 1} / ${CHAPTERS.length}` : undefined,
+    chapterIndex: chapter,
+    chapterCount: CHAPTERS.length,
+    progress: (chapter + 0.4) / CHAPTERS.length,
+    activeAction: sheet,
+    onAction: k => setSheet(s => s === k ? null : k),
+    onPrevChapter: () => setChapter(c => Math.max(0, c - 1)),
+    onNextChapter: () => setChapter(c => Math.min(CHAPTERS.length - 1, c + 1))
+  }, sheet === "chapters" && /*#__PURE__*/React.createElement(ReaderChapterList, {
+    chapters: CHAPTERS,
+    currentIndex: chapter,
+    onSelect: i => {
+      setChapter(i);
+      setSheet(null);
+    }
+  }), sheet === "settings" && /*#__PURE__*/React.createElement(ReaderSettingsBody, {
+    t: prefs,
+    setT: setPrefs,
+    tab: tab,
+    setTab: setTab
+  }), sheet === "highlights" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      paddingBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement(NyanBookmarkCard, {
+    label: "Chapter 3 \xB7 42%",
+    excerpt: "only the bell and the rain felt honest",
+    note: "The hinge of the whole chapter."
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 8
+    }
+  }), /*#__PURE__*/React.createElement(NyanEmptyState, {
+    icon: "highlighter",
+    title: "That's everything",
+    description: "Long-press any line to add a highlight."
+  })), sheet === "bookmarks" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      paddingBottom: 8
+    }
+  }, /*#__PURE__*/React.createElement(NyanBookmarkCard, {
+    label: "Chapter 2 \xB7 18%",
+    excerpt: "watching the rain decide what kind of evening it would be"
+  })))), /*#__PURE__*/React.createElement(NyanBottomSheet, {
+    open: tts,
+    onClose: () => setTts(false)
+  }, /*#__PURE__*/React.createElement(TTSPlayer, {
+    chapter: CHAPTERS[chapter],
+    playing: playing,
+    onTogglePlay: () => setPlaying(p => !p),
+    progress: ttsProg,
+    onSeek: setTtsProg,
+    elapsed: "2:14",
+    remaining: "7:30",
+    speedIndex: speed,
+    onSpeed: setSpeed,
+    onSkipBack: () => setChapter(c => Math.max(0, c - 1)),
+    onSkipForward: () => setChapter(c => Math.min(CHAPTERS.length - 1, c + 1))
+  })), toast && /*#__PURE__*/React.createElement(NyanResponse, {
+    placement: "bottom",
+    status: toast === "highlight" ? "success" : "info",
+    title: toast === "highlight" ? "Highlight saved" : toast === "copy" ? "Copied to clipboard" : "Searching the book",
+    onDismiss: () => setToast(null)
+  }), toast && /*#__PURE__*/React.createElement(Dismisser, {
+    onDone: () => setToast(null)
+  }));
+}
+
+/* auto-dismiss helper for toasts */
+function Dismisser({
+  onDone
+}) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 1900);
+    return () => clearTimeout(t);
+  }, []);
+  return null;
+}
+
+/* ── Privacy PIN gate ───────────────────────────────────────────────────── */
+function PinGate({
+  onUnlock,
+  onCancel
+}) {
+  const [digits, setDigits] = useState([]);
+  const [error, setError] = useState(false);
+  const fg = "#E8E1D5";
+  useEffect(() => {
+    if (digits.length === 4) {
+      const ok = digits.join("") === "1234";
+      const t = setTimeout(() => {
+        ok ? onUnlock() : (setError(true), setDigits([]));
+      }, 240);
+      return () => clearTimeout(t);
+    }
+  }, [digits]);
+  return /*#__PURE__*/React.createElement("div", {
+    "data-theme": "sumi",
+    style: {
+      position: "absolute",
+      inset: 0,
+      zIndex: 90,
+      background: "#1D211E",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingTop: 50
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onCancel,
+    "aria-label": "Cancel",
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      position: "absolute",
+      top: 60,
+      right: 18,
+      width: 44,
+      height: 44,
+      display: "grid",
+      placeItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "close",
+    size: 22,
+    color: "color-mix(in srgb, #E8E1D5 52%, transparent)"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 56,
+      height: 56,
+      borderRadius: "var(--r-card-nested)",
+      background: "color-mix(in srgb, #E8E1D5 12%, transparent)",
       display: "grid",
       placeItems: "center",
-      border: `2px solid ${isSel ? "var(--nyan-primary)" : "color-mix(in srgb, var(--nyan-divider) 80%, transparent)"}`
+      marginBottom: 22
     }
-  }, isSel && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "lock",
+    size: 26,
+    color: fg
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 11,
-      height: 11,
-      borderRadius: "50%",
-      background: "var(--nyan-primary)"
+      font: "500 20px/1.2 var(--font-ui)",
+      color: fg,
+      letterSpacing: "0.4px",
+      marginBottom: error ? 16 : 40
     }
-  })) : /*#__PURE__*/React.createElement("i", {
-    className: "ph ph-caret-right",
+  }, "Enter PIN"), error && /*#__PURE__*/React.createElement("div", {
     style: {
-      fontSize: 16,
-      color: "var(--nyan-text-muted)",
-      flexShrink: 0
+      font: "400 13px/1.3 var(--font-ui)",
+      color: "color-mix(in srgb, #E8E1D5 52%, transparent)",
+      marginBottom: 20
+    }
+  }, "Incorrect PIN \u2014 try 1234"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 44
+    }
+  }, /*#__PURE__*/React.createElement(PinDots, {
+    count: digits.length,
+    hasError: error,
+    dotColor: fg
+  })), /*#__PURE__*/React.createElement(PinPad, {
+    keyColor: fg,
+    onDigit: d => setDigits(p => p.length < 4 ? [...p, d] : p),
+    onDelete: () => {
+      setDigits(p => p.slice(0, -1));
+      setError(false);
     }
   }));
-}))));
+}
 
-/* ── Exports ─────────────────────────────────────────────────────────────── */
-Object.assign(window, {
-  NyanInfoCard,
-  NyanListRow,
-  NyanRowGroup,
-  NyanEmptyState,
-  NyanBottomSheet,
-  NyanActionSheetRow,
-  NyanFAB,
-  NyanResponse,
-  NyanOptionSheet
-});
-})(); } catch (e) { __ds_ns.__errors.push({ path: "components/surfaces.jsx", error: String((e && e.message) || e) }); }
+/* ── App shell ──────────────────────────────────────────────────────────── */
+function App() {
+  const persisted = load();
+  const [screen, setScreen] = useState(persisted.screen || "shelf");
+  const [book, setBook] = useState(null);
+  const [pin, setPin] = useState(false);
+  const go = s => {
+    setScreen(s);
+    save({
+      screen: s
+    });
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "phone"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "notch"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "statusbar"
+  }, /*#__PURE__*/React.createElement("span", null, "9:41"), /*#__PURE__*/React.createElement("span", {
+    className: "dnd"
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "ph ph-moon",
+    style: {
+      fontSize: 13
+    }
+  }), " \u55B5\u9605"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-flex",
+      gap: 5,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "ph ph-cell-signal-full",
+    style: {
+      fontSize: 15
+    }
+  }), /*#__PURE__*/React.createElement("i", {
+    className: "ph ph-wifi-high",
+    style: {
+      fontSize: 15
+    }
+  }), /*#__PURE__*/React.createElement("i", {
+    className: "ph-fill ph-battery-medium",
+    style: {
+      fontSize: 16
+    }
+  }))), screen === "shelf" && /*#__PURE__*/React.createElement(Bookshelf, {
+    onOpenBook: b => {
+      setBook(b);
+      go("reader");
+    },
+    onLock: () => setPin(true)
+  }), screen === "reader" && /*#__PURE__*/React.createElement(Reader, {
+    book: book,
+    onExit: () => go("shelf")
+  }), pin && /*#__PURE__*/React.createElement(PinGate, {
+    onUnlock: () => setPin(false),
+    onCancel: () => setPin(false)
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "home-ind"
+  }));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
+})(); } catch (e) { __ds_ns.__errors.push({ path: "prototype/app.jsx", error: String((e && e.message) || e) }); }
 
 // screens/bundle1.jsx
 try { (() => {
@@ -2827,12 +5234,29 @@ const HighlightNoteDialog = ({
   const [ci, setCi] = useState(initColor);
   const [note, setNote] = useState(initNote);
   const [focused, setFocused] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+  const restoreRef = useRef("");
   const sel = HL_SWATCHES[ci];
+  const deleteNote = () => {
+    restoreRef.current = note;
+    setNote("");
+    setFocused(false);
+    setDeleted(true);
+  };
+  const undoDelete = () => {
+    setNote(restoreRef.current);
+    setDeleted(false);
+  };
   const inputBorder = focused ? "1px solid color-mix(in srgb, var(--nyan-primary) 30%, transparent)" : "1px solid color-mix(in srgb, var(--nyan-divider) 42%, transparent)";
   return /*#__PURE__*/React.createElement("div", {
     style: {
+      position: "relative",
       width: "100%",
-      maxWidth: 350,
+      maxWidth: 350
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "100%",
       background: "var(--nyan-surface)",
       borderRadius: "var(--r-dock)",
       border: "1px solid var(--chrome-edge)",
@@ -2874,6 +5298,8 @@ const HighlightNoteDialog = ({
       letterSpacing: "-0.1px"
     }
   }, "Edit Note"), /*#__PURE__*/React.createElement("button", {
+    onClick: deleteNote,
+    "aria-label": "Delete note",
     style: {
       all: "unset",
       cursor: "pointer",
@@ -2993,6 +5419,22 @@ const HighlightNoteDialog = ({
     label: "Save",
     variant: "primary",
     size: "lg"
+  }))), deleted && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      top: "calc(100% + 12px)"
+    }
+  }, /*#__PURE__*/React.createElement(NyanResponse, {
+    status: "success",
+    title: "Note deleted",
+    description: "The highlight colour is kept on the passage.",
+    action: {
+      label: "Undo",
+      onPress: undoDelete
+    },
+    onDismiss: () => setDeleted(false)
   })));
 };
 const U2Artboard = ({
@@ -4029,24 +6471,44 @@ const BookListRow = ({
     flexShrink: 0
   }
 }));
+const SHELF_SORT_OPTIONS = [{
+  label: "Last read",
+  hint: "Most recently opened first"
+}, {
+  label: "Recently added",
+  hint: "Newest imports first"
+}, {
+  label: "Title",
+  hint: "A → Z"
+}, {
+  label: "Author",
+  hint: "A → Z"
+}, {
+  label: "Reading progress",
+  hint: "Furthest along first"
+}];
 const BookshelfHome = ({
   dark,
   empty,
   view: initView,
   continueCollapsed,
   isPro = false,
-  sort: initSort
+  sort: initSort,
+  sortOpen: initSortOpen = false,
+  sortBy: initSortBy = 0,
+  sortAnimate = true
 }) => {
   const [tab, setTab] = useState(0);
   const [view, setView] = useState(initView || "grid");
-  const [sort, setSort] = useState(!!initSort);
+  const [sortOpen, setSortOpen] = useState(!!initSortOpen || !!initSort);
+  const [sortBy, setSortBy] = useState(initSortBy);
   return /*#__PURE__*/React.createElement(Shell, {
     dark: dark
   }, /*#__PURE__*/React.createElement(ShelfToolbar, {
     view: view,
     onToggleView: () => setView(v => v === "grid" ? "list" : "grid"),
-    sort: sort,
-    onToggleSort: () => setSort(s => !s),
+    sort: sortOpen,
+    onToggleSort: () => setSortOpen(s => !s),
     isPro: isPro,
     onSearch: () => {}
   }), /*#__PURE__*/React.createElement("div", {
@@ -4185,7 +6647,15 @@ const BookshelfHome = ({
       fontSize: 24,
       color: "var(--nyan-surface)"
     }
-  }))));
+  }))), sortOpen && /*#__PURE__*/React.createElement(NyanOptionSheet, {
+    title: "Sort shelf by",
+    subtitle: "Applies to the current shelf",
+    options: SHELF_SORT_OPTIONS,
+    selected: sortBy,
+    animateIn: sortAnimate,
+    onSelect: i => setSortBy(i),
+    onClose: () => setSortOpen(false)
+  }));
 };
 
 /* ──────────────────────────────────────────────────────────────────────
@@ -7559,5 +10029,91 @@ Object.assign(window, {
   ShelfToolbarScreen
 });
 })(); } catch (e) { __ds_ns.__errors.push({ path: "screens/bundle4.jsx", error: String((e && e.message) || e) }); }
+
+__ds_ns.BookListRow = __ds_scope.BookListRow;
+
+__ds_ns.NyanBookGridCard = __ds_scope.NyanBookGridCard;
+
+__ds_ns.NyanBookmarkCard = __ds_scope.NyanBookmarkCard;
+
+__ds_ns.NyanContinueReadingCard = __ds_scope.NyanContinueReadingCard;
+
+__ds_ns.NyanPageHeader = __ds_scope.NyanPageHeader;
+
+__ds_ns.NyanSectionHeader = __ds_scope.NyanSectionHeader;
+
+__ds_ns.Checkbox = __ds_scope.Checkbox;
+
+__ds_ns.Icon = __ds_scope.Icon;
+
+__ds_ns.NyanPrimaryButton = __ds_scope.NyanPrimaryButton;
+
+__ds_ns.NyanSlider = __ds_scope.NyanSlider;
+
+__ds_ns.NyanSwitch = __ds_scope.NyanSwitch;
+
+__ds_ns.PillButton = __ds_scope.PillButton;
+
+__ds_ns.ProgressBar = __ds_scope.ProgressBar;
+
+__ds_ns.SearchField = __ds_scope.SearchField;
+
+__ds_ns.SegmentedTabControl = __ds_scope.SegmentedTabControl;
+
+__ds_ns.Skeleton = __ds_scope.Skeleton;
+
+__ds_ns.TextField = __ds_scope.TextField;
+
+__ds_ns.DisplayPanel = __ds_scope.DisplayPanel;
+
+__ds_ns.DockFooter = __ds_scope.DockFooter;
+
+__ds_ns.HighlightSwatchRow = __ds_scope.HighlightSwatchRow;
+
+__ds_ns.InBookSearch = __ds_scope.InBookSearch;
+
+__ds_ns.Knob = __ds_scope.Knob;
+
+__ds_ns.OnePaperDock = __ds_scope.OnePaperDock;
+
+__ds_ns.PdfControls = __ds_scope.PdfControls;
+
+__ds_ns.ReaderChapterList = __ds_scope.ReaderChapterList;
+
+__ds_ns.ReaderParagraph = __ds_scope.ReaderParagraph;
+
+__ds_ns.ReaderSettingsBody = __ds_scope.ReaderSettingsBody;
+
+__ds_ns.TTSPlayer = __ds_scope.TTSPlayer;
+
+__ds_ns.TextPanel = __ds_scope.TextPanel;
+
+__ds_ns.TextSelectionMenu = __ds_scope.TextSelectionMenu;
+
+__ds_ns.ThemePanel = __ds_scope.ThemePanel;
+
+__ds_ns.PinDots = __ds_scope.PinDots;
+
+__ds_ns.PinPad = __ds_scope.PinPad;
+
+__ds_ns.NyanActionSheetRow = __ds_scope.NyanActionSheetRow;
+
+__ds_ns.NyanBottomSheet = __ds_scope.NyanBottomSheet;
+
+__ds_ns.NyanDialog = __ds_scope.NyanDialog;
+
+__ds_ns.NyanEmptyState = __ds_scope.NyanEmptyState;
+
+__ds_ns.NyanFAB = __ds_scope.NyanFAB;
+
+__ds_ns.NyanInfoCard = __ds_scope.NyanInfoCard;
+
+__ds_ns.NyanListRow = __ds_scope.NyanListRow;
+
+__ds_ns.NyanOptionSheet = __ds_scope.NyanOptionSheet;
+
+__ds_ns.NyanResponse = __ds_scope.NyanResponse;
+
+__ds_ns.NyanRowGroup = __ds_scope.NyanRowGroup;
 
 })();
