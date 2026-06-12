@@ -306,6 +306,8 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — Reader 设置 Knob 内边距（交付包对齐，2026-06，来源 `reader.jsx` `Knob`）**：`ReaderSettingsKnob` 的内边距固定为 **14pt**（`padding: 14`，来源：`reader.jsx`）。此例外**仅限** `ReaderSettingsKnob` 容器本身，**MUST NOT** 用于卡片、列表、页面层级的布局间距。
 
+> **例外 — Highlights & Notes 卡片水平内边距（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `HighlightCard`）**：`NyanHighlightCard` 的水平内边距固定为 **14pt**（`_kCardPaddingH`，来源：`bundle3.jsx` `padding: "12px 14px"`）。此例外**仅限** `NyanHighlightCard` 容器本身，**MUST NOT** 用于其它卡片、列表、页面级布局间距。
+
 #### 4.2.4 阴影 — `lib/core/theme/nyan_shadows.dart`
 
 三个工具方法**现在接收 `NyanTheme nyan`（不再是裸 `Color`）**，并按 `nyan.brightness` 自动选配方：
@@ -340,6 +342,8 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 > **例外 — Privacy PIN 键盘字号（交付包对齐，2026-06，来源 `screens/bundle4.jsx` `NumPad`）**：U16 全屏 PIN 键盘的数字键使用 **26pt w400**、退格图标 **22pt**，均落在 6 档阶梯之外（§4.6 交付包优先）。这两个值是 `PinInputWidget` 键盘**专属**——**MUST NOT** 出现在正文、标题或任何其它表面。常量定义见 `NyanTypography.pinKeyDigit`（26）/ `NyanTypography.pinKeyGlyph`（22）。
 
 > **例外 — Reader Error View 字号（交付包对齐，2026-06，来源 `screens/bundle2-screens.jsx` `ErrorView`）**：U8 错误视图的标题使用 **18pt w600**（`font: "600 18px/1.25"`），正文使用 **14pt w400**（`font: "400 14px/1.5"`），两者均落在 6 档阶梯之外（§4.6 交付包优先）。这两个值是 `ReaderErrorView` **专属**——**MUST NOT** 出现在正文列表行、卡片或其它表面。
+
+> **例外 — Notes & Highlights 空状态字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `NotesList` empty state）**：`NotesListPage` 空状态标题使用 **18pt w600**（`font: "600 18px/1.25"`），说明行使用 **14pt w400**，提示行使用 **13pt w400**，均落在 6 档阶梯之外（§4.6 交付包优先）。这三个值是 `NotesListPage` 空状态**专属**——**MUST NOT** 出现在正文、列表行、卡片或其它表面。
 
 > **例外 — Chapters Sheet "Jump to current" FAB 标签字号（交付包对齐，2026-06，来源 `screens/bundle1.jsx` `ChapterDockSheet`）**：目录 Sheet 浮动按钮的标签使用 **13.5pt w600**（来源：`bundle1.jsx` `font: "600 13.5px/1"`）。此值介于阶梯 `meta 13` 与 `buttonCompact 14` 之间（§4.6 交付包优先）。此例外**仅限** `_JumpToCurrentButton`（`chapter_list_widget.dart`）标签，**MUST NOT** 出现在正文、列表行、卡片或其它表面。常量定义见 `NyanTypography.fabLabel`（13.5）。
 

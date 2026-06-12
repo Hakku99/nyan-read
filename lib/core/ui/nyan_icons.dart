@@ -53,6 +53,9 @@ class NyanIcons {
   static const IconData tableOfContents = PhosphorIconsRegular.listBullets;
   static const IconData highlights = PhosphorIconsRegular.highlighter;
 
+  /// Empty-state hero for the Notes & Highlights page (ph-highlighter-circle).
+  static const IconData highlighterCircle = PhosphorIconsRegular.highlighterCircle;
+
   // ── Common actions ──────────────────────────────────────────────────────
   static const IconData add = PhosphorIconsRegular.plus;
   static const IconData remove = PhosphorIconsRegular.minus;
