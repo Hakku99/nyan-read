@@ -351,6 +351,12 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — 书架排序 Sheet 字段行子标签字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `ShelfSortSheet`）**：`bookshelf_sort_sheet.dart` 的字段行子标签（如 "A → Z"、"Oldest opened first"）使用 **12.5pt w400 `textSecondary`**（来源：`bundle3.jsx` `font: "400 12.5px/1.3"`）。此值介于阶梯 `caption 11` 与 `meta 13` 之间（§4.6 交付包优先）。此例外**仅限** `_SortFieldRow` 子标签，**MUST NOT** 出现在正文、其它列表行或任何其它表面。常量定义见 `NyanTypography.shelfSortFieldSub`（12.5）。
 
+> **例外 — Admin Panel 行标签字号（交付包对齐，2026-06，来源 `screens/bundle4.jsx` `AdminPanel`）**：`admin_panel.dart` 的 `_AdminSwitchRow` 与 `_AdminFlagRow` 主标签使用 **15pt**（选中/关闭均同；来源：`bundle4.jsx` `font: "600 15px/1.2"` / `"500 15px/1.2"`）。此值介于阶梯 `body 16` 与 `meta 13` 之间（§4.6 交付包优先）。此例外**仅限** `_AdminSwitchRow` 与 `_AdminFlagRow` 主标签，**MUST NOT** 出现在正文、其它列表行或卡片表面。常量定义见 `NyanTypography.adminRowLabel`（15）。
+
+> **例外 — Admin Panel 功能开关徽标字号（交付包对齐，2026-06，来源 `screens/bundle4.jsx` `FlagBadge`）**：`admin_panel.dart` 的 `_AdminFlagRow` 徽标芯片文字使用 **12pt w500**（来源：`bundle4.jsx` `font: "500 12px/1"`）。此值介于阶梯 `caption 11` 与 `meta 13` 之间（§4.6 交付包优先）。此例外**仅限** `_AdminFlagRow` 内的 `FlagBadge` 文字，**MUST NOT** 出现在正文、列表行、标题或其它表面。常量定义见 `NyanTypography.adminBadgeLabel`（12）。
+
+> **例外 — Admin Panel 提示卡标题字号（交付包对齐，2026-06，来源 `screens/bundle4.jsx` `AdminPanel` hint card）**：`admin_panel.dart` 的 `_AdminHintRow` 标题使用 **14pt w600**（来源：`bundle4.jsx` `font: "600 14px/1.2"`）。数值与 `buttonCompact` 相同但语义不同，属提示卡专属标题（§4.6 交付包优先）。此例外**仅限** `_AdminHintRow` 标题，**MUST NOT** 出现在按钮、正文、列表行或其它表面。常量定义见 `NyanTypography.adminHintTitle`（14）。
+
 > ✅ **字体已注册（§6 Phase 0 已完成）**：`pubspec.yaml` 的 `flutter.fonts` 段已声明 `Noto Sans SC`（400/500/600）+ `Source Han Serif SC`（400/600）；字体文件存放于 `assets/fonts/`，**未纳入 Git**（体积原因）。开发者需按 `assets/fonts/README.md` 说明手动放置字体文件。缺少字体时 Flutter 打印 warning 并回落平台字体，不影响编译；但 serif 阅读模式仅在字体文件就位后生效。
 
 ### 4.3 组件样式底线（MUST）

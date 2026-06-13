@@ -176,25 +176,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminPanel => '管理面板';
 
   @override
-  String get adminPanelTitle => '管理 / 开发模式';
+  String get adminPanelTitle => '管理面板';
 
   @override
-  String get adminPanelModeSection => '模式控制';
+  String get adminPanelModeSection => '模式';
 
   @override
   String get adminProModeEnabled => '启用专业模式';
 
   @override
-  String get adminProModeSubtitle => '解锁私密书架并关闭广告';
+  String get adminProModeSubtitle => '解锁此次会话的全部专业功能。';
 
   @override
   String get adminForceUnlockPrivacyShelf => '强制解锁私密书架';
 
   @override
-  String get adminForceUnlockPrivacyShelfSubtitle => '跳过密码校验';
+  String get adminForceUnlockPrivacyShelfSubtitle => '跳过此次会话的 PIN 校验。';
 
   @override
-  String get adminFeatureFlagsSection => '功能开关状态';
+  String get adminFeatureFlagsSection => '功能开关';
 
   @override
   String get adminStateOn => '开启';
@@ -203,10 +203,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminStateOff => '关闭';
 
   @override
-  String get adminPanelHintTitle => '内部控制面板';
+  String get adminPanelHintTitle => '仅供测试';
 
   @override
-  String get adminPanelHintSubtitle => '用于调试和功能能力验证，不影响阅读数据。';
+  String get adminPanelHintSubtitle => '此处更改仅影响当前会话，重启应用即可恢复默认。';
 
   @override
   String get language => '语言';

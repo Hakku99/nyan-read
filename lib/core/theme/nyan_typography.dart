@@ -84,6 +84,33 @@ class NyanTypography {
   ///   `font: "400 12.5px/1.3"`
   static const double shelfSortFieldSub = 12.5;
 
+  /// Admin Panel switch/flag row main label — design-system handoff exception
+  /// (see AGENTS.md §4.2.5). Reserved for [_AdminSwitchRow] and [_AdminFlagRow]
+  /// main labels ONLY. Sits between [meta] 13 and [body] 16; it MUST NOT appear
+  /// in body copy, headings, or any other surface.
+  ///
+  /// Source: `screens/bundle4.jsx` `AdminPanel` row label
+  ///   `font: "600 15px/1.2"` / `"500 15px/1.2"`
+  static const double adminRowLabel = 15.0;
+
+  /// Admin Panel feature-flag badge text — design-system handoff exception
+  /// (see AGENTS.md §4.2.5). Reserved for the [_AdminFlagRow] badge chip ONLY.
+  /// Sits between [caption] 11 and [meta] 13; it MUST NOT appear in body copy,
+  /// list rows, or any other surface.
+  ///
+  /// Source: `screens/bundle4.jsx` `FlagBadge`
+  ///   `font: "500 12px/1"`
+  static const double adminBadgeLabel = 12.0;
+
+  /// Admin Panel hint-card title — design-system handoff exception
+  /// (see AGENTS.md §4.2.5). Reserved for the [_AdminHintRow] title ONLY.
+  /// Matches [buttonCompact] 14 numerically but is a distinct semantic role;
+  /// it MUST NOT appear in buttons, body copy, or any other surface.
+  ///
+  /// Source: `screens/bundle4.jsx` `AdminPanel` hint card
+  ///   `font: "600 14px/1.2"`
+  static const double adminHintTitle = 14.0;
+
   /// Olive uppercase eyebrow label — 11pt / w500 / +0.22 letter-spacing.
   /// Pass [color] as `nyan.primaryDeep` from the active [NyanTheme].
   /// Use only for section eyebrows above grouped cards / reader settings headers.

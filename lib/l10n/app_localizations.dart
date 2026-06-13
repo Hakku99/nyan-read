@@ -431,13 +431,13 @@ abstract class AppLocalizations {
   /// No description provided for @adminPanelTitle.
   ///
   /// In en, this message translates to:
-  /// **'Admin / Manager Mode'**
+  /// **'Admin Panel'**
   String get adminPanelTitle;
 
   /// No description provided for @adminPanelModeSection.
   ///
   /// In en, this message translates to:
-  /// **'Mode Control'**
+  /// **'Mode'**
   String get adminPanelModeSection;
 
   /// No description provided for @adminProModeEnabled.
@@ -449,7 +449,7 @@ abstract class AppLocalizations {
   /// No description provided for @adminProModeSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Unlocks Privacy Shelf and disables ads'**
+  /// **'Unlocks all Pro features in this session.'**
   String get adminProModeSubtitle;
 
   /// No description provided for @adminForceUnlockPrivacyShelf.
@@ -461,7 +461,7 @@ abstract class AppLocalizations {
   /// No description provided for @adminForceUnlockPrivacyShelfSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Bypass password verification'**
+  /// **'Bypass PIN for this session.'**
   String get adminForceUnlockPrivacyShelfSubtitle;
 
   /// No description provided for @adminFeatureFlagsSection.
@@ -485,13 +485,13 @@ abstract class AppLocalizations {
   /// No description provided for @adminPanelHintTitle.
   ///
   /// In en, this message translates to:
-  /// **'Internal control panel'**
+  /// **'For testing only'**
   String get adminPanelHintTitle;
 
   /// No description provided for @adminPanelHintSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Use this page for debugging and capability verification.'**
+  /// **'Changes here affect only this session. Restart the app to reset to defaults.'**
   String get adminPanelHintSubtitle;
 
   /// No description provided for @language.

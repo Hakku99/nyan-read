@@ -178,23 +178,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPanel => 'Admin Panel';
 
   @override
-  String get adminPanelTitle => 'Admin / Manager Mode';
+  String get adminPanelTitle => 'Admin Panel';
 
   @override
-  String get adminPanelModeSection => 'Mode Control';
+  String get adminPanelModeSection => 'Mode';
 
   @override
   String get adminProModeEnabled => 'Pro Mode Enabled';
 
   @override
-  String get adminProModeSubtitle => 'Unlocks Privacy Shelf and disables ads';
+  String get adminProModeSubtitle =>
+      'Unlocks all Pro features in this session.';
 
   @override
   String get adminForceUnlockPrivacyShelf => 'Force Unlock Privacy Shelf';
 
   @override
   String get adminForceUnlockPrivacyShelfSubtitle =>
-      'Bypass password verification';
+      'Bypass PIN for this session.';
 
   @override
   String get adminFeatureFlagsSection => 'Feature Flags';
@@ -206,11 +207,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminStateOff => 'Off';
 
   @override
-  String get adminPanelHintTitle => 'Internal control panel';
+  String get adminPanelHintTitle => 'For testing only';
 
   @override
   String get adminPanelHintSubtitle =>
-      'Use this page for debugging and capability verification.';
+      'Changes here affect only this session. Restart the app to reset to defaults.';
 
   @override
   String get language => 'Language';
