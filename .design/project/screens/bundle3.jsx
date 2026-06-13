@@ -121,19 +121,70 @@ const BookListRow = ({ book }) => (
   </div>
 );
 
-const SHELF_SORT_OPTIONS = [
-  { label: "Last read", hint: "Most recently opened first" },
-  { label: "Recently added", hint: "Newest imports first" },
-  { label: "Title", hint: "A → Z" },
-  { label: "Author", hint: "A → Z" },
-  { label: "Reading progress", hint: "Furthest along first" },
+const SHELF_SORT_FIELDS = [
+  { label: "Last read", asc: "Oldest opened first", desc: "Recently opened first" },
+  { label: "Title", asc: "A → Z", desc: "Z → A" },
+  { label: "Added", asc: "Oldest first", desc: "Newest first" },
 ];
 
-const BookshelfHome = ({ dark, empty, view: initView, continueCollapsed, isPro = false, sort: initSort, sortOpen: initSortOpen = false, sortBy: initSortBy = 0, sortAnimate = true }) => {
+/* Sort-by sheet — three sort fields + the canonical Ascending/Descending
+   segmented control (the one sort-direction track used across the kit). */
+const ShelfSortSheet = ({ field = 0, asc = true, onField, onDir, onClose, animateIn = true }) => (
+  <div style={{ position: "absolute", inset: 0, zIndex: 50 }}>
+    <style>{"@keyframes nyanFade { from { opacity: 0; } to { opacity: 1; } } @keyframes nyanSlideUp { from { transform: translateY(120%); } to { transform: translateY(0); } }"}</style>
+    <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "var(--scrim)",
+      backdropFilter: "blur(var(--scrim-blur))", WebkitBackdropFilter: "blur(var(--scrim-blur))", animation: animateIn ? "nyanFade 220ms ease-out" : "none" }} />
+    <div style={{ position: "absolute", left: "var(--inset)", right: "var(--inset)", bottom: "var(--inset)",
+      background: "var(--nyan-surface)", border: "1px solid var(--chrome-edge)", borderRadius: "var(--r-sheet)",
+      boxShadow: "var(--shadow-light-card)", overflow: "hidden", animation: animateIn ? "nyanSlideUp 280ms cubic-bezier(0.33,0.9,0.36,1)" : "none" }}>
+      {/* grabber */}
+      <div style={{ paddingTop: 10, display: "flex", justifyContent: "center" }}>
+        <div style={{ width: 40, height: 5, borderRadius: 999, background: "var(--grabber)" }} />
+      </div>
+      {/* header */}
+      <div style={{ padding: "12px 20px 4px" }}>
+        <div style={{ font: "600 18px/1.2 var(--font-ui)", color: "var(--nyan-text)", letterSpacing: "-0.1px" }}>Sort shelf by</div>
+      </div>
+      {/* direction — canonical Ascending / Descending track */}
+      <div style={{ padding: "8px 20px 6px" }}>
+        <SegmentedTabControl
+          style="subtle"
+          tabs={[{ label: "Ascending" }, { label: "Descending" }]}
+          selected={asc ? 0 : 1}
+          onChange={(i) => onDir && onDir(i === 0)}
+        />
+      </div>
+      {/* fields */}
+      <div style={{ padding: "4px 12px 16px", display: "flex", flexDirection: "column" }}>
+        {SHELF_SORT_FIELDS.map((o, i) => {
+          const isSel = i === field;
+          return (
+            <button key={o.label} onClick={() => { if (onField) onField(i); }} style={{ all: "unset", cursor: "pointer", boxSizing: "border-box",
+              display: "flex", alignItems: "center", gap: 12, padding: "12px 12px", minHeight: 56, borderRadius: "var(--r-card-nested)",
+              background: isSel ? "color-mix(in srgb, var(--nyan-primary) 8%, transparent)" : "transparent" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ font: `${isSel ? 600 : 500} 15px/1.2 var(--font-ui)`, color: isSel ? "var(--nyan-primary-deep)" : "var(--nyan-text)" }}>{o.label}</div>
+                <div style={{ font: "400 12.5px/1.3 var(--font-ui)", color: "var(--nyan-text-secondary)", marginTop: 2 }}>{asc ? o.asc : o.desc}</div>
+              </div>
+              {isSel && <i className="ph-fill ph-arrow-up" style={{ fontSize: 15, color: "var(--nyan-primary)", flexShrink: 0, transform: asc ? "none" : "scaleY(-1)" }} />}
+              <div style={{ width: 22, height: 22, borderRadius: "50%", flexShrink: 0, display: "grid", placeItems: "center",
+                border: `2px solid ${isSel ? "var(--nyan-primary)" : "color-mix(in srgb, var(--nyan-divider) 80%, transparent)"}` }}>
+                {isSel && <div style={{ width: 11, height: 11, borderRadius: "50%", background: "var(--nyan-primary)" }} />}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+);
+
+const BookshelfHome = ({ dark, empty, view: initView, continueCollapsed, isPro = false, sort: initSort, sortOpen: initSortOpen = false, sortField: initSortField = 0, sortAsc: initSortAsc = true, sortAnimate = true }) => {
   const [tab, setTab] = useState(0);
   const [view, setView] = useState(initView || "grid");
   const [sortOpen, setSortOpen] = useState(!!initSortOpen || !!initSort);
-  const [sortBy, setSortBy] = useState(initSortBy);
+  const [sortField, setSortField] = useState(initSortField);
+  const [sortAsc, setSortAsc] = useState(initSortAsc);
   return (
     <Shell dark={dark}>
       {/* Shelf Toolbar — shared header action cluster (search · sort · view · privacy) */}
@@ -192,15 +243,14 @@ const BookshelfHome = ({ dark, empty, view: initView, continueCollapsed, isPro =
           <i className="ph ph-plus" style={{ fontSize: 24, color: "var(--nyan-surface)" }} />
         </button>
       </div>
-      {/* Sort-by option sheet — opens from the toolbar Sort tool */}
+      {/* Sort-by sheet — opens from the toolbar Sort tool */}
       {sortOpen && (
-        <NyanOptionSheet
-          title="Sort shelf by"
-          subtitle="Applies to the current shelf"
-          options={SHELF_SORT_OPTIONS}
-          selected={sortBy}
+        <ShelfSortSheet
+          field={sortField}
+          asc={sortAsc}
           animateIn={sortAnimate}
-          onSelect={(i) => setSortBy(i)}
+          onField={(i) => setSortField(i)}
+          onDir={(a) => setSortAsc(a)}
           onClose={() => setSortOpen(false)}
         />
       )}

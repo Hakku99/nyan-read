@@ -29,7 +29,7 @@
 <div class="screen-head">
   <div class="screen-eyebrow">Nyan Read · Screen Mock</div>
   <h1>U9 · Bookshelf Home Screen</h1>
-  <p>Grid / list view toggle, sort, and (in Pro mode) a privacy-shelf unlock — all in the shared Shelf Toolbar beside the title. Tapping Sort opens the sort-by option sheet (frame 2, "Title" selected). Collapsible Continue Reading card (tap the caret); frame 3 shows it collapsed. Empty state on the last cream frame.</p>
+  <p>Grid / list view toggle, sort, and (in Pro mode) a privacy-shelf unlock — all in the shared Shelf Toolbar beside the title. Tapping Sort opens the sort-by sheet (frame 2): three fields — Last read, Title, Added — each with an Ascending / Descending direction. Collapsible Continue Reading card (tap the caret); frame 3 shows it collapsed. Empty state on the last cream frame.</p>
 </div>
 <div id="root"></div>
 <script src="../_ds_bundle.js"></script>
@@ -50,7 +50,7 @@ function App() {
   return (
     <div className="screen-wrap">
       <Frame label="Cream · grid view" w={390} h={760}><BookshelfHome dark={false} empty={false} view="grid" /></Frame>
-      <Frame label="Cream · Sort-by options sheet" w={390} h={760}><BookshelfHome dark={false} empty={false} view="grid" sortOpen={true} sortBy={2} sortAnimate={false} /></Frame>
+      <Frame label="Cream · Sort-by options sheet" w={390} h={760}><BookshelfHome dark={false} empty={false} view="grid" sortOpen={true} sortField={1} sortAsc={true} sortAnimate={false} /></Frame>
       <Frame label="Cream · Continue Reading collapsed" w={390} h={760}><BookshelfHome dark={false} empty={false} view="grid" continueCollapsed={true} /></Frame>
       <Frame label="Cream · list view" w={390} h={760}><BookshelfHome dark={false} empty={false} view="list" /></Frame>
       <Frame label="Cream · Pro (privacy unlock)" w={390} h={760}><BookshelfHome dark={false} empty={false} view="grid" isPro={true} /></Frame>
