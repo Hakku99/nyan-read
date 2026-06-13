@@ -84,6 +84,32 @@ class NyanShadows {
     ];
   }
 
+  /// Selection state glow — applied to grid/list covers when a card is selected
+  /// in multi-select mode.
+  ///
+  /// Source: `screens/bundle3.jsx` `SelectBookCard`:
+  ///   `0 0 0 3px color-mix(in srgb, var(--nyan-primary) 16%, transparent)`
+  static List<BoxShadow> cardSelectionGlow(NyanTheme nyan) => [
+        BoxShadow(
+          color: nyan.primary.withValues(alpha: 0.16),
+          spreadRadius: 3,
+          blurRadius: 0,
+        ),
+      ];
+
+  /// Selection badge glow — applied to the filled (selected) state of the
+  /// circular selection badge overlaid on book covers.
+  ///
+  /// Source: `screens/bundle3.jsx` `SelectCheck`:
+  ///   `0 1px 4px color-mix(in srgb, var(--nyan-select-fill) 40%, transparent)`
+  static List<BoxShadow> selectionBadgeGlow(NyanTheme nyan) => [
+        BoxShadow(
+          color: nyan.primary.withValues(alpha: 0.40),
+          offset: const Offset(0, 1),
+          blurRadius: 4,
+        ),
+      ];
+
   /// Settings grouped cards — ultra-soft lift (was inlined as `_SettingsCard`).
   static List<BoxShadow> settingsGrouped(NyanTheme nyan) {
     if (nyan.brightness == Brightness.dark) {

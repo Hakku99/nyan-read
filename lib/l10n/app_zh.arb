@@ -129,12 +129,14 @@
   "deleteNote": "删除笔记",
   "delete": "删除",
   "remove": "移出",
+  "undo": "撤销",
+  "export": "导出",
   "cancel": "取消",
   "save": "保存",
   "selected": "已选择",
   "viewDetails": "查看详情",
-  "moveToPublic": "移至公开书架",
-  "moveToPrivate": "移至隐私书架",
+  "moveToPublic": "设为公开",
+  "moveToPrivate": "设为私密",
   "selectAll": "全选",
   "deselectAll": "取消全选",
   "appTitle": "Nyan Read ฅ^•ﻌ•^ฅ",
@@ -161,7 +163,7 @@
   "sortAddedDescSub": "最新添加的在前",
   "lockPrivacyShelf": "锁定隐私书架",
   "unlockPrivacyShelf": "解锁隐私书架",
-  "deleteBooksTitle": "移出 {count} 本书？",
+  "deleteBooksTitle": "{count, plural, other{删除 {count} 本书？}}",
   "@deleteBooksTitle": {
     "placeholders": {
       "count": {
@@ -169,7 +171,15 @@
       }
     }
   },
-  "actionCannotBeUndone": "它们会从当前书架中移出。",
+  "actionCannotBeUndone": "阅读进度、书签及笔记将一并删除，设备上的源文件保留不变。",
+  "deleteBooksButton": "{count, plural, other{删除 {count} 本书}}",
+  "@deleteBooksButton": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "alsoDeleteLocalFiles": "同时删除本地文件",
   "deletedBooks": "已移出 {count} 本书",
   "@deletedBooks": {

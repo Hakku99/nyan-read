@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../models/book.dart';
 import '../../theme/nyan_radius.dart';
+import '../../theme/nyan_shadows.dart';
 import '../../theme/nyan_shelf_ui.dart';
-import '../../theme/nyan_spacing.dart';
 import '../../theme/nyan_typography.dart';
 import '../nyan_icons.dart';
 import '../nyan_theme_context.dart';
@@ -61,10 +61,17 @@ class NyanBookGridCard extends StatelessWidget {
                       nyan.primary.withValues(alpha: 0.12),
                       nyan.surface,
                     ),
-                    border: Border.all(
-                      color: nyan.divider.withValues(alpha: 0.30),
-                      width: 0.5,
-                    ),
+                    // Selected: 2px primary border + 3px spread glow.
+                    // Unselected: 0.5px hairline.
+                    border: isSelected
+                        ? Border.all(color: nyan.primary, width: 2.0)
+                        : Border.all(
+                            color: nyan.divider.withValues(alpha: 0.30),
+                            width: 0.5,
+                          ),
+                    boxShadow: isSelected
+                        ? NyanShadows.cardSelectionGlow(nyan)
+                        : null,
                   ),
                   child: Stack(
                     children: [
@@ -75,23 +82,30 @@ class NyanBookGridCard extends StatelessWidget {
                           color: nyan.primary,
                         ),
                       ),
-                      // Selection badge
-                      if (isSelectionMode)
-                        Positioned(
-                          top: NyanSpacing.space8,
-                          right: NyanSpacing.space8,
-                          child: _SelectionBadge(
-                            isSelected: isSelected,
-                            nyan: nyan,
+                      // Primary@12% tint overlay when selected.
+                      if (isSelected)
+                        Positioned.fill(
+                          child: ColoredBox(
+                            color: nyan.primary.withValues(alpha: 0.12),
                           ),
                         ),
-                      // Format badge
-                      if (!isSelectionMode && book.format.isNotEmpty)
+                      // Format badge — visible in both normal and selection mode.
+                      if (book.format.isNotEmpty)
                         Positioned(
                           top: 6,
                           right: 6,
                           child: _FormatBadge(
                             format: book.format,
+                            nyan: nyan,
+                          ),
+                        ),
+                      // Selection badge — top-left per spec.
+                      if (isSelectionMode)
+                        Positioned(
+                          top: 7,
+                          left: 7,
+                          child: NyanSelectionBadge(
+                            isSelected: isSelected,
                             nyan: nyan,
                           ),
                         ),
@@ -194,26 +208,56 @@ class _FormatBadge extends StatelessWidget {
   }
 }
 
-class _SelectionBadge extends StatelessWidget {
-  const _SelectionBadge({required this.isSelected, required this.nyan});
+class NyanSelectionBadge extends StatelessWidget {
+  const NyanSelectionBadge({
+    super.key,
+    required this.isSelected,
+    required this.nyan,
+    this.size = 24,
+  });
 
   final bool isSelected;
   final NyanTheme nyan;
 
+  /// Badge diameter — 24pt for grid, 20pt for list rows.
+  final double size;
+
   @override
   Widget build(BuildContext context) {
+    // Spec: `SelectCheck` — circle with backdrop blur (approximated via
+    // frosted background), 1.5px border.
+    // Selected: primary fill, primary border, primary@40% glow.
+    // Unselected: surface@76% fill, textPrimary@30% border, small black shadow.
     return Container(
-      width: 24,
-      height: 24,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: isSelected
             ? nyan.primary
-            : nyan.textSecondary.withValues(alpha: 0.45),
-        border: Border.all(color: nyan.surface, width: 2),
+            : nyan.surface.withValues(alpha: 0.76),
+        border: Border.all(
+          color: isSelected
+              ? nyan.primary
+              : nyan.textPrimary.withValues(alpha: 0.30),
+          width: 1.5,
+        ),
+        boxShadow: isSelected
+            ? NyanShadows.selectionBadgeGlow(nyan)
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 3,
+                  offset: const Offset(0, 1),
+                ),
+              ],
       ),
       child: isSelected
-          ? Icon(NyanIcons.check, size: NyanSpacing.space16, color: nyan.surface)
+          ? Icon(
+              NyanIcons.check,
+              size: size * 0.54,
+              color: Colors.white,
+            )
           : null,
     );
   }

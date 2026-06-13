@@ -44,4 +44,9 @@ abstract final class NyanShelfUi {
   /// Extra scroll extent beyond safe area so the FAB does not cover the last row.
   static const double scrollBottomFabClearance =
       NyanSpacing.space16 + 56 + NyanSpacing.space12;
+
+  /// Extra scroll extent for selection mode — clears the floating SelectActionBar
+  /// (height ≈ 68pt) + its 12pt bottom inset, plus breathing room.
+  /// Source: `screens/bundle3.jsx` `BookshelfManage`: `padding-bottom: 104px`.
+  static const double scrollBottomSelectionBarClearance = 104.0;
 }

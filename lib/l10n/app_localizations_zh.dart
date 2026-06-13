@@ -358,6 +358,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get remove => '移出';
 
   @override
+  String get undo => '撤销';
+
+  @override
+  String get export => '导出';
+
+  @override
   String get cancel => '取消';
 
   @override
@@ -370,10 +376,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get viewDetails => '查看详情';
 
   @override
-  String get moveToPublic => '移至公开书架';
+  String get moveToPublic => '设为公开';
 
   @override
-  String get moveToPrivate => '移至隐私书架';
+  String get moveToPrivate => '设为私密';
 
   @override
   String get selectAll => '全选';
@@ -455,11 +461,26 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String deleteBooksTitle(int count) {
-    return '移出 $count 本书？';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '删除 $count 本书？',
+    );
+    return '$_temp0';
   }
 
   @override
-  String get actionCannotBeUndone => '它们会从当前书架中移出。';
+  String get actionCannotBeUndone => '阅读进度、书签及笔记将一并删除，设备上的源文件保留不变。';
+
+  @override
+  String deleteBooksButton(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '删除 $count 本书',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get alsoDeleteLocalFiles => '同时删除本地文件';

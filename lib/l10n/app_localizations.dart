@@ -788,6 +788,18 @@ abstract class AppLocalizations {
   /// **'Remove'**
   String get remove;
 
+  /// No description provided for @undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undo;
+
+  /// No description provided for @export.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get export;
+
   /// No description provided for @cancel.
   ///
   /// In en, this message translates to:
@@ -815,13 +827,13 @@ abstract class AppLocalizations {
   /// No description provided for @moveToPublic.
   ///
   /// In en, this message translates to:
-  /// **'Move to Public'**
+  /// **'Make Public'**
   String get moveToPublic;
 
   /// No description provided for @moveToPrivate.
   ///
   /// In en, this message translates to:
-  /// **'Move to Private'**
+  /// **'Make Private'**
   String get moveToPrivate;
 
   /// No description provided for @selectAll.
@@ -983,14 +995,20 @@ abstract class AppLocalizations {
   /// No description provided for @deleteBooksTitle.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, one{Remove {count} book?} other{Remove {count} books?}}'**
+  /// **'{count, plural, one{Delete {count} book?} other{Delete {count} books?}}'**
   String deleteBooksTitle(int count);
 
   /// No description provided for @actionCannotBeUndone.
   ///
   /// In en, this message translates to:
-  /// **'They will be removed from the current shelf.'**
+  /// **'Their reading progress, bookmarks and notes are removed too. The source files on your device are kept.'**
   String get actionCannotBeUndone;
+
+  /// No description provided for @deleteBooksButton.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Delete {count} book} other{Delete {count} books}}'**
+  String deleteBooksButton(int count);
 
   /// No description provided for @alsoDeleteLocalFiles.
   ///

@@ -364,6 +364,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get remove => 'Remove';
 
   @override
+  String get undo => 'Undo';
+
+  @override
+  String get export => 'Export';
+
+  @override
   String get cancel => 'Cancel';
 
   @override
@@ -376,10 +382,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewDetails => 'View Details';
 
   @override
-  String get moveToPublic => 'Move to Public';
+  String get moveToPublic => 'Make Public';
 
   @override
-  String get moveToPrivate => 'Move to Private';
+  String get moveToPrivate => 'Make Private';
 
   @override
   String get selectAll => 'Select All';
@@ -464,15 +470,26 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Remove $count books?',
-      one: 'Remove $count book?',
+      other: 'Delete $count books?',
+      one: 'Delete $count book?',
     );
     return '$_temp0';
   }
 
   @override
   String get actionCannotBeUndone =>
-      'They will be removed from the current shelf.';
+      'Their reading progress, bookmarks and notes are removed too. The source files on your device are kept.';
+
+  @override
+  String deleteBooksButton(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Delete $count books',
+      one: 'Delete $count book',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get alsoDeleteLocalFiles => 'Also delete local files';

@@ -34,6 +34,11 @@ class BookshelfViewModel extends ChangeNotifier {
   bool _isSelectionMode = false;
   final Set<String> _selectedBookIds = {};
 
+  // --- Undo State ---
+  // Populated by deleteSelectedBooks so undoLastDelete can restore the rows.
+  // Cleared after a successful undo or the next delete batch.
+  List<Map<String, dynamic>> _lastDeletedBookMaps = [];
+
   bool get isSelectionMode => _isSelectionMode;
   Set<String> get selectedBookIds => _selectedBookIds;
   int get selectedCount => _selectedBookIds.length;
@@ -118,6 +123,10 @@ class BookshelfViewModel extends ChangeNotifier {
         ? _collectDeletableSourcePaths(selectedBooks)
         : const <String>[];
 
+    // Save book maps before deletion so undoLastDelete can restore them.
+    _lastDeletedBookMaps =
+        selectedBooks.map((b) => Map<String, dynamic>.from(b.toMap())).toList();
+
     try {
       await _db.deleteBooksWithAssociatedData(idsToDelete);
       await _deleteSourceFilesBestEffort(pathsToDelete);
@@ -125,6 +134,28 @@ class BookshelfViewModel extends ChangeNotifier {
       _selectedBookIds.clear();
       _isSelectionMode = false;
       await loadBooks(); // Reload state
+    } catch (e) {
+      _lastDeletedBookMaps = [];
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// Re-inserts the most recently deleted batch of books (DB rows only —
+  /// associated data such as bookmarks and highlights is not restored since it
+  /// was permanently removed by [deleteSelectedBooks]).
+  Future<void> undoLastDelete() async {
+    if (_lastDeletedBookMaps.isEmpty) return;
+
+    final mapsToRestore = List<Map<String, dynamic>>.from(_lastDeletedBookMaps);
+    _lastDeletedBookMaps = [];
+
+    try {
+      for (final bookMap in mapsToRestore) {
+        await _db.insertBook(bookMap);
+      }
+      await loadBooks();
     } catch (e) {
       _error = e.toString();
       notifyListeners();

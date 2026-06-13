@@ -8,6 +8,7 @@ import '../../../core/theme/nyan_radius.dart';
 import '../../../core/theme/nyan_shelf_ui.dart';
 import '../../../core/theme/nyan_spacing.dart';
 import '../../../core/theme/nyan_typography.dart';
+import '../../../core/ui/components/nyan_book_grid_card.dart' show NyanSelectionBadge;
 import '../../../core/ui/nyan_theme_context.dart';
 
 /// Animated book card for list view mode.
@@ -151,8 +152,9 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
               ),
             DecoratedBox(
               decoration: BoxDecoration(
+                // Selected row bg: primary@7% per spec SelectBookListRow.
                 color: widget.isSelected
-                    ? context.selectionSurface
+                    ? nyan.primary.withValues(alpha: 0.07)
                     : Colors.transparent,
                 borderRadius: tintRadius,
               ),
@@ -164,35 +166,43 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Selection checkbox (only in selection mode)
-                    if (widget.isSelectionMode)
-                      Padding(
-                        padding:
-                            const EdgeInsets.only(right: NyanSpacing.space12),
-                        child: Checkbox(
-                          value: widget.isSelected,
-                          onChanged: (val) => widget.onSelectionToggle?.call(),
+                    // Portrait cover thumbnail — 44×58, r-chip, with overlaid
+                    // SelectCheck badge (top-left) in selection mode.
+                    // Selected: 1.5px primary border per spec SelectBookListRow.
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: NyanShelfUi.listCoverWidth,
+                          height: NyanShelfUi.listCoverHeight,
+                          decoration: BoxDecoration(
+                            color: nyan.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(NyanRadius.chip),
+                            border: widget.isSelected
+                                ? Border.all(color: nyan.primary, width: 1.5)
+                                : Border.all(
+                                    color: nyan.divider.withValues(alpha: 0.30),
+                                    width: 0.5,
+                                  ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Icon(
+                            NyanIcons.book,
+                            size: NyanSpacing.space20,
+                            color: nyan.primary,
+                          ),
                         ),
-                      ),
-
-                    // Portrait cover thumbnail — 44×58, r-chip, 20pt book glyph
-                    Container(
-                      width: NyanShelfUi.listCoverWidth,
-                      height: NyanShelfUi.listCoverHeight,
-                      decoration: BoxDecoration(
-                        color: nyan.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(NyanRadius.chip),
-                        border: Border.all(
-                          color: nyan.divider.withValues(alpha: 0.30),
-                          width: 0.5,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Icon(
-                        NyanIcons.book,
-                        size: NyanSpacing.space20,
-                        color: nyan.primary,
-                      ),
+                        if (widget.isSelectionMode)
+                          Positioned(
+                            top: 4,
+                            left: 4,
+                            child: NyanSelectionBadge(
+                              isSelected: widget.isSelected,
+                              nyan: nyan,
+                              size: 20,
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(width: NyanSpacing.space12),
 

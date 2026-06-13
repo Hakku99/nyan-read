@@ -52,6 +52,8 @@ class _ToastPayload {
     this.description,
     required this.duration,
     this.maxLines = 2,
+    this.actionLabel,
+    this.onActionTap,
   });
 
   final NyanResponseStatus status;
@@ -59,6 +61,11 @@ class _ToastPayload {
   final String? description;
   final Duration duration;
   final int maxLines;
+
+  /// Optional inline action label (e.g. "Undo"). When non-null, a tappable
+  /// label chip is shown on the trailing edge of the toast card.
+  final String? actionLabel;
+  final VoidCallback? onActionTap;
 }
 
 // ── Controller ────────────────────────────────────────────────────────────────
@@ -75,6 +82,8 @@ class NyanToastController {
     String? description,
     required Duration duration,
     int maxLines = 2,
+    String? actionLabel,
+    VoidCallback? onActionTap,
   }) : _payloadNotifier = ValueNotifier<_ToastPayload>(
           _ToastPayload(
             status: status,
@@ -82,6 +91,8 @@ class NyanToastController {
             description: description,
             duration: duration,
             maxLines: maxLines,
+            actionLabel: actionLabel,
+            onActionTap: onActionTap,
           ),
         );
 
@@ -95,6 +106,8 @@ class NyanToastController {
     String? description,
     required Duration duration,
     int maxLines = 2,
+    String? actionLabel,
+    VoidCallback? onActionTap,
   }) {
     if (_dismissNotifier.value) return;
     _payloadNotifier.value = _ToastPayload(
@@ -103,6 +116,8 @@ class NyanToastController {
       description: description,
       duration: duration,
       maxLines: maxLines,
+      actionLabel: actionLabel,
+      onActionTap: onActionTap,
     );
   }
 
@@ -182,6 +197,8 @@ class NyanResponse extends StatelessWidget {
     required this.title,
     this.description,
     this.onDismiss,
+    this.actionLabel,
+    this.onActionTap,
     this.maxLines = 2,
   });
 
@@ -191,6 +208,11 @@ class NyanResponse extends StatelessWidget {
 
   /// When non-null, a quiet ✕ is shown. The app's timed path leaves this null.
   final VoidCallback? onDismiss;
+
+  /// Optional inline action label (e.g. "Undo"). When non-null, a tappable
+  /// label chip is shown on the trailing edge of the card.
+  final String? actionLabel;
+  final VoidCallback? onActionTap;
   final int maxLines;
 
   @override
@@ -259,6 +281,10 @@ class NyanResponse extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (actionLabel != null) ...[
+                  const SizedBox(width: NyanSpacing.space8),
+                  _ActionButton(label: actionLabel!, onTap: onActionTap),
+                ],
                 if (onDismiss != null) ...[
                   const SizedBox(width: NyanSpacing.space8),
                   _DismissButton(onDismiss: onDismiss!),
@@ -349,6 +375,42 @@ class _DismissButton extends StatelessWidget {
         width: _kDismissButtonSize,
         height: _kDismissButtonSize,
         child: Icon(NyanIcons.close, size: _kDismissGlyphSize, color: nyan.textMuted),
+      ),
+    );
+  }
+}
+
+/// Inline action chip — "Undo", "Retry", etc. — shown on the toast trailing edge.
+/// Source: `screens/bundle3.jsx` phase="deleted": `action={{ label: "Undo" }}`.
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({required this.label, this.onTap});
+
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final nyan = context.nyanTheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: nyan.primary.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(NyanRadius.chip),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: NyanTypography.uiFontFamily,
+            fontSize: NyanTypography.meta,
+            fontWeight: FontWeight.w600,
+            height: 1.0,
+            color: nyan.primaryDeep,
+          ),
+        ),
       ),
     );
   }
@@ -517,9 +579,11 @@ class _CardShellState extends State<_CardShell>
   }
 
   void _updateDismiss() {
-    _shownOnDismiss = _shown.status != NyanResponseStatus.loading
-        ? widget.controller.triggerDismiss
-        : null;
+    // Overlay-driven toasts always auto-dismiss via timer or programmatic
+    // triggerDismiss() — the DS contract says "自动消失的 toast 省略 ✕".
+    // The static NyanResponse widget still accepts onDismiss for persistent
+    // surfaces; the overlay path never shows the × button.
+    _shownOnDismiss = null;
   }
 
   Future<void> _onPayloadChanged() async {
@@ -650,6 +714,10 @@ class _CardContent extends StatelessWidget {
             ],
           ),
         ),
+        if (payload.actionLabel != null) ...[
+          const SizedBox(width: NyanSpacing.space8),
+          _ActionButton(label: payload.actionLabel!, onTap: payload.onActionTap),
+        ],
         if (onDismiss != null) ...[
           const SizedBox(width: NyanSpacing.space8),
           _DismissButton(onDismiss: onDismiss!),

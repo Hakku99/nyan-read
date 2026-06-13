@@ -120,6 +120,15 @@ class NyanTypography {
   ///   `font: "600 14px/1.25 var(--font-ui)"`
   static const double responseTitle = 14.0;
 
+  /// Bookshelf selection-mode header title — U21 design-system handoff exception
+  /// (see AGENTS.md §4.2.5). Reserved for the "N selected" count title inside
+  /// the selection-mode AppBar ONLY. Sits between [body] 16 and [section] 20;
+  /// it MUST NOT appear in body copy, headings, list rows, or any other surface.
+  ///
+  /// Source: `screens/bundle3.jsx` `SelectionHeader`
+  ///   `font: "600 18px/1.15 var(--font-ui)"`, `letterSpacing: -0.2px`
+  static const double selectionHeaderTitle = 18.0;
+
   /// Shared response toast (`NyanResponse`) description — design-system handoff
   /// exception (see AGENTS.md §4.2.5). Reserved for the [NyanResponse]
   /// description line ONLY. Sits between [caption] 11 and [meta] 13; it MUST

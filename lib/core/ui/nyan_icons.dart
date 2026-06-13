@@ -99,6 +99,10 @@ class NyanIcons {
   static const IconData selectAll = PhosphorIconsRegular.selectionPlus;
   static const IconData deselect = PhosphorIconsRegular.selectionSlash;
 
+  /// "List with checks" glyph for the Select All pill button in selection mode
+  /// (spec `bundle3.jsx` `SelectionHeader`: `ph ph-list-checks`).
+  static const IconData listChecks = PhosphorIconsRegular.listChecks;
+
   // ── System / Settings ───────────────────────────────────────────────────
   static const IconData settings = PhosphorIconsRegular.gearSix;
   static const IconData tune = PhosphorIconsRegular.slidersHorizontal;

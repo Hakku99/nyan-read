@@ -29,7 +29,6 @@ import '../../core/utils/book_import_fingerprint.dart';
 import '../../core/utils/book_source_platform.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/utils/title_sort_key.dart';
-import 'book_details_page.dart';
 import 'widgets/import_book_sheet.dart';
 import 'widgets/bookshelf_shelf_toolbar.dart';
 import 'widgets/bookshelf_sort_sheet.dart';
@@ -75,8 +74,11 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   }
 
   double _shelfScrollBottomPadding(BuildContext context) {
-    return MediaQuery.paddingOf(context).bottom +
-        NyanShelfUi.scrollBottomFabClearance;
+    final safeBottom = MediaQuery.paddingOf(context).bottom;
+    if (_vm.isSelectionMode) {
+      return safeBottom + NyanShelfUi.scrollBottomSelectionBarClearance;
+    }
+    return safeBottom + NyanShelfUi.scrollBottomFabClearance;
   }
 
   /// 3-column grid delegate with dynamically computed aspect ratio.
@@ -108,58 +110,74 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   }
 
   Future<void> _deleteSelectedBooks(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
     final vm = _vm;
-
     if (vm.selectedCount == 0) return;
 
-    bool deleteFile = _prefs.deleteFilesOnRemove;
+    final deletedCount = vm.selectedCount;
 
-    final confirmed = await showNyanConfirmDialog(
-      context,
-      title: loc.deleteBooksTitle(vm.selectedCount),
-      description: loc.actionCannotBeUndone,
-      confirmLabel: loc.remove,
-      cancelLabel: loc.cancel,
-      tone: NyanConfirmTone.danger,
-      icon: NyanIcons.delete,
-      extraContent: StatefulBuilder(
-        builder: (dialogContext, setDialogState) {
-          return NyanDialogOptionRow(
-            title: loc.alsoDeleteLocalFiles,
-            subtitle: loc.deleteFilesOnRemoveSubtitle,
-            value: deleteFile,
-            isDanger: true,
-            onChanged: (value) {
-              setDialogState(() {
-                deleteFile = value;
-              });
-            },
-          );
-        },
+    // U21 spec: bottom sheet confirm (no deleteFiles toggle).
+    final confirmed = await showNyanSheet<bool>(
+      context: context,
+      builder: (sheetCtx) => _DeleteBooksSheetContent(
+        bookCount: deletedCount,
+        onDelete: () => Navigator.pop(sheetCtx, true),
+        onCancel: () => Navigator.pop(sheetCtx, false),
       ),
     );
 
-    if (confirmed == true && mounted) {
-      final deletedCount = vm.selectedCount;
-      try {
-        await vm.deleteSelectedBooks(deleteFile);
-        if (!context.mounted) return;
-        final deletedMsg = loc.deletedBooks(deletedCount);
-        SnackBarUtils.show(
-          context,
-          deletedMsg,
-          tone: NyanSnackTone.success,
-        );
-      } catch (e) {
-        if (!context.mounted) return;
-        SnackBarUtils.show(
-          context,
-          'Error deleting books: $e',
-          tone: NyanSnackTone.error,
-        );
-      }
+    if (confirmed != true || !context.mounted) return;
+
+    final loc = AppLocalizations.of(context)!;
+
+    // Show loading toast while deletion is in flight.
+    SnackBarUtils.show(
+      context,
+      loc.deletedBooks(deletedCount),
+      tone: NyanSnackTone.loading,
+    );
+
+    try {
+      // Spec does not include a "delete files" toggle; preserve source files.
+      await vm.deleteSelectedBooks(false);
+      if (!context.mounted) return;
+      SnackBarUtils.show(
+        context,
+        loc.deletedBooks(deletedCount),
+        tone: NyanSnackTone.success,
+        actionLabel: loc.undo,
+        onActionTap: () => _undoDelete(context),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      SnackBarUtils.show(
+        context,
+        'Error deleting books: $e',
+        tone: NyanSnackTone.error,
+      );
     }
+  }
+
+  Future<void> _undoDelete(BuildContext context) async {
+    SnackBarUtils.dismiss();
+    try {
+      await _vm.undoLastDelete();
+    } catch (e) {
+      if (!context.mounted) return;
+      SnackBarUtils.show(
+        context,
+        'Undo failed: $e',
+        tone: NyanSnackTone.error,
+      );
+    }
+  }
+
+  void _showExportNotice(BuildContext context) {
+    // Export flow is a stub — show an info toast until the feature is built.
+    SnackBarUtils.show(
+      context,
+      AppLocalizations.of(context)!.exportData,
+      tone: NyanSnackTone.info,
+    );
   }
 
   Future<void> _moveSelectedBooks(BuildContext context, bool toPrivate) async {
@@ -477,7 +495,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
   PreferredSizeWidget? _buildSelectionAppBar(
     BuildContext context,
-    FeatureManager featureManager,
     bool showPrivacyTab,
   ) {
     return PreferredSize(
@@ -487,93 +504,47 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         builder: (context, _) {
           final vm = _vm;
           final selectedCount = vm.selectedCount;
+          final nyan = context.nyanTheme;
           final theme = Theme.of(context);
-          final textTheme = theme.textTheme;
-
-          Widget buildToolbarButton({
-            required IconData icon,
-            required String tooltip,
-            required VoidCallback onPressed,
-          }) {
-            return SizedBox(
-              width: NyanSpacing.minTapTarget,
-              height: NyanSpacing.minTapTarget,
-              child: IconButton(
-                icon: Icon(icon, size: NyanSpacing.space20),
-                tooltip: tooltip,
-                onPressed: onPressed,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: NyanSpacing.minTapTarget,
-                  minHeight: NyanSpacing.minTapTarget,
-                ),
-              ),
-            );
-          }
 
           return AppBar(
             leadingWidth: NyanSpacing.minTapTarget + NyanSpacing.space12,
             leading: Padding(
               padding: const EdgeInsets.only(left: NyanSpacing.space8),
-              child: buildToolbarButton(
-                icon: NyanIcons.close,
-                tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-                onPressed: () => vm.toggleSelectionMode(active: false),
+              child: SizedBox(
+                width: NyanSpacing.minTapTarget,
+                height: NyanSpacing.minTapTarget,
+                child: IconButton(
+                  icon: Icon(NyanIcons.close, size: NyanSpacing.space20),
+                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                  onPressed: () => vm.toggleSelectionMode(active: false),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: NyanSpacing.minTapTarget,
+                    minHeight: NyanSpacing.minTapTarget,
+                  ),
+                ),
               ),
             ),
+            // Title: 18pt w600 per spec SelectionHeader.
             title: Text(
               '$selectedCount ${AppLocalizations.of(context)!.selected}',
-              style: textTheme.bodyLarge?.copyWith(
-                fontSize: NyanTypography.body,
+              style: TextStyle(
+                fontFamily: NyanTypography.uiFontFamily,
+                fontSize: NyanTypography.selectionHeaderTitle,
                 fontWeight: FontWeight.w600,
-                height: 1.1,
+                height: 1.15,
+                letterSpacing: -0.2,
+                color: nyan.textPrimary,
               ),
             ),
             centerTitle: false,
             titleSpacing: NyanSpacing.space4,
+            // Trailing: "Select all" pill button per spec SelectionHeader.
             actions: [
-              if (selectedCount == 1)
-                buildToolbarButton(
-                  icon: NyanIcons.info,
-                  tooltip: AppLocalizations.of(context)!.viewDetails,
-                  onPressed: () async {
-                    final bookId = vm.selectedBookIds.first;
-                    final bookData = await ref
-                        .read(databaseServiceRpProvider)
-                        .getBookById(bookId);
-                    if (bookData != null && context.mounted) {
-                      final book = Book.fromMap(bookData);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => BookDetailsPage(
-                            book: book,
-                            bookData: bookData,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              if (selectedCount > 0 && featureManager.isPro)
-                buildToolbarButton(
-                  icon: showPrivacyTab
-                      ? NyanIcons.lockOpen
-                      : NyanIcons.lock,
-                  tooltip: showPrivacyTab
-                      ? AppLocalizations.of(context)!.moveToPublic
-                      : AppLocalizations.of(context)!.moveToPrivate,
-                  onPressed: () =>
-                      _moveSelectedBooks(this.context, !showPrivacyTab),
-                ),
-              buildToolbarButton(
-                icon: NyanIcons.delete,
-                tooltip: AppLocalizations.of(context)!.delete,
-                onPressed: () => _deleteSelectedBooks(this.context),
-              ),
               Builder(
-                builder: (context) {
-                  final loc = AppLocalizations.of(context)!;
+                builder: (ctx) {
+                  final loc = AppLocalizations.of(ctx)!;
                   final isPrivateTab =
                       showPrivacyTab && _tabController.index == 1;
                   final currentTotal =
@@ -581,22 +552,52 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                   final allSelected =
                       currentTotal > 0 && selectedCount >= currentTotal;
 
-                  return buildToolbarButton(
-                    icon: allSelected ? NyanIcons.deselect : NyanIcons.selectAll,
-                    tooltip: allSelected ? loc.deselectAll : loc.selectAll,
-                    onPressed: () => vm.selectAll(isPrivateTab),
+                  return Padding(
+                    padding: const EdgeInsets.only(right: NyanSpacing.space8),
+                    child: GestureDetector(
+                      onTap: () => vm.selectAll(isPrivateTab),
+                      child: Container(
+                        height: 36,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: NyanSpacing.space12),
+                        decoration: BoxDecoration(
+                          color: nyan.primary.withValues(alpha: 0.10),
+                          borderRadius:
+                              BorderRadius.circular(NyanRadius.chip),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              allSelected
+                                  ? NyanIcons.deselect
+                                  : NyanIcons.listChecks,
+                              size: 16,
+                              color: nyan.primaryDeep,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              allSelected ? loc.deselectAll : loc.selectAll,
+                              style: TextStyle(
+                                fontFamily: NyanTypography.uiFontFamily,
+                                fontSize: NyanTypography.meta,
+                                fontWeight: FontWeight.w600,
+                                height: 1.0,
+                                color: nyan.primaryDeep,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   );
                 },
               ),
-              const SizedBox(width: NyanSpacing.space8),
             ],
             backgroundColor: theme.scaffoldBackgroundColor,
             surfaceTintColor: theme.colorScheme.surface.withValues(alpha: 0),
             elevation: 0,
             scrolledUnderElevation: 0,
-            iconTheme: theme.iconTheme.copyWith(
-              size: NyanSpacing.space20,
-            ),
           );
         },
       ),
@@ -771,31 +772,52 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             featureManager.isPro && featureManager.isPrivateShelfUnlocked;
         final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
 
+        final isOnPrivateTab = showPrivacyTab && _tabController.index == 1;
+
         return Scaffold(
           appBar: isSelectionMode
-              ? _buildSelectionAppBar(context, featureManager, showPrivacyTab)
+              ? _buildSelectionAppBar(context, showPrivacyTab)
               : null,
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                NyanShelfUi.bookshelfPageHorizontalPadding,
-                NyanSpacing.space12,
-                NyanShelfUi.bookshelfPageHorizontalPadding,
-                0,
+          body: Stack(
+            children: [
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    NyanShelfUi.bookshelfPageHorizontalPadding,
+                    NyanSpacing.space12,
+                    NyanShelfUi.bookshelfPageHorizontalPadding,
+                    0,
+                  ),
+                  child: vm.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _buildLibrarySurface(
+                          context,
+                          featureManager: featureManager,
+                          showPrivacyTab: showPrivacyTab,
+                          activeBooks: showPrivacyTab && selectedTabIndex == 1
+                              ? vm.privateBooks
+                              : vm.publicBooks,
+                          showHeaderSections: !isSelectionMode,
+                          isSelectionMode: isSelectionMode,
+                        ),
+                ),
               ),
-              child: vm.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _buildLibrarySurface(
-                      context,
-                      featureManager: featureManager,
-                      showPrivacyTab: showPrivacyTab,
-                      activeBooks: showPrivacyTab && selectedTabIndex == 1
-                          ? vm.privateBooks
-                          : vm.publicBooks,
-                      showHeaderSections: !isSelectionMode,
-                      isSelectionMode: isSelectionMode,
-                    ),
-            ),
+              if (isSelectionMode)
+                Positioned(
+                  left: NyanSpacing.space12,
+                  right: NyanSpacing.space12,
+                  bottom:
+                      NyanSpacing.space12 + MediaQuery.viewPaddingOf(context).bottom,
+                  child: _SelectActionBar(
+                    isOnPrivateTab: isOnPrivateTab,
+                    showMakePrivate: featureManager.isPro,
+                    onMakePrivate: () =>
+                        _moveSelectedBooks(context, !isOnPrivateTab),
+                    onExport: () => _showExportNotice(context),
+                    onDelete: () => _deleteSelectedBooks(context),
+                  ),
+                ),
+            ],
           ),
           floatingActionButton: isSelectionMode
               ? null
@@ -1122,6 +1144,330 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           onSelectionToggle: () => vm.toggleBookSelection(book.id),
         );
       },
+    );
+  }
+}
+
+// ── Floating selection action bar ─────────────────────────────────────────────
+
+/// Floating 3-action dock shown at the bottom of the screen in selection mode.
+///
+/// Layout per bundle3.jsx `SelectActionBar`: surface bg, chrome-edge border,
+/// r-dock (24pt), lightCard shadow, 7pt vertical / 6pt horizontal padding.
+/// Actions: Make Private | Export | Delete, separated by 0.5px hairlines.
+class _SelectActionBar extends StatelessWidget {
+  const _SelectActionBar({
+    required this.isOnPrivateTab,
+    required this.showMakePrivate,
+    required this.onMakePrivate,
+    required this.onExport,
+    required this.onDelete,
+  });
+
+  /// True when the active tab is the private shelf (flips the Make Private label
+  /// to "Move to Public").
+  final bool isOnPrivateTab;
+
+  /// Whether the Make Private / Public action is shown (Pro feature gate).
+  final bool showMakePrivate;
+
+  final VoidCallback onMakePrivate;
+  final VoidCallback onExport;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final nyan = context.nyanTheme;
+    final isDark = nyan.brightness == Brightness.dark;
+    final loc = AppLocalizations.of(context)!;
+
+    Widget action({
+      required IconData icon,
+      required String label,
+      required VoidCallback onTap,
+      bool isDanger = false,
+    }) {
+      // Spec: icon = primaryDeep, label = textSecondary for normal; both error for danger.
+      final iconColor = isDanger ? nyan.errorPrimaryTextColor : nyan.primaryDeep;
+      final labelColor =
+          isDanger ? nyan.errorPrimaryTextColor : nyan.textSecondary;
+      return Expanded(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          // Spec button padding: 8px top/bottom, 4px sides.
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 22, color: iconColor),
+                // Spec gap: 5px between icon and label.
+                const SizedBox(height: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: NyanTypography.uiFontFamily,
+                    fontSize: NyanTypography.caption,
+                    fontWeight: FontWeight.w500,
+                    height: 1.0,
+                    color: labelColor,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Spec: divider at 40% opacity — visually recedes behind the actions.
+    Widget hairline() => Container(
+          width: 0.5,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          color: nyan.divider.withValues(alpha: 0.40),
+        );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: nyan.surface,
+        borderRadius: BorderRadius.circular(NyanRadius.dock),
+        border: Border.all(
+          color: isDark ? nyan.divider : Colors.transparent,
+          width: 1,
+        ),
+        boxShadow: NyanShadows.lightCard(nyan),
+      ),
+      // Spec dock padding: 7px top/bottom, 6px sides.
+      padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 6),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            if (showMakePrivate) ...[
+              action(
+                icon: NyanIcons.lock,
+                label: isOnPrivateTab ? loc.moveToPublic : loc.moveToPrivate,
+                onTap: onMakePrivate,
+              ),
+              hairline(),
+            ],
+            action(
+              icon: NyanIcons.exportData,
+              label: loc.export,
+              onTap: onExport,
+            ),
+            hairline(),
+            action(
+              icon: NyanIcons.delete,
+              label: loc.delete,
+              onTap: onDelete,
+              isDanger: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Delete confirm sheet ───────────────────────────────────────────────────────
+
+/// Bottom sheet asking the user to confirm deletion of selected books.
+///
+/// Per bundle3.jsx `DeleteConfirmSheet`: 56×56 error icon container,
+/// 18pt/600 title, 13.5pt/400 body, full-width Delete and Cancel buttons.
+class _DeleteBooksSheetContent extends StatelessWidget {
+  const _DeleteBooksSheetContent({
+    required this.bookCount,
+    required this.onDelete,
+    required this.onCancel,
+  });
+
+  final int bookCount;
+  final VoidCallback onDelete;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final nyan = context.nyanTheme;
+    final loc = AppLocalizations.of(context)!;
+    final isDark = nyan.brightness == Brightness.dark;
+    // Matches NyanOnePaperSheet surface logic — highest layer in dark.
+    final surface = isDark ? nyan.surfaceRaised : nyan.surface;
+    final chromeEdge = isDark ? nyan.divider : Colors.transparent;
+    final borderRadius = BorderRadius.circular(NyanRadius.sheet);
+
+    // Spec DeleteConfirmSheet has NO grabber pill — this is a destructive
+    // confirmation that must not be accidentally dismissed by swipe. The surface
+    // treatment (shadow + clip + border) mirrors NyanOnePaperSheet without the grabber.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: borderRadius,
+        boxShadow: NyanShadows.lightCard(nyan),
+      ),
+      child: ClipRRect(
+        borderRadius: borderRadius,
+        child: ColoredBox(
+          color: surface,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: borderRadius,
+              border: Border.all(color: chromeEdge, width: 1),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Upper section: icon + title + body ───────────────────
+                // Spec: padding 24px top, 20px sides, 18px bottom; all center-aligned.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    NyanSpacing.space20,
+                    NyanSpacing.space24,
+                    NyanSpacing.space20,
+                    18,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // 56×56 error icon container — r-cardNested, errorBg, errorPrimary@22% border.
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: nyan.errorBackgroundColor,
+                          borderRadius:
+                              BorderRadius.circular(NyanRadius.cardNested),
+                          border: Border.all(
+                            color:
+                                nyan.errorPrimaryTextColor.withValues(alpha: 0.22),
+                            width: 0.7,
+                          ),
+                        ),
+                        child: Icon(
+                          NyanIcons.delete,
+                          size: 26,
+                          color: nyan.errorPrimaryTextColor,
+                        ),
+                      ),
+                      // Spec: marginBottom 14 between icon and title.
+                      const SizedBox(height: 14),
+                      // Title: 18pt/600, center-aligned.
+                      Text(
+                        loc.deleteBooksTitle(bookCount),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: NyanTypography.uiFontFamily,
+                          fontSize: NyanTypography.selectionHeaderTitle,
+                          fontWeight: FontWeight.w600,
+                          height: 1.25,
+                          color: nyan.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: NyanSpacing.space8),
+                      // Body: 13.5pt/400/1.5, center-aligned.
+                      Text(
+                        loc.actionCannotBeUndone,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: NyanTypography.uiFontFamily,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w400,
+                          height: 1.5,
+                          color: nyan.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Button section ───────────────────────────────────────
+                // Spec: padding 0 top, 16px sides, 16px bottom; gap 10 between buttons.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    NyanSpacing.space16,
+                    0,
+                    NyanSpacing.space16,
+                    NyanSpacing.space16,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Delete button — h=50, r-cardNested, errorPrimary bg.
+                      // Spec label: "Delete {n} books" with count; font 600 15px.
+                      GestureDetector(
+                        onTap: onDelete,
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: nyan.errorPrimaryTextColor,
+                            borderRadius:
+                                BorderRadius.circular(NyanRadius.cardNested),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                NyanIcons.delete,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: NyanSpacing.space8),
+                              Text(
+                                loc.deleteBooksButton(bookCount),
+                                style: const TextStyle(
+                                  fontFamily: NyanTypography.uiFontFamily,
+                                  // Off-ladder 15pt: spec DeleteConfirmSheet button, §4.6.
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.0,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Spec gap: 10px between buttons.
+                      const SizedBox(height: 10),
+                      // Cancel button — h=50, r-cardNested, surfaceMuted bg, divider border.
+                      GestureDetector(
+                        onTap: onCancel,
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: nyan.surfaceMuted,
+                            borderRadius:
+                                BorderRadius.circular(NyanRadius.cardNested),
+                            border: Border.all(color: nyan.divider, width: 1.0),
+                          ),
+                          child: Center(
+                            child: Text(
+                              loc.cancel,
+                              style: TextStyle(
+                                fontFamily: NyanTypography.uiFontFamily,
+                                // Off-ladder 15pt: spec DeleteConfirmSheet button, §4.6.
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                height: 1.0,
+                                color: nyan.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

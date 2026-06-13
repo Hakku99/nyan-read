@@ -129,12 +129,14 @@
   "deleteNote": "Delete Note",
   "delete": "Delete",
   "remove": "Remove",
+  "undo": "Undo",
+  "export": "Export",
   "cancel": "Cancel",
   "save": "Save",
   "selected": "Selected",
   "viewDetails": "View Details",
-  "moveToPublic": "Move to Public",
-  "moveToPrivate": "Move to Private",
+  "moveToPublic": "Make Public",
+  "moveToPrivate": "Make Private",
   "selectAll": "Select All",
   "deselectAll": "Deselect All",
   "appTitle": "Nyan Read ฅ^•ﻌ•^ฅ",
@@ -161,7 +163,7 @@
   "sortAddedDescSub": "Newest first",
   "lockPrivacyShelf": "Lock Privacy Shelf",
   "unlockPrivacyShelf": "Unlock Privacy Shelf",
-  "deleteBooksTitle": "{count, plural, one{Remove {count} book?} other{Remove {count} books?}}",
+  "deleteBooksTitle": "{count, plural, one{Delete {count} book?} other{Delete {count} books?}}",
   "@deleteBooksTitle": {
     "placeholders": {
       "count": {
@@ -169,7 +171,15 @@
       }
     }
   },
-  "actionCannotBeUndone": "They will be removed from the current shelf.",
+  "actionCannotBeUndone": "Their reading progress, bookmarks and notes are removed too. The source files on your device are kept.",
+  "deleteBooksButton": "{count, plural, one{Delete {count} book} other{Delete {count} books}}",
+  "@deleteBooksButton": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "alsoDeleteLocalFiles": "Also delete local files",
   "deletedBooks": "{count, plural, one{Removed {count} book} other{Removed {count} books}}",
   "@deletedBooks": {

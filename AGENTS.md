@@ -245,8 +245,8 @@
 | 卡片硬描边（暗色发光环用） | `#E5DED2` | `#474E42` | `borderColor` |
 
 **错误色（暖陶土，非临床红）**——设计系统交付包要求错误状态读起来"平静、在地"而非"刺眼的 Material 红"：
-creamLight `errorBackground #FBF2EC` / `errorPrimary #A85A38` / `errorSecondary #8A6A55` / `errorAccent #ECD9CC`；
-sumiDark `#241D18` / `#D89B7E` / `#B6967F` / `#3A2D24`。
+creamLight `errorBackground #FBF2EC` / `errorPrimary #9C5C49` / `errorSecondary #8A6A55` / `errorAccent #ECD9CC`；
+sumiDark `#241D18` / `#CE9A86` / `#B6967F` / `#3A2D24`。
 
 > **U8 Reader Error View 用色说明（2026-06，来源 `bundle2-screens.jsx` `ErrorView`）**：
 > - **页面背景**：错误页使用 `nyan.background`（标准页底色），**MUST NOT** 用 `errorBackground`。
@@ -362,6 +362,12 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 > **例外 — Action Response 卡片标题字号（交付包对齐，2026-06，来源 `components/surfaces/NyanResponse.jsx`）**：全局反馈 toast `NyanResponse` 的标题使用 **14pt w600**、行高 1.25（来源：`NyanResponse.jsx` `font: "600 14px/1.25"`）。此值介于阶梯 `body 16` 与 `meta 13` 之间（§4.6 交付包优先）。此例外**仅限** `NyanResponse` 标题行，**MUST NOT** 出现在正文、列表行、其它标题或表面。常量定义见 `NyanTypography.responseTitle`（14）。
 
 > **例外 — Action Response 卡片描述字号（交付包对齐，2026-06，来源 `components/surfaces/NyanResponse.jsx`）**：`NyanResponse` 的描述行使用 **12.5pt w400**、行高 1.35（来源：`NyanResponse.jsx` `font: "400 12.5px/1.35"`）。此值介于阶梯 `caption 11` 与 `meta 13` 之间（§4.6 交付包优先）。此例外**仅限** `NyanResponse` 描述行，**MUST NOT** 出现在正文、列表行或其它表面。常量定义见 `NyanTypography.responseDescription`（12.5）。
+
+> **例外 — U21 书架选择标题字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `SelectionHeader`）**：`home_screen.dart` 的选择模式 AppBar 标题（如 "2 Selected"）使用 **18pt w600**、字距 -0.2（来源：`bundle3.jsx` `font: "600 18px/1.15"`, `letterSpacing: "-0.2px"`）。此值介于阶梯 `body 16` 与 `section 20` 之间（§4.6 交付包优先）。此例外**仅限** `_buildSelectionAppBar` 标题和 `_DeleteBooksSheetContent` 标题，**MUST NOT** 出现在正文、列表行或其它表面。常量定义见 `NyanTypography.selectionHeaderTitle`（18）。
+
+> **例外 — U21 删除确认 Sheet 正文字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `DeleteConfirmSheet`）**：`_DeleteBooksSheetContent` 的说明行使用 **13.5pt w400**（来源：`bundle3.jsx` `font: "400 13.5px/1.45"`）。此值介于阶梯 `meta 13` 与 `body 16` 之间（§4.6 交付包优先）。此例外**仅限** `_DeleteBooksSheetContent` 正文行，**MUST NOT** 出现在其它表面。字面量 `13.5` 直接写在该 widget 内，无独立常量（值已有先例：`NyanTypography.fabLabel = 13.5`）。
+
+> **新增阴影 Token — `NyanShadows.cardSelectionGlow` / `selectionBadgeGlow`（2026-06，来源 `bundle3.jsx` `SelectBookCard`）**：选中书格封面外发光（`primary@16%` spread 3px）和 SelectCheck 徽标发光（`primary@40%` 1px drop shadow）通过 `NyanShadows.cardSelectionGlow(nyan)` / `selectionBadgeGlow(nyan)` 访问，**MUST NOT** 直接构造 `BoxShadow`。
 
 > ✅ **字体已注册（§6 Phase 0 已完成）**：`pubspec.yaml` 的 `flutter.fonts` 段已声明 `Noto Sans SC`（400/500/600）+ `Source Han Serif SC`（400/600）；字体文件存放于 `assets/fonts/`，**未纳入 Git**（体积原因）。开发者需按 `assets/fonts/README.md` 说明手动放置字体文件。缺少字体时 Flutter 打印 warning 并回落平台字体，不影响编译；但 serif 阅读模式仅在字体文件就位后生效。
 

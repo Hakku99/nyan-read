@@ -51,12 +51,12 @@ class NyanColors {
   // on-brand rather than clinical Material red. Source: colors_and_type.css
   // --error-* (light + sumi).
   static const Color errorBackgroundLight = Color(0xFFFBF2EC);
-  static const Color errorPrimaryLight = Color(0xFFA85A38);
+  static const Color errorPrimaryLight = Color(0xFF9C5C49);
   static const Color errorSecondaryLight = Color(0xFF8A6A55);
   static const Color errorAccentLight = Color(0xFFECD9CC);
 
   static const Color errorBackgroundDark = Color(0xFF241D18);
-  static const Color errorPrimaryDark = Color(0xFFD89B7E);
+  static const Color errorPrimaryDark = Color(0xFFCE9A86);
   static const Color errorSecondaryDark = Color(0xFFB6967F);
   static const Color errorAccentDark = Color(0xFF3A2D24);
 

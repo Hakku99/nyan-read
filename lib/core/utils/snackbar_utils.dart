@@ -36,6 +36,8 @@ class SnackBarUtils {
     String message, {
     String? description,
     VoidCallback? onAction,
+    String? actionLabel,
+    VoidCallback? onActionTap,
     NyanSnackTone tone = NyanSnackTone.info,
     int maxLines = 2,
   }) {
@@ -77,6 +79,8 @@ class SnackBarUtils {
         description: description,
         duration: duration,
         maxLines: clippedLines,
+        actionLabel: actionLabel,
+        onActionTap: onActionTap,
       );
       return;
     }
@@ -101,6 +105,8 @@ class SnackBarUtils {
         description: description,
         duration: duration,
         maxLines: clippedLines,
+        actionLabel: actionLabel,
+        onActionTap: onActionTap,
       );
       _activeController = controller;
 
