@@ -401,6 +401,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sortBy => 'Sort by';
 
   @override
+  String get sortShelfBy => 'Sort shelf by';
+
+  @override
   String get sortOrderAsc => 'Ascending';
 
   @override
@@ -423,6 +426,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get titleDesc => 'Title Descending';
+
+  @override
+  String get sortLastReadAscSub => 'Oldest opened first';
+
+  @override
+  String get sortLastReadDescSub => 'Recently opened first';
+
+  @override
+  String get sortTitleAscSub => 'A → Z';
+
+  @override
+  String get sortTitleDescSub => 'Z → A';
+
+  @override
+  String get sortAddedAscSub => 'Oldest first';
+
+  @override
+  String get sortAddedDescSub => 'Newest first';
 
   @override
   String get lockPrivacyShelf => 'Lock Privacy Shelf';

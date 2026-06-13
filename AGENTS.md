@@ -347,6 +347,10 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — Chapters Sheet "Jump to current" FAB 标签字号（交付包对齐，2026-06，来源 `screens/bundle1.jsx` `ChapterDockSheet`）**：目录 Sheet 浮动按钮的标签使用 **13.5pt w600**（来源：`bundle1.jsx` `font: "600 13.5px/1"`）。此值介于阶梯 `meta 13` 与 `buttonCompact 14` 之间（§4.6 交付包优先）。此例外**仅限** `_JumpToCurrentButton`（`chapter_list_widget.dart`）标签，**MUST NOT** 出现在正文、列表行、卡片或其它表面。常量定义见 `NyanTypography.fabLabel`（13.5）。
 
+> **例外 — 书架排序 Sheet 字段行标签字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `ShelfSortSheet`）**：`bookshelf_sort_sheet.dart` 的字段行主标签使用 **15pt**（选中态 w600 `primaryDeep`，未选 w500 `textPrimary`；来源：`bundle3.jsx` `font: "${isSel ? 600 : 500} 15px/1.2"`）。此值介于阶梯 `body 16` 与 `meta 13` 之间（§4.6 交付包优先）。此例外**仅限** `_SortFieldRow` 主标签，**MUST NOT** 出现在正文、其它列表行或卡片表面。常量定义见 `NyanTypography.shelfSortFieldLabel`（15）。
+
+> **例外 — 书架排序 Sheet 字段行子标签字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `ShelfSortSheet`）**：`bookshelf_sort_sheet.dart` 的字段行子标签（如 "A → Z"、"Oldest opened first"）使用 **12.5pt w400 `textSecondary`**（来源：`bundle3.jsx` `font: "400 12.5px/1.3"`）。此值介于阶梯 `caption 11` 与 `meta 13` 之间（§4.6 交付包优先）。此例外**仅限** `_SortFieldRow` 子标签，**MUST NOT** 出现在正文、其它列表行或任何其它表面。常量定义见 `NyanTypography.shelfSortFieldSub`（12.5）。
+
 > ✅ **字体已注册（§6 Phase 0 已完成）**：`pubspec.yaml` 的 `flutter.fonts` 段已声明 `Noto Sans SC`（400/500/600）+ `Source Han Serif SC`（400/600）；字体文件存放于 `assets/fonts/`，**未纳入 Git**（体积原因）。开发者需按 `assets/fonts/README.md` 说明手动放置字体文件。缺少字体时 Flutter 打印 warning 并回落平台字体，不影响编译；但 serif 阅读模式仅在字体文件就位后生效。
 
 ### 4.3 组件样式底线（MUST）

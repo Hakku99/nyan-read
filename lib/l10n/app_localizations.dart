@@ -866,6 +866,12 @@ abstract class AppLocalizations {
   /// **'Sort by'**
   String get sortBy;
 
+  /// No description provided for @sortShelfBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort shelf by'**
+  String get sortShelfBy;
+
   /// No description provided for @sortOrderAsc.
   ///
   /// In en, this message translates to:
@@ -913,6 +919,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Title Descending'**
   String get titleDesc;
+
+  /// No description provided for @sortLastReadAscSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest opened first'**
+  String get sortLastReadAscSub;
+
+  /// No description provided for @sortLastReadDescSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently opened first'**
+  String get sortLastReadDescSub;
+
+  /// No description provided for @sortTitleAscSub.
+  ///
+  /// In en, this message translates to:
+  /// **'A → Z'**
+  String get sortTitleAscSub;
+
+  /// No description provided for @sortTitleDescSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Z → A'**
+  String get sortTitleDescSub;
+
+  /// No description provided for @sortAddedAscSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest first'**
+  String get sortAddedAscSub;
+
+  /// No description provided for @sortAddedDescSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest first'**
+  String get sortAddedDescSub;
 
   /// No description provided for @lockPrivacyShelf.
   ///

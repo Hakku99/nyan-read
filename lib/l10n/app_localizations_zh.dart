@@ -397,6 +397,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sortBy => '排序方式';
 
   @override
+  String get sortShelfBy => '书架排序';
+
+  @override
   String get sortOrderAsc => '升序';
 
   @override
@@ -419,6 +422,24 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get titleDesc => '书名降序';
+
+  @override
+  String get sortLastReadAscSub => '最早打开的在前';
+
+  @override
+  String get sortLastReadDescSub => '最近打开的在前';
+
+  @override
+  String get sortTitleAscSub => 'A → Z';
+
+  @override
+  String get sortTitleDescSub => 'Z → A';
+
+  @override
+  String get sortAddedAscSub => '最早添加的在前';
+
+  @override
+  String get sortAddedDescSub => '最新添加的在前';
 
   @override
   String get lockPrivacyShelf => '锁定隐私书架';

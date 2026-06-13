@@ -9,10 +9,12 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 /// Noto Sans SC than Material Round and keeps the paper-book quietness intact.
 ///
 /// Fill weight is reserved for "set" / "selected" affordances. Only these
-/// three glyphs use Phosphor Fill — anything else MUST stay Regular:
+/// four glyphs use Phosphor Fill — anything else MUST stay Regular:
 ///   • [bookmarkFilled] / [bookmarkAdded] — page currently has a bookmark
 ///                                          (the two names are aliases)
 ///   • [checkFilled]                       — matcha selected-card badge
+///   • [playFilled]                        — "currently reading" chapter indicator
+///   • [sortDirectionIndicator]            — selected sort-field direction arrow
 ///
 /// When adding an icon, prefer reusing an existing semantic name. If a brand-new
 /// glyph is needed, add it in the matching section below and reference the
@@ -118,6 +120,12 @@ class NyanIcons {
   static const IconData viewGrid = PhosphorIconsRegular.squaresFour;
   static const IconData sort = PhosphorIconsRegular.arrowsDownUp;
   static const IconData sortAscending = PhosphorIconsRegular.sortAscending;
+
+  /// Fill arrow-up used as the direction indicator on the selected row of the
+  /// bookshelf sort sheet (spec: `ph-fill ph-arrow-up`, flipped via
+  /// `Transform.scale(scaleY: -1)` when descending).
+  /// This is the 4th Phosphor Fill exception; see the class-level comment.
+  static const IconData sortDirectionIndicator = PhosphorIconsFill.arrowUp;
   static const IconData visibility = PhosphorIconsRegular.eye;
   static const IconData visibilityOff = PhosphorIconsRegular.eyeSlash;
   static const IconData palette = PhosphorIconsRegular.palette;

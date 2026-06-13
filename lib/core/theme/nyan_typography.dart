@@ -66,6 +66,24 @@ class NyanTypography {
   ///   `font: "600 13.5px/1"`
   static const double fabLabel = 13.5;
 
+  /// Bookshelf sort sheet field row main label — design-system handoff exception
+  /// (see AGENTS.md §4.2.5). Reserved for [_SortFieldRow] label ONLY.
+  /// Sits between [meta] 13 and [body] 16; it MUST NOT appear in body copy,
+  /// headings, or any other surface.
+  ///
+  /// Source: `screens/bundle3.jsx` `ShelfSortSheet` field row
+  ///   `font: "600 15px/1.2"` (selected) / `"500 15px/1.2"` (unselected)
+  static const double shelfSortFieldLabel = 15.0;
+
+  /// Bookshelf sort sheet field row sub-label — design-system handoff exception
+  /// (see AGENTS.md §4.2.5). Reserved for [_SortFieldRow] sub-label ONLY.
+  /// Sits between [caption] 11 and [meta] 13; it MUST NOT appear in body copy,
+  /// list rows, or any other surface.
+  ///
+  /// Source: `screens/bundle3.jsx` `ShelfSortSheet` field row
+  ///   `font: "400 12.5px/1.3"`
+  static const double shelfSortFieldSub = 12.5;
+
   /// Olive uppercase eyebrow label — 11pt / w500 / +0.22 letter-spacing.
   /// Pass [color] as `nyan.primaryDeep` from the active [NyanTheme].
   /// Use only for section eyebrows above grouped cards / reader settings headers.
