@@ -668,6 +668,18 @@ abstract class AppLocalizations {
   /// **'File path copied to clipboard'**
   String get filePathCopied;
 
+  /// No description provided for @copiedToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get copiedToClipboard;
+
+  /// No description provided for @couldNotOpenBrowserSearchCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open browser — search link copied'**
+  String get couldNotOpenBrowserSearchCopied;
+
   /// No description provided for @fileExists.
   ///
   /// In en, this message translates to:
@@ -1825,6 +1837,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Import failed: {error}'**
   String importFailed(String error);
+
+  /// No description provided for @exportSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Export saved to device'**
+  String get exportSaved;
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed: {error}'**
+  String exportFailed(String error);
 }
 
 class _AppLocalizationsDelegate

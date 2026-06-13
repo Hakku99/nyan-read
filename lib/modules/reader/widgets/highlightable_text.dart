@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/models/highlight.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:async';
@@ -333,7 +334,8 @@ class _HighlightableTextState extends State<HighlightableText> {
         },
         onCopy: () {
           if (selectedText.isNotEmpty) {
-            SnackBarUtils.show(context, 'Copied to clipboard');
+            final loc = AppLocalizations.of(context)!;
+            SnackBarUtils.show(context, loc.copiedToClipboard, tone: NyanSnackTone.success);
           }
           editableTextState.hideToolbar();
         },
@@ -360,8 +362,8 @@ class _HighlightableTextState extends State<HighlightableText> {
       // Fallback: copy to clipboard
       await Clipboard.setData(ClipboardData(text: url.toString()));
       if (mounted) {
-        SnackBarUtils.show(
-            context, 'Could not open browser. Search link copied.');
+        final loc = AppLocalizations.of(context)!;
+        SnackBarUtils.show(context, loc.couldNotOpenBrowserSearchCopied, tone: NyanSnackTone.error);
       }
     }
   }

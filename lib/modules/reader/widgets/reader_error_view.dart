@@ -104,10 +104,10 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
       if (await canLaunchUrl(emailUri)) {
         await launchUrl(emailUri, mode: LaunchMode.externalApplication);
       } else {
-        if (mounted) SnackBarUtils.show(context, loc.couldNotLaunchEmail);
+        if (mounted) SnackBarUtils.show(context, loc.couldNotLaunchEmail, tone: NyanSnackTone.error);
       }
     } catch (e) {
-      if (mounted) SnackBarUtils.show(context, loc.failedToOpenEmail(e.toString()));
+      if (mounted) SnackBarUtils.show(context, loc.failedToOpenEmail(e.toString()), tone: NyanSnackTone.error);
     }
   }
 

@@ -102,6 +102,8 @@
   "continueReading": "Continue Reading",
   "copyPath": "Copy Path",
   "filePathCopied": "File path copied to clipboard",
+  "copiedToClipboard": "Copied to clipboard",
+  "couldNotOpenBrowserSearchCopied": "Could not open browser — search link copied",
   "fileExists": "File exists",
   "fileNotFound": "File not found",
   "fileUnavailableCta": "File unavailable",
@@ -465,6 +467,15 @@
   },
   "importFailed": "Import failed: {error}",
   "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "exportSaved": "Export saved to device",
+  "exportFailed": "Export failed: {error}",
+  "@exportFailed": {
     "placeholders": {
       "error": {
         "type": "String"

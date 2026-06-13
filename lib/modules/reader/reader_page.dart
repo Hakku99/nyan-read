@@ -32,6 +32,7 @@ import 'widgets/one_paper_dock.dart';
 import 'widgets/reader_brightness_popover.dart';
 import 'widgets/smooth_page_reader.dart';
 import '../../core/ui/nyan_icons.dart';
+import '../../core/utils/snackbar_utils.dart';
 export 'controllers/reader_controller.dart';
 
 part 'reader_page_overlay.dart';
@@ -802,7 +803,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   }
 
   /// Top-bar bookmark button: saves a bookmark at the current reading position
-  /// and shows a brief floating SnackBar confirming the action.
+  /// and shows a brief response toast confirming the action.
   Future<void> _handleAddBookmarkFromTopOverlay(
     BuildContext context,
     ReaderController controller,
@@ -810,13 +811,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     final added = await controller.addBookmark();
     if (!added || !context.mounted) return;
     final loc = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(loc.bookmarkAdded),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    SnackBarUtils.show(context, loc.bookmarkAdded, tone: NyanSnackTone.success);
   }
 
   Future<void> _openBookmarksPage(

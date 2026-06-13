@@ -72,7 +72,7 @@ Future<void> _handleExportData(BuildContext context) async {
   } catch (e) {
     if (context.mounted) {
       _closeDialog(context);
-      SnackBarUtils.show(context, 'Export failed: $e', tone: NyanSnackTone.error);
+      SnackBarUtils.show(context, loc.exportFailed(e.toString()), tone: NyanSnackTone.error);
     }
   }
 }
@@ -117,7 +117,7 @@ Future<void> _saveToDevice(
     bytes: await File(exportFilePath).readAsBytes(),
   );
   if (savedPath != null && context.mounted) {
-    SnackBarUtils.show(context, 'Saved to: $savedPath');
+    SnackBarUtils.show(context, loc.exportSaved, tone: NyanSnackTone.success);
   }
 }
 

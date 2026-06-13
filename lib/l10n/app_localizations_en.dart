@@ -301,6 +301,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filePathCopied => 'File path copied to clipboard';
 
   @override
+  String get copiedToClipboard => 'Copied to clipboard';
+
+  @override
+  String get couldNotOpenBrowserSearchCopied =>
+      'Could not open browser — search link copied';
+
+  @override
   String get fileExists => 'File exists';
 
   @override
@@ -962,5 +969,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String importFailed(String error) {
     return 'Import failed: $error';
+  }
+
+  @override
+  String get exportSaved => 'Export saved to device';
+
+  @override
+  String exportFailed(String error) {
+    return 'Export failed: $error';
   }
 }

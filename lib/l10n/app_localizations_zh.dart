@@ -296,6 +296,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get filePathCopied => '文件路径已复制到剪贴板';
 
   @override
+  String get copiedToClipboard => '已复制到剪贴板';
+
+  @override
+  String get couldNotOpenBrowserSearchCopied => '无法打开浏览器，搜索链接已复制';
+
+  @override
   String get fileExists => '文件存在';
 
   @override
@@ -919,5 +925,13 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String importFailed(String error) {
     return '导入失败：$error';
+  }
+
+  @override
+  String get exportSaved => '导出已保存到设备';
+
+  @override
+  String exportFailed(String error) {
+    return '导出失败：$error';
   }
 }
