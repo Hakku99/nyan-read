@@ -4,6 +4,7 @@ import '../../theme/nyan_colors.dart';
 import '../../theme/nyan_spacing.dart';
 import '../nyan_theme_context.dart';
 import 'nyan_overlay_style.dart';
+import 'nyan_switch.dart';
 import '../nyan_icons.dart';
 
 enum NyanDialogOptionControl { checkbox, switchControl }
@@ -107,14 +108,7 @@ class NyanDialogOptionRow extends StatelessWidget {
   Widget _buildControl(BuildContext context, bool value) {
     switch (control) {
       case NyanDialogOptionControl.switchControl:
-        final palette =
-            NyanOverlayStyle.tonePalette(context, NyanOverlayTone.success);
-        return Switch(
-          value: value,
-          onChanged: onChanged,
-          activeThumbColor: palette.foreground,
-          activeTrackColor: palette.softFill,
-        );
+        return NyanSwitch(value: value, onChanged: onChanged);
       case NyanDialogOptionControl.checkbox:
         final olive = Theme.of(context).colorScheme.primary;
         final checkedFill = Color.alphaBlend(
