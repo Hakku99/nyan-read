@@ -191,15 +191,23 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     }
     if (!context.mounted) return;
 
-    var progressVisible = false;
+    DateTime? loadingShownAt;
     try {
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        barrierColor: NyanOverlayStyle.modalBarrierColor(context),
-        builder: (dialogContext) => const ImportProgressDialog(),
+      SnackBarUtils.show(
+        context,
+        loc.importingBooksTitle,
+        description: loc.importingBooksSubtitle,
+        tone: NyanSnackTone.loading,
       );
-      progressVisible = true;
+      // Anchor the 600ms floor to show() call time — independent of how long
+      // the native picker dismiss animation takes.
+      loadingShownAt = DateTime.now();
+      // Yield until the overlay has rendered its first frame. Without this,
+      // rapid I/O-completion events from the import loop can queue ahead of
+      // the vsync callback and delay the card entrance animation — especially
+      // noticeable when importing many files.
+      await WidgetsBinding.instance.endOfFrame;
+      if (!context.mounted) return;
 
       final db = ref.read(databaseServiceRpProvider);
       final existingIndex = await BookImportFingerprint.buildExistingIndex(db);
@@ -271,10 +279,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       await _cleanupPickerTempFiles();
 
       if (!context.mounted) return;
-      if (progressVisible) {
-        Navigator.of(context, rootNavigator: true).pop();
-        progressVisible = false;
-      }
+      await _awaitMinLoadingDisplay(loadingShownAt);
+      if (!context.mounted) return;
 
       final shelfLabel = isPrivate ? loc.privateShelf : loc.publicShelf;
       if (successCount > 0) {
@@ -287,7 +293,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         SnackBarUtils.show(
           context,
           loc.duplicatesSkipped(skippedCount),
-          tone: NyanSnackTone.info,
+          tone: NyanSnackTone.skipped,
         );
       }
 
@@ -295,8 +301,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         _vm.loadBooks();
       }
     } catch (e) {
-      if (context.mounted && progressVisible) {
-        Navigator.of(context, rootNavigator: true).pop();
+      if (context.mounted && loadingShownAt != null) {
+        await _awaitMinLoadingDisplay(loadingShownAt);
       }
       if (context.mounted) {
         SnackBarUtils.show(
@@ -306,6 +312,20 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         );
       }
     }
+  }
+
+  /// Waits until [shownAt] is at least 600ms in the past.
+  ///
+  /// 600ms accounts for: native picker dismiss animation (~300ms on iOS) +
+  /// card entrance animation (220ms) + minimum perception window. Since
+  /// [shownAt] is anchored to when [SnackBarUtils.show] is called (before the
+  /// import work), the floor ensures the loading toast has been visible long
+  /// enough for the user to register it before the result toast appears.
+  static Future<void> _awaitMinLoadingDisplay(DateTime? shownAt) async {
+    if (shownAt == null) return;
+    const floor = Duration(milliseconds: 600);
+    final remaining = floor - DateTime.now().difference(shownAt);
+    if (remaining > Duration.zero) await Future.delayed(remaining);
   }
 
   Future<_ImportedBookSource?> _resolveImportedSource(PlatformFile file) async {

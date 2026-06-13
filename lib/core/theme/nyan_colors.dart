@@ -132,9 +132,6 @@ class NyanColors {
   /// ~2% 纯黑 — NyanOverlayStyle.loadingShadow 内层。
   static const Color overlayShadowLoadingInner = Color(0x06000000);
 
-  /// ~5% 纯黑 — NyanOverlayStyle.noticeShadow（单层）。
-  static const Color overlayShadowNotice = Color(0x0D000000);
-
   // ===========================================================================
   // Overlay micro-palette (NyanOverlayStyle + NyanConfirmDialog + NyanDialogOptionRow)
   // 这些是"顶层浮层"专属的暖米色 + 朴素褐的微调色，独立于主题 surface/divider。

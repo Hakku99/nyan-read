@@ -308,6 +308,8 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — Highlights & Notes 卡片水平内边距（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `HighlightCard`）**：`NyanHighlightCard` 的水平内边距固定为 **14pt**（`_kCardPaddingH`，来源：`bundle3.jsx` `padding: "12px 14px"`）。此例外**仅限** `NyanHighlightCard` 容器本身，**MUST NOT** 用于其它卡片、列表、页面级布局间距。
 
+> **例外 — Action Response 卡片内部间距（交付包对齐，2026-06，来源 `components/surfaces/NyanResponse.jsx`）**：全局反馈 toast `NyanResponse` 的卡片**垂直内边距固定为 10pt**（`_kCardPaddingV`，来源：`NyanResponse.jsx` `padding: "10px 12px"`；水平 12pt 走 `NyanSpacing.space12`），标题↔描述间隙固定为 **2pt**（`_kTitleDescGap`，来源：`marginTop: 2`）。这两个值仅为对齐交付包的卡片内部微距。此例外**仅限** `nyan_response.dart` 容器本身，**MUST NOT** 用于其它卡片、列表、页面级布局间距。
+
 #### 4.2.4 阴影 — `lib/core/theme/nyan_shadows.dart`
 
 三个工具方法**现在接收 `NyanTheme nyan`（不再是裸 `Color`）**，并按 `nyan.brightness` 自动选配方：
@@ -357,6 +359,10 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — Admin Panel 提示卡标题字号（交付包对齐，2026-06，来源 `screens/bundle4.jsx` `AdminPanel` hint card）**：`admin_panel.dart` 的 `_AdminHintRow` 标题使用 **14pt w600**（来源：`bundle4.jsx` `font: "600 14px/1.2"`）。数值与 `buttonCompact` 相同但语义不同，属提示卡专属标题（§4.6 交付包优先）。此例外**仅限** `_AdminHintRow` 标题，**MUST NOT** 出现在按钮、正文、列表行或其它表面。常量定义见 `NyanTypography.adminHintTitle`（14）。
 
+> **例外 — Action Response 卡片标题字号（交付包对齐，2026-06，来源 `components/surfaces/NyanResponse.jsx`）**：全局反馈 toast `NyanResponse` 的标题使用 **14pt w600**、行高 1.25（来源：`NyanResponse.jsx` `font: "600 14px/1.25"`）。此值介于阶梯 `body 16` 与 `meta 13` 之间（§4.6 交付包优先）。此例外**仅限** `NyanResponse` 标题行，**MUST NOT** 出现在正文、列表行、其它标题或表面。常量定义见 `NyanTypography.responseTitle`（14）。
+
+> **例外 — Action Response 卡片描述字号（交付包对齐，2026-06，来源 `components/surfaces/NyanResponse.jsx`）**：`NyanResponse` 的描述行使用 **12.5pt w400**、行高 1.35（来源：`NyanResponse.jsx` `font: "400 12.5px/1.35"`）。此值介于阶梯 `caption 11` 与 `meta 13` 之间（§4.6 交付包优先）。此例外**仅限** `NyanResponse` 描述行，**MUST NOT** 出现在正文、列表行或其它表面。常量定义见 `NyanTypography.responseDescription`（12.5）。
+
 > ✅ **字体已注册（§6 Phase 0 已完成）**：`pubspec.yaml` 的 `flutter.fonts` 段已声明 `Noto Sans SC`（400/500/600）+ `Source Han Serif SC`（400/600）；字体文件存放于 `assets/fonts/`，**未纳入 Git**（体积原因）。开发者需按 `assets/fonts/README.md` 说明手动放置字体文件。缺少字体时 Flutter 打印 warning 并回落平台字体，不影响编译；但 serif 阅读模式仅在字体文件就位后生效。
 
 ### 4.3 组件样式底线（MUST）
@@ -369,6 +375,7 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
   > **例外 — 顶层书架切换器（`SegmentedTabStyle.shelf`，2026-06，来源 `BookshelfScreen.jsx` / `bundle3.jsx`）**：Public / Private 这种**页面级导航**分段器不走上面的 `primaryDeep` / `textSecondary` 规则。指示器 = `surface` 实心 chip + `NyanShadows.settingsGrouped`，**选中文字 = `textPrimary` + w600**（深墨粗体，读作页面级导航而非面板内调节），未选 = `textMuted` + w500；内边距收到 **3pt**（令 11pt 指示器真正同心：14−3）。这是交付包屏幕稿明确的视觉意图（§4.6 交付包优先），**MUST NOT** 把它"修正"回 `primaryDeep`。其它分段控件仍遵循上一条。
 - **Pill 按钮 / 选项 chip（低/中/高、紧凑/标准/舒展、Sans/Serif 等）**（2026-06）：**方圆角 `NyanRadius.chip`（12pt），不再是 `StadiumBorder`**；未选 = `surfaceMuted` 底 + 透明描边 + `textSecondary` 文字；选中 = **去填充（透明底）+ `primaryDeep` 1.5px 描边 + `primaryDeep` 文字**——chip "浮离轨道"。这是本项目的招牌交互（outline-on-select），和 Material 填充 chip 截然不同。
 - **Reader chrome（One Paper，2026-06）**：阅读器底部**只有一块浮动纸面板**——collapsed 时是 `dock`（`OnePaperDock`，inset 12pt / `r-dock` 24），点 Chapters/Settings **原地长成 sheet**（`r-sheet` 28，`AnimatedAlign` 高度展开，`dur-grow` 320ms ease-paper），footer（章节 stepper `‹ ›` + 细进度条 + **4 个动作 Chapters/Bookmarks/Highlights/Settings**）始终钉在底部。**亮度不在 dock**：走顶栏太阳弹层（`ReaderBrightnessPopover`，玻璃拟态）+ 左缘竖向拖拽。Sheet 升起时页面 scrim + 2px 模糊（仅展开时挂载）。Bookmarks 和 Highlights 都是 push 页面，不是 sheet（"adjust→sheet；browse→page"）。**MUST NOT** 回退到边到边贴底控制条或把 Settings/Chapters 改成独立 modal sheet。
+- **Action Response（全局反馈 toast，`NyanResponse`，2026-06 交付包对齐，来源 `components/surfaces/NyanResponse.jsx`）**：全 App **唯一**的"刚刚发生了什么"反馈面（导入完成 / 删除 / 跳过 / 进行中）。**左对齐卡片**而非居中胶囊——圆角 `NyanRadius.cardNested`（16pt）+ `surface` 底 + `NyanShadows.subtle(nyan)` + `--chrome-edge` 描边（亮色透明、暗色 `divider` 环）；浮动 chrome 距屏幕边缘 `NyanSpacing.space12`（左右 12pt，宽屏 maxWidth 480pt 居中，手机满宽）；卡内：左侧 36×36 状态色块（`NyanRadius.chip` 12pt + 状态 tint 底 + 20pt 图标）→ `space12` 间隙 → 标题（`responseTitle` 14/w600）+ 可选描述（`responseDescription` 12.5/w400，`textSecondary`）。**5 个状态**：`success`（`checkCircle` + `successColor` + success 13% tile）/ `error`（`warningCircle` + `errorPrimaryTextColor` + `errorBackground` tile）/ `skipped`（`skipForward` + `textMuted` + `surfaceMuted` tile）/ `info`（`info` + `infoColor` + info 13% tile）/ `loading`（`circleNotch` 旋转 + `primary` + primary 12% tile）。**MUST NOT** 回退到居中胶囊（`StadiumBorder` / radius 999）或自造 `BoxShadow`。自动消失的 toast **省略** ✕（`onDismiss` 留空，DS 契约）；`NyanResponse` 仍支持 `onDismiss` 以备常驻场景。
 - **Slider**：轨道高 3–4pt 用 `surfaceMuted`，已填充段用 `primaryDeep`（亮度）或 `highlightOrange`（暖色温），thumb 10–12pt 实心同色，**无光晕、无阴影、无放大**。
 - **Card**：圆角 `NyanRadius.card`（20pt），`surface` 底，`divider` 描边；**默认无阴影**；仅在书架 hover / 次级浮层必要时使用 `NyanShadows.subtle`。
 - **书架列表视图（list view，2026-06，来源 `screens/bundle3.jsx` `BookListRow`）**：**单块分组面板**而非逐项独立卡片——外层 `surface` 底 + `NyanRadius.cardNested`（16pt）+ `NyanShadows.settingsGrouped` + `--chrome-edge` 描边（亮色透明、暗色 `divider` 环），各行**无自身边框/阴影**，行间用 0.5px `divider@34%` 发丝线（左右内缩 12pt）分隔。行内：左侧 44×58 竖向封面（`NyanRadius.chip`），标题 14pt w600 单行 + 作者独占一行（`textMuted`）+ 进度行（仅 `progress>0` 时显示：满宽 3pt 轨 + 11pt mono 百分比），尾部格式徽标 + `chevronRight`。为不破坏懒加载（§3.4），分组外观由 `DecoratedSliver` 承载、内部仍是 `SliverList.builder`。选中态走整行 `primaryDeep` 淡色填充（`context.selectionSurface`），不加逐行描边。**MUST NOT** 回退到逐项独立卡片 + 卡间留白的旧实现。

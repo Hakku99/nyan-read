@@ -10,7 +10,7 @@ export 'nyan_continue_reading_card.dart';
 export 'nyan_dialog_option_row.dart';
 export 'nyan_empty_state.dart';
 export 'nyan_fab.dart';
-export 'nyan_floating_notice.dart';
+export 'nyan_response.dart';
 export 'nyan_highlight_card.dart';
 export 'nyan_info_card.dart';
 export 'nyan_inline_ad_card.dart';

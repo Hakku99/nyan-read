@@ -111,6 +111,24 @@ class NyanTypography {
   ///   `font: "600 14px/1.2"`
   static const double adminHintTitle = 14.0;
 
+  /// Shared response toast (`NyanResponse`) title — design-system handoff
+  /// exception (see AGENTS.md §4.2.5). Reserved for the [NyanResponse] title
+  /// line ONLY. Sits between [meta] 13 and [body] 16; it MUST NOT appear in
+  /// body copy, headings, list rows, or any other surface.
+  ///
+  /// Source: `components/surfaces/NyanResponse.jsx`
+  ///   `font: "600 14px/1.25 var(--font-ui)"`
+  static const double responseTitle = 14.0;
+
+  /// Shared response toast (`NyanResponse`) description — design-system handoff
+  /// exception (see AGENTS.md §4.2.5). Reserved for the [NyanResponse]
+  /// description line ONLY. Sits between [caption] 11 and [meta] 13; it MUST
+  /// NOT appear in body copy, list rows, or any other surface.
+  ///
+  /// Source: `components/surfaces/NyanResponse.jsx`
+  ///   `font: "400 12.5px/1.35 var(--font-ui)"`
+  static const double responseDescription = 12.5;
+
   /// Olive uppercase eyebrow label — 11pt / w500 / +0.22 letter-spacing.
   /// Pass [color] as `nyan.primaryDeep` from the active [NyanTheme].
   /// Use only for section eyebrows above grouped cards / reader settings headers.

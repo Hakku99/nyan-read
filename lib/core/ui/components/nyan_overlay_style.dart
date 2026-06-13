@@ -31,8 +31,6 @@ class NyanOverlayStyle {
   const NyanOverlayStyle._();
 
   static const Duration overlayTransitionDuration = Duration(milliseconds: 220);
-  static const Duration noticeEnterDuration = Duration(milliseconds: 220);
-  static const Duration noticeExitDuration = Duration(milliseconds: 160);
   static const Duration loaderCycleDuration = Duration(milliseconds: 840);
   static const Curve overlayCurve = Curves.easeOutCubic;
   static const Curve overlayFadeCurve = Curves.easeOut;
@@ -47,16 +45,6 @@ class NyanOverlayStyle {
   static const double dialogSubtitleGap = 8;
   static const double dialogOptionGap = 22;
   static const double dialogActionGap = 18;
-
-  static const double toastRadius = 999;
-  static const double noticeMaxWidthFactor = 0.76;
-  static const double noticeMaxWidthCap = 360;
-  static const double noticeMinHeight = 56;
-  static const double noticeHorizontalPadding = 16;
-  static const double noticeVerticalPadding = 11;
-  static const double noticeIconBadgeSize = 24;
-  static const double noticeIconSize = 18;
-  static const double noticeIconGap = 9;
 
   static const double optionRowRadius = 24;
   static const double optionTileMinHeight = 88;
@@ -96,8 +84,6 @@ class NyanOverlayStyle {
     final nyanTheme = context.nyanTheme;
     return Color.lerp(nyanTheme.primary, nyanTheme.textSecondary, 0.34)!;
   }
-
-  static Color successNoticeIcon(BuildContext context) => brandOlive(context);
 
   static Color destructiveAccent(BuildContext context) {
     final theme = Theme.of(context);
@@ -207,54 +193,6 @@ class NyanOverlayStyle {
         blurRadius: 8,
         spreadRadius: 0,
         offset: Offset(0, 2),
-      ),
-    ];
-  }
-
-  static Color noticeBorder(
-    BuildContext context, {
-    required NyanOverlayTone tone,
-  }) {
-    final palette = tonePalette(context, tone);
-    final theme = Theme.of(context);
-    final base = Color.lerp(divider(context), palette.border, 0.42)!;
-    return base.withValues(
-        alpha: theme.brightness == Brightness.dark ? 0.34 : 0.26);
-  }
-
-  static Color noticeSurface(
-    BuildContext context, {
-    required NyanOverlayTone tone,
-  }) {
-    final theme = Theme.of(context);
-    final palette = tonePalette(context, tone);
-    final base = creamSurface(context);
-    return Color.alphaBlend(
-      palette.tint
-          .withValues(alpha: theme.brightness == Brightness.dark ? 0.1 : 0.045),
-      base,
-    );
-  }
-
-  static List<BoxShadow> noticeShadow(
-    BuildContext context, {
-    required NyanOverlayTone tone,
-  }) {
-    final theme = Theme.of(context);
-    if (theme.brightness == Brightness.dark) {
-      return const [];
-    }
-    final palette = tonePalette(context, tone);
-
-    return [
-      BoxShadow(
-        color: Color.alphaBlend(
-          palette.tint.withValues(alpha: 0.04),
-          NyanColors.overlayShadowNotice,
-        ),
-        blurRadius: 18,
-        spreadRadius: 0,
-        offset: Offset(0, 6),
       ),
     ];
   }

@@ -64,6 +64,13 @@ class NyanIcons {
   static const IconData delete = PhosphorIconsRegular.trash;
   static const IconData check = PhosphorIconsRegular.check;
 
+  /// Success status glyph for the shared response toast (ph-check-circle).
+  static const IconData checkCircle = PhosphorIconsRegular.checkCircle;
+
+  /// Indeterminate loading glyph for the response toast (ph-circle-notch);
+  /// rendered spinning. See [NyanResponse].
+  static const IconData circleNotch = PhosphorIconsRegular.circleNotch;
+
   /// Used only for the matcha selected-card badge (reader theme picker, etc).
   static const IconData checkFilled = PhosphorIconsFill.check;
   static const IconData search = PhosphorIconsRegular.magnifyingGlass;
