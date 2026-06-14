@@ -5,37 +5,37 @@ abstract final class NyanShelfUi {
   NyanShelfUi._();
 
   /// Thin progress track used on shelf cards and continue-reading hero.
-  static const double progressBarHeight = 5;
+  static const double progressBarHeight = 3;
 
-  /// Grid gutters (equal cross/main).
-  static const double gridCrossAxisSpacing = 14;
-  static const double gridMainAxisSpacing = 14;
+  /// Grid gutters — cross (column gap) 12, main (row gap) 16 per bundle3.jsx spec.
+  static const double gridCrossAxisSpacing = 12;
+  static const double gridMainAxisSpacing = 16;
 
   /// Same rhythm as a grid row gap: pinned shelf → first row, list top, ad margins.
   static const double sectionGapAfterShelfChrome = gridMainAxisSpacing;
 
-  /// 3-column shelf tiles: width/height. ~1.0 works with vertically centered card content.
-  static const double gridChildAspectRatio = 1.0;
+  /// Cover portrait ratio for grid cards (120 × 156 per bundle3.jsx BookCard).
+  static const double gridCoverAspectRatio = 120.0 / 156.0;
+
+  /// Fixed height of the text section below the cover (progress bar + title + author
+  /// with their gaps). Used by the home screen to compute childAspectRatio dynamically.
+  static const double gridCardTextSectionHeight = 64.0;
 
   /// Vertical gap between list-mode book cards (bottom margin per tile).
   /// Spec uses 12px gap for list vs 14px for grid — intentional asymmetry.
   static const double listTileSpacing = 12;
 
-  /// Equal gaps between grid card blocks: icon — title — progress.
-  static const double gridCardBlockGap = NyanSpacing.space8;
+  /// List-row thumbnail size — a small portrait cover, not a square badge
+  /// (bundle3.jsx `BookListRow`: 44 × 58 with `r-chip` rounding).
+  static const double listCoverWidth = 44;
+  static const double listCoverHeight = 58;
 
-  /// Uniform padding on all 4 sides of the grid card — 12 pt per Claude Design
-  /// spec (`shelf-grid.html` rule: "Padding 12 px on all four sides").
-  static const double gridCardPadding = NyanSpacing.space12;
+  /// List-row format badge height (bundle3.jsx `BookListRow`: h18 pill).
+  static const double listFormatChipHeight = 18;
 
-  /// Reduced padding used when the card is selected (border grows 1→2 px,
-  /// so we subtract 1 pt to keep the inner content area identical:
-  /// 12 − 1 = 11. Not a standard 8-grid value; derivation is 100% intentional).
-  static const double gridCardSelectedPadding = 11.0;
-
-  /// Minimum height of the title text slot — reserves 2 lines of
-  /// 12.5 px × 1.28 line-height (= 32 px) so every card in a row
-  /// shares the same content rhythm regardless of title length.
+  /// Minimum height of the title text slot below a grid cover — reserves 2
+  /// lines of 12.5px × 1.28 line-height (= 32px) so every card in a row keeps
+  /// the same vertical rhythm regardless of title length.
   static const double gridCardTitleMinHeight = 32.0;
 
   /// Horizontal inset for the main bookshelf scroll content (screen edge).
@@ -44,4 +44,9 @@ abstract final class NyanShelfUi {
   /// Extra scroll extent beyond safe area so the FAB does not cover the last row.
   static const double scrollBottomFabClearance =
       NyanSpacing.space16 + 56 + NyanSpacing.space12;
+
+  /// Extra scroll extent for selection mode — clears the floating SelectActionBar
+  /// (height ≈ 68pt) + its 12pt bottom inset, plus breathing room.
+  /// Source: `screens/bundle3.jsx` `BookshelfManage`: `padding-bottom: 104px`.
+  static const double scrollBottomSelectionBarClearance = 104.0;
 }

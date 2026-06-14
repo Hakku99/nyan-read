@@ -93,11 +93,12 @@ class NyanEmptyState extends StatelessWidget {
                     title,
                     textAlign: TextAlign.center,
                     style: titleStyle ??
-                        theme.textTheme.titleMedium?.copyWith(
+                        TextStyle(
+                          fontFamily: NyanTypography.uiFontFamily,
                           fontSize: NyanTypography.section, // 20pt
                           fontWeight: FontWeight.w600,
-                          // Spec: `font:600 20px/1.3`
                           height: 1.3,
+                          color: nyan.textPrimary,
                         ),
                   ),
                   if (description != null) ...[
@@ -106,8 +107,11 @@ class NyanEmptyState extends StatelessWidget {
                       description!,
                       textAlign: TextAlign.center,
                       style: descriptionStyle ??
-                          theme.textTheme.bodyMedium?.copyWith(
+                          TextStyle(
                             // Spec: `font:400 14px/1.5 text-secondary`
+                            fontFamily: NyanTypography.uiFontFamily,
+                            fontSize: NyanTypography.body,
+                            fontWeight: FontWeight.w400,
                             height: 1.5,
                             color: nyan.textSecondary,
                           ),
@@ -134,7 +138,7 @@ class NyanEmptyState extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: nyan.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(NyanRadius.card),
+        borderRadius: BorderRadius.circular(NyanRadius.cardNested),
       ),
       child: Icon(
         iconData,

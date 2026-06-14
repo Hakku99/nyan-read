@@ -18,7 +18,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themePreset => '预设主题';
 
   @override
+  String get themePresetSubtitle => '阅读时的 Nyan Read 外观';
+
+  @override
   String get readingSettings => '阅读设置';
+
+  @override
+  String get reading => '阅读';
 
   @override
   String get readerQuickProgressSubtitle => '章节跳转与阅读位置';
@@ -40,6 +46,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pageTurnMode => '翻页模式';
+
+  @override
+  String get pageTurnModeSubtitle => '阅读时翻页的方向';
 
   @override
   String get pageTurnModeTap => '点击翻页';
@@ -99,15 +108,33 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readingReminder => '阅读提醒';
 
   @override
-  String get readingReminderSubtitle => '提醒我休息一下';
+  String get readingReminderSubtitle => '章节跳转与阅读位置';
 
   @override
   String get reminderInterval => '提醒间隔';
 
   @override
+  String get reminderIntervalSubtitle => '多久提醒你回来阅读一次';
+
+  @override
   String reminderMinutes(int minutes) {
     return '$minutes 分钟';
   }
+
+  @override
+  String get reminderEvery15min => '每 15 分钟';
+
+  @override
+  String get reminderEvery30min => '每 30 分钟';
+
+  @override
+  String get reminderEveryHour => '每小时';
+
+  @override
+  String get reminderEvery2hours => '每 2 小时';
+
+  @override
+  String get reminderDaily => '每天';
 
   @override
   String get dataManagement => '数据管理';
@@ -116,7 +143,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get deleteFilesOnRemove => '删除时移除文件';
 
   @override
-  String get deleteFilesOnRemoveSubtitle => '也会一起删除设备里的原始文件';
+  String get deleteFilesOnRemoveSubtitle => '删除书籍时一并移除原始文件';
 
   @override
   String get lockPrivateShelf => '锁定私密书架';
@@ -143,31 +170,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get about => '关于';
 
   @override
-  String get lockPrivacyShelfSubtitle => '隐藏直到下次解锁';
+  String get lockPrivacyShelfSubtitle => '需要 PIN 码才能打开';
 
   @override
   String get adminPanel => '管理面板';
 
   @override
-  String get adminPanelTitle => '管理 / 开发模式';
+  String get adminPanelTitle => '管理面板';
 
   @override
-  String get adminPanelModeSection => '模式控制';
+  String get adminPanelModeSection => '模式';
 
   @override
   String get adminProModeEnabled => '启用专业模式';
 
   @override
-  String get adminProModeSubtitle => '解锁私密书架并关闭广告';
+  String get adminProModeSubtitle => '解锁此次会话的全部专业功能。';
 
   @override
   String get adminForceUnlockPrivacyShelf => '强制解锁私密书架';
 
   @override
-  String get adminForceUnlockPrivacyShelfSubtitle => '跳过密码校验';
+  String get adminForceUnlockPrivacyShelfSubtitle => '跳过此次会话的 PIN 校验。';
 
   @override
-  String get adminFeatureFlagsSection => '功能开关状态';
+  String get adminFeatureFlagsSection => '功能开关';
 
   @override
   String get adminStateOn => '开启';
@@ -176,13 +203,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminStateOff => '关闭';
 
   @override
-  String get adminPanelHintTitle => '内部控制面板';
+  String get adminPanelHintTitle => '仅供测试';
 
   @override
-  String get adminPanelHintSubtitle => '用于调试和功能能力验证，不影响阅读数据。';
+  String get adminPanelHintSubtitle => '此处更改仅影响当前会话，重启应用即可恢复默认。';
 
   @override
   String get language => '语言';
+
+  @override
+  String get languageSubtitle => '应用界面语言';
 
   @override
   String get bookDetails => '书籍详情';
@@ -266,10 +296,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get filePathCopied => '文件路径已复制到剪贴板';
 
   @override
+  String get copiedToClipboard => '已复制到剪贴板';
+
+  @override
+  String get couldNotOpenBrowserSearchCopied => '无法打开浏览器，搜索链接已复制';
+
+  @override
   String get fileExists => '文件存在';
 
   @override
   String get fileNotFound => '文件未找到';
+
+  @override
+  String get fileUnavailableCta => '文件不可用';
 
   @override
   String get unknown => '未知';
@@ -319,6 +358,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get remove => '移出';
 
   @override
+  String get undo => '撤销';
+
+  @override
+  String get export => '导出';
+
+  @override
   String get cancel => '取消';
 
   @override
@@ -331,10 +376,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get viewDetails => '查看详情';
 
   @override
-  String get moveToPublic => '移至公开书架';
+  String get moveToPublic => '设为公开';
 
   @override
-  String get moveToPrivate => '移至隐私书架';
+  String get moveToPrivate => '设为私密';
 
   @override
   String get selectAll => '全选';
@@ -349,6 +394,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enjoyReading => '享受阅读时光';
 
   @override
+  String get bookshelf => '书架';
+
+  @override
   String get listView => '列表视图';
 
   @override
@@ -359,6 +407,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sortBy => '排序方式';
+
+  @override
+  String get sortShelfBy => '书架排序';
 
   @override
   String get sortOrderAsc => '升序';
@@ -385,6 +436,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get titleDesc => '书名降序';
 
   @override
+  String get sortLastReadAscSub => '最早打开的在前';
+
+  @override
+  String get sortLastReadDescSub => '最近打开的在前';
+
+  @override
+  String get sortTitleAscSub => 'A → Z';
+
+  @override
+  String get sortTitleDescSub => 'Z → A';
+
+  @override
+  String get sortAddedAscSub => '最早添加的在前';
+
+  @override
+  String get sortAddedDescSub => '最新添加的在前';
+
+  @override
   String get lockPrivacyShelf => '锁定隐私书架';
 
   @override
@@ -392,11 +461,26 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String deleteBooksTitle(int count) {
-    return '移出 $count 本书？';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '删除 $count 本书？',
+    );
+    return '$_temp0';
   }
 
   @override
-  String get actionCannotBeUndone => '它们会从当前书架中移出。';
+  String get actionCannotBeUndone => '阅读进度、书签及笔记将一并删除，设备上的源文件保留不变。';
+
+  @override
+  String deleteBooksButton(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '删除 $count 本书',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get alsoDeleteLocalFiles => '同时删除本地文件';
@@ -424,19 +508,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importBooksTitle => '导入书籍';
 
   @override
-  String get importBooksSubtitle => '从设备中选择文件，加入你的书架。';
+  String get importBooksSubtitle => '继续向书架添加书籍。';
 
   @override
-  String get importBooksEmptySubtitle => '从设备中导入第一本书，开始阅读。';
+  String get importBooksEmptySubtitle => '导入第一本书，开始阅读。';
 
   @override
-  String get importFilesSubtitle => '选择一个或多个受支持的电子书文件。';
+  String get importFilesSubtitle => '浏览并打开 .txt、.epub 或 .pdf 文件';
 
   @override
   String get supportedFormats => '支持的格式';
 
   @override
-  String get supportedFormatsSubtitle => '目前支持 TXT、EPUB 和 PDF。';
+  String get supportedFormatsSubtitle => '纯文本、电子书和文档文件。';
 
   @override
   String get supportedFormatsDescription =>
@@ -481,6 +565,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get unlock => '解锁';
 
   @override
+  String get pinEnter => '输入 PIN';
+
+  @override
+  String get pinSet => '设置 PIN';
+
+  @override
+  String get pinConfirm => '确认 PIN';
+
+  @override
+  String get pinMismatch => '两次 PIN 不一致，请重试';
+
+  @override
   String get fontSize => '字体大小';
 
   @override
@@ -506,6 +602,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get readerMenuTheme => '主题';
+
+  @override
+  String get readingTheme => '阅读主题';
 
   @override
   String readerSheetProgressSubtitle(String percent) {
@@ -579,6 +678,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get readerTypographyPreviewSample => '春日和风，纸页轻响，阅读让时间慢下来。';
 
   @override
+  String readerResetSection(String section) {
+    return '重置$section';
+  }
+
+  @override
   String get readerResetAppearance => '恢复默认';
 
   @override
@@ -611,7 +715,15 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String chapterOfCount(int current, int total) {
+    return '第 $current 章 / 共 $total 章';
+  }
+
+  @override
   String get readerDockChapters => '目录';
+
+  @override
+  String get readerDockHighlights => '高亮';
 
   @override
   String get jumpToCurrentChapter => '定位当前章节';
@@ -656,6 +768,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String bookmarksTitle(int count) {
     return '书签 ($count)';
+  }
+
+  @override
+  String bookmarksSavedCount(int count) {
+    return '已存 $count 个';
   }
 
   @override
@@ -714,7 +831,37 @@ class AppLocalizationsZh extends AppLocalizations {
   String get themeCreamLight => '奶油白';
 
   @override
+  String get themeCreamLightHint => '温暖纸感，默认';
+
+  @override
   String get themeSumiDark => '墨色黑';
+
+  @override
+  String get themeSumiDarkHint => '深夜护眼';
+
+  @override
+  String get themeMatchSystem => '跟随系统';
+
+  @override
+  String get themeMatchSystemHint => '随设备深色模式切换';
+
+  @override
+  String get pageTurnLeftRight => '左右翻页';
+
+  @override
+  String get pageTurnLeftRightHint => '水平翻页';
+
+  @override
+  String get pageTurnUpDown => '上下翻页';
+
+  @override
+  String get pageTurnUpDownHint => '垂直翻页';
+
+  @override
+  String get languageEnglishHint => 'English';
+
+  @override
+  String get languageChineseHint => '中文 · 简体中文';
 
   @override
   String get timeToday => '今天';
@@ -735,16 +882,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get neverRead => '从未阅读';
 
   @override
-  String get errorFileNotFound => '这本书好像迷路了。\n找不到源文件，它可能已被移动或删除。';
+  String get errorFileNotFoundTitle => '这本书迷路了';
 
   @override
-  String get errorUnsupportedFormat => 'Nyan 还不能读取这种格式。\n当前暂不支持该文件类型。';
+  String get errorFileNotFoundBody => '找不到源文件——它可能已被移动或删除。';
 
   @override
-  String get errorParseFailed => '书页像是粘在一起了。\n文件解析失败，可能已经损坏。';
+  String get errorUnsupportedFormatTitle => 'Nyan 还不能读取这种格式';
 
   @override
-  String get errorUnknown => '发生了意外错误。\n请稍后再试。';
+  String get errorUnsupportedFormatBody => '暂不支持该文件类型。';
+
+  @override
+  String get errorParseFailedTitle => '书页像是粘在一起了';
+
+  @override
+  String get errorParseFailedBody => '无法打开此文件，它可能已损坏。';
+
+  @override
+  String get errorUnknownTitle => '出了点问题';
+
+  @override
+  String get errorUnknownBody => '发生了意外错误，请稍后再试。';
 
   @override
   String get emptyShelfTitle => '书架正在等待新的故事';
@@ -753,28 +912,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String get emptyShelfSubtitle => '导入一本书开始阅读';
 
   @override
-  String get exportData => '导出阅读数据';
+  String get exportData => '导出数据';
 
   @override
-  String get exportDataSubtitle => '将书籍、高亮和书签备份为 JSON';
+  String get exportDataSubtitle => '保存到设备或分享';
+
+  @override
+  String get exportDataSheetSubtitle => '选择阅读数据的保存方式';
 
   @override
   String get saveToDevice => '保存到设备';
 
   @override
-  String get saveToDeviceSubtitle => '选择设备上的文件夹';
+  String get saveToDeviceSubtitle => '将 JSON 备份存储到文件';
 
   @override
-  String get shareVia => '通过以下方式分享';
+  String get shareVia => '分享...';
 
   @override
-  String get shareViaSubtitle => 'Gmail、Drive、Quick Share 等';
+  String get shareViaSubtitle => '通过 Gmail、Drive 等应用发送';
 
   @override
-  String get importData => '导入阅读数据';
+  String get importData => '导入数据';
 
   @override
-  String get importDataSubtitle => '从之前导出的 JSON 文件恢复';
+  String get importDataSubtitle => '从备份文件恢复';
 
   @override
   String importSuccess(int count) {
@@ -784,5 +946,13 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String importFailed(String error) {
     return '导入失败：$error';
+  }
+
+  @override
+  String get exportSaved => '导出已保存到设备';
+
+  @override
+  String exportFailed(String error) {
+    return '导出失败：$error';
   }
 }

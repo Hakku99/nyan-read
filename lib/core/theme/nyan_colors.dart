@@ -15,17 +15,29 @@ class NyanColors {
   static const Color creamDivider = Color(0xFFE5DED2);
   static const Color creamSuccess = Color(0xFF4F6B1E);
 
-  static const Color inkNightBackground = Color(0xFF1D211E);
-  static const Color inkNightSurface = Color(0xFF262B27);
+  // ── Sumi Dark — v3 elevation ladder (design-system handoff 2026-06) ──────
+  // Depth is carried by TONE, not drop-shadow: surfaces step LIGHTER as they
+  // rise toward the user, on a deliberate ladder with a visible ~5–8 L* gap so
+  // each elevated layer reads as a distinct plane:
+  //   bg #181B16 (page void) < surfaceMuted #1D211B (recessed track) <
+  //   surface #242922 (cards/bars, +1) < surfaceRaised #2E342B
+  //   (dialogs/sheets/popovers, highest).
+  // Source: colors_and_type.css [data-theme="sumi"]; HANDOFF-flutter.md §2.
+  static const Color inkNightBackground = Color(0xFF181B16);
+  static const Color inkNightSurface = Color(0xFF242922);
+  static const Color inkNightSurfaceMuted = Color(0xFF1D211B);
+  static const Color inkNightSurfaceRaised = Color(0xFF2E342B);
   static const Color inkNightPrimary = Color(0xFFA9B690);
-  static const Color inkNightPrimaryDeep = Color(0xFFB3C29A);
-  static const Color inkNightTextMain = Color(0xFFE8E1D5);
-  static const Color inkNightTextSecondary = Color(0xFFB4AC9F);
-  // Lightened from #9C968D to ensure ≥5.5:1 WCAG AA margin on inkNightSurface/inkNightBackground.
-  static const Color inkNightTextMuted = Color(0xFFA6A099);
-  static const Color inkNightSurfaceMuted = Color(0xFF202520);
-  static const Color inkNightDivider = Color(0xFF3A3F3A);
-  static const Color inkNightSuccess = Color(0xFF8FBC8F);
+  static const Color inkNightPrimaryDeep = Color(0xFFB7C69E);
+  static const Color inkNightTextMain = Color(0xFFECE6DB);
+  static const Color inkNightTextSecondary = Color(0xFFBBB3A6);
+  // #9A948B clears WCAG AA on BOTH background and surface under the v3 ladder.
+  static const Color inkNightTextMuted = Color(0xFF9A948B);
+  static const Color inkNightDivider = Color(0xFF3D443A);
+  // Explicit card edge — brighter than divider; used when a hard border helps a
+  // surface read as a plane (e.g. the luminous hairline ring on dark chrome).
+  static const Color inkNightBorder = Color(0xFF474E42);
+  static const Color inkNightSuccess = Color(0xFF94C194);
 
   static const Color highlightYellow = Color(0xFFF2E58A);
   static const Color highlightGreen = Color(0xFFA8D18D);
@@ -34,15 +46,19 @@ class NyanColors {
   static const Color highlightOrange = Color(0xFFF2BE7E);
   static const Color readerInfoBlue = Color(0xFF7FABAC);
 
-  static const Color errorBackgroundLight = Color(0xFFFFF0F0);
-  static const Color errorPrimaryLight = Color(0xFFC62828);
-  static const Color errorSecondaryLight = Color(0xFFD32F2F);
-  static const Color errorAccentLight = Color(0xFFFFCDD2);
+  // Warm-clay error palette (design-system handoff 2026-06): a desaturated
+  // terracotta that shares the warm-paper chroma, so errors read as calm and
+  // on-brand rather than clinical Material red. Source: colors_and_type.css
+  // --error-* (light + sumi).
+  static const Color errorBackgroundLight = Color(0xFFFBF2EC);
+  static const Color errorPrimaryLight = Color(0xFF9C5C49);
+  static const Color errorSecondaryLight = Color(0xFF8A6A55);
+  static const Color errorAccentLight = Color(0xFFECD9CC);
 
-  static const Color errorBackgroundDark = Color(0xFF2B2020);
-  static const Color errorPrimaryDark = Color(0xFFFFCDD2);
-  static const Color errorSecondaryDark = Color(0xFFE57373);
-  static const Color errorAccentDark = Color(0xFFEF9A9A);
+  static const Color errorBackgroundDark = Color(0xFF241D18);
+  static const Color errorPrimaryDark = Color(0xFFCE9A86);
+  static const Color errorSecondaryDark = Color(0xFFB6967F);
+  static const Color errorAccentDark = Color(0xFF3A2D24);
 
   // ===========================================================================
   // Reader runtime defaults (出厂默认的阅读画布色；用户可在阅读设置中覆盖)
@@ -116,9 +132,6 @@ class NyanColors {
   /// ~2% 纯黑 — NyanOverlayStyle.loadingShadow 内层。
   static const Color overlayShadowLoadingInner = Color(0x06000000);
 
-  /// ~5% 纯黑 — NyanOverlayStyle.noticeShadow（单层）。
-  static const Color overlayShadowNotice = Color(0x0D000000);
-
   // ===========================================================================
   // Overlay micro-palette (NyanOverlayStyle + NyanConfirmDialog + NyanDialogOptionRow)
   // 这些是"顶层浮层"专属的暖米色 + 朴素褐的微调色，独立于主题 surface/divider。
@@ -146,6 +159,20 @@ class NyanColors {
 
   /// NyanConfirmDialog badge 薄荷描边（~42% alpha）。
   static const Color confirmBadgeBorder = Color(0x6BDCE4D3);
+
+  // ===========================================================================
+  // Privacy PIN overlay — dark takeover ink (U16 handoff, AGENTS.md §4.2.1)
+  // The full-screen PIN overlay's DARK variant uses bespoke ink literals that
+  // sit OUTSIDE both NyanTheme presets, matching the U16 mock exactly (the mock
+  // hardcodes #1D211E / #E8E1D5 rather than the standard sumi tokens
+  // #181B16 / #ECE6DB). Referenced directly only by the PIN overlay widgets.
+  // Source: screens/bundle4.jsx `PinOverlay` (dark branch).
+  // ===========================================================================
+  /// Dark takeover page-void background (mock `bg`, dark branch).
+  static const Color pinOverlayInkBackground = Color(0xFF1D211E);
+
+  /// Dark takeover foreground ink — title, dots, keypad glyphs (mock `fg`).
+  static const Color pinOverlayInk = Color(0xFFE8E1D5);
 
   // ===========================================================================
   // Misc fallbacks

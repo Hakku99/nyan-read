@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Components" name="Reader · One Paper" subtitle="Reader canvas + the dock that grows into a sheet" viewport="420x600" -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reader — Nyan Read</title>
+  <link rel="stylesheet" href="../../colors_and_type.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <style>html, body { margin: 0; } body { background: var(--nyan-bg); }</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="../../_ds_bundle.js"></script>
+<script>
+(function () {
+  var NS = window[Object.keys(window).filter(function (k) { return k.indexOf("NyanReadDesignSystem_") === 0; })[0]];
+  var h = React.createElement;
+  function Demo() {
+    var ch = React.useState(2);
+    return h("div", { style: { position: "relative", height: 600, background: "var(--reader-bg-cream)", overflow: "hidden" } },
+      h("div", { style: { padding: "28px 24px" } },
+        h(NS.ReaderParagraph, { serif: true }, "The cat sat on the threshold for a long while, watching the rain decide what kind of evening it would be. Inside, the kettle had gone quiet, and the lamp made a small amber country of the desk."),
+        h(NS.ReaderParagraph, { serif: true }, "She turned the page the way one steps onto old wood — slowly, listening for what it would say.")),
+      h(NS.OnePaperDock, {
+        chapterIndex: ch[0], chapterCount: 12, progress: 0.42,
+        onPrevChapter: function () { ch[1](Math.max(0, ch[0] - 1)); },
+        onNextChapter: function () { ch[1](Math.min(11, ch[0] + 1)); }
+      })
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(h(Demo));
+})();
+</script>
+</body>
+</html>

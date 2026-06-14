@@ -1,29 +1,46 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/nyan_radius.dart';
+import '../../../core/theme/nyan_shadows.dart';
 import '../../../core/theme/nyan_spacing.dart';
+import '../../../core/ui/nyan_theme_context.dart';
 
-/// Visual weight: [emphasis] matches primary-filled pills (reader settings);
-/// [subtle] uses a light primary tint so the control does not compete with the hero CTA.
+/// Visual weight:
+/// [emphasis] = floating surface chip + grouped shadow, `primaryDeep` selected
+///   text (default — reader sort / sections, per `primitives.jsx`).
+/// [subtle] = matcha-tint chip, `primaryDeep` selected text (sort-order sheet —
+///   doesn't compete with a hero CTA nearby).
+/// [shelf] = surface chip + grouped shadow, **`textPrimary` w600** selected /
+///   `textMuted` unselected. The top-level Public/Private shelf switcher
+///   (`BookshelfScreen.jsx`): a dark bold label reads as page-level navigation,
+///   not an in-panel adjustment. Documented exception to AGENTS.md §4.3.
 enum SegmentedTabStyle {
   emphasis,
   subtle,
+  shelf,
 }
 
-/// A segmented control widget with pill-style design and sliding indicator animation.
-/// Used for the Public/Private shelf tabs in HomeScreen.
+/// Segmented / tab control — "ONE recessed-track style for the whole system."
+///
+/// Track: `r-control` (14pt), `surfaceMuted` background, no border — recessed
+/// by tone, never by a ring. Indicator: concentric inner 11pt (= 14 − 3);
+/// emphasis = `surface` chip + `settingsGrouped` shadow; subtle = matcha-tint.
+/// Animation: `--dur-chrome` 280ms, `ease-paper` (cubic-bezier 0.33,0.9,0.36,1).
+/// Selected text: `primaryDeep`. Unselected: `textSecondary`.
+///
+/// Source: `components/primitives.jsx` `SegmentedTabControl`; `colors_and_type.css`
+/// `--dur-chrome`, `--r-control`; `HANDOFF-flutter.md §2`.
 class SegmentedTabControl extends StatefulWidget {
   final List<SegmentedTab> tabs;
   final int selectedIndex;
   final ValueChanged<int> onTabChanged;
+
+  /// Override the track background. Defaults to [NyanTheme.surfaceMuted].
   final Color? backgroundColor;
-  final Color? selectedColor;
-  final Color? unselectedColor;
 
   /// When set, applied to tab label [TextStyle.height] (e.g. reader settings).
   final double? labelLineHeight;
 
-  /// [subtle] = tinted selection + primary text (bookshelf). Default = strong fill (reader menu, etc.).
+  /// [subtle] = matcha-tint chip (bookshelf); [emphasis] = surface chip (default).
   final SegmentedTabStyle style;
 
   const SegmentedTabControl({
@@ -32,8 +49,6 @@ class SegmentedTabControl extends StatefulWidget {
     required this.selectedIndex,
     required this.onTabChanged,
     this.backgroundColor,
-    this.selectedColor,
-    this.unselectedColor,
     this.labelLineHeight,
     this.style = SegmentedTabStyle.emphasis,
   });
@@ -43,88 +58,79 @@ class SegmentedTabControl extends StatefulWidget {
 }
 
 class _SegmentedTabControlState extends State<SegmentedTabControl> {
+  // --dur-chrome 280ms; --ease-paper cubic-bezier(0.33, 0.9, 0.36, 1)
+  static const _kDuration = Duration(milliseconds: 280);
+  static const _kCurve = Cubic(0.33, 0.9, 0.36, 1.0);
+
+  // Concentric inner: track r-control(14) minus 3px padding on each side → 11.
+  // This is intentional off-scale (not a NyanRadius constant) — the inner arc
+  // must look parallel to the outer arc, not independent.
+  static const double _kIndicatorRadius = NyanRadius.control - 3; // 11
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final nyan = context.nyanTheme;
+    final subtle = widget.style == SegmentedTabStyle.subtle;
+    final shelf = widget.style == SegmentedTabStyle.shelf;
 
-    final backgroundColor = widget.backgroundColor ?? theme.colorScheme.surface;
+    final Color trackBg = widget.backgroundColor ?? nyan.surfaceMuted;
 
-    final bool subtle = widget.style == SegmentedTabStyle.subtle;
+    // emphasis + shelf both use a surface chip; only subtle uses the matcha tint.
+    final Color indicatorBg = subtle
+        ? nyan.primary.withValues(alpha: 0.16)
+        : nyan.surface;
 
-    // Ghost style for dark mode, solid for light mode; subtle = tinted pill, not full primary block.
-    final Color resolvedSelectedFill = widget.selectedColor ??
-        (subtle
-            ? theme.colorScheme.primary.withValues(alpha: isDark ? 0.22 : 0.18)
-            : (isDark
-                ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                : theme.colorScheme.primary));
+    final List<BoxShadow> indicatorShadow =
+        subtle ? const [] : NyanShadows.settingsGrouped(nyan);
 
-    final unselectedColor = widget.unselectedColor ??
-        theme.textTheme.bodySmall?.color ??
-        theme.colorScheme.onSurface.withValues(alpha: 0.62);
-
-    // Text color for selected tab (tinted pill uses primary ink; solid fill uses onPrimary in light).
-    final Color selectedTextColor = widget.selectedColor != null
-        ? (isDark ? theme.colorScheme.primary : theme.colorScheme.onPrimary)
-        : subtle
-            ? theme.colorScheme.primary
-            : (isDark
-                ? theme.colorScheme.primary
-                : theme.colorScheme.onPrimary);
+    // Shelf uses 3pt inset so the 11pt indicator (14−3) reads truly concentric,
+    // matching BookshelfScreen.jsx; other variants keep the 4pt grid value.
+    final double trackPadding = shelf ? 3 : NyanSpacing.space4;
 
     return Container(
       height: 40,
       decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(AppRadius.large),
-        border: Border.all(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.12),
-          width: 1,
-        ),
+        color: trackBg,
+        borderRadius: BorderRadius.circular(NyanRadius.control),
+        // No border — recessed by tone only (AGENTS.md §4.3 / bundle spec).
       ),
-      padding: const EdgeInsets.all(NyanSpacing.space4),
+      padding: EdgeInsets.all(trackPadding),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final totalWidth = constraints.maxWidth;
-          final tabWidth = totalWidth / widget.tabs.length;
+          final tabWidth = constraints.maxWidth / widget.tabs.length;
           final indicatorLeft = widget.selectedIndex * tabWidth;
 
           return Stack(
             children: [
-              // Sliding indicator
+              // Sliding indicator — owns the card-on-track lift.
               AnimatedPositioned(
-                duration: const Duration(milliseconds: 240),
-                curve: Curves.easeOutCubic,
+                duration: _kDuration,
+                curve: _kCurve,
                 left: indicatorLeft,
                 top: 0,
                 bottom: 0,
                 width: tabWidth,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: resolvedSelectedFill,
-                    borderRadius: BorderRadius.circular(NyanRadius.input),
-                    border: isDark && !subtle
-                        ? Border.all(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.5),
-                            width: 1,
-                          )
-                        : subtle && isDark
-                            ? Border.all(
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.35),
-                                width: 1,
-                              )
-                            : null,
+                    color: indicatorBg,
+                    borderRadius: BorderRadius.circular(_kIndicatorRadius),
+                    boxShadow: indicatorShadow,
                   ),
                 ),
               ),
-              // Tab buttons
+              // Tab buttons overlay (z > indicator).
               Row(
                 children: List.generate(widget.tabs.length, (index) {
                   final tab = widget.tabs[index];
                   final isSelected = index == widget.selectedIndex;
+                  // Shelf switcher: dark bold selected label (page-level voice).
+                  // Other variants: matcha-deep selected label (in-panel voice).
+                  final Color labelColor = shelf
+                      ? (isSelected ? nyan.textPrimary : nyan.textMuted)
+                      : (isSelected ? nyan.primaryDeep : nyan.textSecondary);
+                  final FontWeight labelWeight = (shelf && isSelected)
+                      ? FontWeight.w600
+                      : FontWeight.w500;
 
                   return SizedBox(
                     width: tabWidth,
@@ -141,13 +147,7 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (tab.icon != null) ...[
-                              Icon(
-                                tab.icon,
-                                size: 16,
-                                color: isSelected
-                                    ? selectedTextColor
-                                    : unselectedColor,
-                              ),
+                              Icon(tab.icon, size: 16, color: labelColor),
                               const SizedBox(width: NyanSpacing.space4),
                             ],
                             Flexible(
@@ -155,11 +155,9 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
                                 tab.label,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: labelWeight,
                                   height: widget.labelLineHeight,
-                                  color: isSelected
-                                      ? selectedTextColor
-                                      : unselectedColor,
+                                  color: labelColor,
                                 ),
                                 strutStyle: widget.labelLineHeight != null
                                     ? StrutStyle(
@@ -187,7 +185,7 @@ class _SegmentedTabControlState extends State<SegmentedTabControl> {
   }
 }
 
-/// Data class for a single tab in the segmented control
+/// Data class for a single tab in the segmented control.
 class SegmentedTab {
   final String label;
   final IconData? icon;

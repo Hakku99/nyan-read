@@ -1,0 +1,43 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Components — Continue-reading card" subtitle="Title + author + progress + matcha CTA" viewport="700x160" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Continue-reading card</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; }
+  .card { width: 100%; }
+  .row { display: flex; gap: 12px; align-items: center; }
+  .col { display: flex; flex-direction: column; gap: 12px; }
+  .swatch { width: 56px; height: 56px; border-radius: var(--radius-small); border: 1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent); }
+  .swatch-lg { width: 100%; height: 64px; border-radius: var(--radius-card); border: 1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent); }
+  .token-label { font: var(--fw-medium) var(--fz-meta)/1.2 var(--font-ui); color: var(--nyan-text); }
+  .token-meta  { font: var(--fw-regular) 11px/1.3 var(--font-mono); color: var(--nyan-text-secondary); }
+  .grid { display: grid; gap: 14px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font: var(--fw-medium) 11px/1 var(--font-mono); background: var(--nyan-surface-muted); color: var(--nyan-text-secondary); border: 1px solid var(--nyan-divider); }
+  
+</style>
+</head>
+<body><div class="card">
+  <div style="background:var(--nyan-surface); border-radius:var(--radius-card); border:0.5px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent); padding:16px; box-shadow: var(--shadow-light-card);">
+    <div class="row" style="justify-content: space-between;">
+      <div class="col" style="gap:4px; flex:1; min-width:0;">
+        <div style="font:600 16px/1.25 var(--font-ui); color:var(--nyan-text); letter-spacing:-0.2px;">The Tale of Genji</div>
+        <div style="font:400 13px/1.2 var(--font-ui); color:color-mix(in srgb, var(--nyan-text) 62%, transparent);">Murasaki Shikibu</div>
+      </div>
+      <button style="all:unset; cursor:pointer; padding:4px; color:color-mix(in srgb, var(--nyan-text) 55%, transparent);"><i class="ph ph-caret-up" style="font-size:20px;"></i></button>
+    </div>
+    <div class="row" style="gap:12px; margin-top:8px; align-items:flex-end;">
+      <div class="col" style="gap:8px; flex:1;">
+        <div style="font:400 12px/1.2 var(--font-ui); color:color-mix(in srgb, var(--nyan-text) 62%, transparent); letter-spacing:0.1px;">42%</div>
+        <div style="height:5px; background:color-mix(in srgb, var(--nyan-primary) 20%, transparent); border-radius:999px; overflow:hidden;"><div style="width:42%; height:100%; background:var(--nyan-primary);"></div></div>
+      </div>
+      <button style="all:unset; cursor:pointer; padding:8px 20px; background:var(--nyan-primary); color:var(--nyan-surface); border-radius:var(--radius-input); font:500 14px/1 var(--font-ui); min-height:36px;">Continue Reading</button>
+    </div>
+  </div>
+</div></body>
+</html>

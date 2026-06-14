@@ -12,6 +12,12 @@ class NyanBookCard extends StatelessWidget {
   final VoidCallback onLongPress;
   final VoidCallback? onSelectionToggle;
 
+  /// Forwarded to [AnimatedBookCardList]: hairline divider above the row and
+  /// rounding of the selection tint on the grouped panel's outer corners.
+  final bool showTopDivider;
+  final bool isFirst;
+  final bool isLast;
+
   const NyanBookCard({
     super.key,
     required this.book,
@@ -21,6 +27,9 @@ class NyanBookCard extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     this.onSelectionToggle,
+    this.showTopDivider = false,
+    this.isFirst = false,
+    this.isLast = false,
   });
 
   @override
@@ -33,6 +42,9 @@ class NyanBookCard extends StatelessWidget {
       onTap: onTap,
       onLongPress: onLongPress,
       onSelectionToggle: onSelectionToggle,
+      showTopDivider: showTopDivider,
+      isFirst: isFirst,
+      isLast: isLast,
     );
   }
 }

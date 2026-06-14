@@ -183,12 +183,17 @@ class BookImportFingerprint {
   ) {
     final ext = path.extension(locatorHint).toLowerCase();
     final header = utf8.encode('nyan-read-v1|$ext|$fileSize|');
-    final digest = sha256.convert([
-      ...header,
-      ...prefix,
-      ...suffix,
-    ]);
-    return digest.toString();
+    // Feed each buffer directly rather than spreading prefix+suffix into a
+    // single ~130 KB List<int>. The spread boxes every byte individually and
+    // allocates a full heap list — for many files in a loop that blocks the
+    // main isolate long enough to delay vsync and stall the entrance animation.
+    final out = _DigestSink();
+    sha256.startChunkedConversion(out)
+      ..add(header)
+      ..add(prefix)
+      ..add(suffix)
+      ..close();
+    return out.value.toString();
   }
 
   static Future<_Sample> _readSampleAsync(RandomAccessFile raf, int fileSize) async {
@@ -225,4 +230,18 @@ class _Sample {
   final List<int> suffix;
 
   const _Sample({required this.prefix, required this.suffix});
+}
+
+/// Minimal [Sink] that captures the single [Digest] emitted by
+/// [sha256.startChunkedConversion] so callers avoid [AccumulatorSink]'s
+/// list allocation when only one event is expected.
+class _DigestSink implements Sink<Digest> {
+  Digest? _value;
+  Digest get value => _value!;
+
+  @override
+  void add(Digest data) => _value = data;
+
+  @override
+  void close() {}
 }

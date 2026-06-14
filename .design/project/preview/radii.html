@@ -1,0 +1,115 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Spacing — radii" subtitle="Scale + nesting rule (child = parent − padding) + approved pairs" viewport="700x760" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Corner radii — scale + nesting rule</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; color: var(--nyan-text); }
+  .section { display: flex; flex-direction: column; gap: 14px; }
+  .section + .section { margin-top: 20px; }
+  .h { font: 600 14px/1.2 var(--font-ui); color: var(--nyan-text); letter-spacing: -0.1px; }
+  .sub { font: 400 12px/1.4 var(--font-ui); color: var(--nyan-text-secondary); }
+
+  .scale-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .scale-cell { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+  .scale-swatch { width: 100%; height: 60px; background: var(--nyan-surface); border: 1px solid var(--nyan-divider); }
+  .token-meta { font: 400 11px/1.3 var(--font-mono); color: var(--nyan-text-secondary); text-align: center; }
+  .token-label { font: 500 12px/1.2 var(--font-ui); color: var(--nyan-text); text-align: center; }
+
+  .nest-row { display: flex; gap: 14px; align-items: stretch; }
+  .nest-card {
+    flex: 1; padding: 14px;
+    background: var(--nyan-surface);
+    border: 0.5px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent);
+    box-shadow: var(--shadow-light-card);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .verdict { font: 600 10px/1 var(--font-mono); letter-spacing: 0.4px; padding: 3px 8px; border-radius: 999px; align-self: flex-start; }
+  .verdict.good { background: #E5F1E4; color: #2E6B3A; border: 1px solid #B7D8B5; }
+  .verdict.bad  { background: #FBE6E6; color: #9A2A2A; border: 1px solid #E8B6B6; }
+
+  .math {
+    font: 500 12px/1.3 var(--font-mono);
+    color: var(--nyan-text);
+    background: var(--nyan-surface-muted);
+    border: 1px dashed var(--nyan-divider);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+
+  .demo-outer-good { background: var(--nyan-surface); border: 1px solid var(--nyan-divider); padding: 4px; border-radius: 20px; }
+  .demo-inner-good { height: 36px; background: var(--nyan-primary); border-radius: 16px; display:flex; align-items:center; justify-content:center; color: var(--nyan-surface); font: 500 13px/1 var(--font-ui); }
+  .demo-outer-bad  { background: var(--nyan-surface); border: 1px solid var(--nyan-divider); padding: 4px; border-radius: 14px; }
+  .demo-inner-bad  { height: 36px; background: var(--nyan-primary); border-radius: 20px; display:flex; align-items:center; justify-content:center; color: var(--nyan-surface); font: 500 13px/1 var(--font-ui); }
+
+  .pair-table { width: 100%; border-collapse: collapse; font: 400 12px/1.4 var(--font-ui); }
+  .pair-table th, .pair-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--nyan-divider); }
+  .pair-table th { font: 600 11px/1.2 var(--font-ui); color: var(--nyan-text-secondary); letter-spacing: 0.3px; text-transform: uppercase; }
+  .pair-table code { font: 500 11px/1.3 var(--font-mono); color: var(--nyan-text); background: var(--nyan-surface-muted); padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="section">
+  <div class="h">Scale — 5 radii</div>
+  <div class="scale-grid">
+    <div class="scale-cell"><div class="scale-swatch" style="border-radius:14px;"></div><div class="token-label">small</div><div class="token-meta">14<br/>chip · tab inner</div></div>
+    <div class="scale-cell"><div class="scale-swatch" style="border-radius:16px;"></div><div class="token-label">input</div><div class="token-meta">16<br/>button · field · FAB</div></div>
+    <div class="scale-cell"><div class="scale-swatch" style="border-radius:20px;"></div><div class="token-label">card</div><div class="token-meta">20<br/>card · shelf item</div></div>
+    <div class="scale-cell"><div class="scale-swatch" style="border-radius:24px;"></div><div class="token-label">panel</div><div class="token-meta">24<br/>dialog</div></div>
+    <div class="scale-cell"><div class="scale-swatch" style="border-radius:28px;"></div><div class="token-label">sheet</div><div class="token-meta">28<br/>floating sheet · dock-grown</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="h">Nesting rule — concentric corners</div>
+  <div class="sub">When a rounded shape sits inside another rounded shape, the corners must stay <strong>concentric</strong> — the stroke gap between parent and child must be uniform all the way around. Otherwise the child either bulges past the parent's curve (bad) or sits inside it lopsidedly. Formula:</div>
+  <div class="math">child_radius = parent_radius − padding</div>
+
+  <div class="nest-row">
+    <div class="nest-card">
+      <span class="verdict good">✓ CONCENTRIC</span>
+      <div class="demo-outer-good"><div class="demo-inner-good">Text</div></div>
+      <div class="token-meta" style="text-align:left;">Outer <code>card · 20</code> &nbsp;−&nbsp; padding <code>4</code> &nbsp;=&nbsp; inner <code>input · 16</code></div>
+    </div>
+    <div class="nest-card">
+      <span class="verdict bad">✗ BULGE</span>
+      <div class="demo-outer-bad"><div class="demo-inner-bad">Text</div></div>
+      <div class="token-meta" style="text-align:left;">Outer <code>small · 14</code> &nbsp;−&nbsp; padding <code>4</code> &nbsp;=&nbsp; inner should be <code>10</code>, not <code>20</code></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="h">Approved nesting pairs</div>
+  <div class="sub">These are the only parent → child combinations the design system uses. Pick a row when you build a nested layout; don't improvise.</div>
+  <table class="pair-table">
+    <thead>
+      <tr><th>Parent (radius)</th><th>Padding</th><th>Child (radius)</th><th>Where it's used</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>card · 20</code></td><td><code>4</code></td><td><code>input · 16</code></td><td>Segmented tab control · pill button cluster</td></tr>
+      <tr><td><code>panel · 24</code></td><td><code>8</code></td><td><code>input · 16</code></td><td>Dialog inner controls · book-details overview grouped rows</td></tr>
+      <tr><td><code>panel · 24</code></td><td><code>4</code></td><td><code>card · 20</code></td><td>Dialog containing one large media block</td></tr>
+      <tr><td><code>sheet · 28</code></td><td><code>12</code></td><td><code>card-nested · 16</code></td><td>Reader dock-sheet body containing a Knob card</td></tr>
+      <tr><td><code>sheet · 28</code></td><td><code>12</code></td><td><code>input · 16</code></td><td>Bottom sheet containing a row of inputs / buttons</td></tr>
+      <tr><td><code>card-nested · 16</code></td><td><code>—</code></td><td><code>chip · 12</code></td><td>Knob card holding a row of option chips (warmth Low/Medium/High)</td></tr>
+      <tr><td><code>card · 20</code></td><td><code>2</code></td><td><code>small · 14</code></td><td>Tinted icon tile inside a list / action-sheet row</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="h">Exceptions</div>
+  <div class="sub">
+    <strong>Option chips</strong> — chips are <code>r-chip · 12</code>, squared to match every other container (no longer stadium pills). When a chip sits inside a Knob card the concentric gap is read visually, not computed. <br>
+    <strong>Circles</strong> — the matcha selected-check badge, the bookmark indicator dot, and slider thumbs. Treat radius as <code>50%</code>; no nesting math applies. <br>
+    <strong>Nothing welds to the edge</strong> — every bar, dock, and sheet floats inset 12 px and is rounded on <em>all four</em> corners. The reader dock rests at <code>dock · 24</code> and eases to <code>sheet · 28</code> as it grows. Only the reading canvas itself reaches the device edge.
+  </div>
+</div>
+
+</body>
+</html>

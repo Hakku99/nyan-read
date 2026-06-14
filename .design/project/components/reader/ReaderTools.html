@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Components" name="Reader Tools" subtitle="Selection menu · highlight pens · in-book search · PDF controls · book list row" viewport="440x600" -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reader Tools — Nyan Read</title>
+  <link rel="stylesheet" href="../../colors_and_type.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <style>html, body { margin: 0; } body { padding: 20px; background: var(--nyan-bg); }</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="../../_ds_bundle.js"></script>
+<script>
+(function () {
+  var NS = window[Object.keys(window).filter(function (k) { return k.indexOf("NyanReadDesignSystem_") === 0; })[0]];
+  var h = React.createElement;
+  function Demo() {
+    var pen = React.useState("yellow");
+    var q = React.useState("bell"), mi = React.useState(2);
+    var page = React.useState(12), zoom = React.useState(1);
+    return h("div", { style: { display: "flex", flexDirection: "column", gap: 20 } },
+      h("div", { style: { display: "flex", justifyContent: "center" } },
+        h(NS.TextSelectionMenu, { selectedPen: pen[0], onSelectPen: function (id) { pen[1](id); } })),
+      h(NS.InBookSearch, { value: q[0], onChange: q[1], matchIndex: mi[0], matchCount: 17,
+        onPrevMatch: function () { mi[1](Math.max(0, mi[0] - 1)); }, onNextMatch: function () { mi[1](Math.min(16, mi[0] + 1)); },
+        style: { borderRadius: "var(--r-card)", border: "1px solid var(--chrome-edge)" } }),
+      h("div", { style: { display: "flex", justifyContent: "center" } },
+        h(NS.PdfControls, { page: page[0], pageCount: 248, zoom: zoom[0],
+          onPage: page[1], onZoom: zoom[1] })),
+      h(NS.NyanRowGroup, null,
+        h(NS.BookListRow, { book: { title: "The Stillwater Diaries", author: "Matsuno Eri", fmt: "EPUB", pct: 42 } }),
+        h(NS.BookListRow, { book: { title: "A Long Slope Down", author: "Park Hyun-joo", fmt: "PDF", pct: 88 } }),
+        h(NS.BookListRow, { book: { title: "Borrowed Light", author: "Yuen Lai-Ying", fmt: "TXT", pct: 0 } })));
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(h(Demo));
+})();
+</script>
+</body>
+</html>

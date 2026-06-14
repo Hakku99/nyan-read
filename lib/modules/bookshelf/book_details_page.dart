@@ -14,7 +14,6 @@ import '../../core/theme/nyan_typography.dart';
 import '../../core/ui/components/nyan_list_row.dart';
 import '../../core/ui/components/nyan_page_header.dart';
 import '../../core/ui/components/nyan_primary_button.dart';
-import '../../core/ui/components/nyan_recessed_icon_button.dart';
 import '../../core/ui/components/nyan_row_group.dart';
 import '../../core/ui/components/nyan_section_header.dart';
 import '../../core/ui/nyan_icons.dart';
@@ -25,7 +24,6 @@ import '../../l10n/app_localizations.dart';
 import 'epub_cover_extractor.dart';
 
 /// Rhythm between page sections — matches [SettingsPage] list gaps.
-const double _kBookDetailsSectionGap = NyanSpacing.space24;
 
 /// Hero cover dimensions per BookDetailsScreen.jsx spec (120×156 px).
 const double _kCoverSlotWidth = 120;
@@ -187,20 +185,22 @@ class BookDetailsPage extends StatelessWidget {
                 bottom: false,
                 child: NyanPageHeader(
                   title: loc.bookDetails,
-                  leading: NyanRecessedIconButton(
-                    icon: NyanIcons.back,
+                  // Spec (_chrome.jsx PageHdr): plain 40×40 back button, no
+                  // background. NyanRecessedIconButton is for overlaid chrome;
+                  // page headers use a transparent IconButton.
+                  leading: IconButton(
+                    icon: Icon(NyanIcons.back, size: 21),
+                    color: nyanTheme.textPrimary,
                     tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                     onPressed: () => context.pop(),
-                  ),
-                  actions: [
-                    NyanRecessedIconButton(
-                      icon: NyanIcons.moreHorizontal,
-                      // More-actions menu is deferred; placeholder preserves
-                      // the header footprint for future implementation.
-                      tooltip: '',
-                      onPressed: null,
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size(40, 40),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(NyanRadius.control),
+                      ),
                     ),
-                  ],
+                  ),
                 ),
               ),
               Expanded(
@@ -221,7 +221,7 @@ class BookDetailsPage extends StatelessWidget {
                           isSourceAvailable: isAvailable,
                         ),
                       ),
-                      const SizedBox(height: NyanSpacing.space12),
+                      const SizedBox(height: 10),
                       // Title — tap to reveal full text in a bottom sheet.
                       GestureDetector(
                         onTap: () => _showFullTitleBottomSheet(
@@ -244,7 +244,7 @@ class BookDetailsPage extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: NyanSpacing.space4),
+                      const SizedBox(height: 10),
                       Text(
                         author ?? loc.unknownAuthor,
                         textAlign: TextAlign.center,
@@ -260,15 +260,17 @@ class BookDetailsPage extends StatelessWidget {
                               : nyanTheme.textMuted,
                         ),
                       ),
-                      const SizedBox(height: NyanSpacing.space12),
+                      const SizedBox(height: 10),
                       // CTA row: primary action + share icon button side-by-side.
                       Row(
                         children: [
                           Expanded(
                             child: NyanPrimaryButton(
-                              label: displayPercent > 0
-                                  ? loc.continueReading
-                                  : loc.startReading,
+                              label: hasAvailability && !isAvailable
+                                  ? loc.fileUnavailableCta
+                                  : displayPercent > 0
+                                      ? loc.continueReading
+                                      : loc.startReading,
                               onPressed: isAvailable
                                   ? () => _openReader(context)
                                   : null,
@@ -281,13 +283,12 @@ class BookDetailsPage extends StatelessWidget {
                         ],
                       ),
                       if (hasAvailability && !isAvailable) ...[
-                        const SizedBox(height: NyanSpacing.space12),
+                        const SizedBox(height: 10),
                         _UnavailableNotice(
                           message: BookSourceAccess.unavailableMessage,
                         ),
                       ],
-                      const SizedBox(height: _kBookDetailsSectionGap),
-
+                      const SizedBox(height: NyanSpacing.space16),
                       // ── Overview ──────────────────────────────────────────
                       NyanSectionHeader(
                         title: loc.bookDetailsOverviewSection,
@@ -318,9 +319,8 @@ class BookDetailsPage extends StatelessWidget {
                             _DetailRow(label: loc.added, value: addedAtShort),
                         ],
                       ),
-                      const SizedBox(height: _kBookDetailsSectionGap),
-
                       // ── Source ────────────────────────────────────────────
+                      const SizedBox(height: NyanSpacing.space24),
                       NyanSectionHeader(
                         title: loc.bookDetailsSourceSection,
                         withLeadingDot: true,
@@ -355,9 +355,8 @@ class BookDetailsPage extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: _kBookDetailsSectionGap),
-
                       // ── Highlights & Notes ────────────────────────────────
+                      const SizedBox(height: NyanSpacing.space24),
                       NyanSectionHeader(
                         title: loc.highlightsAndNotes,
                         withLeadingDot: true,
@@ -459,21 +458,23 @@ class _HeroShareButton extends StatelessWidget {
     return Material(
       color: nyan.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(NyanRadius.input),
-        side: BorderSide(color: nyan.divider),
+        borderRadius: BorderRadius.circular(NyanRadius.cardNested),
+        // Spec (bundle3.jsx): 1px border at 60% divider alpha.
+        side: BorderSide(color: nyan.divider.withValues(alpha: 0.60)),
       ),
       child: InkWell(
         // TODO(#share): implement book share / export.
         onTap: null,
         customBorder: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(NyanRadius.input),
+          borderRadius: BorderRadius.circular(NyanRadius.cardNested),
         ),
         child: SizedBox(
-          width: NyanSpacing.minTapTarget,
-          height: NyanSpacing.minTapTarget,
+          // Spec (bundle3.jsx): share button is 50×50, matching CTA height.
+          width: 50,
+          height: 50,
           child: Icon(
-            NyanIcons.share,
-            size: NyanSpacing.space20,
+            NyanIcons.exportData,
+            size: 20,
             color: nyan.textPrimary,
           ),
         ),
@@ -558,17 +559,25 @@ class _BookHeroCoverState extends State<_BookHeroCover> {
     );
   }
 
-  Widget _placeholder() => _BookCoverPlaceholder(title: widget.book.title);
+  Widget _placeholder() => _BookCoverPlaceholder(
+        title: widget.book.title,
+        isUnavailable: !widget.isSourceAvailable,
+      );
 }
 
 /// Full-slot placeholder when no EPUB bitmap is available.
 ///
-/// Spec (BookDetailsScreen.jsx): the 120×156 cover slot itself is the
-/// `primary@12%` tinted tile — not a chip nested inside a transparent box.
+/// Spec (bundle3.jsx line 321–324): the 120×156 cover slot has borderRadius 16
+/// (cardNested). Available state: primary@12% tint over surface + book-open icon.
+/// Unavailable state: surfaceMuted bg + warning-circle icon at errorPrimary (40pt).
 class _BookCoverPlaceholder extends StatelessWidget {
   final String title;
+  final bool isUnavailable;
 
-  const _BookCoverPlaceholder({required this.title});
+  const _BookCoverPlaceholder({
+    required this.title,
+    this.isUnavailable = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -580,19 +589,25 @@ class _BookCoverPlaceholder extends StatelessWidget {
         width: _kCoverSlotWidth,
         height: _kCoverSlotHeight,
         decoration: BoxDecoration(
-          color: nyan.primary.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(NyanRadius.card),
+          // Unavailable: surfaceMuted bg + error border.
+          // Available: color-mix(primary 12%, surface) per spec — must lerp into
+          // surface, not alpha-blend over background, to match the spec's lighter tint.
+          color: isUnavailable
+              ? nyan.surfaceMuted
+              : Color.lerp(nyan.surface, nyan.primary, 0.12)!,
+          borderRadius: BorderRadius.circular(NyanRadius.cardNested),
           border: Border.all(
-            // Spec: 0.5px border at 30% divider alpha.
-            color: nyan.divider.withValues(alpha: 0.30),
-            width: 0.5,
+            color: isUnavailable
+                ? nyan.errorPrimaryTextColor.withValues(alpha: 0.22)
+                : nyan.divider.withValues(alpha: 0.30),
+            width: isUnavailable ? 1.0 : 0.5,
           ),
         ),
         child: Center(
           child: Icon(
-            NyanIcons.book,
-            size: 48,
-            color: nyan.primary,
+            isUnavailable ? NyanIcons.error : NyanIcons.book,
+            size: isUnavailable ? 40 : 44,
+            color: isUnavailable ? nyan.errorPrimaryTextColor : nyan.primary,
           ),
         ),
       ),
@@ -619,11 +634,11 @@ class _BookCoverMemoryImage extends StatelessWidget {
       width: _kCoverSlotWidth,
       height: _kCoverSlotHeight,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(NyanRadius.card),
+        borderRadius: BorderRadius.circular(NyanRadius.cardNested),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: nyanTheme.surfaceMuted,
-            borderRadius: BorderRadius.circular(NyanRadius.card),
+            borderRadius: BorderRadius.circular(NyanRadius.cardNested),
             border: Border.all(
               color: theme.dividerColor.withValues(
                 alpha: isDark ? 0.24 : 0.32,
@@ -664,13 +679,15 @@ class _UnavailableNotice extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: nyanTheme.errorBackgroundColor,
-        borderRadius: BorderRadius.circular(NyanRadius.input),
+        // Spec (bundle3.jsx line 338): borderRadius 12 = NyanRadius.chip.
+        borderRadius: BorderRadius.circular(NyanRadius.chip),
         border: Border.all(
           color: nyanTheme.errorAccentColor.withValues(alpha: 0.6),
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(NyanSpacing.space12),
+        // Spec (bundle3.jsx line 338): padding "10px 12px".
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: NyanSpacing.space12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

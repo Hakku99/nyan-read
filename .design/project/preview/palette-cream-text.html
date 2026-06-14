@@ -1,0 +1,79 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Colors — Cream Light text" subtitle="Text inks with WCAG contrast badges · muted fails AA on cream" viewport="700x380" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Cream Light — text inks</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; }
+  .card { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+  .swatch-card { border-radius: var(--radius-card); padding: 16px; }
+  .ink-row { display: flex; align-items: baseline; gap: 8px; }
+  .ink-row + .ink-row { margin-top: 4px; }
+  .meta { font: 400 12px/1.3 var(--font-mono); opacity: 0.78; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 999px;
+    font: 600 10px/1.4 var(--font-mono);
+    letter-spacing: 0.3px; margin-left: auto; white-space: nowrap;
+    border: 1px solid currentColor;
+  }
+  .badge.aaa  { color: #2E6B3A; background: #E5F1E4; border-color: #B7D8B5; }
+  .badge.aa   { color: #3F5D29; background: #EDF1DF; border-color: #C7D3A4; }
+  .delta {
+    display:inline-flex; padding:1px 6px; border-radius:4px;
+    font: 500 10px/1.4 var(--font-mono); color:#6E7A55;
+    background:#F0EBDE; border:1px solid #DCD2BB; margin-left:6px;
+  }
+  .footnote { font: 400 12px/1.4 var(--font-ui); color: var(--nyan-text-secondary); }
+  .footnote code { font: 500 11px/1.3 var(--font-mono); color: var(--nyan-text); }
+</style>
+</head>
+<body><div class="card">
+
+  <!-- Cream Light card on surface #FFFDF8 -->
+  <div class="swatch-card" style="background:#FFFDF8; border: 0.5px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent);">
+    <div class="ink-row">
+      <div style="font:600 18px/1.3 var(--font-ui); color:#3F3A34;">Primary ink</div>
+      <div class="meta" style="color:#3F3A34;">#3F3A34</div>
+      <div class="badge aaa">AAA · 11.07:1</div>
+    </div>
+    <div class="ink-row">
+      <div style="font:400 14px/1.3 var(--font-ui); color:#5F5950;">Secondary ink — subtitles, descriptions <span class="delta">was #8A8377</span></div>
+      <div class="meta" style="color:#5F5950;">#5F5950</div>
+      <div class="badge aa">AA · 6.81:1</div>
+    </div>
+    <div class="ink-row">
+      <div style="font:400 14px/1.3 var(--font-ui); color:#706A5A;">Muted ink — placeholders, units <span class="delta">was #B0ACA5</span></div>
+      <div class="meta" style="color:#706A5A;">#706A5A</div>
+      <div class="badge aa">AA · 5.30:1</div>
+    </div>
+  </div>
+
+  <!-- Sumi Dark card on background #1D211E -->
+  <div class="swatch-card" style="background:#1D211E;">
+    <div class="ink-row">
+      <div style="font:600 18px/1.3 var(--font-ui); color:#E8E1D5;">Primary ink</div>
+      <div class="meta" style="color:#E8E1D5;">#E8E1D5</div>
+      <div class="badge aaa">AAA · 12.54:1</div>
+    </div>
+    <div class="ink-row">
+      <div style="font:400 14px/1.3 var(--font-ui); color:#B4AC9F;">Secondary ink — subtitles <span class="delta" style="color:#B4AC9F; background:#2E332E; border-color:#3F4640;">was #AAA396</span></div>
+      <div class="meta" style="color:#B4AC9F;">#B4AC9F</div>
+      <div class="badge aaa">AAA · 7.25:1</div>
+    </div>
+    <div class="ink-row">
+      <div style="font:400 14px/1.3 var(--font-ui); color:#9C968D;">Muted ink — placeholders, units <span class="delta" style="color:#9C968D; background:#2E332E; border-color:#3F4640;">was #8F8A84</span></div>
+      <div class="meta" style="color:#9C968D;">#9C968D</div>
+      <div class="badge aa">AA · 5.56:1</div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    All six inks now hit WCAG&nbsp;AA on their respective surfaces. Tokens diverge from upstream <code>nyan_colors.dart</code>; original values are kept as <code>--nyan-*-src</code> CSS vars for source-fidelity work. See README "Token deviations from upstream" for the full diff.
+  </div>
+
+</div></body>
+</html>

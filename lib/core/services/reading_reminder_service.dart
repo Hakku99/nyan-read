@@ -7,7 +7,7 @@ class ReadingReminderService extends ChangeNotifier {
 
   SharedPreferences? _prefs;
   bool _isEnabled = false;
-  int _intervalMinutes = 60;
+  int _intervalMinutes = 30;
 
   // Keys
   static const String _keyEnabled = 'reading_reminder_enabled';
@@ -19,7 +19,7 @@ class ReadingReminderService extends ChangeNotifier {
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     _isEnabled = _prefs?.getBool(_keyEnabled) ?? false;
-    _intervalMinutes = _prefs?.getInt(_keyInterval) ?? 60;
+    _intervalMinutes = _prefs?.getInt(_keyInterval) ?? 30;
     notifyListeners();
   }
 

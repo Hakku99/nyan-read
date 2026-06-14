@@ -243,15 +243,18 @@ class _NotesListPageState extends State<NotesListPage> {
                 titleStyle: theme.textTheme.titleLarge?.copyWith(
                   fontSize: NyanTypography.section,
                   fontWeight: FontWeight.w600,
+                  letterSpacing: -0.15,
                 ),
                 subtitleStyle: theme.textTheme.bodySmall?.copyWith(
-                  color: nyanTheme.textSecondary.withValues(alpha: 0.78),
+                  fontSize: 13,
+                  height: 1.35,
+                  color: nyanTheme.textMuted,
                 ),
                 padding: const EdgeInsets.fromLTRB(
-                  NyanSpacing.space16,
                   NyanSpacing.space12,
                   NyanSpacing.space16,
-                  NyanSpacing.space8,
+                  NyanSpacing.space12,
+                  NyanSpacing.space12,
                 ),
                 leading: SizedBox(
                   width: NyanSpacing.minTapTarget,
@@ -302,50 +305,52 @@ class _NotesListPageState extends State<NotesListPage> {
           decoration: BoxDecoration(
             color: Color.alphaBlend(
               nyanTheme.primary.withValues(
-                alpha: isDark ? 0.09 : 0.05,
+                alpha: isDark ? 0.09 : 0.06,
               ),
               nyanTheme.surface,
             ),
             shape: BoxShape.circle,
             border: Border.all(
-              color: theme.dividerColor.withValues(
-                alpha: isDark ? 0.1 : 0.09,
-              ),
+              color: nyanTheme.divider.withValues(alpha: 0.18),
               width: 0.7,
             ),
           ),
           child: Center(
             child: Icon(
-              NyanIcons.editNote,
-              size: NyanSpacing.space32 + NyanSpacing.space8,
-              color: nyanTheme.primary.withValues(alpha: isDark ? 0.82 : 0.78),
+              NyanIcons.highlighterCircle,
+              size: 36,
+              color: nyanTheme.primary.withValues(alpha: 0.78),
             ),
           ),
         ),
         title: _emptyStateTitle(),
+        // Empty-state title uses 18pt — exception per design spec
+        // (bundle3.jsx NotesList empty state: "600 18px/1.25").
+        // Same exception pattern as Reader Error View and Sheet title.
         titleStyle: theme.textTheme.titleMedium?.copyWith(
-          fontSize: NyanTypography.section,
+          fontSize: 18,
           fontWeight: FontWeight.w600,
+          height: 1.25,
           color: nyanTheme.textPrimary.withValues(alpha: isDark ? 0.88 : 0.84),
         ),
         description: _emptyStateDescription(),
         descriptionStyle: theme.textTheme.bodyMedium?.copyWith(
-          height: 1.3,
-          color: nyanTheme.textSecondary.withValues(
-            alpha: isDark ? 0.84 : 0.74,
-          ),
+          fontSize: 14,
+          height: 1.4,
+          color: nyanTheme.textSecondary.withValues(alpha: isDark ? 0.84 : 0.74),
         ),
-        iconSpacing: NyanSpacing.space16,
-        descriptionSpacing: NyanSpacing.space12,
+        iconSpacing: 14,
+        descriptionSpacing: NyanSpacing.space12 - 2, // ~10pt gap to hint
         actionSpacing: NyanSpacing.space12,
         action: Text(
           _emptyStateHint(),
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall?.copyWith(
+            fontSize: 13,
             color: nyanTheme.textSecondary.withValues(
               alpha: isDark ? 0.74 : 0.62,
             ),
-            height: 1.24,
+            height: 1.38,
           ),
         ),
       );
@@ -416,9 +421,9 @@ class _NotesListPageState extends State<NotesListPage> {
       ),
       decoration: BoxDecoration(
         color: panelSurface,
-        borderRadius: BorderRadius.circular(NyanRadius.card),
+        borderRadius: BorderRadius.circular(NyanRadius.cardNested),
         border: Border.all(
-          color: theme.dividerColor.withValues(alpha: isDark ? 0.18 : 0.12),
+          color: nyanTheme.divider.withValues(alpha: isDark ? 0.18 : 0.16),
           width: 0.6,
         ),
       ),
@@ -435,10 +440,10 @@ class _NotesListPageState extends State<NotesListPage> {
                       nyanTheme.surfaceMuted.withValues(alpha: 0.9),
                     )
                   : Color.alphaBlend(
-                      nyanTheme.primary.withValues(alpha: 0.07),
+                      nyanTheme.primary.withValues(alpha: 0.08),
                       nyanTheme.surfaceMuted,
                     ),
-              borderRadius: BorderRadius.circular(NyanRadius.input),
+              borderRadius: BorderRadius.circular(NyanRadius.chip),
             ),
             child: Icon(
               NyanIcons.editNote,
@@ -530,7 +535,7 @@ class _NotesListPageState extends State<NotesListPage> {
     return Align(
       alignment: Alignment.centerRight,
       child: SizedBox(
-        width: 78,
+        width: 104,
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(NyanRadius.card),
@@ -556,9 +561,9 @@ class _NotesListPageState extends State<NotesListPage> {
                   Text(
                     _deleteActionLabel(),
                     style: theme.textTheme.labelSmall?.copyWith(
-                      fontSize: 10.5,
+                      fontSize: 12,
                       color: nyanTheme.errorPrimaryTextColor.withValues(
-                        alpha: isDark ? 0.8 : 0.58,
+                        alpha: isDark ? 0.8 : 0.62,
                       ),
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.2,

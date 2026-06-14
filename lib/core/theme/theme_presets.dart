@@ -8,6 +8,8 @@ import 'nyan_typography.dart';
 enum ThemePreset {
   creamLight,
   sumiDark,
+  /// Follows the device's light/dark mode setting via [ThemeMode.system].
+  matchSystem,
 }
 
 @immutable
@@ -18,6 +20,12 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
   final Color primaryDeep;
   final Color surface;
   final Color surfaceMuted;
+
+  /// Highest elevation tier — dialogs, bottom sheets, popovers, menus.
+  /// In Sumi Dark this is one ladder step lighter than [surface] (`#2E342B`);
+  /// in Cream Light it reuses [surface] (the elevation ladder is dark-only —
+  /// light lift is carried by the soft `lightCard` shadow instead).
+  final Color surfaceRaised;
   final Color background;
   final Color textPrimary;
   final Color textSecondary;
@@ -47,6 +55,7 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
     required this.primaryDeep,
     required this.surface,
     required this.surfaceMuted,
+    required this.surfaceRaised,
     required this.background,
     required this.textPrimary,
     required this.textSecondary,
@@ -195,8 +204,11 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
         labelStyle: TextStyle(color: textSecondary),
         hintStyle: TextStyle(color: textSecondary.withValues(alpha: 0.7)),
       ),
+      // Dialogs and sheets sit on the highest elevation tier (surfaceRaised).
+      // In Cream Light this equals surface; in Sumi Dark it steps one ladder
+      // level lighter (#2E342B) so they visually float above cards.
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: surface,
+        backgroundColor: surfaceRaised,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(NyanRadius.sheet),
@@ -204,7 +216,7 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: surface,
+        backgroundColor: surfaceRaised,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(NyanRadius.panel),
         ),
@@ -237,6 +249,7 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
     Color? primaryDeep,
     Color? surface,
     Color? surfaceMuted,
+    Color? surfaceRaised,
     Color? background,
     Color? textPrimary,
     Color? textSecondary,
@@ -264,6 +277,7 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
       primaryDeep: primaryDeep ?? this.primaryDeep,
       surface: surface ?? this.surface,
       surfaceMuted: surfaceMuted ?? this.surfaceMuted,
+      surfaceRaised: surfaceRaised ?? this.surfaceRaised,
       background: background ?? this.background,
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
@@ -303,6 +317,7 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
       primaryDeep: Color.lerp(primaryDeep, other.primaryDeep, t)!,
       surface: Color.lerp(surface, other.surface, t)!,
       surfaceMuted: Color.lerp(surfaceMuted, other.surfaceMuted, t)!,
+      surfaceRaised: Color.lerp(surfaceRaised, other.surfaceRaised, t)!,
       background: Color.lerp(background, other.background, t)!,
       textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
@@ -343,6 +358,8 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     primaryDeep: NyanColors.creamPrimaryDeep,
     surface: NyanColors.creamSurface,
     surfaceMuted: NyanColors.creamSurfaceMuted,
+    // D1: light has no distinct raised tone — reuse surface (ladder is dark-only).
+    surfaceRaised: NyanColors.creamSurface,
     background: NyanColors.creamBackground,
     textPrimary: NyanColors.creamTextMain,
     textSecondary: NyanColors.creamTextSecondary,
@@ -372,13 +389,15 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     primaryDeep: NyanColors.inkNightPrimaryDeep,
     surface: NyanColors.inkNightSurface,
     surfaceMuted: NyanColors.inkNightSurfaceMuted,
+    surfaceRaised: NyanColors.inkNightSurfaceRaised,
     background: NyanColors.inkNightBackground,
     textPrimary: NyanColors.inkNightTextMain,
     textSecondary: NyanColors.inkNightTextSecondary,
     textMuted: NyanColors.inkNightTextMuted,
     accent: NyanColors.highlightOrange,
     divider: NyanColors.inkNightDivider,
-    borderColor: NyanColors.inkNightDivider,
+    // v3 ladder: explicit card edge is brighter than the divider hairline.
+    borderColor: NyanColors.inkNightBorder,
     brightness: Brightness.dark,
     // inkNightBackground (~7.6:1) on inkNightPrimary (green) button passes AAA.
     // inkNightTextMain was 1.65:1 — critical AA failure, Fix #1.

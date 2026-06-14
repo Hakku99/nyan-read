@@ -25,6 +25,10 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
   late PdfController _pdfController;
   bool _isInit = false;
   String? _temporaryPdfPath;
+  // Retained so dispose() can chain temp-file cleanup if it races ahead of
+  // _preparePdfDocument() completing — the future resolves after dispose, but
+  // the .then() below still runs and deletes the file.
+  Future<PdfDocument>? _pendingDocumentFuture;
   // Tracks whether the underlying PdfDocument future has resolved; used to
   // gate [getProgress] / [getCurrentPosition] so we don't hit the controller
   // before it has real page numbers.
@@ -52,6 +56,7 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
     // the reader's load path (and the scaffold CircularProgressIndicator)
     // for the full duration of a multi-MB PDF parse on Android.
     final documentFuture = _preparePdfDocument();
+    _pendingDocumentFuture = documentFuture;
     _pdfController = PdfController(document: documentFuture);
     _isInit = true;
 
@@ -60,9 +65,13 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
     // getPageCount can bail out cleanly until the document is real.  Errors
     // are surfaced the next time a caller interacts with the controller.
     unawaited(documentFuture.then(
-      (_) => _isDocumentReady = true,
+      (_) {
+        _isDocumentReady = true;
+        _pendingDocumentFuture = null;
+      },
       onError: (Object error, StackTrace stack) {
         debugPrint('PDF document open failed: $error');
+        _pendingDocumentFuture = null;
       },
     ));
   }
@@ -251,6 +260,21 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
     if (tempPath != null) {
       unawaited(_deleteTemporaryPdf(tempPath));
       _temporaryPdfPath = null;
+    }
+
+    // Race guard: if initialize()'s _preparePdfDocument() hasn't resolved yet,
+    // _temporaryPdfPath is still null here.  Attach cleanup to the in-flight
+    // future so the temp file is deleted whenever it eventually lands.
+    final pending = _pendingDocumentFuture;
+    if (pending != null) {
+      unawaited(pending.then(
+        (_) {
+          final p = _temporaryPdfPath;
+          if (p != null) unawaited(_deleteTemporaryPdf(p));
+        },
+        onError: (_, __) {},
+      ));
+      _pendingDocumentFuture = null;
     }
   }
 

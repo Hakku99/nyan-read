@@ -18,7 +18,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themePreset => 'Theme Preset';
 
   @override
+  String get themePresetSubtitle => 'How Nyan Read looks while you read.';
+
+  @override
   String get readingSettings => 'Reading Settings';
+
+  @override
+  String get reading => 'Reading';
 
   @override
   String get readerQuickProgressSubtitle => 'Chapter seek and position';
@@ -40,6 +46,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pageTurnMode => 'Page Turn Mode';
+
+  @override
+  String get pageTurnModeSubtitle => 'The direction pages move as you read.';
 
   @override
   String get pageTurnModeTap => 'Tap to turn pages';
@@ -99,15 +108,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readingReminder => 'Reading Reminder';
 
   @override
-  String get readingReminderSubtitle => 'Remind me to take a break';
+  String get readingReminderSubtitle => 'Chapter seek and position';
 
   @override
   String get reminderInterval => 'Reminder Interval';
 
   @override
+  String get reminderIntervalSubtitle =>
+      'How often to nudge you back to reading.';
+
+  @override
   String reminderMinutes(int minutes) {
     return '$minutes min';
   }
+
+  @override
+  String get reminderEvery15min => 'Every 15 min';
+
+  @override
+  String get reminderEvery30min => 'Every 30 min';
+
+  @override
+  String get reminderEveryHour => 'Every hour';
+
+  @override
+  String get reminderEvery2hours => 'Every 2 hours';
+
+  @override
+  String get reminderDaily => 'Daily';
 
   @override
   String get dataManagement => 'Data Management';
@@ -117,7 +145,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteFilesOnRemoveSubtitle =>
-      'Original files will also be removed from your device.';
+      'Remove source files when deleting a book';
 
   @override
   String get lockPrivateShelf => 'Lock Private Shelf';
@@ -144,29 +172,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get about => 'About';
 
   @override
-  String get lockPrivacyShelfSubtitle => 'Hide until next unlock';
+  String get lockPrivacyShelfSubtitle => 'Require PIN to open';
 
   @override
   String get adminPanel => 'Admin Panel';
 
   @override
-  String get adminPanelTitle => 'Admin / Manager Mode';
+  String get adminPanelTitle => 'Admin Panel';
 
   @override
-  String get adminPanelModeSection => 'Mode Control';
+  String get adminPanelModeSection => 'Mode';
 
   @override
   String get adminProModeEnabled => 'Pro Mode Enabled';
 
   @override
-  String get adminProModeSubtitle => 'Unlocks Privacy Shelf and disables ads';
+  String get adminProModeSubtitle =>
+      'Unlocks all Pro features in this session.';
 
   @override
   String get adminForceUnlockPrivacyShelf => 'Force Unlock Privacy Shelf';
 
   @override
   String get adminForceUnlockPrivacyShelfSubtitle =>
-      'Bypass password verification';
+      'Bypass PIN for this session.';
 
   @override
   String get adminFeatureFlagsSection => 'Feature Flags';
@@ -178,14 +207,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminStateOff => 'Off';
 
   @override
-  String get adminPanelHintTitle => 'Internal control panel';
+  String get adminPanelHintTitle => 'For testing only';
 
   @override
   String get adminPanelHintSubtitle =>
-      'Use this page for debugging and capability verification.';
+      'Changes here affect only this session. Restart the app to reset to defaults.';
 
   @override
   String get language => 'Language';
+
+  @override
+  String get languageSubtitle => 'App display language.';
 
   @override
   String get bookDetails => 'Book Details';
@@ -269,10 +301,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filePathCopied => 'File path copied to clipboard';
 
   @override
+  String get copiedToClipboard => 'Copied to clipboard';
+
+  @override
+  String get couldNotOpenBrowserSearchCopied =>
+      'Could not open browser — search link copied';
+
+  @override
   String get fileExists => 'File exists';
 
   @override
   String get fileNotFound => 'File not found';
+
+  @override
+  String get fileUnavailableCta => 'File unavailable';
 
   @override
   String get unknown => 'Unknown';
@@ -287,13 +329,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
-  String get reportToDeveloper => 'Report to Developer';
+  String get reportToDeveloper => 'Report to developer';
 
   @override
-  String get showTechnicalDetails => 'Show Technical Details';
+  String get showTechnicalDetails => 'Show technical details';
 
   @override
-  String get hideTechnicalDetails => 'Hide Technical Details';
+  String get hideTechnicalDetails => 'Hide technical details';
 
   @override
   String get couldNotLaunchEmail => 'Could not launch email client';
@@ -322,6 +364,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get remove => 'Remove';
 
   @override
+  String get undo => 'Undo';
+
+  @override
+  String get export => 'Export';
+
+  @override
   String get cancel => 'Cancel';
 
   @override
@@ -334,10 +382,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewDetails => 'View Details';
 
   @override
-  String get moveToPublic => 'Move to Public';
+  String get moveToPublic => 'Make Public';
 
   @override
-  String get moveToPrivate => 'Move to Private';
+  String get moveToPrivate => 'Make Private';
 
   @override
   String get selectAll => 'Select All';
@@ -352,6 +400,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enjoyReading => 'Enjoy your reading';
 
   @override
+  String get bookshelf => 'Bookshelf';
+
+  @override
   String get listView => 'List View';
 
   @override
@@ -362,6 +413,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sortBy => 'Sort by';
+
+  @override
+  String get sortShelfBy => 'Sort shelf by';
 
   @override
   String get sortOrderAsc => 'Ascending';
@@ -388,6 +442,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get titleDesc => 'Title Descending';
 
   @override
+  String get sortLastReadAscSub => 'Oldest opened first';
+
+  @override
+  String get sortLastReadDescSub => 'Recently opened first';
+
+  @override
+  String get sortTitleAscSub => 'A → Z';
+
+  @override
+  String get sortTitleDescSub => 'Z → A';
+
+  @override
+  String get sortAddedAscSub => 'Oldest first';
+
+  @override
+  String get sortAddedDescSub => 'Newest first';
+
+  @override
   String get lockPrivacyShelf => 'Lock Privacy Shelf';
 
   @override
@@ -398,15 +470,26 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Remove $count books?',
-      one: 'Remove $count book?',
+      other: 'Delete $count books?',
+      one: 'Delete $count book?',
     );
     return '$_temp0';
   }
 
   @override
   String get actionCannotBeUndone =>
-      'They will be removed from the current shelf.';
+      'Their reading progress, bookmarks and notes are removed too. The source files on your device are kept.';
+
+  @override
+  String deleteBooksButton(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Delete $count books',
+      one: 'Delete $count book',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get alsoDeleteLocalFiles => 'Also delete local files';
@@ -442,22 +525,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importBooksTitle => 'Import Books';
 
   @override
-  String get importBooksSubtitle =>
-      'Choose files from your device and add them to your shelf.';
+  String get importBooksSubtitle => 'Add more books to your shelf.';
 
   @override
-  String get importBooksEmptySubtitle =>
-      'Import your first book from this device and start reading.';
+  String get importBooksEmptySubtitle => 'Add your first book to get started.';
 
   @override
-  String get importFilesSubtitle => 'Pick one or more supported ebook files.';
+  String get importFilesSubtitle => 'Browse and open .txt, .epub or .pdf';
 
   @override
   String get supportedFormats => 'Supported Formats';
 
   @override
   String get supportedFormatsSubtitle =>
-      'TXT, EPUB, and PDF are ready to import.';
+      'Plain text, e-book, and document files.';
 
   @override
   String get supportedFormatsDescription =>
@@ -508,6 +589,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unlock => 'Unlock';
 
   @override
+  String get pinEnter => 'Enter PIN';
+
+  @override
+  String get pinSet => 'Set PIN';
+
+  @override
+  String get pinConfirm => 'Confirm PIN';
+
+  @override
+  String get pinMismatch => 'PINs don\'t match — try again';
+
+  @override
   String get fontSize => 'Font Size';
 
   @override
@@ -533,6 +626,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get readerMenuTheme => 'Theme';
+
+  @override
+  String get readingTheme => 'Reading Theme';
 
   @override
   String readerSheetProgressSubtitle(String percent) {
@@ -607,6 +703,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'The quick brown fox jumps over the lazy dog.';
 
   @override
+  String readerResetSection(String section) {
+    return 'Reset $section';
+  }
+
+  @override
   String get readerResetAppearance => 'Reset to defaults';
 
   @override
@@ -641,10 +742,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String chapterOfCount(int current, int total) {
+    return 'Chapter $current of $total';
+  }
+
+  @override
   String get readerDockChapters => 'Chapters';
 
   @override
-  String get jumpToCurrentChapter => 'Jump to current chapter';
+  String get readerDockHighlights => 'Highlights';
+
+  @override
+  String get jumpToCurrentChapter => 'Jump to current';
 
   @override
   String chapterListProgressLabel(int current, int total) {
@@ -692,6 +801,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String bookmarksTitle(int count) {
     return 'Bookmarks ($count)';
+  }
+
+  @override
+  String bookmarksSavedCount(int count) {
+    return '$count saved';
   }
 
   @override
@@ -753,7 +867,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeCreamLight => 'Cream Light';
 
   @override
+  String get themeCreamLightHint => 'Warm paper — the default';
+
+  @override
   String get themeSumiDark => 'Sumi Dark';
+
+  @override
+  String get themeSumiDarkHint => 'Ink night for low light';
+
+  @override
+  String get themeMatchSystem => 'Match System';
+
+  @override
+  String get themeMatchSystemHint => 'Follow your device setting';
+
+  @override
+  String get pageTurnLeftRight => 'Left & Right';
+
+  @override
+  String get pageTurnLeftRightHint => 'Turn pages horizontally';
+
+  @override
+  String get pageTurnUpDown => 'Up & Down';
+
+  @override
+  String get pageTurnUpDownHint => 'Turn pages vertically';
+
+  @override
+  String get languageEnglishHint => 'English';
+
+  @override
+  String get languageChineseHint => 'Chinese · 简体中文';
 
   @override
   String get timeToday => 'Today';
@@ -774,20 +918,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get neverRead => 'Never read';
 
   @override
-  String get errorFileNotFound =>
-      'This book seems to have lost its way.\nThe file cannot be found, it may have been moved or deleted.';
+  String get errorFileNotFoundTitle => 'This book lost its way';
 
   @override
-  String get errorUnsupportedFormat =>
-      'Nyan cannot read this format.\nThis file type is not supported yet.';
+  String get errorFileNotFoundBody =>
+      'The file can\'t be found — it may have been moved or deleted.';
 
   @override
-  String get errorParseFailed =>
-      'The pages are stuck together.\nThis file may be corrupted or incomplete.';
+  String get errorUnsupportedFormatTitle => 'Nyan can\'t read this format';
 
   @override
-  String get errorUnknown =>
-      'Something unexpected happened.\nPlease try again later.';
+  String get errorUnsupportedFormatBody =>
+      'This file type isn\'t supported yet.';
+
+  @override
+  String get errorParseFailedTitle => 'These pages are stuck together';
+
+  @override
+  String get errorParseFailedBody =>
+      'We couldn\'t open this file. It might be corrupted.';
+
+  @override
+  String get errorUnknownTitle => 'Something went wrong';
+
+  @override
+  String get errorUnknownBody =>
+      'An unexpected error occurred. Please try again.';
 
   @override
   String get emptyShelfTitle => 'Bookshelf is waiting for stories';
@@ -796,28 +952,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emptyShelfSubtitle => 'Import a book to start reading';
 
   @override
-  String get exportData => 'Export Reading Assets';
+  String get exportData => 'Export Data';
 
   @override
-  String get exportDataSubtitle => 'Save reading data as JSON';
+  String get exportDataSubtitle => 'Save to device or share';
+
+  @override
+  String get exportDataSheetSubtitle => 'Choose where your reading data goes.';
 
   @override
   String get saveToDevice => 'Save to Device';
 
   @override
-  String get saveToDeviceSubtitle => 'Choose a folder on your device';
+  String get saveToDeviceSubtitle => 'Store a JSON backup in your Files';
 
   @override
-  String get shareVia => 'Share via...';
+  String get shareVia => 'Share...';
 
   @override
-  String get shareViaSubtitle => 'Gmail, Drive, Quick Share, etc.';
+  String get shareViaSubtitle => 'Send via Gmail, Drive or another app';
 
   @override
-  String get importData => 'Import Reading Assets';
+  String get importData => 'Import Data';
 
   @override
-  String get importDataSubtitle => 'Restore reading data from JSON backup';
+  String get importDataSubtitle => 'Restore from a backup file';
 
   @override
   String importSuccess(int count) {
@@ -827,5 +986,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String importFailed(String error) {
     return 'Import failed: $error';
+  }
+
+  @override
+  String get exportSaved => 'Export saved to device';
+
+  @override
+  String exportFailed(String error) {
+    return 'Export failed: $error';
   }
 }

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nyan Read — Interactive Reader Prototype</title>
+  <link rel="stylesheet" href="../colors_and_type.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    html, body { margin: 0; height: 100%; }
+    body { background: #2A2722; display: grid; place-items: center; overflow: hidden; font-family: var(--font-ui); }
+    #stage { position: fixed; inset: 0; display: grid; place-items: center; }
+    .phone {
+      position: relative; width: 390px; height: 844px; flex-shrink: 0;
+      background: var(--nyan-bg); border-radius: 46px;
+      box-shadow: 0 0 0 12px #14110D, 0 0 0 13px #3a352d, 0 40px 90px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+    .statusbar {
+      position: absolute; top: 0; left: 0; right: 0; height: 50px; z-index: 40;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; font: 600 14px/1 var(--font-ui); color: var(--nyan-text);
+      pointer-events: none;
+    }
+    .statusbar .dnd { letter-spacing: 0.5px; }
+    .notch { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 120px; height: 28px; background: #14110D; border-radius: 16px; z-index: 41; }
+    .screen { position: absolute; inset: 0; display: flex; flex-direction: column; padding-top: 50px; }
+    .home-ind { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 128px; height: 5px; border-radius: 99px; background: var(--nyan-text); opacity: 0.28; z-index: 45; }
+  </style>
+</head>
+<body>
+  <div id="stage"><div id="root"></div></div>
+  <script src="../_ds_bundle.js"></script>
+  <script>
+    (function () {
+      var key = Object.keys(window).filter(function (n) { return n.indexOf("NyanReadDesignSystem_") === 0; })[0];
+      if (key) Object.assign(window, window[key]);
+    })();
+  </script>
+  <script type="text/babel" src="app.jsx"></script>
+  <script>
+    // fit phone to viewport
+    function fit() {
+      var p = document.querySelector(".phone");
+      if (!p) return;
+      var s = Math.min(window.innerWidth / 414, window.innerHeight / 868, 1);
+      p.style.transform = "scale(" + s + ")";
+    }
+    window.addEventListener("resize", fit);
+    new MutationObserver(fit).observe(document.getElementById("root"), { childList: true, subtree: true });
+    setTimeout(fit, 300);
+  </script>
+</body>
+</html>

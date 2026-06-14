@@ -9,10 +9,12 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 /// Noto Sans SC than Material Round and keeps the paper-book quietness intact.
 ///
 /// Fill weight is reserved for "set" / "selected" affordances. Only these
-/// three glyphs use Phosphor Fill — anything else MUST stay Regular:
+/// four glyphs use Phosphor Fill — anything else MUST stay Regular:
 ///   • [bookmarkFilled] / [bookmarkAdded] — page currently has a bookmark
 ///                                          (the two names are aliases)
 ///   • [checkFilled]                       — matcha selected-card badge
+///   • [playFilled]                        — "currently reading" chapter indicator
+///   • [sortDirectionIndicator]            — selected sort-field direction arrow
 ///
 /// When adding an icon, prefer reusing an existing semantic name. If a brand-new
 /// glyph is needed, add it in the matching section below and reference the
@@ -34,6 +36,11 @@ class NyanIcons {
   /// Generic "book" glyph — replaces Material `Icons.menu_book`, `book_open`,
   /// any book cover placeholder. Use `books` (plural) for a library/shelf.
   static const IconData book = PhosphorIconsRegular.bookOpen;
+
+  /// Plain closed-book outline (`ph-book`). Used where the design spec calls
+  /// for a single-volume icon without the open-pages silhouette — e.g. the
+  /// "Supported Formats" leading icon in ImportBookSheet.
+  static const IconData bookClosed = PhosphorIconsRegular.book;
   static const IconData books = PhosphorIconsRegular.books;
   static const IconData bookCollection = PhosphorIconsRegular.bookBookmark;
   static const IconData bookmark = PhosphorIconsRegular.bookmarkSimple;
@@ -46,12 +53,23 @@ class NyanIcons {
   static const IconData bookmarkAdded = PhosphorIconsFill.bookmarkSimple;
   static const IconData bookmarks = PhosphorIconsRegular.bookmarksSimple;
   static const IconData tableOfContents = PhosphorIconsRegular.listBullets;
+  static const IconData highlights = PhosphorIconsRegular.highlighter;
+
+  /// Empty-state hero for the Notes & Highlights page (ph-highlighter-circle).
+  static const IconData highlighterCircle = PhosphorIconsRegular.highlighterCircle;
 
   // ── Common actions ──────────────────────────────────────────────────────
   static const IconData add = PhosphorIconsRegular.plus;
   static const IconData remove = PhosphorIconsRegular.minus;
   static const IconData delete = PhosphorIconsRegular.trash;
   static const IconData check = PhosphorIconsRegular.check;
+
+  /// Success status glyph for the shared response toast (ph-check-circle).
+  static const IconData checkCircle = PhosphorIconsRegular.checkCircle;
+
+  /// Indeterminate loading glyph for the response toast (ph-circle-notch);
+  /// rendered spinning. See [NyanResponse].
+  static const IconData circleNotch = PhosphorIconsRegular.circleNotch;
 
   /// Used only for the matcha selected-card badge (reader theme picker, etc).
   static const IconData checkFilled = PhosphorIconsFill.check;
@@ -63,11 +81,15 @@ class NyanIcons {
 
   /// iOS-style share glyph (square with up arrow). Use [share] elsewhere.
   static const IconData shareIos = PhosphorIconsRegular.shareFat;
+
+  /// Export action — settings "Export Data" row (spec `bundle4.jsx`: icon="export").
+  // ignore: library_private_types_in_public_api
+  static const IconData exportData = PhosphorIconsRegular.export;
   static const IconData download = PhosphorIconsRegular.downloadSimple;
   static const IconData upload = PhosphorIconsRegular.uploadSimple;
   static const IconData save = PhosphorIconsRegular.floppyDisk;
   static const IconData folderOpen = PhosphorIconsRegular.folderOpen;
-  static const IconData editNote = PhosphorIconsRegular.pencilSimpleLine;
+  static const IconData editNote = PhosphorIconsRegular.pencilLine;
 
   /// Covers Material `Icons.format_quote_rounded` — pull-quote glyph used in
   /// the highlight note dialog and similar excerpt UIs.
@@ -77,16 +99,31 @@ class NyanIcons {
   static const IconData selectAll = PhosphorIconsRegular.selectionPlus;
   static const IconData deselect = PhosphorIconsRegular.selectionSlash;
 
+  /// "List with checks" glyph for the Select All pill button in selection mode
+  /// (spec `bundle3.jsx` `SelectionHeader`: `ph ph-list-checks`).
+  static const IconData listChecks = PhosphorIconsRegular.listChecks;
+
   // ── System / Settings ───────────────────────────────────────────────────
   static const IconData settings = PhosphorIconsRegular.gearSix;
   static const IconData tune = PhosphorIconsRegular.slidersHorizontal;
   static const IconData dashboard = PhosphorIconsRegular.squaresFour;
-  static const IconData adminPanel = PhosphorIconsRegular.shieldStar;
+  // Spec `bundle4.jsx` settings row: icon="wrench".
+  static const IconData adminPanel = PhosphorIconsRegular.wrench;
   static const IconData sparkle = PhosphorIconsRegular.sparkle;
   static const IconData info = PhosphorIconsRegular.info;
   static const IconData warning = PhosphorIconsRegular.warning;
   static const IconData error = PhosphorIconsRegular.warningCircle;
   static const IconData bug = PhosphorIconsRegular.bug;
+
+  /// Used for the "Report to developer" button in error screens (ph-bug-beetle).
+  static const IconData bugBeetle = PhosphorIconsRegular.bugBeetle;
+
+  /// Used for the "File not found" error state icon (ph-compass).
+  static const IconData compass = PhosphorIconsRegular.compass;
+
+  /// Used for the "Unsupported format" error state icon (ph-file-dashed).
+  static const IconData fileDashed = PhosphorIconsRegular.fileDashed;
+
   static const IconData block = PhosphorIconsRegular.prohibit;
 
   // ── View / Visual ───────────────────────────────────────────────────────
@@ -94,6 +131,12 @@ class NyanIcons {
   static const IconData viewGrid = PhosphorIconsRegular.squaresFour;
   static const IconData sort = PhosphorIconsRegular.arrowsDownUp;
   static const IconData sortAscending = PhosphorIconsRegular.sortAscending;
+
+  /// Fill arrow-up used as the direction indicator on the selected row of the
+  /// bookshelf sort sheet (spec: `ph-fill ph-arrow-up`, flipped via
+  /// `Transform.scale(scaleY: -1)` when descending).
+  /// This is the 4th Phosphor Fill exception; see the class-level comment.
+  static const IconData sortDirectionIndicator = PhosphorIconsFill.arrowUp;
   static const IconData visibility = PhosphorIconsRegular.eye;
   static const IconData visibilityOff = PhosphorIconsRegular.eyeSlash;
   static const IconData palette = PhosphorIconsRegular.palette;
@@ -123,6 +166,8 @@ class NyanIcons {
   static const IconData thermostat = PhosphorIconsRegular.thermometer;
 
   // ── Time ────────────────────────────────────────────────────────────────
+  // Spec `bundle4.jsx` reading reminder row: icon="bell".
+  static const IconData bell = PhosphorIconsRegular.bell;
   static const IconData alarm = PhosphorIconsRegular.alarm;
   static const IconData clock = PhosphorIconsRegular.clock;
   static const IconData inbox = PhosphorIconsRegular.tray;
@@ -136,10 +181,28 @@ class NyanIcons {
 
   // ── Playback ────────────────────────────────────────────────────────────
   static const IconData play = PhosphorIconsRegular.play;
+  // Filled play — used as the "currently reading" indicator inside ChapterListItem
+  // (spec: `ph-fill ph-play`; §4.6 delivery-package takes priority over the
+  // regular-only icon rule in §4.3 for this specific affordance).
+  static const IconData playFilled = PhosphorIconsFill.play;
   static const IconData skipNext = PhosphorIconsRegular.skipForward;
   static const IconData skipPrevious = PhosphorIconsRegular.skipBack;
+
+  // ── Page turn ────────────────────────────────────────────────────────────
+  /// Horizontal arrows (↔) — "Left & Right" page turn mode in Settings picker.
+  static const IconData pageTurnHorizontal = PhosphorIconsRegular.arrowsHorizontal;
+  /// Vertical arrows (↕) — "Up & Down" page turn mode in Settings picker.
+  static const IconData pageTurnVertical = PhosphorIconsRegular.arrowsVertical;
+
+  // ── System / device ──────────────────────────────────────────────────────
+  /// Half-light/half-dark device icon — "Match System" theme option.
+  static const IconData matchSystem = PhosphorIconsRegular.circleHalfTilt;
 
   // ── Misc ────────────────────────────────────────────────────────────────
   static const IconData pets = PhosphorIconsRegular.pawPrint;
   static const IconData myLocation = PhosphorIconsRegular.crosshair;
+
+  /// Compact crosshair (no outer ring) — used by the "Jump to current" FAB
+  /// in the Chapters sheet. `ph-crosshair-simple` per design spec.
+  static const IconData jumpToCurrent = PhosphorIconsRegular.crosshairSimple;
 }

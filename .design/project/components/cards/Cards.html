@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Components" name="Cards" subtitle="Book grid card · continue reading · bookmark" viewport="420x620" -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cards — Nyan Read</title>
+  <link rel="stylesheet" href="../../colors_and_type.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <style>html, body { margin: 0; } body { padding: 20px; background: var(--nyan-bg); }</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="../../_ds_bundle.js"></script>
+<script>
+(function () {
+  var NS = window[Object.keys(window).filter(function (k) { return k.indexOf("NyanReadDesignSystem_") === 0; })[0]];
+  var h = React.createElement;
+  function Demo() {
+    var col = React.useState(false);
+    return h("div", { style: { display: "flex", flexDirection: "column", gap: 16 } },
+      h(NS.NyanContinueReadingCard, {
+        book: { title: "The Stillwater Diaries", author: "Matsuno Eri", progress: 0.42 },
+        collapsed: col[0], onToggleCollapse: function () { col[1](!col[0]); }
+      }),
+      h("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 } },
+        h(NS.NyanBookGridCard, { book: { title: "The Stillwater Diaries", author: "Matsuno Eri", fmt: "EPUB", pct: 42 } }),
+        h(NS.NyanBookGridCard, { book: { title: "Borrowed Light", author: "Yuen Lai-Ying", fmt: "TXT", pct: 0 } }),
+        h(NS.NyanBookGridCard, { book: { title: "A Long Slope Down", author: "Park Hyun-joo", fmt: "PDF", pct: 88 }, selectionMode: true, selected: true })),
+      h(NS.NyanBookmarkCard, {
+        label: "Chapter 3 · 42%",
+        excerpt: "The cat sat on the threshold for a long while, watching the rain decide what kind of evening it would be.",
+        note: "The hinge of the whole chapter."
+      })
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(h(Demo));
+})();
+</script>
+</body>
+</html>

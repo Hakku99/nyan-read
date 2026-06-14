@@ -3,30 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/nyan_colors.dart';
 import '../../../../core/theme/nyan_radius.dart';
 import '../../../../core/theme/nyan_spacing.dart';
 import '../../../../core/theme/nyan_typography.dart';
-import '../../../../core/ui/components/nyan_sheet_card.dart';
-
-Color _themeLabelColor({
-  required ThemeData theme,
-  required Color preview,
-  required bool isSelected,
-}) {
-  final previewDark = preview.computeLuminance() < 0.45;
-  if (previewDark) {
-    return theme.colorScheme.onPrimary
-        .withValues(alpha: isSelected ? 1.0 : 0.88);
-  }
-  return isSelected
-      ? theme.colorScheme.primary
-      : (theme.textTheme.bodySmall?.color?.withValues(alpha: 0.92) ??
-          theme.colorScheme.onSurface.withValues(alpha: 0.9));
-}
+import 'reader_settings_common.dart';
 
 /// Reading background presets (Theme tab).
+///
+/// Layout per spec `reader.jsx` `ThemePanel`:
+///   "Reading Theme" Knob (surfaceMuted) containing a 2×2 grid of swatches.
 class ReaderSettingsThemePanel extends StatelessWidget {
   const ReaderSettingsThemePanel({
     super.key,
@@ -80,37 +66,35 @@ class ReaderSettingsThemePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final options = _options(loc);
 
-    return NyanSheetCard(
+    return ReaderSettingsKnob(
       key: const Key('reader-menu-theme-grid'),
-      radius: NyanRadius.card,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(NyanSpacing.space16),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: options.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: NyanSpacing.space12,
-              mainAxisSpacing: NyanSpacing.space12,
-              // Spec ReaderSettingsSheet.jsx: theme card height 80pt with the
-              // "Aa 永" sample inside the preview area.
-              mainAxisExtent: 80,
-            ),
-            itemBuilder: (context, index) {
-              final option = options[index];
-              final selected = _isSelected(currentBackground, option);
-              return _ThemeCard(
-                option: option,
-                isSelected: selected,
-                onTap: () => onSelectBackground(option.background),
-                semanticsLabel: '${loc.readerMenuTheme}: ${option.label}',
-              );
-            },
-          ),
+      label: loc.readingTheme,
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        // Explicit zero padding prevents Flutter from injecting MediaQuery
+        // safe-area insets into the grid's scroll viewport, which would inflate
+        // the Knob height (common in sheet/overlay contexts).
+        padding: EdgeInsets.zero,
+        itemCount: options.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          // Spec reader.jsx ThemePanel grid: gap 10 (§4.6 override of space12).
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          mainAxisExtent: 74,
         ),
-      ],
+        itemBuilder: (context, index) {
+          final option = options[index];
+          final selected = _isSelected(currentBackground, option);
+          return _ThemeCard(
+            option: option,
+            isSelected: selected,
+            onTap: () => onSelectBackground(option.background),
+            semanticsLabel: '${loc.readerMenuTheme}: ${option.label}',
+          );
+        },
+      ),
     );
   }
 }
@@ -146,74 +130,70 @@ class _ThemeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Per Claude Design spec (`ReaderSettingsSheet.jsx`): the card uses the
-    // theme's preview colour as its own background, with the name in the
-    // theme's ink colour top-left, an "Aa 永" sample (serif) bottom-left,
-    // and a 22pt check circle top-right when selected. The check uses
-    // [Icons.check_rounded] with the [primary] colour for the circle so the
-    // selection cue reads regardless of card luminance.
-    final labelColor = _themeLabelColor(
-      theme: theme,
-      preview: option.preview,
-      isSelected: isSelected,
-    );
-
     return Semantics(
       button: true,
       selected: isSelected,
       label: semanticsLabel,
       child: Material(
-        color: theme.colorScheme.surface.withValues(alpha: 0),
+        color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.medium),
+          borderRadius: BorderRadius.circular(NyanRadius.cardNested),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.all(NyanSpacing.space12),
             decoration: BoxDecoration(
               color: option.preview,
-              borderRadius: BorderRadius.circular(AppRadius.medium),
+              borderRadius: BorderRadius.circular(NyanRadius.cardNested),
+              // Spec ThemePanel: selected = 1.5px primary border, unselected = transparent.
               border: Border.all(
                 color: isSelected
                     ? theme.colorScheme.primary
-                    : option.ink.withValues(alpha: 0.16),
-                width: isSelected ? 2 : 1,
+                    : Colors.transparent,
+                width: 1.5,
               ),
             ),
+            // Stack outside the content padding so Positioned(top:8,right:8) is
+            // relative to the card edge, not the content area edge.
             child: Stack(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      option.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: NyanTypography.uiFontFamily,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                        color: labelColor,
+                Padding(
+                  padding: const EdgeInsets.all(NyanSpacing.space12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Spec: label always uses s.ink color (no luminance switching).
+                      Text(
+                        option.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: NyanTypography.uiFontFamily,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                          color: option.ink,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'Aa 永',
-                      style: TextStyle(
-                        fontFamily: NyanTypography.readingSerifFontFamily,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        height: 1.0,
-                        color: option.ink.withValues(alpha: 0.7),
+                      // Spec: "400 13px/1 var(--font-serif)", opacity 0.72.
+                      Text(
+                        'Aa 永',
+                        style: TextStyle(
+                          fontFamily: NyanTypography.readingSerifFontFamily,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                          height: 1.0,
+                          color: option.ink.withValues(alpha: 0.72),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                // Spec: badge at top:8, right:8 from card edge; icon size 13pt.
                 if (isSelected)
                   Positioned(
-                    top: 0,
-                    right: 0,
+                    top: 8,
+                    right: 8,
                     child: Container(
                       width: 22,
                       height: 22,
@@ -223,8 +203,8 @@ class _ThemeCard extends StatelessWidget {
                       ),
                       alignment: Alignment.center,
                       child: Icon(
-                        NyanIcons.checkFilled,
-                        size: 14,
+                        NyanIcons.check,
+                        size: 13,
                         color: theme.colorScheme.onPrimary,
                       ),
                     ),

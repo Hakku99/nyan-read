@@ -116,11 +116,23 @@ abstract class AppLocalizations {
   /// **'Theme Preset'**
   String get themePreset;
 
+  /// No description provided for @themePresetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How Nyan Read looks while you read.'**
+  String get themePresetSubtitle;
+
   /// No description provided for @readingSettings.
   ///
   /// In en, this message translates to:
   /// **'Reading Settings'**
   String get readingSettings;
+
+  /// No description provided for @reading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get reading;
 
   /// No description provided for @readerQuickProgressSubtitle.
   ///
@@ -163,6 +175,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Page Turn Mode'**
   String get pageTurnMode;
+
+  /// No description provided for @pageTurnModeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The direction pages move as you read.'**
+  String get pageTurnModeSubtitle;
 
   /// No description provided for @pageTurnModeTap.
   ///
@@ -281,7 +299,7 @@ abstract class AppLocalizations {
   /// No description provided for @readingReminderSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Remind me to take a break'**
+  /// **'Chapter seek and position'**
   String get readingReminderSubtitle;
 
   /// No description provided for @reminderInterval.
@@ -290,11 +308,47 @@ abstract class AppLocalizations {
   /// **'Reminder Interval'**
   String get reminderInterval;
 
+  /// No description provided for @reminderIntervalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How often to nudge you back to reading.'**
+  String get reminderIntervalSubtitle;
+
   /// No description provided for @reminderMinutes.
   ///
   /// In en, this message translates to:
   /// **'{minutes} min'**
   String reminderMinutes(int minutes);
+
+  /// No description provided for @reminderEvery15min.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 15 min'**
+  String get reminderEvery15min;
+
+  /// No description provided for @reminderEvery30min.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 30 min'**
+  String get reminderEvery30min;
+
+  /// No description provided for @reminderEveryHour.
+  ///
+  /// In en, this message translates to:
+  /// **'Every hour'**
+  String get reminderEveryHour;
+
+  /// No description provided for @reminderEvery2hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 2 hours'**
+  String get reminderEvery2hours;
+
+  /// No description provided for @reminderDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get reminderDaily;
 
   /// No description provided for @dataManagement.
   ///
@@ -311,7 +365,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteFilesOnRemoveSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Original files will also be removed from your device.'**
+  /// **'Remove source files when deleting a book'**
   String get deleteFilesOnRemoveSubtitle;
 
   /// No description provided for @lockPrivateShelf.
@@ -365,7 +419,7 @@ abstract class AppLocalizations {
   /// No description provided for @lockPrivacyShelfSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Hide until next unlock'**
+  /// **'Require PIN to open'**
   String get lockPrivacyShelfSubtitle;
 
   /// No description provided for @adminPanel.
@@ -377,13 +431,13 @@ abstract class AppLocalizations {
   /// No description provided for @adminPanelTitle.
   ///
   /// In en, this message translates to:
-  /// **'Admin / Manager Mode'**
+  /// **'Admin Panel'**
   String get adminPanelTitle;
 
   /// No description provided for @adminPanelModeSection.
   ///
   /// In en, this message translates to:
-  /// **'Mode Control'**
+  /// **'Mode'**
   String get adminPanelModeSection;
 
   /// No description provided for @adminProModeEnabled.
@@ -395,7 +449,7 @@ abstract class AppLocalizations {
   /// No description provided for @adminProModeSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Unlocks Privacy Shelf and disables ads'**
+  /// **'Unlocks all Pro features in this session.'**
   String get adminProModeSubtitle;
 
   /// No description provided for @adminForceUnlockPrivacyShelf.
@@ -407,7 +461,7 @@ abstract class AppLocalizations {
   /// No description provided for @adminForceUnlockPrivacyShelfSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Bypass password verification'**
+  /// **'Bypass PIN for this session.'**
   String get adminForceUnlockPrivacyShelfSubtitle;
 
   /// No description provided for @adminFeatureFlagsSection.
@@ -431,13 +485,13 @@ abstract class AppLocalizations {
   /// No description provided for @adminPanelHintTitle.
   ///
   /// In en, this message translates to:
-  /// **'Internal control panel'**
+  /// **'For testing only'**
   String get adminPanelHintTitle;
 
   /// No description provided for @adminPanelHintSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Use this page for debugging and capability verification.'**
+  /// **'Changes here affect only this session. Restart the app to reset to defaults.'**
   String get adminPanelHintSubtitle;
 
   /// No description provided for @language.
@@ -445,6 +499,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language'**
   String get language;
+
+  /// No description provided for @languageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App display language.'**
+  String get languageSubtitle;
 
   /// No description provided for @bookDetails.
   ///
@@ -608,6 +668,18 @@ abstract class AppLocalizations {
   /// **'File path copied to clipboard'**
   String get filePathCopied;
 
+  /// No description provided for @copiedToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get copiedToClipboard;
+
+  /// No description provided for @couldNotOpenBrowserSearchCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open browser — search link copied'**
+  String get couldNotOpenBrowserSearchCopied;
+
   /// No description provided for @fileExists.
   ///
   /// In en, this message translates to:
@@ -619,6 +691,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'File not found'**
   String get fileNotFound;
+
+  /// No description provided for @fileUnavailableCta.
+  ///
+  /// In en, this message translates to:
+  /// **'File unavailable'**
+  String get fileUnavailableCta;
 
   /// No description provided for @unknown.
   ///
@@ -647,19 +725,19 @@ abstract class AppLocalizations {
   /// No description provided for @reportToDeveloper.
   ///
   /// In en, this message translates to:
-  /// **'Report to Developer'**
+  /// **'Report to developer'**
   String get reportToDeveloper;
 
   /// No description provided for @showTechnicalDetails.
   ///
   /// In en, this message translates to:
-  /// **'Show Technical Details'**
+  /// **'Show technical details'**
   String get showTechnicalDetails;
 
   /// No description provided for @hideTechnicalDetails.
   ///
   /// In en, this message translates to:
-  /// **'Hide Technical Details'**
+  /// **'Hide technical details'**
   String get hideTechnicalDetails;
 
   /// No description provided for @couldNotLaunchEmail.
@@ -710,6 +788,18 @@ abstract class AppLocalizations {
   /// **'Remove'**
   String get remove;
 
+  /// No description provided for @undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undo;
+
+  /// No description provided for @export.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get export;
+
   /// No description provided for @cancel.
   ///
   /// In en, this message translates to:
@@ -737,13 +827,13 @@ abstract class AppLocalizations {
   /// No description provided for @moveToPublic.
   ///
   /// In en, this message translates to:
-  /// **'Move to Public'**
+  /// **'Make Public'**
   String get moveToPublic;
 
   /// No description provided for @moveToPrivate.
   ///
   /// In en, this message translates to:
-  /// **'Move to Private'**
+  /// **'Make Private'**
   String get moveToPrivate;
 
   /// No description provided for @selectAll.
@@ -770,6 +860,12 @@ abstract class AppLocalizations {
   /// **'Enjoy your reading'**
   String get enjoyReading;
 
+  /// No description provided for @bookshelf.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookshelf'**
+  String get bookshelf;
+
   /// No description provided for @listView.
   ///
   /// In en, this message translates to:
@@ -793,6 +889,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sort by'**
   String get sortBy;
+
+  /// No description provided for @sortShelfBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort shelf by'**
+  String get sortShelfBy;
 
   /// No description provided for @sortOrderAsc.
   ///
@@ -842,6 +944,42 @@ abstract class AppLocalizations {
   /// **'Title Descending'**
   String get titleDesc;
 
+  /// No description provided for @sortLastReadAscSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest opened first'**
+  String get sortLastReadAscSub;
+
+  /// No description provided for @sortLastReadDescSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently opened first'**
+  String get sortLastReadDescSub;
+
+  /// No description provided for @sortTitleAscSub.
+  ///
+  /// In en, this message translates to:
+  /// **'A → Z'**
+  String get sortTitleAscSub;
+
+  /// No description provided for @sortTitleDescSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Z → A'**
+  String get sortTitleDescSub;
+
+  /// No description provided for @sortAddedAscSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest first'**
+  String get sortAddedAscSub;
+
+  /// No description provided for @sortAddedDescSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest first'**
+  String get sortAddedDescSub;
+
   /// No description provided for @lockPrivacyShelf.
   ///
   /// In en, this message translates to:
@@ -857,14 +995,20 @@ abstract class AppLocalizations {
   /// No description provided for @deleteBooksTitle.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, one{Remove {count} book?} other{Remove {count} books?}}'**
+  /// **'{count, plural, one{Delete {count} book?} other{Delete {count} books?}}'**
   String deleteBooksTitle(int count);
 
   /// No description provided for @actionCannotBeUndone.
   ///
   /// In en, this message translates to:
-  /// **'They will be removed from the current shelf.'**
+  /// **'Their reading progress, bookmarks and notes are removed too. The source files on your device are kept.'**
   String get actionCannotBeUndone;
+
+  /// No description provided for @deleteBooksButton.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Delete {count} book} other{Delete {count} books}}'**
+  String deleteBooksButton(int count);
 
   /// No description provided for @alsoDeleteLocalFiles.
   ///
@@ -911,19 +1055,19 @@ abstract class AppLocalizations {
   /// No description provided for @importBooksSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose files from your device and add them to your shelf.'**
+  /// **'Add more books to your shelf.'**
   String get importBooksSubtitle;
 
   /// No description provided for @importBooksEmptySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Import your first book from this device and start reading.'**
+  /// **'Add your first book to get started.'**
   String get importBooksEmptySubtitle;
 
   /// No description provided for @importFilesSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Pick one or more supported ebook files.'**
+  /// **'Browse and open .txt, .epub or .pdf'**
   String get importFilesSubtitle;
 
   /// No description provided for @supportedFormats.
@@ -935,7 +1079,7 @@ abstract class AppLocalizations {
   /// No description provided for @supportedFormatsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'TXT, EPUB, and PDF are ready to import.'**
+  /// **'Plain text, e-book, and document files.'**
   String get supportedFormatsSubtitle;
 
   /// No description provided for @supportedFormatsDescription.
@@ -1016,6 +1160,30 @@ abstract class AppLocalizations {
   /// **'Unlock'**
   String get unlock;
 
+  /// No description provided for @pinEnter.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter PIN'**
+  String get pinEnter;
+
+  /// No description provided for @pinSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Set PIN'**
+  String get pinSet;
+
+  /// No description provided for @pinConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm PIN'**
+  String get pinConfirm;
+
+  /// No description provided for @pinMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'PINs don\'t match — try again'**
+  String get pinMismatch;
+
   /// No description provided for @fontSize.
   ///
   /// In en, this message translates to:
@@ -1069,6 +1237,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Theme'**
   String get readerMenuTheme;
+
+  /// No description provided for @readingTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading Theme'**
+  String get readingTheme;
 
   /// No description provided for @readerSheetProgressSubtitle.
   ///
@@ -1208,6 +1382,12 @@ abstract class AppLocalizations {
   /// **'The quick brown fox jumps over the lazy dog.'**
   String get readerTypographyPreviewSample;
 
+  /// Per-tab reset button label in the reader settings sheet. {section} is the tab name (Display / Text / Theme).
+  ///
+  /// In en, this message translates to:
+  /// **'Reset {section}'**
+  String readerResetSection(String section);
+
   /// No description provided for @readerResetAppearance.
   ///
   /// In en, this message translates to:
@@ -1268,16 +1448,28 @@ abstract class AppLocalizations {
   /// **'Reading progress {pct}%'**
   String readerSettingsProgressHint(Object pct);
 
-  /// Short label for the Chapters tile in the reader bottom dock (must fit alongside 3 other tiles in a narrow strip).
+  /// No description provided for @chapterOfCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapter {current} of {total}'**
+  String chapterOfCount(int current, int total);
+
+  /// Short label for the Chapters tile in the reader bottom dock (must fit alongside 4 other tiles in a narrow strip).
   ///
   /// In en, this message translates to:
   /// **'Chapters'**
   String get readerDockChapters;
 
+  /// Short label for the Highlights tile in the reader bottom dock (must fit alongside 3 other tiles in a narrow strip).
+  ///
+  /// In en, this message translates to:
+  /// **'Highlights'**
+  String get readerDockHighlights;
+
   /// No description provided for @jumpToCurrentChapter.
   ///
   /// In en, this message translates to:
-  /// **'Jump to current chapter'**
+  /// **'Jump to current'**
   String get jumpToCurrentChapter;
 
   /// No description provided for @chapterListProgressLabel.
@@ -1339,6 +1531,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bookmarks ({count})'**
   String bookmarksTitle(int count);
+
+  /// No description provided for @bookmarksSavedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} saved'**
+  String bookmarksSavedCount(int count);
 
   /// No description provided for @noBookmarksYet.
   ///
@@ -1430,11 +1628,71 @@ abstract class AppLocalizations {
   /// **'Cream Light'**
   String get themeCreamLight;
 
+  /// No description provided for @themeCreamLightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm paper — the default'**
+  String get themeCreamLightHint;
+
   /// No description provided for @themeSumiDark.
   ///
   /// In en, this message translates to:
   /// **'Sumi Dark'**
   String get themeSumiDark;
+
+  /// No description provided for @themeSumiDarkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ink night for low light'**
+  String get themeSumiDarkHint;
+
+  /// No description provided for @themeMatchSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Match System'**
+  String get themeMatchSystem;
+
+  /// No description provided for @themeMatchSystemHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow your device setting'**
+  String get themeMatchSystemHint;
+
+  /// No description provided for @pageTurnLeftRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Left & Right'**
+  String get pageTurnLeftRight;
+
+  /// No description provided for @pageTurnLeftRightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn pages horizontally'**
+  String get pageTurnLeftRightHint;
+
+  /// No description provided for @pageTurnUpDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Up & Down'**
+  String get pageTurnUpDown;
+
+  /// No description provided for @pageTurnUpDownHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn pages vertically'**
+  String get pageTurnUpDownHint;
+
+  /// No description provided for @languageEnglishHint.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglishHint;
+
+  /// No description provided for @languageChineseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese · 简体中文'**
+  String get languageChineseHint;
 
   /// No description provided for @timeToday.
   ///
@@ -1472,29 +1730,53 @@ abstract class AppLocalizations {
   /// **'Never read'**
   String get neverRead;
 
-  /// No description provided for @errorFileNotFound.
+  /// No description provided for @errorFileNotFoundTitle.
   ///
   /// In en, this message translates to:
-  /// **'This book seems to have lost its way.\nThe file cannot be found, it may have been moved or deleted.'**
-  String get errorFileNotFound;
+  /// **'This book lost its way'**
+  String get errorFileNotFoundTitle;
 
-  /// No description provided for @errorUnsupportedFormat.
+  /// No description provided for @errorFileNotFoundBody.
   ///
   /// In en, this message translates to:
-  /// **'Nyan cannot read this format.\nThis file type is not supported yet.'**
-  String get errorUnsupportedFormat;
+  /// **'The file can\'t be found — it may have been moved or deleted.'**
+  String get errorFileNotFoundBody;
 
-  /// No description provided for @errorParseFailed.
+  /// No description provided for @errorUnsupportedFormatTitle.
   ///
   /// In en, this message translates to:
-  /// **'The pages are stuck together.\nThis file may be corrupted or incomplete.'**
-  String get errorParseFailed;
+  /// **'Nyan can\'t read this format'**
+  String get errorUnsupportedFormatTitle;
 
-  /// No description provided for @errorUnknown.
+  /// No description provided for @errorUnsupportedFormatBody.
   ///
   /// In en, this message translates to:
-  /// **'Something unexpected happened.\nPlease try again later.'**
-  String get errorUnknown;
+  /// **'This file type isn\'t supported yet.'**
+  String get errorUnsupportedFormatBody;
+
+  /// No description provided for @errorParseFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'These pages are stuck together'**
+  String get errorParseFailedTitle;
+
+  /// No description provided for @errorParseFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t open this file. It might be corrupted.'**
+  String get errorParseFailedBody;
+
+  /// No description provided for @errorUnknownTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get errorUnknownTitle;
+
+  /// No description provided for @errorUnknownBody.
+  ///
+  /// In en, this message translates to:
+  /// **'An unexpected error occurred. Please try again.'**
+  String get errorUnknownBody;
 
   /// No description provided for @emptyShelfTitle.
   ///
@@ -1511,14 +1793,20 @@ abstract class AppLocalizations {
   /// No description provided for @exportData.
   ///
   /// In en, this message translates to:
-  /// **'Export Reading Assets'**
+  /// **'Export Data'**
   String get exportData;
 
   /// No description provided for @exportDataSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Save reading data as JSON'**
+  /// **'Save to device or share'**
   String get exportDataSubtitle;
+
+  /// No description provided for @exportDataSheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where your reading data goes.'**
+  String get exportDataSheetSubtitle;
 
   /// No description provided for @saveToDevice.
   ///
@@ -1529,31 +1817,31 @@ abstract class AppLocalizations {
   /// No description provided for @saveToDeviceSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose a folder on your device'**
+  /// **'Store a JSON backup in your Files'**
   String get saveToDeviceSubtitle;
 
   /// No description provided for @shareVia.
   ///
   /// In en, this message translates to:
-  /// **'Share via...'**
+  /// **'Share...'**
   String get shareVia;
 
   /// No description provided for @shareViaSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Gmail, Drive, Quick Share, etc.'**
+  /// **'Send via Gmail, Drive or another app'**
   String get shareViaSubtitle;
 
   /// No description provided for @importData.
   ///
   /// In en, this message translates to:
-  /// **'Import Reading Assets'**
+  /// **'Import Data'**
   String get importData;
 
   /// No description provided for @importDataSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Restore reading data from JSON backup'**
+  /// **'Restore from a backup file'**
   String get importDataSubtitle;
 
   /// No description provided for @importSuccess.
@@ -1567,6 +1855,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Import failed: {error}'**
   String importFailed(String error);
+
+  /// No description provided for @exportSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Export saved to device'**
+  String get exportSaved;
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed: {error}'**
+  String exportFailed(String error);
 }
 
 class _AppLocalizationsDelegate

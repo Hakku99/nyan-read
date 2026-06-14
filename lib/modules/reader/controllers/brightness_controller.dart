@@ -56,7 +56,8 @@ class BrightnessController extends ChangeNotifier {
 
   void setFromSlider(double value) {
     final clamped = _normalize(value);
-    _showHud();
+    // No HUD here — settings slider is self-contained UI; HUD only fires from
+    // the left-edge drag gesture (handleDragStart / handleDragUpdate).
     _syncLocalState(state.copyWith(
       mode: BrightnessMode.manual,
       uiBrightness: clamped,
@@ -66,11 +67,10 @@ class BrightnessController extends ChangeNotifier {
 
   Future<void> commitFromSlider(double value) async {
     final clamped = _normalize(value);
-    _showHud();
+    // No HUD — same rationale as setFromSlider.
     await _orchestrator.commitBrightness(clamped);
     if (_isDisposed) return;
     _syncLocalState(_orchestrator.state);
-    _scheduleHudHide();
   }
 
   Future<void> setBrightness(double value) async {

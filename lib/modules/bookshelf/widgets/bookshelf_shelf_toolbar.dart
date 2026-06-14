@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:nyan_read/core/theme/nyan_spacing.dart';
-import 'package:nyan_read/core/theme/theme_presets.dart';
-import 'package:nyan_read/core/ui/components/nyan_info_card.dart';
-import 'package:nyan_read/core/ui/components/nyan_overlay_style.dart';
 import 'package:nyan_read/modules/bookshelf/widgets/segmented_tab_control.dart';
 
-const double _kShelfCardPadding = NyanSpacing.space12;
+/// Vertical inset above + below the track (drives the pinned sliver extent).
+/// Top = 0: gap above tabs comes entirely from NyanPageHeader's bottom padding (space12).
+/// Bottom = space12: matches the gap above so both sides are equal at 12pt.
+const double _kShelfTrackVerticalPaddingTop = 0;
+const double _kShelfTrackVerticalPaddingBottom = NyanSpacing.space12;
+
+/// Horizontal inset — 4pt to align the track width with the continue-reading
+/// card and the grid (both inset by [NyanSpacing.space4] inside the page pad).
+const double _kShelfTrackHorizontalPadding = NyanSpacing.space4;
+
 const double _kShelfSegmentedHeight = 40;
 
 /// Subpixel borders / font metrics can exceed the nominal sum by 1px; keeps pinned header from clipping.
 const double _kShelfPinnedLayoutSlack = 1;
 
-/// Pinned sliver extent = card padding × 2 + segmented control height + slack.
+/// Pinned sliver extent = top padding + segmented control height + bottom padding + slack.
 const double kBookshelfShelfToolbarPinnedExtent =
-    _kShelfCardPadding +
+    _kShelfTrackVerticalPaddingTop +
     _kShelfSegmentedHeight +
-    _kShelfCardPadding +
+    _kShelfTrackVerticalPaddingBottom +
     _kShelfPinnedLayoutSlack;
 
 /// Bookshelf pinned tab strip. Per design spec the tab control is the only
@@ -35,17 +41,25 @@ class BookshelfShelfToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NyanInfoCard(
-      padding: const EdgeInsets.all(_kShelfCardPadding),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        _kShelfTrackHorizontalPadding,
+        _kShelfTrackVerticalPaddingTop,
+        _kShelfTrackHorizontalPadding,
+        _kShelfTrackVerticalPaddingBottom,
+      ),
       child: SizedBox(
         height: _kShelfSegmentedHeight,
         child: SegmentedTabControl(
-          style: SegmentedTabStyle.subtle,
-          backgroundColor: NyanOverlayStyle.recessedSurface(context),
+          style: SegmentedTabStyle.shelf,
+          // No backgroundColor override — the shelf variant uses the default
+          // surfaceMuted track (BookshelfScreen.jsx), which reads as a warm
+          // recessed beige against the page and the white selected chip.
           tabs: tabs,
           selectedIndex: selectedIndex,
           onTabChanged: onTabChanged,
-          labelLineHeight: 1.15,
+          // Spec label is `14px/1`; 1.0 line-height centres cleanly in the chip.
+          labelLineHeight: 1.0,
         ),
       ),
     );
@@ -74,27 +88,11 @@ class BookshelfShelfPinnedHeaderDelegate extends SliverPersistentHeaderDelegate 
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    final theme = Theme.of(context);
-    final nyan = resolveNyanTheme(theme);
-    final bottomAlpha = theme.brightness == Brightness.dark ? 0.35 : 0.28;
-
-    // Use scaffold background so the square [Material] behind [NyanInfoCard]'s rounded rect does
-    // not read as bright "corner slivers" (card leaves the bbox corners unpainted; surface≠scaffold).
     return SizedBox(
       height: maxExtent,
       child: Material(
-        color: theme.scaffoldBackgroundColor,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: nyan.divider.withValues(alpha: bottomAlpha),
-                width: 1,
-              ),
-            ),
-          ),
-          child: child,
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: child,
       ),
     );
   }

@@ -1,0 +1,589 @@
+{
+  "plugins": [
+    "react",
+    "import"
+  ],
+  "rules": {
+    "react/forbid-elements": [
+      "warn",
+      {
+        "forbid": []
+      }
+    ],
+    "no-restricted-imports": [
+      "warn",
+      {
+        "patterns": [
+          {
+            "group": [
+              "brand/**",
+              "components/cards/**",
+              "components/navigation/**",
+              "components/primitives/**",
+              "components/reader/**",
+              "components/security/**",
+              "components/surfaces/**",
+              "prototype/**",
+              "screens/**"
+            ],
+            "message": "Import design-system components from 'index.js', not component internals."
+          }
+        ]
+      }
+    ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+        "message": "Raw hex color — use a design-system color token via var()."
+      },
+      {
+        "selector": "Literal[value=/\\b\\d+px\\b/]",
+        "message": "Raw px value — use a design-system spacing token via var()."
+      },
+      {
+        "selector": "Literal[value=/font-family\\s*:\\s*(?!['\\\"]?(?:Source Han Serif SC|Noto Sans SC))/i]",
+        "message": "Font not provided by the design system. Available: Source Han Serif SC, Noto Sans SC."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='BookListRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:book|onPress|key|ref|className|style|children)$/]",
+        "message": "<BookListRow> doesn't accept that prop. Declared props: book, onPress."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Checkbox'] > JSXAttribute > JSXIdentifier[name!=/^(?:checked|onChange|disabled|size|key|ref|className|style|children)$/]",
+        "message": "<Checkbox> doesn't accept that prop. Declared props: checked, onChange, disabled, size."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='DisplayPanel'] > JSXAttribute > JSXIdentifier[name!=/^(?:t|setT|key|ref|className|style|children)$/]",
+        "message": "<DisplayPanel> doesn't accept that prop. Declared props: t, setT."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='DockFooter'] > JSXAttribute > JSXIdentifier[name!=/^(?:chapterIndex|chapterCount|progress|activeAction|onAction|onPrevChapter|onNextChapter|sheetOpen|actions|labels|key|ref|className|style|children)$/]",
+        "message": "<DockFooter> doesn't accept that prop. Declared props: chapterIndex, chapterCount, progress, activeAction, onAction, onPrevChapter, onNextChapter, sheetOpen, actions, labels."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='HighlightPen'] > JSXAttribute > JSXIdentifier[name!=/^(?:id|color|label|key|ref|className|style|children)$/]",
+        "message": "<HighlightPen> doesn't accept that prop. Declared props: id, color, label."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Icon'] > JSXAttribute > JSXIdentifier[name!=/^(?:name|size|color|weight|style|onClick|key|ref|className|style|children)$/]",
+        "message": "<Icon> doesn't accept that prop. Declared props: name, size, color, weight, style, onClick."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Icon'] > JSXAttribute[name.name='weight'] > Literal[value!=/^(?:regular|thin|light|bold|fill|duotone)$/]",
+        "message": "<Icon> weight must be one of 'regular' | 'thin' | 'light' | 'bold' | 'fill' | 'duotone'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='InBookSearch'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|onClose|matchIndex|matchCount|onPrevMatch|onNextMatch|style|key|ref|className|style|children)$/]",
+        "message": "<InBookSearch> doesn't accept that prop. Declared props: value, onChange, onClose, matchIndex, matchCount, onPrevMatch, onNextMatch, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Knob'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|hint|children|key|ref|className|style|children)$/]",
+        "message": "<Knob> doesn't accept that prop. Declared props: label, hint, children."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanActionSheetRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:icon|title|subtitle|onPress|showChevron|key|ref|className|style|children)$/]",
+        "message": "<NyanActionSheetRow> doesn't accept that prop. Declared props: icon, title, subtitle, onPress, showChevron."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanBookGridCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:book|selected|selectionMode|onPress|onLongPress|key|ref|className|style|children)$/]",
+        "message": "<NyanBookGridCard> doesn't accept that prop. Declared props: book, selected, selectionMode, onPress, onLongPress."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanBookmarkCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|excerpt|note|onPress|key|ref|className|style|children)$/]",
+        "message": "<NyanBookmarkCard> doesn't accept that prop. Declared props: label, excerpt, note, onPress."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanBottomSheet'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|onClose|children|height|key|ref|className|style|children)$/]",
+        "message": "<NyanBottomSheet> doesn't accept that prop. Declared props: open, onClose, children, height."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanContinueReadingCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:book|onContinue|collapsed|onToggleCollapse|eyebrow|continueLabel|key|ref|className|style|children)$/]",
+        "message": "<NyanContinueReadingCard> doesn't accept that prop. Declared props: book, onContinue, collapsed, onToggleCollapse, eyebrow, continueLabel."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanDialog'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|onClose|icon|title|message|tone|confirmLabel|cancelLabel|onConfirm|onCancel|hideCancel|children|key|ref|className|style|children)$/]",
+        "message": "<NyanDialog> doesn't accept that prop. Declared props: open, onClose, icon, title, message, tone, confirmLabel, cancelLabel, onConfirm, onCancel, hideCancel, children."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanDialog'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:default|danger)$/]",
+        "message": "<NyanDialog> tone must be one of 'default' | 'danger'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanEmptyState'] > JSXAttribute > JSXIdentifier[name!=/^(?:icon|title|description|action|key|ref|className|style|children)$/]",
+        "message": "<NyanEmptyState> doesn't accept that prop. Declared props: icon, title, description, action."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanFAB'] > JSXAttribute > JSXIdentifier[name!=/^(?:icon|onPress|style|key|ref|className|style|children)$/]",
+        "message": "<NyanFAB> doesn't accept that prop. Declared props: icon, onPress, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanInfoCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|variant|tone|padding|onPress|style|key|ref|className|style|children)$/]",
+        "message": "<NyanInfoCard> doesn't accept that prop. Declared props: children, variant, tone, padding, onPress, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanInfoCard'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:standard|grouped)$/]",
+        "message": "<NyanInfoCard> variant must be one of 'standard' | 'grouped'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanInfoCard'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:surface|muted|raised)$/]",
+        "message": "<NyanInfoCard> tone must be one of 'surface' | 'muted' | 'raised'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanListRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:icon|title|subtitle|trailing|onPress|danger|indent|chevron|key|ref|className|style|children)$/]",
+        "message": "<NyanListRow> doesn't accept that prop. Declared props: icon, title, subtitle, trailing, onPress, danger, indent, chevron."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanOptionSheet'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|subtitle|options|selected|variant|animateIn|onSelect|onClose|style|key|ref|className|style|children)$/]",
+        "message": "<NyanOptionSheet> doesn't accept that prop. Declared props: title, subtitle, options, selected, variant, animateIn, onSelect, onClose, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanOptionSheet'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:radio|action)$/]",
+        "message": "<NyanOptionSheet> variant must be one of 'radio' | 'action'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanPageHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|subtitle|leading|actions|back|onBack|style|key|ref|className|style|children)$/]",
+        "message": "<NyanPageHeader> doesn't accept that prop. Declared props: title, subtitle, leading, actions, back, onBack, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanPrimaryButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|onPress|icon|expanded|variant|size|disabled|loading|style|key|ref|className|style|children)$/]",
+        "message": "<NyanPrimaryButton> doesn't accept that prop. Declared props: label, onPress, icon, expanded, variant, size, disabled, loading, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanPrimaryButton'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:primary|deep|ghost)$/]",
+        "message": "<NyanPrimaryButton> variant must be one of 'primary' | 'deep' | 'ghost'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanPrimaryButton'] > JSXAttribute[name.name='size'] > Literal[value!=/^(?:sm|md|lg)$/]",
+        "message": "<NyanPrimaryButton> size must be one of 'sm' | 'md' | 'lg'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanResponse'] > JSXAttribute > JSXIdentifier[name!=/^(?:status|title|description|action|onDismiss|placement|style|key|ref|className|style|children)$/]",
+        "message": "<NyanResponse> doesn't accept that prop. Declared props: status, title, description, action, onDismiss, placement, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanResponse'] > JSXAttribute[name.name='status'] > Literal[value!=/^(?:success|error|skipped|info|loading)$/]",
+        "message": "<NyanResponse> status must be one of 'success' | 'error' | 'skipped' | 'info' | 'loading'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanResponse'] > JSXAttribute[name.name='placement'] > Literal[value!=/^(?:bottom|static)$/]",
+        "message": "<NyanResponse> placement must be one of 'bottom' | 'static'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanRowGroup'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|style|key|ref|className|style|children)$/]",
+        "message": "<NyanRowGroup> doesn't accept that prop. Declared props: children, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanSectionHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|withDot|style|key|ref|className|style|children)$/]",
+        "message": "<NyanSectionHeader> doesn't accept that prop. Declared props: title, withDot, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanSlider'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|min|max|step|onChange|color|disabled|key|ref|className|style|children)$/]",
+        "message": "<NyanSlider> doesn't accept that prop. Declared props: value, min, max, step, onChange, color, disabled."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='NyanSwitch'] > JSXAttribute > JSXIdentifier[name!=/^(?:disabled|value|onChange|key|ref|className|style|children)$/]",
+        "message": "<NyanSwitch> doesn't accept that prop. Declared props: disabled, value, onChange."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='OnePaperDock'] > JSXAttribute > JSXIdentifier[name!=/^(?:visible|sheetOpen|title|meta|children|maxSheetHeight|onStopProp|key|ref|className|style|children)$/]",
+        "message": "<OnePaperDock> doesn't accept that prop. Declared props: visible, sheetOpen, title, meta, children, maxSheetHeight, onStopProp."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PdfControls'] > JSXAttribute > JSXIdentifier[name!=/^(?:page|pageCount|zoom|minZoom|maxZoom|zoomStep|onZoom|onPage|onGoToPage|style|key|ref|className|style|children)$/]",
+        "message": "<PdfControls> doesn't accept that prop. Declared props: page, pageCount, zoom, minZoom, maxZoom, zoomStep, onZoom, onPage, onGoToPage, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PillButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|selected|onPress|icon|disabled|style|key|ref|className|style|children)$/]",
+        "message": "<PillButton> doesn't accept that prop. Declared props: label, selected, onPress, icon, disabled, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PinDots'] > JSXAttribute > JSXIdentifier[name!=/^(?:count|length|hasError|dotColor|gap|size|key|ref|className|style|children)$/]",
+        "message": "<PinDots> doesn't accept that prop. Declared props: count, length, hasError, dotColor, gap, size."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PinPad'] > JSXAttribute > JSXIdentifier[name!=/^(?:onDigit|onDelete|keyColor|keySize|gap|key|ref|className|style|children)$/]",
+        "message": "<PinPad> doesn't accept that prop. Declared props: onDigit, onDelete, keyColor, keySize, gap."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ProgressBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|height|label|color|style|key|ref|className|style|children)$/]",
+        "message": "<ProgressBar> doesn't accept that prop. Declared props: value, height, label, color, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ReaderChapterList'] > JSXAttribute > JSXIdentifier[name!=/^(?:chapters|currentIndex|ascending|onSelect|key|ref|className|style|children)$/]",
+        "message": "<ReaderChapterList> doesn't accept that prop. Declared props: chapters, currentIndex, ascending, onSelect."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ReaderParagraph'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|serif|fontSize|lineHeight|color|key|ref|className|style|children)$/]",
+        "message": "<ReaderParagraph> doesn't accept that prop. Declared props: children, serif, fontSize, lineHeight, color."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ReaderSettingsBody'] > JSXAttribute > JSXIdentifier[name!=/^(?:t|setT|tab|setTab|key|ref|className|style|children)$/]",
+        "message": "<ReaderSettingsBody> doesn't accept that prop. Declared props: t, setT, tab, setTab."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SearchField'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|onClear|onSubmit|placeholder|autoFocus|style|key|ref|className|style|children)$/]",
+        "message": "<SearchField> doesn't accept that prop. Declared props: value, onChange, onClear, onSubmit, placeholder, autoFocus, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SegmentedTabControl'] > JSXAttribute > JSXIdentifier[name!=/^(?:tabs|selected|onChange|style|key|ref|className|style|children)$/]",
+        "message": "<SegmentedTabControl> doesn't accept that prop. Declared props: tabs, selected, onChange, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SegmentedTabControl'] > JSXAttribute[name.name='style'] > Literal[value!=/^(?:emphasis|subtle)$/]",
+        "message": "<SegmentedTabControl> style must be one of 'emphasis' | 'subtle'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Skeleton'] > JSXAttribute > JSXIdentifier[name!=/^(?:variant|width|height|radius|style|key|ref|className|style|children)$/]",
+        "message": "<Skeleton> doesn't accept that prop. Declared props: variant, width, height, radius, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Skeleton'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:text|cover|circle|block)$/]",
+        "message": "<Skeleton> variant must be one of 'text' | 'cover' | 'circle' | 'block'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='TextField'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|label|placeholder|icon|multiline|rows|error|disabled|onSubmit|style|key|ref|className|style|children)$/]",
+        "message": "<TextField> doesn't accept that prop. Declared props: value, onChange, label, placeholder, icon, multiline, rows, error, disabled, onSubmit, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='TextPanel'] > JSXAttribute > JSXIdentifier[name!=/^(?:t|setT|key|ref|className|style|children)$/]",
+        "message": "<TextPanel> doesn't accept that prop. Declared props: t, setT."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='TextSelectionAction'] > JSXAttribute > JSXIdentifier[name!=/^(?:key|icon|label|key|ref|className|style|children)$/]",
+        "message": "<TextSelectionAction> doesn't accept that prop. Declared props: key, icon, label."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ThemePanel'] > JSXAttribute > JSXIdentifier[name!=/^(?:t|setT|key|ref|className|style|children)$/]",
+        "message": "<ThemePanel> doesn't accept that prop. Declared props: t, setT."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='TTSPlayer'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|chapter|voice|playing|onTogglePlay|onSkipBack|onSkipForward|progress|onSeek|elapsed|remaining|speeds|speedIndex|onSpeed|onVoice|style|key|ref|className|style|children)$/]",
+        "message": "<TTSPlayer> doesn't accept that prop. Declared props: title, chapter, voice, playing, onTogglePlay, onSkipBack, onSkipForward, progress, onSeek, elapsed, remaining, speeds, speedIndex, onSpeed, onVoice, style."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/index.js"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "x-omelette": {
+    "components": {
+      "BookListRow": {
+        "replaces": []
+      },
+      "Checkbox": {
+        "replaces": []
+      },
+      "DisplayPanel": {
+        "replaces": []
+      },
+      "DockFooter": {
+        "replaces": []
+      },
+      "HighlightPen": {
+        "replaces": []
+      },
+      "Icon": {
+        "replaces": []
+      },
+      "InBookSearch": {
+        "replaces": []
+      },
+      "Knob": {
+        "replaces": []
+      },
+      "NyanActionSheetRow": {
+        "replaces": []
+      },
+      "NyanBookGridCard": {
+        "replaces": []
+      },
+      "NyanBookmarkCard": {
+        "replaces": []
+      },
+      "NyanBottomSheet": {
+        "replaces": []
+      },
+      "NyanContinueReadingCard": {
+        "replaces": []
+      },
+      "NyanDialog": {
+        "replaces": []
+      },
+      "NyanEmptyState": {
+        "replaces": []
+      },
+      "NyanFAB": {
+        "replaces": []
+      },
+      "NyanInfoCard": {
+        "replaces": []
+      },
+      "NyanListRow": {
+        "replaces": []
+      },
+      "NyanOptionSheet": {
+        "replaces": []
+      },
+      "NyanPageHeader": {
+        "replaces": []
+      },
+      "NyanPrimaryButton": {
+        "replaces": []
+      },
+      "NyanResponse": {
+        "replaces": []
+      },
+      "NyanRowGroup": {
+        "replaces": []
+      },
+      "NyanSectionHeader": {
+        "replaces": []
+      },
+      "NyanSlider": {
+        "replaces": []
+      },
+      "NyanSwitch": {
+        "replaces": []
+      },
+      "OnePaperDock": {
+        "replaces": []
+      },
+      "PdfControls": {
+        "replaces": []
+      },
+      "PillButton": {
+        "replaces": []
+      },
+      "PinDots": {
+        "replaces": []
+      },
+      "PinPad": {
+        "replaces": []
+      },
+      "ProgressBar": {
+        "replaces": []
+      },
+      "ReaderChapterList": {
+        "replaces": []
+      },
+      "ReaderParagraph": {
+        "replaces": []
+      },
+      "ReaderSettingsBody": {
+        "replaces": []
+      },
+      "SearchField": {
+        "replaces": []
+      },
+      "SegmentedTabControl": {
+        "replaces": []
+      },
+      "Skeleton": {
+        "replaces": []
+      },
+      "TextField": {
+        "replaces": []
+      },
+      "TextPanel": {
+        "replaces": []
+      },
+      "TextSelectionAction": {
+        "replaces": []
+      },
+      "ThemePanel": {
+        "replaces": []
+      },
+      "TTSPlayer": {
+        "replaces": []
+      }
+    },
+    "tokens": [
+      "--chrome-edge",
+      "--dur-chrome",
+      "--dur-grow",
+      "--ease-paper",
+      "--error-accent",
+      "--error-bg",
+      "--error-primary",
+      "--error-secondary",
+      "--font-mono",
+      "--font-serif",
+      "--font-ui",
+      "--fw-medium",
+      "--fw-regular",
+      "--fw-semibold",
+      "--fz-body",
+      "--fz-caption",
+      "--fz-display",
+      "--fz-meta",
+      "--fz-section",
+      "--fz-title",
+      "--grabber",
+      "--hl-blue",
+      "--hl-green",
+      "--hl-ink-blue",
+      "--hl-ink-green",
+      "--hl-ink-orange",
+      "--hl-ink-pink",
+      "--hl-ink-yellow",
+      "--hl-orange",
+      "--hl-pink",
+      "--hl-yellow",
+      "--inset",
+      "--min-tap",
+      "--nyan-bg",
+      "--nyan-border",
+      "--nyan-divider",
+      "--nyan-primary",
+      "--nyan-primary-deep",
+      "--nyan-primary-deep-src",
+      "--nyan-primary-src",
+      "--nyan-select-fill",
+      "--nyan-success",
+      "--nyan-success-src",
+      "--nyan-surface",
+      "--nyan-surface-muted",
+      "--nyan-surface-raised",
+      "--nyan-text",
+      "--nyan-text-muted",
+      "--nyan-text-muted-src",
+      "--nyan-text-secondary",
+      "--nyan-text-secondary-src",
+      "--page-recede",
+      "--r-card-nested",
+      "--r-chip",
+      "--r-control",
+      "--r-dock",
+      "--r-panel",
+      "--r-sheet",
+      "--radius-card",
+      "--radius-input",
+      "--radius-panel",
+      "--radius-sheet",
+      "--radius-small",
+      "--reader-bg-charcoal",
+      "--reader-bg-cream",
+      "--reader-bg-sepia",
+      "--reader-bg-sumi",
+      "--reader-info-blue",
+      "--reader-ink",
+      "--reader-ink-charcoal",
+      "--reader-ink-sepia",
+      "--reader-ink-sumi",
+      "--reader-paper",
+      "--scrim",
+      "--scrim-blur",
+      "--shadow-color",
+      "--shadow-grouped",
+      "--shadow-light-card",
+      "--shadow-subtle",
+      "--space-12",
+      "--space-16",
+      "--space-20",
+      "--space-24",
+      "--space-32",
+      "--space-4",
+      "--space-8"
+    ],
+    "tokenKinds": {
+      "--nyan-bg": "color",
+      "--nyan-surface": "color",
+      "--nyan-surface-muted": "color",
+      "--nyan-divider": "color",
+      "--nyan-border": "color",
+      "--nyan-text": "font",
+      "--nyan-text-secondary": "font",
+      "--nyan-text-muted": "font",
+      "--nyan-primary": "color",
+      "--nyan-primary-deep": "color",
+      "--nyan-success": "color",
+      "--nyan-select-fill": "color",
+      "--nyan-text-secondary-src": "font",
+      "--nyan-text-muted-src": "font",
+      "--nyan-primary-src": "color",
+      "--nyan-primary-deep-src": "color",
+      "--nyan-success-src": "color",
+      "--reader-paper": "color",
+      "--reader-ink": "color",
+      "--reader-bg-cream": "color",
+      "--reader-bg-sepia": "color",
+      "--reader-ink-sepia": "color",
+      "--reader-bg-sumi": "color",
+      "--reader-ink-sumi": "color",
+      "--reader-bg-charcoal": "color",
+      "--reader-ink-charcoal": "color",
+      "--hl-yellow": "color",
+      "--hl-green": "color",
+      "--hl-blue": "color",
+      "--hl-pink": "color",
+      "--hl-orange": "color",
+      "--reader-info-blue": "color",
+      "--hl-ink-yellow": "color",
+      "--hl-ink-blue": "color",
+      "--hl-ink-pink": "color",
+      "--hl-ink-orange": "color",
+      "--hl-ink-green": "color",
+      "--error-bg": "color",
+      "--error-primary": "color",
+      "--error-secondary": "color",
+      "--error-accent": "color",
+      "--radius-small": "radius",
+      "--radius-input": "radius",
+      "--radius-card": "radius",
+      "--radius-panel": "radius",
+      "--radius-sheet": "radius",
+      "--space-4": "spacing",
+      "--space-8": "spacing",
+      "--space-12": "spacing",
+      "--space-16": "spacing",
+      "--space-20": "spacing",
+      "--space-24": "spacing",
+      "--space-32": "spacing",
+      "--min-tap": "spacing",
+      "--shadow-color": "shadow",
+      "--shadow-light-card": "shadow",
+      "--shadow-subtle": "shadow",
+      "--shadow-grouped": "shadow",
+      "--inset": "spacing",
+      "--r-chip": "spacing",
+      "--r-control": "spacing",
+      "--r-card-nested": "spacing",
+      "--r-dock": "spacing",
+      "--r-panel": "spacing",
+      "--r-sheet": "spacing",
+      "--ease-paper": "other",
+      "--dur-grow": "other",
+      "--dur-chrome": "other",
+      "--scrim": "color",
+      "--scrim-blur": "spacing",
+      "--page-recede": "other",
+      "--grabber": "color",
+      "--chrome-edge": "color",
+      "--font-ui": "font",
+      "--font-serif": "font",
+      "--font-mono": "font",
+      "--fz-display": "spacing",
+      "--fz-title": "spacing",
+      "--fz-section": "spacing",
+      "--fz-body": "spacing",
+      "--fz-meta": "spacing",
+      "--fz-caption": "spacing",
+      "--fw-regular": "font",
+      "--fw-medium": "font",
+      "--fw-semibold": "font",
+      "--nyan-surface-raised": "color"
+    },
+    "fontFamilies": [
+      "Noto Sans SC",
+      "Source Han Serif SC"
+    ]
+  }
+}

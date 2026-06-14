@@ -48,7 +48,6 @@ class _ReaderMenuState extends State<ReaderMenu> {
   _ReaderMenuSection _selectedSection = _ReaderMenuSection.display;
 
   String _resetLabelForSection(
-    BuildContext context,
     AppLocalizations loc,
     _ReaderMenuSection section,
   ) {
@@ -57,8 +56,9 @@ class _ReaderMenuState extends State<ReaderMenu> {
       _ReaderMenuSection.text => loc.readerMenuText,
       _ReaderMenuSection.theme => loc.readerMenuTheme,
     };
-    final isChinese = Localizations.localeOf(context).languageCode == 'zh';
-    return isChinese ? '重置$sectionLabel' : 'Reset $sectionLabel';
+    // Uses the l10n template so both EN ("Reset Display") and ZH ("重置显示")
+    // are produced from the ARB without locale sniffing in widget code.
+    return loc.readerResetSection(sectionLabel);
   }
 
   @override
@@ -83,14 +83,18 @@ class _ReaderMenuState extends State<ReaderMenu> {
                 const headerBottomGap = NyanSpacing.space12;
                 // Embedded: one small tail gap only (matches quick body + shell);
                 // system inset is from the parent SafeArea, not double-stacked here.
+                // When embedded in OnePaperDock (showSheetChrome=false) the dock
+                // already provides 14pt horizontal padding — add none here to
+                // avoid double-padding (F1 width fix, §4.6 delivery-package spec).
+                final hPad = widget.showSheetChrome ? NyanSpacing.space20 : 0.0;
                 final contentPadding = EdgeInsets.fromLTRB(
-                  NyanSpacing.space20,
+                  hPad,
                   widget.showHeader
                       ? (compactLayout
                           ? NyanSpacing.space12
                           : NyanSpacing.space16)
                       : 0,
-                  NyanSpacing.space20,
+                  hPad,
                   !widget.showHeader
                       ? 0.0
                       : (NyanSpacing.space8 +
@@ -99,7 +103,6 @@ class _ReaderMenuState extends State<ReaderMenu> {
                 );
                 final resetSection = _ReaderSettingsResetSection(
                   label: _resetLabelForSection(
-                    context,
                     loc,
                     _selectedSection,
                   ),
@@ -126,13 +129,15 @@ class _ReaderMenuState extends State<ReaderMenu> {
                         Center(
                           child: Container(
                             width: 40,
-                            height: NyanSpacing.space4,
+                            height: 5,
                             decoration: BoxDecoration(
-                              // Spec: text-muted token; pill ends (height/2).
-                              color: nyan.textMuted,
-                              borderRadius: BorderRadius.circular(
-                                NyanSpacing.space4 / 2,
+                              // Spec --grabber: primary @ 36% light / 50% dark.
+                              color: nyan.primary.withValues(
+                                alpha: nyan.brightness == Brightness.dark
+                                    ? 0.5
+                                    : 0.36,
                               ),
+                              borderRadius: BorderRadius.circular(999),
                             ),
                           ),
                         ),
@@ -145,7 +150,10 @@ class _ReaderMenuState extends State<ReaderMenu> {
                         SizedBox(height: headerBottomGap),
                       ],
                       if (sections.length > 1) ...[
+                        // Spec ReaderSettingsBody: style="subtle" (matcha-tint
+                        // indicator chip, primaryDeep selected label).
                         SegmentedTabControl(
+                          style: SegmentedTabStyle.subtle,
                           tabs: [
                             for (final section in sections)
                               SegmentedTab(
@@ -158,8 +166,6 @@ class _ReaderMenuState extends State<ReaderMenu> {
                               _selectedSection = sections[index];
                             });
                           },
-                          backgroundColor:
-                              NyanOverlayStyle.recessedSurface(context),
                           labelLineHeight: 1.15,
                         ),
                         SizedBox(height: sectionGap),
@@ -329,11 +335,10 @@ class _ReaderMenuHeader extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: NyanTypography.uiFontFamily,
-                // Spec: 18pt section-title weight, slightly heavier than the
-                // section header treatment used elsewhere on the sheet.
-                fontSize: 18,
+                // Spec: 600 / 20px / -0.2 letter-spacing (OnePaperDock title).
+                fontSize: NyanTypography.section,
                 fontWeight: FontWeight.w600,
-                letterSpacing: -0.1,
+                letterSpacing: -0.2,
                 height: 1.2,
                 color: nyan.textPrimary,
               ),

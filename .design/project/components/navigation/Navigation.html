@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Components" name="Navigation" subtitle="Page header · olive section caption" viewport="420x250" -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Navigation — Nyan Read</title>
+  <link rel="stylesheet" href="../../colors_and_type.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <style>html, body { margin: 0; } body { padding: 12px 4px; background: var(--nyan-bg); }</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="../../_ds_bundle.js"></script>
+<script>
+(function () {
+  var NS = window[Object.keys(window).filter(function (k) { return k.indexOf("NyanReadDesignSystem_") === 0; })[0]];
+  var h = React.createElement;
+  ReactDOM.createRoot(document.getElementById("root")).render(
+    h("div", null,
+      h(NS.NyanPageHeader, {
+        title: "Bookshelf",
+        subtitle: "6 books · sorted by recent",
+        actions: h("div", { style: { display: "flex", gap: 12 } },
+          h(NS.Icon, { name: "search", size: 20 }),
+          h(NS.Icon, { name: "sort", size: 20 }))
+      }),
+      h("div", { style: { height: 14 } }),
+      h(NS.NyanSectionHeader, { title: "Reading Now", withDot: true })
+    )
+  );
+})();
+</script>
+</body>
+</html>

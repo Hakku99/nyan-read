@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../nyan_theme_context.dart';
 
-/// Themed Material [Switch] aligned to Nyan tokens.
+/// Spec-matched toggle switch (`primitives.jsx` `NyanSwitch`).
 ///
-/// ON  — track = `nyanTheme.primary`, thumb = white.
-/// OFF — track = `nyanTheme.surfaceMuted`, thumb = white.
-/// Splash overlay is suppressed (transparent) so taps don't ripple a Material
-/// halo — keeps the surface "paper-like" per design rules.
+/// Track: 44×26pt pill. Thumb: 20×20pt surface circle with 3pt inset.
+/// OFF track = `nyan.divider`. ON track = `nyan.primary`.
+/// Null [onChanged] renders the switch in a non-interactive (disabled) state.
 class NyanSwitch extends StatelessWidget {
   const NyanSwitch({
     super.key,
@@ -21,24 +20,47 @@ class NyanSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final nyan = context.nyanTheme;
+    final enabled = onChanged != null;
 
-    return Switch(
-      value: value,
-      onChanged: onChanged,
-      activeThumbColor: Colors.white,
-      activeTrackColor: nyan.primary,
-      inactiveThumbColor: Colors.white,
-      inactiveTrackColor: nyan.surfaceMuted,
-      trackOutlineColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return nyan.primary;
-        }
-        return nyan.divider.withValues(alpha: 0.6);
-      }),
-      trackOutlineWidth: const WidgetStatePropertyAll(0.5),
-      overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-      splashRadius: 0,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    return Semantics(
+      toggled: value,
+      enabled: enabled,
+      child: GestureDetector(
+        onTap: enabled ? () => onChanged!(!value) : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 44,
+          height: 26,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            color: (value ? nyan.primary : nyan.divider)
+                .withValues(alpha: enabled ? 1.0 : 0.45),
+          ),
+          child: AnimatedAlign(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: nyan.surface,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nyan Read — Brand Mark · One Paper</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<style>
+  html, body { margin: 0; height: 100%; }
+  body { background: #ECE6D8; font-family: var(--font-ui); }
+  #root { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="nyan-mark.jsx"></script>
+
+<script type="text/babel">
+const { useState } = React;
+
+function Tile({ size = 200, radius = 0.22, bg, children, lift = true, ring }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: size * radius,
+      background: bg, display: "grid", placeItems: "center", overflow: "hidden",
+      boxShadow: lift ? "0 18px 40px -18px rgba(40,36,30,0.45), 0 4px 12px -6px rgba(40,36,30,0.25)" : "none",
+      border: ring ? `1px solid ${ring}` : "none",
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="primary" title="App Icon — primary" subtitle="The cat peeking over its open book. One matcha fill, cream knockout, ~1.5px strokes, concentric corner.">
+        <DCArtboard id="icon-cream" label="Cream tile · primary" width={320} height={360}>
+          <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", background: "transparent" }}>
+            <Tile size={224} bg="var(--reader-bg-cream, #F7F5EF)"><NyanMark size={150} /></Tile>
+          </div>
+        </DCArtboard>
+        <DCArtboard id="icon-matcha" label="Matcha tile · reversed" width={320} height={360}>
+          <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center" }}>
+            <Tile size={224} bg="#6E7A55"><NyanMark size={150} fill="#F4F1E6" ink="#6E7A55" paper="#6E7A55" reversed /></Tile>
+          </div>
+        </DCArtboard>
+        <DCArtboard id="icon-sumi" label="Sumi dark tile" width={320} height={360}>
+          <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center" }}>
+            <Tile size={224} bg="#242922" ring="#3D443A"><NyanMark size={150} fill="#A9B690" ink="#242922" paper="#242922" /></Tile>
+          </div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="mono" title="Monochrome & construction" subtitle="Single-color lockups for stamps, watermarks, and tight spaces.">
+        <DCArtboard id="mono-matcha" label="Matcha on paper" width={260} height={300}>
+          <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", background: "#F2EEE2" }}>
+            <NyanMark size={150} mono="#5A6644" />
+          </div>
+        </DCArtboard>
+        <DCArtboard id="mono-ink" label="Ink on paper" width={260} height={300}>
+          <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", background: "#F2EEE2" }}>
+            <NyanMark size={150} mono="#3F3A34" />
+          </div>
+        </DCArtboard>
+        <DCArtboard id="grid" label="On the construction grid" width={260} height={300}>
+          <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", background: "#F2EEE2" }}>
+            <NyanMark size={150} grid />
+          </div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="sizes" title="Small-size legibility" subtitle="The mark holds down to favicon scale — features simplify, silhouette survives.">
+        <DCArtboard id="sizes-row" label="128 · 64 · 48 · 32 · 24" width={420} height={200}>
+          <div style={{ width: "100%", height: "100%", display: "flex", gap: 20, alignItems: "center", justifyContent: "center", background: "#F2EEE2" }}>
+            {[128, 64, 48, 32, 24].map((s) => (
+              <Tile key={s} size={s} radius={0.22} bg="#F7F5EF" lift={false} ring="rgba(63,58,52,0.10)">
+                <NyanMark size={s * 0.66} />
+              </Tile>
+            ))}
+          </div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="lockup" title="Lockups" subtitle="Mark + 喵阅 / Nyan Read wordmark, set in Noto Sans SC — the system UI face.">
+        <DCArtboard id="lockup-h" label="Horizontal" width={420} height={180}>
+          <div style={{ width: "100%", height: "100%", display: "flex", gap: 20, alignItems: "center", justifyContent: "center", background: "#F2EEE2" }}>
+            <Tile size={96} bg="#F7F5EF" lift={false} ring="rgba(63,58,52,0.10)"><NyanMark size={64} /></Tile>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div style={{ font: "600 17px/1 var(--font-ui)", letterSpacing: "2px", color: "#6E7A55" }}>喵阅</div>
+              <div style={{ font: "600 30px/1 var(--font-ui)", letterSpacing: "-0.4px", color: "#3F3A34" }}>Nyan Read</div>
+              <div style={{ font: "400 13px/1 var(--font-ui)", color: "#857F72" }}>Enjoy reading time</div>
+            </div>
+          </div>
+        </DCArtboard>
+        <DCArtboard id="lockup-v" label="Vertical" width={260} height={300}>
+          <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: 18, alignItems: "center", justifyContent: "center", background: "#F2EEE2" }}>
+            <Tile size={120} bg="#F7F5EF" lift={false} ring="rgba(63,58,52,0.10)"><NyanMark size={80} /></Tile>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "center" }}>
+              <div style={{ font: "600 14px/1 var(--font-ui)", letterSpacing: "3px", color: "#6E7A55" }}>喵阅</div>
+              <div style={{ font: "600 26px/1 var(--font-ui)", letterSpacing: "-0.3px", color: "#3F3A34" }}>Nyan Read</div>
+            </div>
+          </div>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

@@ -3,7 +3,9 @@
   "settingsTitle": "Settings",
   "appearance": "Appearance",
   "themePreset": "Theme Preset",
+  "themePresetSubtitle": "How Nyan Read looks while you read.",
   "readingSettings": "Reading Settings",
+  "reading": "Reading",
   "readerQuickProgressSubtitle": "Chapter seek and position",
   "readerQuickToolsSubtitle": "Bookmarks, notes, and full settings",
   "readerQuickOpenFullSettings": "All settings",
@@ -11,6 +13,7 @@
   "readerEdgeBrightnessOn": "Left edge brightness: on",
   "readerEdgeBrightnessOff": "Left edge brightness: off",
   "pageTurnMode": "Page Turn Mode",
+  "pageTurnModeSubtitle": "The direction pages move as you read.",
   "pageTurnModeTap": "Tap to turn pages",
   "pageTurnModeSwipe": "Swipe to turn pages",
   "pageTurnModeDisabled": "Page turning disabled",
@@ -30,8 +33,9 @@
   "pageAnimPaper": "Paper",
   "pageAnimNone": "None",
   "readingReminder": "Reading Reminder",
-  "readingReminderSubtitle": "Remind me to take a break",
+  "readingReminderSubtitle": "Chapter seek and position",
   "reminderInterval": "Reminder Interval",
+  "reminderIntervalSubtitle": "How often to nudge you back to reading.",
   "reminderMinutes": "{minutes} min",
   "@reminderMinutes": {
     "placeholders": {
@@ -40,9 +44,14 @@
       }
     }
   },
+  "reminderEvery15min": "Every 15 min",
+  "reminderEvery30min": "Every 30 min",
+  "reminderEveryHour": "Every hour",
+  "reminderEvery2hours": "Every 2 hours",
+  "reminderDaily": "Daily",
   "dataManagement": "Data Management",
   "deleteFilesOnRemove": "Delete Files on Remove",
-  "deleteFilesOnRemoveSubtitle": "Original files will also be removed from your device.",
+  "deleteFilesOnRemoveSubtitle": "Remove source files when deleting a book",
   "lockPrivateShelf": "Lock Private Shelf",
   "tts": "TTS (Text-to-Speech)",
   "ads": "Ads",
@@ -51,20 +60,21 @@
   "upgradeToProSubtitle": "Unlock Privacy Shelf and more",
   "pro": "Pro",
   "about": "About",
-  "lockPrivacyShelfSubtitle": "Hide until next unlock",
+  "lockPrivacyShelfSubtitle": "Require PIN to open",
   "adminPanel": "Admin Panel",
-  "adminPanelTitle": "Admin / Manager Mode",
-  "adminPanelModeSection": "Mode Control",
+  "adminPanelTitle": "Admin Panel",
+  "adminPanelModeSection": "Mode",
   "adminProModeEnabled": "Pro Mode Enabled",
-  "adminProModeSubtitle": "Unlocks Privacy Shelf and disables ads",
+  "adminProModeSubtitle": "Unlocks all Pro features in this session.",
   "adminForceUnlockPrivacyShelf": "Force Unlock Privacy Shelf",
-  "adminForceUnlockPrivacyShelfSubtitle": "Bypass password verification",
+  "adminForceUnlockPrivacyShelfSubtitle": "Bypass PIN for this session.",
   "adminFeatureFlagsSection": "Feature Flags",
   "adminStateOn": "On",
   "adminStateOff": "Off",
-  "adminPanelHintTitle": "Internal control panel",
-  "adminPanelHintSubtitle": "Use this page for debugging and capability verification.",
+  "adminPanelHintTitle": "For testing only",
+  "adminPanelHintSubtitle": "Changes here affect only this session. Restart the app to reset to defaults.",
   "language": "Language",
+  "languageSubtitle": "App display language.",
   "bookDetails": "Book Details",
   "bookDetailsOverviewSection": "Overview",
   "bookDetailsSourceSection": "Source",
@@ -92,15 +102,18 @@
   "continueReading": "Continue Reading",
   "copyPath": "Copy Path",
   "filePathCopied": "File path copied to clipboard",
+  "copiedToClipboard": "Copied to clipboard",
+  "couldNotOpenBrowserSearchCopied": "Could not open browser — search link copied",
   "fileExists": "File exists",
   "fileNotFound": "File not found",
+  "fileUnavailableCta": "File unavailable",
   "unknown": "Unknown",
   "never": "Never",
   "backToBookshelf": "Back to Bookshelf",
   "retry": "Retry",
-  "reportToDeveloper": "Report to Developer",
-  "showTechnicalDetails": "Show Technical Details",
-  "hideTechnicalDetails": "Hide Technical Details",
+  "reportToDeveloper": "Report to developer",
+  "showTechnicalDetails": "Show technical details",
+  "hideTechnicalDetails": "Hide technical details",
   "couldNotLaunchEmail": "Could not launch email client",
   "failedToOpenEmail": "Failed to open email: {error}",
   "@failedToOpenEmail": {
@@ -116,20 +129,24 @@
   "deleteNote": "Delete Note",
   "delete": "Delete",
   "remove": "Remove",
+  "undo": "Undo",
+  "export": "Export",
   "cancel": "Cancel",
   "save": "Save",
   "selected": "Selected",
   "viewDetails": "View Details",
-  "moveToPublic": "Move to Public",
-  "moveToPrivate": "Move to Private",
+  "moveToPublic": "Make Public",
+  "moveToPrivate": "Make Private",
   "selectAll": "Select All",
   "deselectAll": "Deselect All",
   "appTitle": "Nyan Read ฅ^•ﻌ•^ฅ",
   "enjoyReading": "Enjoy your reading",
+  "bookshelf": "Bookshelf",
   "listView": "List View",
   "gridView": "Grid View",
   "sort": "Sort",
   "sortBy": "Sort by",
+  "sortShelfBy": "Sort shelf by",
   "sortOrderAsc": "Ascending",
   "sortOrderDesc": "Descending",
   "lastReadAsc": "Last Read Ascending",
@@ -138,9 +155,15 @@
   "addedDesc": "Added Descending",
   "titleAsc": "Title Ascending",
   "titleDesc": "Title Descending",
+  "sortLastReadAscSub": "Oldest opened first",
+  "sortLastReadDescSub": "Recently opened first",
+  "sortTitleAscSub": "A → Z",
+  "sortTitleDescSub": "Z → A",
+  "sortAddedAscSub": "Oldest first",
+  "sortAddedDescSub": "Newest first",
   "lockPrivacyShelf": "Lock Privacy Shelf",
   "unlockPrivacyShelf": "Unlock Privacy Shelf",
-  "deleteBooksTitle": "{count, plural, one{Remove {count} book?} other{Remove {count} books?}}",
+  "deleteBooksTitle": "{count, plural, one{Delete {count} book?} other{Delete {count} books?}}",
   "@deleteBooksTitle": {
     "placeholders": {
       "count": {
@@ -148,7 +171,15 @@
       }
     }
   },
-  "actionCannotBeUndone": "They will be removed from the current shelf.",
+  "actionCannotBeUndone": "Their reading progress, bookmarks and notes are removed too. The source files on your device are kept.",
+  "deleteBooksButton": "{count, plural, one{Delete {count} book} other{Delete {count} books}}",
+  "@deleteBooksButton": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "alsoDeleteLocalFiles": "Also delete local files",
   "deletedBooks": "{count, plural, one{Removed {count} book} other{Removed {count} books}}",
   "@deletedBooks": {
@@ -173,11 +204,11 @@
   "emptyShelfInstructions": "Your shelf is empty!\nTap the + button below to import some books.",
   "importFiles": "Import Files",
   "importBooksTitle": "Import Books",
-  "importBooksSubtitle": "Choose files from your device and add them to your shelf.",
-  "importBooksEmptySubtitle": "Import your first book from this device and start reading.",
-  "importFilesSubtitle": "Pick one or more supported ebook files.",
+  "importBooksSubtitle": "Add more books to your shelf.",
+  "importBooksEmptySubtitle": "Add your first book to get started.",
+  "importFilesSubtitle": "Browse and open .txt, .epub or .pdf",
   "supportedFormats": "Supported Formats",
-  "supportedFormatsSubtitle": "TXT, EPUB, and PDF are ready to import.",
+  "supportedFormatsSubtitle": "Plain text, e-book, and document files.",
   "supportedFormatsDescription": "Nyan Read currently supports importing TXT, EPUB, and PDF files from your device.",
   "importingBooksTitle": "Importing",
   "importingBooksSubtitle": "Placing books onto your shelf...",
@@ -201,6 +232,10 @@
   "unlockPrivacyShelfTitle": "Unlock Privacy Shelf",
   "invalidPassword": "Invalid Password",
   "unlock": "Unlock",
+  "pinEnter": "Enter PIN",
+  "pinSet": "Set PIN",
+  "pinConfirm": "Confirm PIN",
+  "pinMismatch": "PINs don't match — try again",
   "fontSize": "Font Size",
   "lineHeight": "Line Height",
   "themeCream": "Cream",
@@ -210,6 +245,7 @@
   "readerMenuDisplay": "Display",
   "readerMenuText": "Text",
   "readerMenuTheme": "Theme",
+  "readingTheme": "Reading Theme",
   "readerSheetProgressSubtitle": "Reading progress {percent}",
   "@readerSheetProgressSubtitle": {
     "placeholders": {
@@ -240,6 +276,15 @@
   "readerTypographyStandard": "Standard",
   "readerTypographyComfortable": "Comfortable",
   "readerTypographyPreviewSample": "The quick brown fox jumps over the lazy dog.",
+  "readerResetSection": "Reset {section}",
+  "@readerResetSection": {
+    "description": "Per-tab reset button label in the reader settings sheet. {section} is the tab name (Display / Text / Theme).",
+    "placeholders": {
+      "section": {
+        "type": "String"
+      }
+    }
+  },
   "readerResetAppearance": "Reset to defaults",
   "readerResetAppearanceHint": "Font, spacing, theme, warmth, and brightness mode",
   "readerResetCurrentTab": "Reset this tab",
@@ -253,11 +298,26 @@
   "@readerSettingsProgressHint": {
     "description": "Meta text shown on the right of the Reader Settings sheet header. {pct} is replaced with the rounded reading-progress percentage."
   },
+  "chapterOfCount": "Chapter {current} of {total}",
+  "@chapterOfCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "readerDockChapters": "Chapters",
   "@readerDockChapters": {
-    "description": "Short label for the Chapters tile in the reader bottom dock (must fit alongside 3 other tiles in a narrow strip)."
+    "description": "Short label for the Chapters tile in the reader bottom dock (must fit alongside 4 other tiles in a narrow strip)."
   },
-  "jumpToCurrentChapter": "Jump to current chapter",
+  "readerDockHighlights": "Highlights",
+  "@readerDockHighlights": {
+    "description": "Short label for the Highlights tile in the reader bottom dock (must fit alongside 3 other tiles in a narrow strip)."
+  },
+  "jumpToCurrentChapter": "Jump to current",
   "chapterListProgressLabel": "{current} / {total} chapters",
   "@chapterListProgressLabel": {
     "placeholders": {
@@ -307,6 +367,14 @@
   },
   "bookmarksTitle": "Bookmarks ({count})",
   "@bookmarksTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookmarksSavedCount": "{count} saved",
+  "@bookmarksSavedCount": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -363,27 +431,42 @@
     }
   },
   "themeCreamLight": "Cream Light",
+  "themeCreamLightHint": "Warm paper — the default",
   "themeSumiDark": "Sumi Dark",
+  "themeSumiDarkHint": "Ink night for low light",
+  "themeMatchSystem": "Match System",
+  "themeMatchSystemHint": "Follow your device setting",
+  "pageTurnLeftRight": "Left & Right",
+  "pageTurnLeftRightHint": "Turn pages horizontally",
+  "pageTurnUpDown": "Up & Down",
+  "pageTurnUpDownHint": "Turn pages vertically",
+  "languageEnglishHint": "English",
+  "languageChineseHint": "Chinese · 简体中文",
   "timeToday": "Today",
   "timeYesterday": "Yesterday",
   "timeThreeDaysAgo": "3 days ago",
   "timeSevenDaysAgo": "7 days ago",
   "timeLongAgo": "Long ago",
   "neverRead": "Never read",
-  "errorFileNotFound": "This book seems to have lost its way.\nThe file cannot be found, it may have been moved or deleted.",
-  "errorUnsupportedFormat": "Nyan cannot read this format.\nThis file type is not supported yet.",
-  "errorParseFailed": "The pages are stuck together.\nThis file may be corrupted or incomplete.",
-  "errorUnknown": "Something unexpected happened.\nPlease try again later.",
+  "errorFileNotFoundTitle": "This book lost its way",
+  "errorFileNotFoundBody": "The file can't be found — it may have been moved or deleted.",
+  "errorUnsupportedFormatTitle": "Nyan can't read this format",
+  "errorUnsupportedFormatBody": "This file type isn't supported yet.",
+  "errorParseFailedTitle": "These pages are stuck together",
+  "errorParseFailedBody": "We couldn't open this file. It might be corrupted.",
+  "errorUnknownTitle": "Something went wrong",
+  "errorUnknownBody": "An unexpected error occurred. Please try again.",
   "emptyShelfTitle": "Bookshelf is waiting for stories",
   "emptyShelfSubtitle": "Import a book to start reading",
-  "exportData": "Export Reading Assets",
-  "exportDataSubtitle": "Save reading data as JSON",
+  "exportData": "Export Data",
+  "exportDataSubtitle": "Save to device or share",
+  "exportDataSheetSubtitle": "Choose where your reading data goes.",
   "saveToDevice": "Save to Device",
-  "saveToDeviceSubtitle": "Choose a folder on your device",
-  "shareVia": "Share via...",
-  "shareViaSubtitle": "Gmail, Drive, Quick Share, etc.",
-  "importData": "Import Reading Assets",
-  "importDataSubtitle": "Restore reading data from JSON backup",
+  "saveToDeviceSubtitle": "Store a JSON backup in your Files",
+  "shareVia": "Share...",
+  "shareViaSubtitle": "Send via Gmail, Drive or another app",
+  "importData": "Import Data",
+  "importDataSubtitle": "Restore from a backup file",
   "importSuccess": "Successfully restored {count} books!",
   "@importSuccess": {
     "placeholders": {
@@ -394,6 +477,15 @@
   },
   "importFailed": "Import failed: {error}",
   "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "exportSaved": "Export saved to device",
+  "exportFailed": "Export failed: {error}",
+  "@exportFailed": {
     "placeholders": {
       "error": {
         "type": "String"

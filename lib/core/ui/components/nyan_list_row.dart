@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
+import '../../theme/nyan_typography.dart';
 import '../../theme/theme_presets.dart';
 import '../nyan_icons.dart';
 
@@ -10,17 +11,16 @@ import '../nyan_icons.dart';
 /// Mirrors the Claude Design spec
 /// (`nyan-read-design-system/project/preview/list-row.html`):
 ///
-///   • 12pt leading↔content gap, 4pt title↔subtitle gap
-///   • Title `w600 16/1.2`, subtitle `w400 13/1.3`
-///   • Optional 36×36 [leadingIcon] chip — `NyanRadius.small` (14pt) corners,
-///     `primary` @ 9% fill, 17pt glyph in `primary`
-///   • Optional [showChevron] — `NyanIcons.chevronRight` at 18pt,
-///     `textSecondary` @ 44% alpha
+///   • 12pt vertical / 16pt horizontal padding, 12pt leading↔content gap
+///   • minHeight 44pt (spec: `min-height: 44`)
+///   • Title `w500 15/1.2`, subtitle `w400 13/1.3 textSecondary`
+///   • Optional 32×32 [leadingIcon] chip — `NyanRadius.chip` (12pt) corners,
+///     9% primary / surfaceMuted (opaque), 16pt glyph in `primary`
+///   • Optional [showChevron] — `NyanIcons.chevronRight` (`ph-caret-right`)
+///     at 16pt, `textMuted` color
 ///   • Optional [danger] flag swaps title + chip into the error palette
 ///
-/// **Deviation note (AGENTS.md §4.2.3 honored):** the design HTML uses 14pt
-/// vertical padding; we stay on the 8-grid with `NyanSpacing.space12` (12pt).
-/// The 2pt delta is a conscious trade — token discipline > visual exactness.
+/// Source: `screens/_chrome.jsx` `ListRow` (canonical superset, Phase-4 HANDOFF).
 class NyanListRow extends StatelessWidget {
   final Widget? leading;
 
@@ -79,64 +79,67 @@ class NyanListRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(NyanRadius.card),
-      child: Padding(
-        padding: contentPadding ??
-            const EdgeInsets.symmetric(
-              horizontal: NyanSpacing.space16,
-              vertical: NyanSpacing.space12,
-            ),
-        child: Row(
-          children: [
-            if (leadingWidget != null) ...[
-              leadingWidget,
-              const SizedBox(width: NyanSpacing.space12),
-            ],
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: titleStyle ??
-                        theme.textTheme.bodyLarge?.copyWith(
-                          // Spec: `font:600 16/1.2`.
-                          fontWeight: FontWeight.w600,
-                          height: 1.2,
-                          color: titleColor,
-                        ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: NyanSpacing.space4),
+      child: ConstrainedBox(
+        // Spec: `min-height: 44` (_chrome.jsx ListRow).
+        constraints: const BoxConstraints(minHeight: 44),
+        child: Padding(
+          padding: contentPadding ??
+              const EdgeInsets.symmetric(
+                horizontal: NyanSpacing.space16,
+                vertical: NyanSpacing.space12,
+              ),
+          child: Row(
+            children: [
+              if (leadingWidget != null) ...[
+                leadingWidget,
+                const SizedBox(width: NyanSpacing.space12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      subtitle!,
-                      // Spec: `font:400 13/1.3` — bodySmall already matches.
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        height: 1.3,
-                      ),
+                      title,
+                      style: titleStyle ??
+                          TextStyle(
+                            fontFamily: NyanTypography.uiFontFamily,
+                            // Spec: `font:500 15/1.2` (_chrome.jsx ListRow).
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            height: 1.2,
+                            color: titleColor,
+                          ),
                     ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        // Spec: `font:400 13/1.3 textSecondary` (_chrome.jsx).
+                        style: TextStyle(
+                          fontFamily: NyanTypography.uiFontFamily,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                          height: 1.3,
+                          color: nyan.textSecondary,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-            ),
-            if (trailingWidget != null) ...[
-              const SizedBox(width: NyanSpacing.space12),
-              ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minWidth: NyanSpacing.minTapTarget,
-                  minHeight: NyanSpacing.minTapTarget,
                 ),
-                child: Center(child: trailingWidget),
               ),
+              if (trailingWidget != null) ...[
+                const SizedBox(width: NyanSpacing.space12),
+                trailingWidget,
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 
-  /// 36×36 icon chip per Claude Design spec.
-  /// `primary` @ 9% fill (or `errorBackgroundColor` tint when [danger]),
-  /// 17pt glyph in the matching accent color.
+  /// 32×32 icon chip per `_chrome.jsx` canonical spec.
+  /// Opaque blend: `primary @ 9%` over `surfaceMuted`. Glyph 16pt in primary.
   Widget? _buildIconChip(NyanTheme nyan) {
     final icon = leadingIcon;
     if (icon == null) return null;
@@ -147,32 +150,34 @@ class NyanListRow extends StatelessWidget {
       chipBg = nyan.errorBackgroundColor;
       chipFg = nyan.errorPrimaryTextColor;
     } else {
-      chipBg = nyan.primary.withValues(alpha: 0.09);
+      // Spec: `color-mix(in srgb, primary 9%, surfaceMuted)` — opaque blend
+      // so the chip reads correctly on any surface behind it.
+      chipBg = Color.alphaBlend(
+        nyan.primary.withValues(alpha: 0.09),
+        nyan.surfaceMuted,
+      );
       chipFg = nyan.primary;
     }
 
     return Container(
-      width: 36,
-      height: 36,
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
         color: chipBg,
-        borderRadius: BorderRadius.circular(NyanRadius.small),
+        // Spec: `var(--r-chip)` = 12pt.
+        borderRadius: BorderRadius.circular(NyanRadius.chip),
       ),
-      // Spec glyph size: 17pt — sits between space16 and space20 so we
-      // use the literal with this explanation rather than a new token.
-      child: Icon(icon, size: 17, color: chipFg),
+      child: Icon(icon, size: 16, color: chipFg),
     );
   }
 
-  /// Trailing caret-right chevron — 18pt glyph at 44% `textSecondary`
-  /// alpha (matches `color-mix(--nyan-text-secondary 44%)` in the spec).
+  /// Trailing `ph-caret-right` — 16pt, `textMuted` (_chrome.jsx ListRow).
   Widget? _buildChevron(NyanTheme nyan) {
     if (!showChevron) return null;
     return Icon(
       NyanIcons.chevronRight,
-      // Spec glyph size: 18pt — literal with this explanation.
-      size: 18,
-      color: nyan.textSecondary.withValues(alpha: 0.44),
+      size: 16,
+      color: nyan.textMuted,
     );
   }
 }

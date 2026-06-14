@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Screens" name="U20 — Action Response" subtitle="Shared feedback toast · completed / failed / skipped / in-progress · over live context" viewport="1310x900" -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>U20 · Action Response — Nyan Read</title>
+  <link rel="stylesheet" href="../colors_and_type.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    html, body { margin: 0; padding: 0; min-height: 100%; background: #ECE6D8; font-family: var(--font-ui); }
+    * { box-sizing: border-box; }
+    .screen-head { padding: 36px 40px 8px; max-width: 1100px; }
+    .screen-eyebrow { font: 500 11px/1 var(--font-ui); letter-spacing: 2px; text-transform: uppercase; color: var(--nyan-primary-deep); }
+    .screen-head h1 { font: 600 26px/1.2 var(--font-ui); letter-spacing: -0.3px; color: var(--nyan-text); margin: 12px 0 0; }
+    .screen-head p { font: 400 14.5px/1.5 var(--font-ui); color: var(--nyan-text-secondary); margin: 8px 0 0; max-width: 820px; text-wrap: pretty; }
+    .screen-wrap { display: flex; flex-wrap: wrap; gap: 30px; padding: 28px 40px 56px; align-items: flex-start; }
+    .frame { display: flex; flex-direction: column; gap: 11px; }
+    .frame-body { border-radius: 26px; overflow: hidden; background: var(--nyan-bg); box-shadow: 0 22px 55px -22px rgba(40,36,30,.45), 0 4px 14px -8px rgba(40,36,30,.22); border: 1px solid rgba(63,58,52,.07); }
+    .frame-label { font: 500 12px/1.35 var(--font-ui); letter-spacing: .2px; color: var(--nyan-text-muted); text-align: center; max-width: 390px; }
+  </style>
+</head>
+<body>
+<div class="screen-head">
+  <div class="screen-eyebrow">Nyan Read · Shared Component</div>
+  <h1>U20 · Action Response</h1>
+  <p>The one shareable feedback surface — shown whenever an action completes, fails, is skipped, or is mid-flight. Floating chrome doctrine: insets 12px, rounded all four corners, lifts on the quiet toast shadow. Calm copy, matcha-deep actions, no blocking scrim. The last frame is live — tap an action to fire a response.</p>
+</div>
+<div id="root"></div>
+<script src="../_ds_bundle.js"></script>
+<script>(function () { var k = Object.keys(window).filter(function (n) { return n.indexOf("NyanReadDesignSystem_") === 0; })[0]; if (k) { Object.assign(window, window[k]); } })();</script>
+<script type="text/babel" src="../screens/_chrome.jsx"></script>
+<script type="text/babel" src="../screens/bundle3.jsx"></script>
+  <script type="text/babel">
+const { useState, useEffect, useRef } = React;
+function Frame({ label, w, h, children }) {
+  return (
+    <div className="frame">
+      <div className="frame-body" style={{ width: w, height: h }}>{children}</div>
+      <div className="frame-label">{label}</div>
+    </div>
+  );
+}
+
+/* Bookshelf context behind the toast, with the response floated at the base. */
+function Stage({ dark, children }) {
+  return (
+    <div data-theme={dark ? "sumi" : undefined} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+      <BookshelfHome dark={dark} empty={false} view="grid" continueCollapsed={true} />
+      {children}
+    </div>
+  );
+}
+
+/* Live demo — fire each response status, auto-dismiss after a beat. */
+const DEMO = {
+  success: { status: "success", title: "Restored 12 books", description: "Imported from your backup file.", dismissable: true },
+  error:   { status: "error", title: "Couldn't import 1 file", description: "Nyan cannot read this format yet.", action: "Retry" },
+  skipped: { status: "skipped", title: "2 books skipped", description: "Already on your Public Shelf.", dismissable: true },
+  deleted: { status: "success", title: "Bookmark deleted", action: "Undo" },
+  loading: { status: "loading", title: "Moving to Privacy Shelf…", description: "Encrypting 3 books." },
+};
+function LiveStage() {
+  const [active, setActive] = useState("deleted");
+  const cfg = DEMO[active];
+  const triggers = [
+    ["success", "ph-check-circle", "Complete"],
+    ["error", "ph-warning-circle", "Fail"],
+    ["skipped", "ph-skip-forward", "Skip"],
+    ["deleted", "ph-trash", "Delete"],
+    ["loading", "ph-circle-notch", "Run"],
+  ];
+  return (
+    <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", background: "var(--nyan-bg)", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "20px 18px 8px" }}>
+        <div style={{ font: "600 20px/1.2 var(--font-ui)", color: "var(--nyan-text)", letterSpacing: "-0.2px" }}>Try a response</div>
+        <div style={{ font: "400 13px/1.4 var(--font-ui)", color: "var(--nyan-text-secondary)", marginTop: 6 }}>Tap an action to surface the matching feedback toast.</div>
+      </div>
+      <div style={{ padding: "10px 18px", display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {triggers.map(([key, icon, label]) => (
+          <button key={key} onClick={() => setActive(key)} style={{
+            all: "unset", cursor: "pointer", boxSizing: "border-box",
+            display: "inline-flex", alignItems: "center", gap: 6, height: 38, padding: "0 14px",
+            borderRadius: "var(--r-chip)",
+            background: active === key ? "transparent" : "var(--nyan-surface-muted)",
+            border: active === key ? "1.5px solid var(--nyan-primary-deep)" : "1.5px solid transparent",
+            color: active === key ? "var(--nyan-primary-deep)" : "var(--nyan-text-secondary)",
+            font: "500 14px/1 var(--font-ui)",
+          }}>
+            <i className={`ph ${icon}`} style={{ fontSize: 16 }} />
+            {label}
+          </button>
+        ))}
+      </div>
+      {cfg && (
+        <NyanResponse
+          placement="bottom"
+          status={cfg.status}
+          title={cfg.title}
+          description={cfg.description}
+          action={cfg.action ? { label: cfg.action, onPress: () => setActive(null) } : undefined}
+          onDismiss={cfg.dismissable ? () => setActive(null) : undefined}
+        />
+      )}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <div className="screen-wrap">
+      <Frame label="Cream · Completed" w={390} h={720}>
+        <Stage dark={false}>
+          <NyanResponse placement="bottom" status="success" title="Restored 12 books" description="Imported from your backup file." onDismiss={() => {}} />
+        </Stage>
+      </Frame>
+      <Frame label="Cream · Failed" w={390} h={720}>
+        <Stage dark={false}>
+          <NyanResponse placement="bottom" status="error" title="Couldn't import 1 file" description="Nyan cannot read this format yet." action={{ label: "Retry" }} />
+        </Stage>
+      </Frame>
+      <Frame label="Cream · Skipped" w={390} h={720}>
+        <Stage dark={false}>
+          <NyanResponse placement="bottom" status="skipped" title="2 books skipped" description="Already on your Public Shelf." onDismiss={() => {}} />
+        </Stage>
+      </Frame>
+      <Frame label="Sumi Dark · In progress" w={390} h={720}>
+        <Stage dark={true}>
+          <NyanResponse placement="bottom" status="loading" title="Moving to Privacy Shelf…" description="Encrypting 3 books." />
+        </Stage>
+      </Frame>
+      <Frame label="Cream · Live (tap an action)" w={390} h={720}>
+        <LiveStage />
+      </Frame>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

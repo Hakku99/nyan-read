@@ -1,0 +1,64 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Components — Shelf Toolbar" subtitle="The Bookshelf header action cluster: search · sort · list/grid · privacy unlock (Pro only)" viewport="720x420" -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Shelf Toolbar</title>
+<link rel="stylesheet" href="../colors_and_type.css" />
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--nyan-bg); padding: 24px; display: flex; flex-direction: column; gap: 22px; }
+  .eyebrow { font: 500 11px/1 var(--font-ui); letter-spacing: 0.22px; text-transform: uppercase; color: var(--nyan-primary-deep); margin: 0 0 8px 2px; }
+  .bar { display: flex; align-items: center; gap: 8px; }
+  .bar .title { flex: 1; font: 600 22px/1.15 var(--font-ui); color: var(--nyan-text); letter-spacing: -0.2px; }
+  .tools { display: flex; gap: 6px; }
+  .tool {
+    width: 40px; height: 40px; border-radius: var(--r-control);
+    background: var(--nyan-surface);
+    border: 1px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent);
+    display: grid; place-items: center;
+  }
+  .tool i { font-size: 18px; color: var(--nyan-text-secondary); }
+  .tool.active {
+    background: color-mix(in srgb, var(--nyan-primary) 13%, var(--nyan-surface));
+    border-color: color-mix(in srgb, var(--nyan-primary) 42%, transparent);
+  }
+  .tool.active i { color: var(--nyan-primary-deep); }
+  .card { background: var(--nyan-surface); border: 1px solid var(--chrome-edge); border-radius: var(--r-sheet); box-shadow: var(--shadow-grouped); padding: 14px 16px; }
+  .note { font: 400 12.5px/1.4 var(--font-ui); color: var(--nyan-text-secondary); margin: 8px 2px 0; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="eyebrow">Default · free</div>
+    <div class="card">
+      <div class="bar">
+        <div class="title">Bookshelf</div>
+        <div class="tools">
+          <div class="tool"><i class="ph ph-magnifying-glass"></i></div>
+          <div class="tool"><i class="ph ph-arrows-down-up"></i></div>
+          <div class="tool"><i class="ph ph-rows"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="note">Search · Sort · List/Grid toggle (icon shows the layout you switch to).</div>
+  </div>
+
+  <div>
+    <div class="eyebrow">Sort active · Pro (privacy unlock)</div>
+    <div class="card">
+      <div class="bar">
+        <div class="title">Bookshelf</div>
+        <div class="tools">
+          <div class="tool"><i class="ph ph-magnifying-glass"></i></div>
+          <div class="tool active"><i class="ph ph-sort-ascending"></i></div>
+          <div class="tool"><i class="ph ph-squares-four"></i></div>
+          <div class="tool active"><i class="ph ph-lock-simple-open"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="note">An active tool lifts to a matcha tint + outline. The lock tool is shown only when Pro mode is enabled.</div>
+  </div>
+</body>
+</html>

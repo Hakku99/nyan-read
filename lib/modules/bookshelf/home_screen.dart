@@ -12,11 +12,14 @@ import '../../core/services/feature_manager.dart';
 import '../../core/services/riverpod_providers.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
 import '../../core/models/book.dart';
-import '../../core/services/mascot_manager.dart';
+import '../../core/theme/nyan_radius.dart';
+import '../../core/theme/nyan_shadows.dart';
 import '../../core/theme/nyan_shelf_ui.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
 import '../../core/ui/components/components.dart';
+import '../../core/ui/nyan_sheet.dart';
+import '../../core/ui/nyan_theme_context.dart';
 import '../../modules/privacy/privacy_lock_service.dart';
 import 'package:go_router/go_router.dart';
 import '../settings/settings_page.dart';
@@ -26,9 +29,9 @@ import '../../core/utils/book_import_fingerprint.dart';
 import '../../core/utils/book_source_platform.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/utils/title_sort_key.dart';
-import 'book_details_page.dart';
 import 'widgets/import_book_sheet.dart';
 import 'widgets/bookshelf_shelf_toolbar.dart';
+import 'widgets/bookshelf_sort_sheet.dart';
 import 'widgets/segmented_tab_control.dart';
 import 'bookshelf_view_model.dart';
 import 'bookshelf_view_model_provider.dart';
@@ -71,73 +74,110 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   }
 
   double _shelfScrollBottomPadding(BuildContext context) {
-    return MediaQuery.paddingOf(context).bottom +
-        NyanShelfUi.scrollBottomFabClearance;
+    final safeBottom = MediaQuery.paddingOf(context).bottom;
+    if (_vm.isSelectionMode) {
+      return safeBottom + NyanShelfUi.scrollBottomSelectionBarClearance;
+    }
+    return safeBottom + NyanShelfUi.scrollBottomFabClearance;
   }
 
-  /// Single 3-column layout for the whole shelf so ad segments don’t resize tiles.
-  SliverGridDelegateWithFixedCrossAxisCount _bookshelfGridDelegate() {
+  /// 3-column grid delegate with dynamically computed aspect ratio.
+  ///
+  /// The cover follows a 120:156 portrait ratio; text below is fixed height.
+  /// Computing from [context] ensures the ratio is correct for every screen width.
+  SliverGridDelegateWithFixedCrossAxisCount _bookshelfGridDelegate(
+    BuildContext context,
+  ) {
+    const double crossAxisSpacing = NyanShelfUi.gridCrossAxisSpacing; // 12
+    const double gridSideInset = NyanSpacing.space4; // 4pt each side
+
+    final double screenWidth = MediaQuery.sizeOf(context).width;
+    final double usedWidth =
+        2 * NyanShelfUi.bookshelfPageHorizontalPadding +
+        2 * gridSideInset +
+        2 * crossAxisSpacing; // 2 gaps for 3 columns
+    final double cardWidth = (screenWidth - usedWidth) / 3;
+    final double coverHeight = cardWidth / NyanShelfUi.gridCoverAspectRatio;
+    final double cardHeight =
+        coverHeight + NyanShelfUi.gridCardTextSectionHeight;
+
     return SliverGridDelegateWithFixedCrossAxisCount(
       crossAxisCount: 3,
-      childAspectRatio: NyanShelfUi.gridChildAspectRatio,
-      crossAxisSpacing: NyanShelfUi.gridCrossAxisSpacing,
-      mainAxisSpacing: NyanShelfUi.gridMainAxisSpacing,
+      childAspectRatio: cardWidth / cardHeight,
+      crossAxisSpacing: crossAxisSpacing,
+      mainAxisSpacing: NyanShelfUi.gridMainAxisSpacing, // 16
     );
   }
 
   Future<void> _deleteSelectedBooks(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
     final vm = _vm;
-
     if (vm.selectedCount == 0) return;
 
-    bool deleteFile = _prefs.deleteFilesOnRemove;
+    final deletedCount = vm.selectedCount;
 
-    final confirmed = await showNyanConfirmDialog(
-      context,
-      title: loc.deleteBooksTitle(vm.selectedCount),
-      description: loc.actionCannotBeUndone,
-      confirmLabel: loc.remove,
-      cancelLabel: loc.cancel,
-      tone: NyanConfirmTone.danger,
-      icon: NyanIcons.delete,
-      extraContent: StatefulBuilder(
-        builder: (dialogContext, setDialogState) {
-          return NyanDialogOptionRow(
-            title: loc.alsoDeleteLocalFiles,
-            subtitle: loc.deleteFilesOnRemoveSubtitle,
-            value: deleteFile,
-            isDanger: true,
-            onChanged: (value) {
-              setDialogState(() {
-                deleteFile = value;
-              });
-            },
-          );
-        },
+    // U21 spec: bottom sheet confirm (no deleteFiles toggle).
+    final confirmed = await showNyanSheet<bool>(
+      context: context,
+      builder: (sheetCtx) => _DeleteBooksSheetContent(
+        bookCount: deletedCount,
+        onDelete: () => Navigator.pop(sheetCtx, true),
+        onCancel: () => Navigator.pop(sheetCtx, false),
       ),
     );
 
-    if (confirmed == true && mounted) {
-      final deletedCount = vm.selectedCount;
-      try {
-        await vm.deleteSelectedBooks(deleteFile);
-        if (!context.mounted) return;
-        final deletedMsg = loc.deletedBooks(deletedCount);
-        SnackBarUtils.show(
-          context,
-          deletedMsg,
-          tone: NyanSnackTone.success,
-        );
-      } catch (e) {
-        if (!context.mounted) return;
-        SnackBarUtils.show(
-          context,
-          'Error deleting books: $e',
-          tone: NyanSnackTone.error,
-        );
-      }
+    if (confirmed != true || !context.mounted) return;
+
+    final loc = AppLocalizations.of(context)!;
+
+    // Show loading toast while deletion is in flight.
+    SnackBarUtils.show(
+      context,
+      loc.deletedBooks(deletedCount),
+      tone: NyanSnackTone.loading,
+    );
+
+    try {
+      // Spec does not include a "delete files" toggle; preserve source files.
+      await vm.deleteSelectedBooks(false);
+      if (!context.mounted) return;
+      SnackBarUtils.show(
+        context,
+        loc.deletedBooks(deletedCount),
+        tone: NyanSnackTone.success,
+        actionLabel: loc.undo,
+        onActionTap: () => _undoDelete(context),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      SnackBarUtils.show(
+        context,
+        'Error deleting books: $e',
+        tone: NyanSnackTone.error,
+      );
     }
+  }
+
+  Future<void> _undoDelete(BuildContext context) async {
+    SnackBarUtils.dismiss();
+    try {
+      await _vm.undoLastDelete();
+    } catch (e) {
+      if (!context.mounted) return;
+      SnackBarUtils.show(
+        context,
+        'Undo failed: $e',
+        tone: NyanSnackTone.error,
+      );
+    }
+  }
+
+  void _showExportNotice(BuildContext context) {
+    // Export flow is a stub — show an info toast until the feature is built.
+    SnackBarUtils.show(
+      context,
+      AppLocalizations.of(context)!.exportData,
+      tone: NyanSnackTone.info,
+    );
   }
 
   Future<void> _moveSelectedBooks(BuildContext context, bool toPrivate) async {
@@ -169,15 +209,23 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     }
     if (!context.mounted) return;
 
-    var progressVisible = false;
+    DateTime? loadingShownAt;
     try {
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        barrierColor: NyanOverlayStyle.modalBarrierColor(context),
-        builder: (dialogContext) => const ImportProgressDialog(),
+      SnackBarUtils.show(
+        context,
+        loc.importingBooksTitle,
+        description: loc.importingBooksSubtitle,
+        tone: NyanSnackTone.loading,
       );
-      progressVisible = true;
+      // Anchor the 600ms floor to show() call time — independent of how long
+      // the native picker dismiss animation takes.
+      loadingShownAt = DateTime.now();
+      // Yield until the overlay has rendered its first frame. Without this,
+      // rapid I/O-completion events from the import loop can queue ahead of
+      // the vsync callback and delay the card entrance animation — especially
+      // noticeable when importing many files.
+      await WidgetsBinding.instance.endOfFrame;
+      if (!context.mounted) return;
 
       final db = ref.read(databaseServiceRpProvider);
       final existingIndex = await BookImportFingerprint.buildExistingIndex(db);
@@ -249,10 +297,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       await _cleanupPickerTempFiles();
 
       if (!context.mounted) return;
-      if (progressVisible) {
-        Navigator.of(context, rootNavigator: true).pop();
-        progressVisible = false;
-      }
+      await _awaitMinLoadingDisplay(loadingShownAt);
+      if (!context.mounted) return;
 
       final shelfLabel = isPrivate ? loc.privateShelf : loc.publicShelf;
       if (successCount > 0) {
@@ -265,7 +311,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         SnackBarUtils.show(
           context,
           loc.duplicatesSkipped(skippedCount),
-          tone: NyanSnackTone.info,
+          tone: NyanSnackTone.skipped,
         );
       }
 
@@ -273,8 +319,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         _vm.loadBooks();
       }
     } catch (e) {
-      if (context.mounted && progressVisible) {
-        Navigator.of(context, rootNavigator: true).pop();
+      if (context.mounted && loadingShownAt != null) {
+        await _awaitMinLoadingDisplay(loadingShownAt);
       }
       if (context.mounted) {
         SnackBarUtils.show(
@@ -284,6 +330,20 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         );
       }
     }
+  }
+
+  /// Waits until [shownAt] is at least 600ms in the past.
+  ///
+  /// 600ms accounts for: native picker dismiss animation (~300ms on iOS) +
+  /// card entrance animation (220ms) + minimum perception window. Since
+  /// [shownAt] is anchored to when [SnackBarUtils.show] is called (before the
+  /// import work), the floor ensures the loading toast has been visible long
+  /// enough for the user to register it before the result toast appears.
+  static Future<void> _awaitMinLoadingDisplay(DateTime? shownAt) async {
+    if (shownAt == null) return;
+    const floor = Duration(milliseconds: 600);
+    final remaining = floor - DateTime.now().difference(shownAt);
+    if (remaining > Duration.zero) await Future.delayed(remaining);
   }
 
   Future<_ImportedBookSource?> _resolveImportedSource(PlatformFile file) async {
@@ -345,10 +405,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     final loc = AppLocalizations.of(context)!;
     final shelfLabel = isPrivateShelf ? loc.privateShelf : loc.publicShelf;
 
-    showModalBottomSheet(
+    showNyanSheet(
       context: context,
-      backgroundColor:
-          Theme.of(context).colorScheme.surface.withValues(alpha: 0),
       builder: (context) {
         return ImportBookSheet(
           isEmptyShelf: activeBooks.isEmpty,
@@ -363,36 +421,17 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   }
 
   void _showSortMenu(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
-    final sortOptions = [
-      (SortBy.recency, false, loc.lastReadDesc),
-      (SortBy.recency, true, loc.lastReadAsc),
-      (SortBy.importDate, false, loc.addedDesc),
-      (SortBy.importDate, true, loc.addedAsc),
-      (SortBy.title, true, loc.titleAsc),
-      (SortBy.title, false, loc.titleDesc),
-    ];
-
-    final selected =
-        await showNyanSelectionSheet<({SortBy sortBy, bool isAscending})>(
+    // Two-axis sort sheet (key chips + Ascending/Descending segmented control)
+    // that applies live while open, per `BookshelfScreen.jsx`.
+    await showBookshelfSortSheet(
       context: context,
-      title: loc.sortBy,
-      currentValue: (sortBy: _prefs.sortBy, isAscending: _prefs.isAscending),
-      options: [
-        for (final option in sortOptions)
-          NyanSelectionOption(
-            value: (sortBy: option.$1, isAscending: option.$2),
-            label: option.$3,
-          ),
-      ],
+      currentSortBy: _prefs.sortBy,
+      currentAscending: _prefs.isAscending,
+      onChanged: (sortBy, isAscending) async {
+        await _prefs.setSort(sortBy, isAscending);
+        _vm.loadBooks();
+      },
     );
-
-    if (selected == null) return;
-
-    await _prefs.setSort(selected.sortBy, selected.isAscending);
-    if (!context.mounted) return;
-
-    _vm.loadBooks();
   }
 
   Future<void> _handlePrivacyLock(BuildContext context) async {
@@ -427,57 +466,16 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   }
 
   Future<void> _showSetPasswordDialog(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
-    final created = await showNyanSecureEntryDialog(
-      context,
-      title: loc.setPrivacyPassword,
-      fields: [
-        NyanSecureFieldConfig(
-          label: loc.password,
-          controller: TextEditingController(),
-          autofocus: true,
-        ),
-        NyanSecureFieldConfig(
-          label: loc.confirmPassword,
-          controller: TextEditingController(),
-        ),
-      ],
-      confirmLabel: loc.save,
-      cancelLabel: loc.cancel,
-      onConfirm: (values) async {
-        if (values[0].isEmpty || values[0] != values[1]) {
-          return loc.passwordsDoNotMatch;
-        }
-        await PrivacyLockService().setPassword(values[0]);
-        return null;
-      },
-    );
-
+    // Full-screen PIN takeover (U16) — set→confirm. PrivacyLockService stores a
+    // 4-digit hashed PIN, so the numeric keypad is the canonical entry surface.
+    final created = await PrivacyLockService().showPinSetup(context);
     if (created == true && mounted) {
       _unlockPrivateShelfAfterRouteSettles();
     }
   }
 
   Future<void> _showEnterPasswordDialog(BuildContext context) async {
-    final loc = AppLocalizations.of(context)!;
-    final unlocked = await showNyanSecureEntryDialog(
-      context,
-      title: loc.unlockPrivacyShelfTitle,
-      fields: [
-        NyanSecureFieldConfig(
-          label: loc.password,
-          controller: TextEditingController(),
-          autofocus: true,
-        ),
-      ],
-      confirmLabel: loc.unlock,
-      cancelLabel: loc.cancel,
-      onConfirm: (values) async {
-        final isValid = await PrivacyLockService().verifyPassword(values[0]);
-        return isValid ? null : loc.invalidPassword;
-      },
-    );
-
+    final unlocked = await PrivacyLockService().showPinVerify(context);
     if (unlocked == true && mounted) {
       _unlockPrivateShelfAfterRouteSettles();
     }
@@ -497,7 +495,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
   PreferredSizeWidget? _buildSelectionAppBar(
     BuildContext context,
-    FeatureManager featureManager,
     bool showPrivacyTab,
   ) {
     return PreferredSize(
@@ -507,93 +504,47 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         builder: (context, _) {
           final vm = _vm;
           final selectedCount = vm.selectedCount;
+          final nyan = context.nyanTheme;
           final theme = Theme.of(context);
-          final textTheme = theme.textTheme;
-
-          Widget buildToolbarButton({
-            required IconData icon,
-            required String tooltip,
-            required VoidCallback onPressed,
-          }) {
-            return SizedBox(
-              width: NyanSpacing.minTapTarget,
-              height: NyanSpacing.minTapTarget,
-              child: IconButton(
-                icon: Icon(icon, size: NyanSpacing.space20),
-                tooltip: tooltip,
-                onPressed: onPressed,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: NyanSpacing.minTapTarget,
-                  minHeight: NyanSpacing.minTapTarget,
-                ),
-              ),
-            );
-          }
 
           return AppBar(
             leadingWidth: NyanSpacing.minTapTarget + NyanSpacing.space12,
             leading: Padding(
               padding: const EdgeInsets.only(left: NyanSpacing.space8),
-              child: buildToolbarButton(
-                icon: NyanIcons.close,
-                tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-                onPressed: () => vm.toggleSelectionMode(active: false),
+              child: SizedBox(
+                width: NyanSpacing.minTapTarget,
+                height: NyanSpacing.minTapTarget,
+                child: IconButton(
+                  icon: Icon(NyanIcons.close, size: NyanSpacing.space20),
+                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                  onPressed: () => vm.toggleSelectionMode(active: false),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: NyanSpacing.minTapTarget,
+                    minHeight: NyanSpacing.minTapTarget,
+                  ),
+                ),
               ),
             ),
+            // Title: 18pt w600 per spec SelectionHeader.
             title: Text(
               '$selectedCount ${AppLocalizations.of(context)!.selected}',
-              style: textTheme.bodyLarge?.copyWith(
-                fontSize: NyanTypography.body,
+              style: TextStyle(
+                fontFamily: NyanTypography.uiFontFamily,
+                fontSize: NyanTypography.selectionHeaderTitle,
                 fontWeight: FontWeight.w600,
-                height: 1.1,
+                height: 1.15,
+                letterSpacing: -0.2,
+                color: nyan.textPrimary,
               ),
             ),
             centerTitle: false,
             titleSpacing: NyanSpacing.space4,
+            // Trailing: "Select all" pill button per spec SelectionHeader.
             actions: [
-              if (selectedCount == 1)
-                buildToolbarButton(
-                  icon: NyanIcons.info,
-                  tooltip: AppLocalizations.of(context)!.viewDetails,
-                  onPressed: () async {
-                    final bookId = vm.selectedBookIds.first;
-                    final bookData = await ref
-                        .read(databaseServiceRpProvider)
-                        .getBookById(bookId);
-                    if (bookData != null && context.mounted) {
-                      final book = Book.fromMap(bookData);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => BookDetailsPage(
-                            book: book,
-                            bookData: bookData,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              if (selectedCount > 0 && featureManager.isPro)
-                buildToolbarButton(
-                  icon: showPrivacyTab
-                      ? NyanIcons.lockOpen
-                      : NyanIcons.lock,
-                  tooltip: showPrivacyTab
-                      ? AppLocalizations.of(context)!.moveToPublic
-                      : AppLocalizations.of(context)!.moveToPrivate,
-                  onPressed: () =>
-                      _moveSelectedBooks(this.context, !showPrivacyTab),
-                ),
-              buildToolbarButton(
-                icon: NyanIcons.delete,
-                tooltip: AppLocalizations.of(context)!.delete,
-                onPressed: () => _deleteSelectedBooks(this.context),
-              ),
               Builder(
-                builder: (context) {
-                  final loc = AppLocalizations.of(context)!;
+                builder: (ctx) {
+                  final loc = AppLocalizations.of(ctx)!;
                   final isPrivateTab =
                       showPrivacyTab && _tabController.index == 1;
                   final currentTotal =
@@ -601,22 +552,52 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                   final allSelected =
                       currentTotal > 0 && selectedCount >= currentTotal;
 
-                  return buildToolbarButton(
-                    icon: allSelected ? NyanIcons.deselect : NyanIcons.selectAll,
-                    tooltip: allSelected ? loc.deselectAll : loc.selectAll,
-                    onPressed: () => vm.selectAll(isPrivateTab),
+                  return Padding(
+                    padding: const EdgeInsets.only(right: NyanSpacing.space8),
+                    child: GestureDetector(
+                      onTap: () => vm.selectAll(isPrivateTab),
+                      child: Container(
+                        height: 36,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: NyanSpacing.space12),
+                        decoration: BoxDecoration(
+                          color: nyan.primary.withValues(alpha: 0.10),
+                          borderRadius:
+                              BorderRadius.circular(NyanRadius.chip),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              allSelected
+                                  ? NyanIcons.deselect
+                                  : NyanIcons.listChecks,
+                              size: 16,
+                              color: nyan.primaryDeep,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              allSelected ? loc.deselectAll : loc.selectAll,
+                              style: TextStyle(
+                                fontFamily: NyanTypography.uiFontFamily,
+                                fontSize: NyanTypography.meta,
+                                fontWeight: FontWeight.w600,
+                                height: 1.0,
+                                color: nyan.primaryDeep,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   );
                 },
               ),
-              const SizedBox(width: NyanSpacing.space8),
             ],
             backgroundColor: theme.scaffoldBackgroundColor,
             surfaceTintColor: theme.colorScheme.surface.withValues(alpha: 0),
             elevation: 0,
             scrolledUnderElevation: 0,
-            iconTheme: theme.iconTheme.copyWith(
-              size: NyanSpacing.space20,
-            ),
           );
         },
       ),
@@ -665,7 +646,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   }) {
     final loc = AppLocalizations.of(context)!;
     final continueReadingBook = _resolveContinueReadingBook(activeBooks);
-    final theme = Theme.of(context);
     final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
     const useCompactContinueReading = false;
 
@@ -673,92 +653,67 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       slivers: [
         if (showHeaderSections)
           SliverToBoxAdapter(
-            child: Theme(
-              data: theme.copyWith(
-                textTheme: theme.textTheme.copyWith(
-                  bodySmall: theme.textTheme.bodySmall?.copyWith(
-                    fontSize: NyanTypography.meta,
-                    height: 1.35,
-                    letterSpacing: 0.15,
-                  ),
+            child: NyanPageHeader(
+              // Plain "Bookshelf" per BookshelfScreen U9; the mascot wordmark
+              // is reserved for Splash + About (design README).
+              title: loc.bookshelf,
+              actions: [
+                // Sort
+                NyanSquareActionButton(
+                  icon: NyanIcons.sort,
+                  tooltip: loc.sortBy,
+                  onPressed: () => _showSortMenu(context),
                 ),
-              ),
-              child: NyanPageHeader(
-                title: loc.appTitle,
-                subtitle: loc.enjoyReading,
-                actions: [
-                  // View-mode toggle
-                  Builder(
-                    builder: (context) {
-                      final isGridView = _prefs.viewMode == ViewMode.grid;
-                      return NyanRecessedIconButton(
-                        icon: isGridView
-                            ? NyanIcons.viewList
-                            : NyanIcons.viewGrid,
-                        tooltip: isGridView ? loc.listView : loc.gridView,
-                        onPressed: () async {
-                          await _prefs.setViewMode(
-                            isGridView ? ViewMode.list : ViewMode.grid,
-                          );
-                          setState(() {});
-                        },
-                      );
-                    },
-                  ),
-                  // Sort
-                  NyanRecessedIconButton(
-                    icon: NyanIcons.sort,
-                    tooltip: loc.sortBy,
-                    onPressed: () => _showSortMenu(context),
-                  ),
-                  // Privacy lock (Pro only)
-                  if (featureManager.isPro)
-                    NyanRecessedIconButton(
-                      icon: featureManager.isPrivateShelfUnlocked
-                          ? NyanIcons.lockOpen
-                          : NyanIcons.lock,
-                      tooltip: featureManager.isPrivateShelfUnlocked
-                          ? loc.lockPrivacyShelf
-                          : loc.unlockPrivacyShelf,
-                      onPressed: () => _handlePrivacyLock(context),
-                    ),
-                  // Settings
-                  NyanRecessedIconButton(
-                    tooltip: loc.settingsTitle,
-                    icon: NyanIcons.settings,
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SettingsPage()),
-                    ).then((_) => setState(() {})),
-                  ),
-                ],
-                padding: const EdgeInsets.fromLTRB(
-                  NyanSpacing.space4,
-                  0,
-                  NyanSpacing.space4,
-                  NyanSpacing.space12,
+                // View-mode toggle — icon shows the layout you'll switch TO.
+                Builder(
+                  builder: (context) {
+                    final isGridView = _prefs.viewMode == ViewMode.grid;
+                    return NyanSquareActionButton(
+                      icon: isGridView
+                          ? NyanIcons.viewList
+                          : NyanIcons.viewGrid,
+                      tooltip: isGridView ? loc.listView : loc.gridView,
+                      onPressed: () async {
+                        await _prefs.setViewMode(
+                          isGridView ? ViewMode.list : ViewMode.grid,
+                        );
+                        setState(() {});
+                      },
+                    );
+                  },
                 ),
-              ),
-            ),
-          ),
-        if (showHeaderSections && continueReadingBook != null)
-          SliverToBoxAdapter(
-            child: Padding(
-              // 4pt side inset keeps the hero card slightly inset from the
-              // grid edge; 14pt bottom gap matches the grid row rhythm.
+                // Privacy lock (Pro only)
+                if (featureManager.isPro)
+                  NyanSquareActionButton(
+                    icon: featureManager.isPrivateShelfUnlocked
+                        ? NyanIcons.lockOpen
+                        : NyanIcons.lock,
+                    tooltip: featureManager.isPrivateShelfUnlocked
+                        ? loc.lockPrivacyShelf
+                        : loc.unlockPrivacyShelf,
+                    onPressed: () => _handlePrivacyLock(context),
+                  ),
+                // Settings
+                NyanSquareActionButton(
+                  tooltip: loc.settingsTitle,
+                  icon: NyanIcons.settings,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsPage()),
+                  ).then((_) => setState(() {})),
+                ),
+              ],
               padding: const EdgeInsets.fromLTRB(
                 NyanSpacing.space4,
                 0,
                 NyanSpacing.space4,
-                NyanShelfUi.sectionGapAfterShelfChrome,
-              ),
-              child: _buildContinueReadingSection(
-                context,
-                continueReadingBook,
-                useCompactContinueReading,
+                NyanSpacing.space12,
               ),
             ),
           ),
+        // Pinned shelf switcher sits directly under the title, above the
+        // continue-reading hero (BookshelfScreen.jsx: tabs are pinned chrome,
+        // the hero scrolls beneath them).
         SliverPersistentHeader(
           pinned: true,
           delegate: BookshelfShelfPinnedHeaderDelegate(
@@ -776,6 +731,22 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             ),
           ),
         ),
+        if (showHeaderSections && continueReadingBook != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              // 4pt side inset matches the grid / hero rhythm. No vertical pad:
+              // the pinned tabs supply the gap above and the grid's own top pad
+              // supplies the gap below (avoids a doubled 32pt gulf).
+              padding: const EdgeInsets.symmetric(
+                horizontal: NyanSpacing.space4,
+              ),
+              child: _buildContinueReadingSection(
+                context,
+                continueReadingBook,
+                useCompactContinueReading,
+              ),
+            ),
+          ),
         ..._buildShelfSlivers(
           context,
           activeBooks,
@@ -801,31 +772,52 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             featureManager.isPro && featureManager.isPrivateShelfUnlocked;
         final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
 
+        final isOnPrivateTab = showPrivacyTab && _tabController.index == 1;
+
         return Scaffold(
           appBar: isSelectionMode
-              ? _buildSelectionAppBar(context, featureManager, showPrivacyTab)
+              ? _buildSelectionAppBar(context, showPrivacyTab)
               : null,
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                NyanShelfUi.bookshelfPageHorizontalPadding,
-                NyanSpacing.space12,
-                NyanShelfUi.bookshelfPageHorizontalPadding,
-                0,
+          body: Stack(
+            children: [
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    NyanShelfUi.bookshelfPageHorizontalPadding,
+                    NyanSpacing.space12,
+                    NyanShelfUi.bookshelfPageHorizontalPadding,
+                    0,
+                  ),
+                  child: vm.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _buildLibrarySurface(
+                          context,
+                          featureManager: featureManager,
+                          showPrivacyTab: showPrivacyTab,
+                          activeBooks: showPrivacyTab && selectedTabIndex == 1
+                              ? vm.privateBooks
+                              : vm.publicBooks,
+                          showHeaderSections: !isSelectionMode,
+                          isSelectionMode: isSelectionMode,
+                        ),
+                ),
               ),
-              child: vm.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _buildLibrarySurface(
-                      context,
-                      featureManager: featureManager,
-                      showPrivacyTab: showPrivacyTab,
-                      activeBooks: showPrivacyTab && selectedTabIndex == 1
-                          ? vm.privateBooks
-                          : vm.publicBooks,
-                      showHeaderSections: !isSelectionMode,
-                      isSelectionMode: isSelectionMode,
-                    ),
-            ),
+              if (isSelectionMode)
+                Positioned(
+                  left: NyanSpacing.space12,
+                  right: NyanSpacing.space12,
+                  bottom:
+                      NyanSpacing.space12 + MediaQuery.viewPaddingOf(context).bottom,
+                  child: _SelectActionBar(
+                    isOnPrivateTab: isOnPrivateTab,
+                    showMakePrivate: featureManager.isPro,
+                    onMakePrivate: () =>
+                        _moveSelectedBooks(context, !isOnPrivateTab),
+                    onExport: () => _showExportNotice(context),
+                    onDelete: () => _deleteSelectedBooks(context),
+                  ),
+                ),
+            ],
           ),
           floatingActionButton: isSelectionMode
               ? null
@@ -860,41 +852,22 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       AdsUI.hide();
       final loc = AppLocalizations.of(context)!;
 
-      final viewHeight = MediaQuery.sizeOf(context).height;
-      final minEmptyBody = (viewHeight * 0.42).clamp(280.0, 560.0);
-
       return [
-        SliverToBoxAdapter(
+        SliverFillRemaining(
+          hasScrollBody: false,
           child: Padding(
-            padding:
-                EdgeInsets.only(bottom: _shelfScrollBottomPadding(context)),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: minEmptyBody),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final compactLayout = constraints.maxHeight < 520;
-
-                  return Center(
-                    child: NyanEmptyState(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: NyanSpacing.space24,
-                      ),
-                      iconSpacing: NyanSpacing.space12,
-                      descriptionSpacing: NyanSpacing.space4,
-                      textMinHeight: compactLayout ? 112 : 132,
-                      icon: MascotManager().render(
-                        MascotScene.emptyShelf,
-                        size: compactLayout ? 112 : 128,
-                      ),
-                      title: isPrivate
-                          ? loc.emptyShelfMessage
-                          : loc.emptyShelfTitle,
-                      description: isPrivate
-                          ? loc.emptyPrivateShelf
-                          : loc.emptyShelfSubtitle,
-                    ),
-                  );
-                },
+            padding: EdgeInsets.only(
+              bottom: NyanShelfUi.scrollBottomFabClearance,
+            ),
+            child: Center(
+              child: NyanEmptyState(
+                iconData: NyanIcons.books,
+                title: isPrivate
+                    ? loc.emptyShelfMessage
+                    : loc.emptyShelfTitle,
+                description: isPrivate
+                    ? loc.emptyPrivateShelf
+                    : loc.emptyShelfSubtitle,
               ),
             ),
           ),
@@ -936,7 +909,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             bottomPad,
           ),
           sliver: SliverGrid(
-            gridDelegate: _bookshelfGridDelegate(),
+            gridDelegate: _bookshelfGridDelegate(context),
             delegate: SliverChildBuilderDelegate(
               (context, index) => _buildGridBookTile(context, books[index]),
               childCount: books.length,
@@ -954,7 +927,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       SliverPadding(
         padding: EdgeInsets.fromLTRB(gridSideInset, topPad, gridSideInset, 0),
         sliver: SliverGrid(
-          gridDelegate: _bookshelfGridDelegate(),
+          gridDelegate: _bookshelfGridDelegate(context),
           delegate: SliverChildBuilderDelegate(
             (context, index) =>
                 _buildGridBookTile(context, leadingBooks[index]),
@@ -977,7 +950,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         SliverPadding(
           padding: EdgeInsets.fromLTRB(gridSideInset, 0, gridSideInset, bottomPad),
           sliver: SliverGrid(
-            gridDelegate: _bookshelfGridDelegate(),
+            gridDelegate: _bookshelfGridDelegate(context),
             delegate: SliverChildBuilderDelegate(
               (context, index) =>
                   _buildGridBookTile(context, trailingBooks[index]),
@@ -1022,6 +995,24 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     );
   }
 
+  /// Surface / radius / shadow / hairline border for the list-view grouped
+  /// panel (bundle3.jsx `BookListRow` group). The border follows the
+  /// `--chrome-edge` token: transparent in light, a [NyanTheme.divider] ring in
+  /// dark. Painted by [DecoratedSliver] so the inner [SliverList] stays lazy.
+  BoxDecoration _listGroupDecoration(BuildContext context) {
+    final nyan = context.nyanTheme;
+    final isDark = nyan.brightness == Brightness.dark;
+    return BoxDecoration(
+      color: nyan.surface,
+      borderRadius: BorderRadius.circular(NyanRadius.cardNested),
+      border: Border.all(
+        color: isDark ? nyan.divider : Colors.transparent,
+        width: 1,
+      ),
+      boxShadow: NyanShadows.settingsGrouped(nyan),
+    );
+  }
+
   List<Widget> _buildListSlivers(
     BuildContext context,
     List<Book> books, {
@@ -1033,7 +1024,11 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     // 4pt horizontal inset mirrors the grid and continue-reading card side padding.
     const double listSideInset = NyanSpacing.space4;
 
+    final decoration = _listGroupDecoration(context);
+    final dividerColor = context.nyanTheme.divider.withValues(alpha: 0.34);
+
     if (!showInlineAd) {
+      final lastIndex = books.length - 1;
       return [
         SliverPadding(
           padding: EdgeInsets.fromLTRB(
@@ -1042,10 +1037,19 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             listSideInset,
             bottomPad,
           ),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) => _buildListBookTile(context, books[index]),
-              childCount: books.length,
+          sliver: DecoratedSliver(
+            decoration: decoration,
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => _buildListBookTile(
+                  context,
+                  books[index],
+                  showTopDivider: index > 0,
+                  isFirst: index == 0,
+                  isLast: index == lastIndex,
+                ),
+                childCount: books.length,
+              ),
             ),
           ),
         ),
@@ -1053,6 +1057,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     }
 
     final itemCount = books.length + 1;
+    final adIndex = AdsUI.bookshelfListInsertionIndex;
 
     return [
       SliverPadding(
@@ -1062,31 +1067,52 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           listSideInset,
           bottomPad,
         ),
-        sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              if (index == AdsUI.bookshelfListInsertionIndex) {
-                // Only bottom inset: previous tile already has [listTileSpacing] margin.
-                return Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: NyanShelfUi.listTileSpacing,
-                  ),
-                  child: AdsUI.buildBookshelfInlineAd(context),
-                );
-              }
+        sliver: DecoratedSliver(
+          decoration: decoration,
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                if (index == adIndex) {
+                  // Ad lives inside the grouped panel, divided like any row.
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (index > 0)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: NyanSpacing.space12,
+                          ),
+                          child: Container(height: 0.5, color: dividerColor),
+                        ),
+                      AdsUI.buildBookshelfInlineAd(context),
+                    ],
+                  );
+                }
 
-              final bookIndex =
-                  index > AdsUI.bookshelfListInsertionIndex ? index - 1 : index;
-              return _buildListBookTile(context, books[bookIndex]);
-            },
-            childCount: itemCount,
+                final bookIndex = index > adIndex ? index - 1 : index;
+                return _buildListBookTile(
+                  context,
+                  books[bookIndex],
+                  showTopDivider: index > 0,
+                  isFirst: index == 0,
+                  isLast: index == itemCount - 1,
+                );
+              },
+              childCount: itemCount,
+            ),
           ),
         ),
       ),
     ];
   }
 
-  Widget _buildListBookTile(BuildContext context, Book book) {
+  Widget _buildListBookTile(
+    BuildContext context,
+    Book book, {
+    required bool showTopDivider,
+    required bool isFirst,
+    required bool isLast,
+  }) {
     return ListenableBuilder(
       listenable: _vm,
       builder: (context, _) {
@@ -1098,6 +1124,9 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           bookData: book.toMap(),
           isSelected: isSelected,
           isSelectionMode: isSelectionMode,
+          showTopDivider: showTopDivider,
+          isFirst: isFirst,
+          isLast: isLast,
           onTap: () {
             if (isSelectionMode) {
               vm.toggleBookSelection(book.id);
@@ -1115,6 +1144,330 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           onSelectionToggle: () => vm.toggleBookSelection(book.id),
         );
       },
+    );
+  }
+}
+
+// ── Floating selection action bar ─────────────────────────────────────────────
+
+/// Floating 3-action dock shown at the bottom of the screen in selection mode.
+///
+/// Layout per bundle3.jsx `SelectActionBar`: surface bg, chrome-edge border,
+/// r-dock (24pt), lightCard shadow, 7pt vertical / 6pt horizontal padding.
+/// Actions: Make Private | Export | Delete, separated by 0.5px hairlines.
+class _SelectActionBar extends StatelessWidget {
+  const _SelectActionBar({
+    required this.isOnPrivateTab,
+    required this.showMakePrivate,
+    required this.onMakePrivate,
+    required this.onExport,
+    required this.onDelete,
+  });
+
+  /// True when the active tab is the private shelf (flips the Make Private label
+  /// to "Move to Public").
+  final bool isOnPrivateTab;
+
+  /// Whether the Make Private / Public action is shown (Pro feature gate).
+  final bool showMakePrivate;
+
+  final VoidCallback onMakePrivate;
+  final VoidCallback onExport;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final nyan = context.nyanTheme;
+    final isDark = nyan.brightness == Brightness.dark;
+    final loc = AppLocalizations.of(context)!;
+
+    Widget action({
+      required IconData icon,
+      required String label,
+      required VoidCallback onTap,
+      bool isDanger = false,
+    }) {
+      // Spec: icon = primaryDeep, label = textSecondary for normal; both error for danger.
+      final iconColor = isDanger ? nyan.errorPrimaryTextColor : nyan.primaryDeep;
+      final labelColor =
+          isDanger ? nyan.errorPrimaryTextColor : nyan.textSecondary;
+      return Expanded(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          // Spec button padding: 8px top/bottom, 4px sides.
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 22, color: iconColor),
+                // Spec gap: 5px between icon and label.
+                const SizedBox(height: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: NyanTypography.uiFontFamily,
+                    fontSize: NyanTypography.caption,
+                    fontWeight: FontWeight.w500,
+                    height: 1.0,
+                    color: labelColor,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Spec: divider at 40% opacity — visually recedes behind the actions.
+    Widget hairline() => Container(
+          width: 0.5,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          color: nyan.divider.withValues(alpha: 0.40),
+        );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: nyan.surface,
+        borderRadius: BorderRadius.circular(NyanRadius.dock),
+        border: Border.all(
+          color: isDark ? nyan.divider : Colors.transparent,
+          width: 1,
+        ),
+        boxShadow: NyanShadows.lightCard(nyan),
+      ),
+      // Spec dock padding: 7px top/bottom, 6px sides.
+      padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 6),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            if (showMakePrivate) ...[
+              action(
+                icon: NyanIcons.lock,
+                label: isOnPrivateTab ? loc.moveToPublic : loc.moveToPrivate,
+                onTap: onMakePrivate,
+              ),
+              hairline(),
+            ],
+            action(
+              icon: NyanIcons.exportData,
+              label: loc.export,
+              onTap: onExport,
+            ),
+            hairline(),
+            action(
+              icon: NyanIcons.delete,
+              label: loc.delete,
+              onTap: onDelete,
+              isDanger: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Delete confirm sheet ───────────────────────────────────────────────────────
+
+/// Bottom sheet asking the user to confirm deletion of selected books.
+///
+/// Per bundle3.jsx `DeleteConfirmSheet`: 56×56 error icon container,
+/// 18pt/600 title, 13.5pt/400 body, full-width Delete and Cancel buttons.
+class _DeleteBooksSheetContent extends StatelessWidget {
+  const _DeleteBooksSheetContent({
+    required this.bookCount,
+    required this.onDelete,
+    required this.onCancel,
+  });
+
+  final int bookCount;
+  final VoidCallback onDelete;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final nyan = context.nyanTheme;
+    final loc = AppLocalizations.of(context)!;
+    final isDark = nyan.brightness == Brightness.dark;
+    // Matches NyanOnePaperSheet surface logic — highest layer in dark.
+    final surface = isDark ? nyan.surfaceRaised : nyan.surface;
+    final chromeEdge = isDark ? nyan.divider : Colors.transparent;
+    final borderRadius = BorderRadius.circular(NyanRadius.sheet);
+
+    // Spec DeleteConfirmSheet has NO grabber pill — this is a destructive
+    // confirmation that must not be accidentally dismissed by swipe. The surface
+    // treatment (shadow + clip + border) mirrors NyanOnePaperSheet without the grabber.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: borderRadius,
+        boxShadow: NyanShadows.lightCard(nyan),
+      ),
+      child: ClipRRect(
+        borderRadius: borderRadius,
+        child: ColoredBox(
+          color: surface,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: borderRadius,
+              border: Border.all(color: chromeEdge, width: 1),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Upper section: icon + title + body ───────────────────
+                // Spec: padding 24px top, 20px sides, 18px bottom; all center-aligned.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    NyanSpacing.space20,
+                    NyanSpacing.space24,
+                    NyanSpacing.space20,
+                    18,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // 56×56 error icon container — r-cardNested, errorBg, errorPrimary@22% border.
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: nyan.errorBackgroundColor,
+                          borderRadius:
+                              BorderRadius.circular(NyanRadius.cardNested),
+                          border: Border.all(
+                            color:
+                                nyan.errorPrimaryTextColor.withValues(alpha: 0.22),
+                            width: 0.7,
+                          ),
+                        ),
+                        child: Icon(
+                          NyanIcons.delete,
+                          size: 26,
+                          color: nyan.errorPrimaryTextColor,
+                        ),
+                      ),
+                      // Spec: marginBottom 14 between icon and title.
+                      const SizedBox(height: 14),
+                      // Title: 18pt/600, center-aligned.
+                      Text(
+                        loc.deleteBooksTitle(bookCount),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: NyanTypography.uiFontFamily,
+                          fontSize: NyanTypography.selectionHeaderTitle,
+                          fontWeight: FontWeight.w600,
+                          height: 1.25,
+                          color: nyan.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: NyanSpacing.space8),
+                      // Body: 13.5pt/400/1.5, center-aligned.
+                      Text(
+                        loc.actionCannotBeUndone,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: NyanTypography.uiFontFamily,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w400,
+                          height: 1.5,
+                          color: nyan.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Button section ───────────────────────────────────────
+                // Spec: padding 0 top, 16px sides, 16px bottom; gap 10 between buttons.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    NyanSpacing.space16,
+                    0,
+                    NyanSpacing.space16,
+                    NyanSpacing.space16,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Delete button — h=50, r-cardNested, errorPrimary bg.
+                      // Spec label: "Delete {n} books" with count; font 600 15px.
+                      GestureDetector(
+                        onTap: onDelete,
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: nyan.errorPrimaryTextColor,
+                            borderRadius:
+                                BorderRadius.circular(NyanRadius.cardNested),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                NyanIcons.delete,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: NyanSpacing.space8),
+                              Text(
+                                loc.deleteBooksButton(bookCount),
+                                style: const TextStyle(
+                                  fontFamily: NyanTypography.uiFontFamily,
+                                  // Off-ladder 15pt: spec DeleteConfirmSheet button, §4.6.
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.0,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Spec gap: 10px between buttons.
+                      const SizedBox(height: 10),
+                      // Cancel button — h=50, r-cardNested, surfaceMuted bg, divider border.
+                      GestureDetector(
+                        onTap: onCancel,
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: nyan.surfaceMuted,
+                            borderRadius:
+                                BorderRadius.circular(NyanRadius.cardNested),
+                            border: Border.all(color: nyan.divider, width: 1.0),
+                          ),
+                          child: Center(
+                            child: Text(
+                              loc.cancel,
+                              style: TextStyle(
+                                fontFamily: NyanTypography.uiFontFamily,
+                                // Off-ladder 15pt: spec DeleteConfirmSheet button, §4.6.
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                height: 1.0,
+                                color: nyan.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
