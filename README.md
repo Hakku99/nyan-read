@@ -1,41 +1,108 @@
-# Nyan Read (喵阅) - Project Setup
+# 喵阅 Nyan Read
 
-## Prerequisites
-1. Install [Flutter SDK](https://flutter.dev/docs/get-started/install).
-2. Android Studio or VS Code with Flutter extensions.
+> A completely offline e-book reader for TXT, EPUB, and PDF — built with a paper-reading soul.  
+> 完全离线的本地电子书阅读器，支持 TXT / EPUB / PDF，UI 气质取自纸本阅读。
 
-## Setup Instructions
+---
 
-1. **Restore Dependencies:**
-   Open a terminal in this directory (`c:\Projects\nyan-read`) and run:
-   ```bash
-   flutter pub get
-   ```
+## Features
 
-2. **Run the App:**
-   Connect an Android device or start an Emulator, then run:
-   ```bash
-   flutter run
-   ```
+- **Three formats** — TXT, EPUB, and PDF with unified reading experience
+- **Offline & private** — no account, no cloud, no telemetry; all data lives in local SQLite + SharedPreferences
+- **One Paper reader chrome** — a single floating dock that grows in-place into a Chapters or Settings sheet; brightness via top-bar popover + left-edge drag
+- **Design system** — "Muji × paper reading × matcha" aesthetic; Cream Light and Sumi Dark themes with a full token layer (`NyanColors`, `NyanTypography`, `NyanSpacing`, `NyanRadius`, `NyanShadows`)
+- **Privacy shelf** — PIN-protected hidden bookshelf (Pro)
+- **Bookmarks, highlights & notes** — per-paragraph annotations persisted locally
+- **Reading stats** — session tracking and progress history
 
-3. **Build APK:**
-   To generate the installation file:
-   ```bash
-   flutter build apk --debug
-   ```
-   The APK will be located at: `build/app/outputs/flutter-apk/app-debug.apk`
+---
 
-## Features Implemented (Phase 1)
+## Platform Support
 
-- **Architecture:** Modular Clean Architecture.
-- **Database:** SQLite with tables for Books, Bookmarks, Stats.
-- **Feature Flags:** Admin Panel to toggle Free/Pro modes instantly.
-- **Privacy Shelf:** Pro-only hidden shelf logic (AES-256 stub).
-- **Reader UI:** Basic layout with font size, background color, and reminder logic.
-- **Nyan UI:** Cute pink/pastel theme application.
+| Platform | Status |
+|---|---|
+| Android | ✅ Primary |
+| iOS | ✅ Primary |
+| Windows / macOS / Linux | 🔲 TBC |
 
-## Testing the Manager Mode
-1. Launch the App.
-2. Tap the **Admin Icon** (top right) on the Home Screen.
-3. Toggle "Pro Mode Enabled".
-4. Go back: You will see the "Privacy Shelf" tab appear and the "Ads" banner disappear.
+---
+
+## Getting Started
+
+### Prerequisites
+
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) `>=3.19`
+- Android Studio or VS Code with the Flutter extension
+- An Android or iOS device / emulator
+
+### Install dependencies
+
+```bash
+flutter pub get
+```
+
+### Font assets
+
+The app uses **Noto Sans SC** and **Source Han Serif SC**, which are not committed to the repo due to file size. Follow the instructions in [`assets/fonts/README.md`](assets/fonts/README.md) to download and place the font files before running.
+
+> The app compiles and runs without the fonts — Flutter falls back to the platform font and prints a warning. The serif reading mode only activates once the font files are in place.
+
+### Run
+
+```bash
+flutter run
+```
+
+### Build APK
+
+```bash
+flutter build apk --release
+```
+
+Output: `build/app/outputs/flutter-apk/app-release.apk`
+
+---
+
+## Architecture
+
+The project follows a strict five-layer architecture:
+
+```
+Presentation  →  Controller  →  Engine  →  Service  →  Platform / Infra
+```
+
+- **Engine** (`ReaderEngine`) is the format-agnostic reading contract; TXT, EPUB, and PDF each have their own implementation.
+- **Services** (`DatabaseService`, `ReaderPreferencesService`) own all persistence; widgets never touch SQLite or SharedPreferences directly.
+- **State** is managed with `flutter_riverpod` + `get_it`; high-frequency values (progress, brightness) use `ValueNotifier` to avoid full-tree rebuilds.
+
+Full guidelines, protected surfaces, and the architecture roadmap are documented in [`AGENTS.md`](AGENTS.md).
+
+---
+
+## Design System
+
+UI token definitions live in `lib/core/theme/`:
+
+| File | Covers |
+|---|---|
+| `nyan_colors.dart` | Atomic colour constants + semantic error/success palette |
+| `nyan_typography.dart` | Font families, size ladder, weight rules |
+| `nyan_spacing.dart` | 8pt grid constants + 44pt min tap target |
+| `nyan_radius.dart` | One Paper concentric corner-radius family |
+| `nyan_shadows.dart` | Themed shadow/glow-ring tokens |
+
+Theme-sensitive colours must be accessed through `Theme.of(context).extension<NyanTheme>()` — never reference `NyanColors.creamXxx` / `inkNightXxx` directly in widgets. See [`AGENTS.md §4`](AGENTS.md) for the full design philosophy and token truth table.
+
+---
+
+## Development
+
+```bash
+# Static analysis
+flutter analyze
+
+# Tests
+flutter test
+```
+
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/): `feat:` / `fix:` / `refactor:` / `perf:` / `docs:` / `test:` / `chore:`, subject ≤ 50 characters.
