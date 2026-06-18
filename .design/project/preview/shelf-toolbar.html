@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- @dsCard group="Brand" name="Components — Shelf Toolbar" subtitle="The Bookshelf header action cluster: search · sort · list/grid · privacy unlock (Pro only)" viewport="720x420" -->
+<!-- @dsCard group="Brand" name="Components — Shelf Toolbar" subtitle="Leading Settings gear · search · sort · list/grid · privacy unlock (Pro only)" viewport="720x460" -->
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -11,10 +11,17 @@
   body { background: var(--nyan-bg); padding: 24px; display: flex; flex-direction: column; gap: 22px; }
   .eyebrow { font: 500 11px/1 var(--font-ui); letter-spacing: 0.22px; text-transform: uppercase; color: var(--nyan-primary-deep); margin: 0 0 8px 2px; }
   .bar { display: flex; align-items: center; gap: 8px; }
-  .bar .title { flex: 1; font: 600 22px/1.15 var(--font-ui); color: var(--nyan-text); letter-spacing: -0.2px; }
+  .bar .spacer { flex: 1; }
+  .lead {
+    width: 44px; height: 44px; border-radius: var(--r-control);
+    background: var(--nyan-surface);
+    border: 1px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent);
+    display: grid; place-items: center;
+  }
+  .lead i { font-size: 18px; color: var(--nyan-text-secondary); }
   .tools { display: flex; gap: 6px; }
   .tool {
-    width: 40px; height: 40px; border-radius: var(--r-control);
+    width: 44px; height: 44px; border-radius: var(--r-control);
     background: var(--nyan-surface);
     border: 1px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent);
     display: grid; place-items: center;
@@ -34,7 +41,8 @@
     <div class="eyebrow">Default · free</div>
     <div class="card">
       <div class="bar">
-        <div class="title">Bookshelf</div>
+        <div class="lead"><i class="ph ph-gear-six"></i></div>
+        <div class="spacer"></div>
         <div class="tools">
           <div class="tool"><i class="ph ph-magnifying-glass"></i></div>
           <div class="tool"><i class="ph ph-arrows-down-up"></i></div>
@@ -42,14 +50,15 @@
         </div>
       </div>
     </div>
-    <div class="note">Search · Sort · List/Grid toggle (icon shows the layout you switch to).</div>
+    <div class="note">Leading gear opens the Settings page. Trailing in-context tools: Search · Sort · List/Grid toggle (icon shows the layout you switch to). No screen title — the Public/Private tabs below carry identity.</div>
   </div>
 
   <div>
     <div class="eyebrow">Sort active · Pro (privacy unlock)</div>
     <div class="card">
       <div class="bar">
-        <div class="title">Bookshelf</div>
+        <div class="lead"><i class="ph ph-gear-six"></i></div>
+        <div class="spacer"></div>
         <div class="tools">
           <div class="tool"><i class="ph ph-magnifying-glass"></i></div>
           <div class="tool active"><i class="ph ph-sort-ascending"></i></div>

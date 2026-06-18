@@ -112,11 +112,24 @@ const NyanToggle = ({ on, onChange }) => (
 );
 
 /* ── Shelf Toolbar — the canonical Bookshelf header action cluster ─────────
-   ONE toolbar for every shelf surface (U9 Home, U19 pinned header). It is the
-   "tools beside the Bookshelf title": Search · Sort · List/Grid · Privacy
-   Unlock (the lock only appears when Pro mode is enabled). Each button is the
-   40px rounded chrome tile; an "active" tool lifts to a matcha tint + outline.
-   Self-driving for galleries (internal state) or fully controllable by props. */
+   ONE toolbar for every shelf surface (U9 Home, U19 pinned header). Leading
+   Settings gear → opens the Settings page; the trailing cluster is the
+   in-context shelf tools: Search · Sort · List/Grid · Privacy Unlock (Pro only).
+   No screen title — the Public/Private shelf tabs below carry screen identity.
+   Each tool is a 44px rounded chrome tile; an "active" tool lifts to a matcha
+   tint + outline. Self-driving for galleries or fully controllable by props. */
+const ShelfSettingsBtn = ({ onClick, label = "Settings" }) => (
+  <button onClick={onClick} title={label} aria-label={label} style={{
+    all: "unset", cursor: "pointer", width: 44, height: 44, borderRadius: "var(--r-control)",
+    flexShrink: 0, display: "grid", placeItems: "center",
+    background: "var(--nyan-surface)",
+    border: "1px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent)",
+    transition: "background 140ms var(--ease-paper), border-color 140ms var(--ease-paper)",
+  }}>
+    <i className="ph ph-gear-six" style={{ fontSize: 18, color: "var(--nyan-text-secondary)" }} />
+  </button>
+);
+
 const ShelfToolBtn = ({ icon, active, onClick, label }) => (
   <button onClick={onClick} title={label} aria-label={label} style={{
     all: "unset", cursor: "pointer", width: 44, height: 44, borderRadius: "var(--r-control)",
@@ -132,11 +145,10 @@ const ShelfToolBtn = ({ icon, active, onClick, label }) => (
 );
 
 const ShelfToolbar = ({
-  title = "Bookshelf",
   view: viewProp, onToggleView,
   sort: sortProp, onToggleSort,
   isPro = false, unlocked: unlockedProp, onToggleUnlock,
-  onSearch, pad = "14px 16px 8px",
+  onSearch, onSettings, pad = "14px 16px 8px",
 }) => {
   const [viewS, setViewS] = useState(viewProp || "grid");
   const [sortS, setSortS] = useState(!!sortProp);
@@ -146,7 +158,8 @@ const ShelfToolbar = ({
   const unlocked = unlockedProp !== undefined ? unlockedProp : unlockedS;
   return (
     <div style={{ padding: pad, display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-      <div style={{ flex: 1, minWidth: 0, font: "600 22px/1.15 var(--font-ui)", color: "var(--nyan-text)", letterSpacing: "-0.2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
+      <ShelfSettingsBtn onClick={onSettings} />
+      <div style={{ flex: 1, minWidth: 0 }} />
       <div style={{ display: "flex", gap: 6 }}>
         <ShelfToolBtn icon="magnifying-glass" onClick={onSearch} label="Search" />
         <ShelfToolBtn icon="arrows-down-up" active={sort}
@@ -190,4 +203,4 @@ const NyanSplash = ({ markSrc = "assets/images/nyan_mark_v2.png", loading = fals
   </div>
 );
 
-Object.assign(window, { READER_SAMPLE, READER_PROSE, ThemeWrap, ReaderBg, Shell, PageHdr, SectionHdr, RowGroup, ListRow, NyanToggle, ShelfToolBtn, ShelfToolbar, NyanSplash });
+Object.assign(window, { READER_SAMPLE, READER_PROSE, ThemeWrap, ReaderBg, Shell, PageHdr, SectionHdr, RowGroup, ListRow, NyanToggle, ShelfSettingsBtn, ShelfToolBtn, ShelfToolbar, NyanSplash });

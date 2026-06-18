@@ -178,34 +178,42 @@ const U15Artboard = ({ dark, startIndex = 2 }) => {
                W300 → W400 (minimum weight in design system)
    Modes: setup · verify (error) · change
    ────────────────────────────────────────────────────────────────────── */
-const PinDots = ({ count, hasError, dotColor }) => (
-  <div style={{ display: "flex", gap: 20, justifyContent: "center", animation: hasError ? "pin-shake 320ms ease" : "none" }}>
-    {[0,1,2,3].map(i => (
-      <div key={i} style={{ width: 16, height: 16, borderRadius: "50%",
-        background: i < count ? dotColor : "transparent",
-        border: `1.5px solid ${hasError ? `color-mix(in srgb, ${dotColor} 38%, transparent)` : `color-mix(in srgb, ${dotColor} 56%, transparent)`}`,
-        transition: "background 120ms ease" }} />
-    ))}
+const PinDots = ({ count, hasError, fill, ring, errorColor }) => (
+  <div style={{ display: "flex", gap: 18, justifyContent: "center", animation: hasError ? "pin-shake 360ms var(--ease-paper)" : "none" }}>
+    {[0,1,2,3].map(i => {
+      const on = i < count;
+      const c = hasError ? errorColor : fill;
+      return (
+        <div key={i} style={{ width: 14, height: 14, borderRadius: "50%",
+          background: on ? c : "transparent",
+          border: `1.5px solid ${on ? c : ring}`,
+          transform: on ? "scale(1)" : "scale(0.86)",
+          transition: "background 150ms var(--ease-paper), border-color 150ms ease, transform 150ms var(--ease-paper)" }} />
+      );
+    })}
   </div>
 );
 
-const NumPad = ({ onDigit, onDelete, keyColor }) => {
-  const keys = [[1,2,3],[4,5,6],[7,8,9],[null,0,"⌫"]];
+const NumPad = ({ onDigit, onDelete }) => {
+  const keys = [[1,2,3],[4,5,6],[7,8,9],[null,0,"del"]];
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
       {keys.map((row, ri) => (
-        <div key={ri} style={{ display: "flex", gap: 16 }}>
+        <div key={ri} style={{ display: "flex", gap: 18 }}>
           {row.map((k, ki) => k === null ? (
-            <div key="empty" style={{ width: 72, height: 72 }} />
+            <div key="empty" style={{ width: 74, height: 74 }} />
+          ) : k === "del" ? (
+            <button key="del" onClick={onDelete} className="nyan-pinkey-ghost"
+              style={{ all: "unset", cursor: "pointer", width: 74, height: 74, borderRadius: "50%",
+                display: "grid", placeItems: "center", color: "var(--nyan-text-muted)" }}>
+              <i className="ph ph-backspace" style={{ fontSize: 23 }} />
+            </button>
           ) : (
-            <button key={k} onClick={() => k === "⌫" ? onDelete() : onDigit(k)}
-              style={{ all: "unset", cursor: "pointer", width: 72, height: 72, borderRadius: "50%",
-                background: `color-mix(in srgb, ${keyColor} 10%, transparent)`,
-                border: `1px solid color-mix(in srgb, ${keyColor} 16%, transparent)`,
+            <button key={k} onClick={() => onDigit(k)} className="nyan-pinkey"
+              style={{ all: "unset", cursor: "pointer", width: 74, height: 74, borderRadius: "50%",
+                background: "var(--nyan-surface)", boxShadow: "var(--shadow-subtle)",
                 display: "grid", placeItems: "center",
-                font: k === "⌫" ? "400 22px/1 var(--font-ui)" : "400 26px/1 var(--font-ui)",
-                color: keyColor,
-                transition: "background 100ms ease" }}>
+                font: "400 27px/1 var(--font-ui)", color: "var(--nyan-text)" }}>
               {k}
             </button>
           ))}
@@ -217,42 +225,66 @@ const NumPad = ({ onDigit, onDelete, keyColor }) => {
 
 const PinOverlay = ({ mode = "verify", hasError, dark = true }) => {
   const [digits, setDigits] = useState(hasError ? [1,2,3,4] : []);
-  const titles = { setup: "Set PIN", verify: "Enter PIN", change: "New PIN", confirm: "Confirm PIN" };
+  const titles = { setup: "Set a PIN", verify: "Enter your PIN", change: "New PIN", confirm: "Confirm your PIN" };
+  const subs = {
+    setup:   "Choose a 4-digit code to keep your library private.",
+    verify:  "Enter your code to open your shelf.",
+    change:  "Choose a new 4-digit code.",
+    confirm: "Re-enter your code to confirm.",
+  };
 
   const onDigit = (d) => setDigits(p => p.length < 4 ? [...p, d] : p);
   const onDelete = () => setDigits(p => p.slice(0,-1));
 
-  // Dark = ink-night takeover; Light = warm-paper takeover. Same layout, themed.
-  const bg       = dark ? "#1D211E" : "var(--nyan-bg)";
-  const fg       = dark ? "#E8E1D5" : "var(--nyan-text)";
-  const subtle   = dark ? "color-mix(in srgb, #E8E1D5 52%, transparent)" : "var(--nyan-text-muted)";
-  const lockTint = dark ? "color-mix(in srgb, #E8E1D5 12%, transparent)" : "color-mix(in srgb, var(--nyan-primary) 12%, transparent)";
-  const lockIcon = dark ? "#E8E1D5" : "var(--nyan-primary-deep)";
-
+  // One Paper takeover — themed entirely by tokens (data-theme drives Sumi).
   return (
-    <div data-theme={dark ? "sumi" : undefined} style={{ width: "100%", height: "100%", background: bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", gap: 0 }}>
+    <div data-theme={dark ? "sumi" : undefined} style={{ width: "100%", height: "100%", background: "var(--nyan-bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", padding: "0 28px" }}>
+      <style>{`
+        .nyan-pinkey { transition: transform 150ms var(--ease-paper), box-shadow 200ms ease, background 150ms ease; }
+        .nyan-pinkey:hover { transform: translateY(-1px); box-shadow: var(--shadow-light-card); }
+        .nyan-pinkey:active { transform: scale(0.93); box-shadow: var(--shadow-grouped); background: color-mix(in srgb, var(--nyan-primary) 14%, var(--nyan-surface)); }
+        .nyan-pinkey-ghost { transition: color 150ms ease, transform 150ms var(--ease-paper); }
+        .nyan-pinkey-ghost:hover { color: var(--nyan-text-secondary); }
+        .nyan-pinkey-ghost:active { transform: scale(0.9); }
+        .nyan-pin-cancel { transition: background 150ms ease; }
+        .nyan-pin-cancel:hover { background: color-mix(in srgb, var(--nyan-text) 7%, transparent); }
+      `}</style>
+
       {/* Cancel X (top right) */}
-      <button style={{ all: "unset", cursor: "pointer", position: "absolute", top: 14, right: 14, width: 44, height: 44, display: "grid", placeItems: "center" }}>
-        <i className="ph ph-x" style={{ fontSize: 22, color: subtle }} />
+      <button className="nyan-pin-cancel" style={{ all: "unset", cursor: "pointer", position: "absolute", top: 16, right: 16, width: 42, height: 42, borderRadius: "50%", display: "grid", placeItems: "center" }}>
+        <i className="ph ph-x" style={{ fontSize: 20, color: "var(--nyan-text-muted)" }} />
       </button>
-      {/* Lock glyph */}
-      <div style={{ width: 56, height: 56, borderRadius: "var(--r-card-nested)", background: lockTint, display: "grid", placeItems: "center", marginBottom: 22 }}>
-        <i className="ph ph-lock-simple" style={{ fontSize: 26, color: lockIcon }} />
+
+      {/* Lock tile — floating surface plane, matcha glyph */}
+      <div style={{ width: 72, height: 72, borderRadius: "var(--r-panel)", background: "var(--nyan-surface)", boxShadow: "var(--shadow-light-card)", display: "grid", placeItems: "center", marginBottom: 28 }}>
+        <i className="ph-fill ph-lock-key" style={{ fontSize: 30, color: "var(--nyan-primary)" }} />
       </div>
-      {/* Title */}
-      <div style={{ font: "500 20px/1.2 var(--font-ui)", color: fg, letterSpacing: "0.4px", marginBottom: hasError ? 16 : 48 }}>
+
+      {/* Title + supporting line */}
+      <div style={{ font: "600 22px/1.25 var(--font-ui)", color: "var(--nyan-text)", letterSpacing: "-0.2px", marginBottom: 8 }}>
         {titles[mode]}
       </div>
+      <div style={{ font: "400 13.5px/1.45 var(--font-ui)", color: "var(--nyan-text-muted)", textAlign: "center", maxWidth: 264, textWrap: "balance", marginBottom: hasError ? 22 : 40 }}>
+        {subs[mode]}
+      </div>
+
+      {/* PIN dots */}
+      <PinDots count={digits.length} hasError={hasError}
+        fill="var(--nyan-primary)"
+        ring="color-mix(in srgb, var(--nyan-text) 24%, transparent)"
+        errorColor="var(--error-primary)" />
+
       {/* Error hint */}
       {hasError && (
-        <div style={{ font: "400 13px/1.3 var(--font-ui)", color: subtle, letterSpacing: "0.3px", marginBottom: 20, textAlign: "center" }}>
-          PINs don't match — try again
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 16, font: "400 13px/1.3 var(--font-ui)", color: "var(--error-primary)" }}>
+          <i className="ph-fill ph-warning-circle" style={{ fontSize: 15 }} />
+          PINs don’t match — try again
         </div>
       )}
-      <div style={{ marginBottom: 48 }}>
-        <PinDots count={digits.length} hasError={hasError} dotColor={fg} />
+
+      <div style={{ marginTop: hasError ? 30 : 46 }}>
+        <NumPad onDigit={onDigit} onDelete={onDelete} />
       </div>
-      <NumPad onDigit={onDigit} onDelete={onDelete} keyColor={fg} />
     </div>
   );
 };

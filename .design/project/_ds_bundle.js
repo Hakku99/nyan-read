@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"NyanReadDesignSystem_019e2f","components":[{"name":"BookListRow","sourcePath":"components/cards/BookListRow.jsx"},{"name":"NyanBookGridCard","sourcePath":"components/cards/NyanBookGridCard.jsx"},{"name":"NyanBookmarkCard","sourcePath":"components/cards/NyanBookmarkCard.jsx"},{"name":"NyanContinueReadingCard","sourcePath":"components/cards/NyanContinueReadingCard.jsx"},{"name":"NyanPageHeader","sourcePath":"components/navigation/NyanPageHeader.jsx"},{"name":"NyanSectionHeader","sourcePath":"components/navigation/NyanSectionHeader.jsx"},{"name":"Checkbox","sourcePath":"components/primitives/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/primitives/Icon.jsx"},{"name":"NyanPrimaryButton","sourcePath":"components/primitives/NyanPrimaryButton.jsx"},{"name":"NyanSlider","sourcePath":"components/primitives/NyanSlider.jsx"},{"name":"NyanSwitch","sourcePath":"components/primitives/NyanSwitch.jsx"},{"name":"PillButton","sourcePath":"components/primitives/PillButton.jsx"},{"name":"ProgressBar","sourcePath":"components/primitives/ProgressBar.jsx"},{"name":"SearchField","sourcePath":"components/primitives/SearchField.jsx"},{"name":"SegmentedTabControl","sourcePath":"components/primitives/SegmentedTabControl.jsx"},{"name":"Skeleton","sourcePath":"components/primitives/Skeleton.jsx"},{"name":"TextField","sourcePath":"components/primitives/TextField.jsx"},{"name":"DisplayPanel","sourcePath":"components/reader/DisplayPanel.jsx"},{"name":"DockFooter","sourcePath":"components/reader/DockFooter.jsx"},{"name":"HighlightSwatchRow","sourcePath":"components/reader/HighlightSwatchRow.jsx"},{"name":"InBookSearch","sourcePath":"components/reader/InBookSearch.jsx"},{"name":"Knob","sourcePath":"components/reader/Knob.jsx"},{"name":"OnePaperDock","sourcePath":"components/reader/OnePaperDock.jsx"},{"name":"PdfControls","sourcePath":"components/reader/PdfControls.jsx"},{"name":"ReaderChapterList","sourcePath":"components/reader/ReaderChapterList.jsx"},{"name":"ReaderParagraph","sourcePath":"components/reader/ReaderParagraph.jsx"},{"name":"ReaderSettingsBody","sourcePath":"components/reader/ReaderSettingsBody.jsx"},{"name":"TTSPlayer","sourcePath":"components/reader/TTSPlayer.jsx"},{"name":"TextPanel","sourcePath":"components/reader/TextPanel.jsx"},{"name":"TextSelectionMenu","sourcePath":"components/reader/TextSelectionMenu.jsx"},{"name":"ThemePanel","sourcePath":"components/reader/ThemePanel.jsx"},{"name":"PinDots","sourcePath":"components/security/PinDots.jsx"},{"name":"PinPad","sourcePath":"components/security/PinPad.jsx"},{"name":"NyanActionSheetRow","sourcePath":"components/surfaces/NyanActionSheetRow.jsx"},{"name":"NyanBottomSheet","sourcePath":"components/surfaces/NyanBottomSheet.jsx"},{"name":"NyanDialog","sourcePath":"components/surfaces/NyanDialog.jsx"},{"name":"NyanEmptyState","sourcePath":"components/surfaces/NyanEmptyState.jsx"},{"name":"NyanFAB","sourcePath":"components/surfaces/NyanFAB.jsx"},{"name":"NyanInfoCard","sourcePath":"components/surfaces/NyanInfoCard.jsx"},{"name":"NyanListRow","sourcePath":"components/surfaces/NyanListRow.jsx"},{"name":"NyanOptionSheet","sourcePath":"components/surfaces/NyanOptionSheet.jsx"},{"name":"NyanResponse","sourcePath":"components/surfaces/NyanResponse.jsx"},{"name":"NyanRowGroup","sourcePath":"components/surfaces/NyanRowGroup.jsx"}],"sourceHashes":{"brand/nyan-mark.jsx":"dc3409626c1d","components/cards/BookListRow.jsx":"1c9a64ad04a7","components/cards/NyanBookGridCard.jsx":"e42b6c6b9c4b","components/cards/NyanBookmarkCard.jsx":"43737516a9e3","components/cards/NyanContinueReadingCard.jsx":"a8e8f2101577","components/navigation/NyanPageHeader.jsx":"15d362ad06f2","components/navigation/NyanSectionHeader.jsx":"a2e31fc2700e","components/primitives/Checkbox.jsx":"a45a8ce73268","components/primitives/Icon.jsx":"3700fcab2dda","components/primitives/NyanPrimaryButton.jsx":"a2d12459f656","components/primitives/NyanSlider.jsx":"a21d05bfa5fa","components/primitives/NyanSwitch.jsx":"bc4c42d8cf48","components/primitives/PillButton.jsx":"5c71a9024fd6","components/primitives/ProgressBar.jsx":"5cb3a5de9b70","components/primitives/SearchField.jsx":"5bf5d520dec0","components/primitives/SegmentedTabControl.jsx":"6b51c1d2a1db","components/primitives/Skeleton.jsx":"4d81823d1a03","components/primitives/TextField.jsx":"d7c7fad507f3","components/reader/DisplayPanel.jsx":"f650d0f3d177","components/reader/DockFooter.jsx":"4ae790e3fcf4","components/reader/HighlightSwatchRow.jsx":"b4e26de2b0da","components/reader/InBookSearch.jsx":"498631f506e9","components/reader/Knob.jsx":"fbcee9bbe400","components/reader/OnePaperDock.jsx":"b80bf5c5eecb","components/reader/PdfControls.jsx":"9a4d717f55a1","components/reader/ReaderChapterList.jsx":"4c74b797cc42","components/reader/ReaderParagraph.jsx":"f28b79a1bee6","components/reader/ReaderSettingsBody.jsx":"4956c82986c5","components/reader/TTSPlayer.jsx":"beaabf507734","components/reader/TextPanel.jsx":"aeb9bf8d037c","components/reader/TextSelectionMenu.jsx":"ea57210bdd3e","components/reader/ThemePanel.jsx":"56c713f3cc96","components/security/PinDots.jsx":"b3b2c1346ede","components/security/PinPad.jsx":"7bd58ce93912","components/surfaces/NyanActionSheetRow.jsx":"b37e872c7f4a","components/surfaces/NyanBottomSheet.jsx":"1887a0a174ee","components/surfaces/NyanDialog.jsx":"7b689e35f6d6","components/surfaces/NyanEmptyState.jsx":"ca8380515877","components/surfaces/NyanFAB.jsx":"2c8fc01dbdfe","components/surfaces/NyanInfoCard.jsx":"934a030de5b6","components/surfaces/NyanListRow.jsx":"5a279c72d2d7","components/surfaces/NyanOptionSheet.jsx":"3f1336ef378b","components/surfaces/NyanResponse.jsx":"20cc95129368","components/surfaces/NyanRowGroup.jsx":"ac9e1dbb9e9a","prototype/app.jsx":"e977c7914f4c","screens/bundle1.jsx":"463954c7c3fc","screens/bundle2-screens.jsx":"1b00c01ddca1","screens/bundle3.jsx":"cb77f2da41f4","screens/bundle4.jsx":"2ad01f02e7d5"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"NyanReadDesignSystem_019e2f","components":[{"name":"BookListRow","sourcePath":"components/cards/BookListRow.jsx"},{"name":"NyanBookGridCard","sourcePath":"components/cards/NyanBookGridCard.jsx"},{"name":"NyanBookmarkCard","sourcePath":"components/cards/NyanBookmarkCard.jsx"},{"name":"NyanContinueReadingCard","sourcePath":"components/cards/NyanContinueReadingCard.jsx"},{"name":"NyanPageHeader","sourcePath":"components/navigation/NyanPageHeader.jsx"},{"name":"NyanSectionHeader","sourcePath":"components/navigation/NyanSectionHeader.jsx"},{"name":"Checkbox","sourcePath":"components/primitives/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/primitives/Icon.jsx"},{"name":"NyanPrimaryButton","sourcePath":"components/primitives/NyanPrimaryButton.jsx"},{"name":"NyanSlider","sourcePath":"components/primitives/NyanSlider.jsx"},{"name":"NyanSwitch","sourcePath":"components/primitives/NyanSwitch.jsx"},{"name":"PillButton","sourcePath":"components/primitives/PillButton.jsx"},{"name":"ProgressBar","sourcePath":"components/primitives/ProgressBar.jsx"},{"name":"SearchField","sourcePath":"components/primitives/SearchField.jsx"},{"name":"SegmentedTabControl","sourcePath":"components/primitives/SegmentedTabControl.jsx"},{"name":"Skeleton","sourcePath":"components/primitives/Skeleton.jsx"},{"name":"TextField","sourcePath":"components/primitives/TextField.jsx"},{"name":"DisplayPanel","sourcePath":"components/reader/DisplayPanel.jsx"},{"name":"DockFooter","sourcePath":"components/reader/DockFooter.jsx"},{"name":"HighlightSwatchRow","sourcePath":"components/reader/HighlightSwatchRow.jsx"},{"name":"InBookSearch","sourcePath":"components/reader/InBookSearch.jsx"},{"name":"Knob","sourcePath":"components/reader/Knob.jsx"},{"name":"OnePaperDock","sourcePath":"components/reader/OnePaperDock.jsx"},{"name":"PdfControls","sourcePath":"components/reader/PdfControls.jsx"},{"name":"ReaderChapterList","sourcePath":"components/reader/ReaderChapterList.jsx"},{"name":"ReaderParagraph","sourcePath":"components/reader/ReaderParagraph.jsx"},{"name":"ReaderSettingsBody","sourcePath":"components/reader/ReaderSettingsBody.jsx"},{"name":"TTSPlayer","sourcePath":"components/reader/TTSPlayer.jsx"},{"name":"TextPanel","sourcePath":"components/reader/TextPanel.jsx"},{"name":"TextSelectionMenu","sourcePath":"components/reader/TextSelectionMenu.jsx"},{"name":"ThemePanel","sourcePath":"components/reader/ThemePanel.jsx"},{"name":"PinDots","sourcePath":"components/security/PinDots.jsx"},{"name":"PinPad","sourcePath":"components/security/PinPad.jsx"},{"name":"NyanActionSheetRow","sourcePath":"components/surfaces/NyanActionSheetRow.jsx"},{"name":"NyanBottomSheet","sourcePath":"components/surfaces/NyanBottomSheet.jsx"},{"name":"NyanDialog","sourcePath":"components/surfaces/NyanDialog.jsx"},{"name":"NyanEmptyState","sourcePath":"components/surfaces/NyanEmptyState.jsx"},{"name":"NyanFAB","sourcePath":"components/surfaces/NyanFAB.jsx"},{"name":"NyanInfoCard","sourcePath":"components/surfaces/NyanInfoCard.jsx"},{"name":"NyanListRow","sourcePath":"components/surfaces/NyanListRow.jsx"},{"name":"NyanOptionSheet","sourcePath":"components/surfaces/NyanOptionSheet.jsx"},{"name":"NyanResponse","sourcePath":"components/surfaces/NyanResponse.jsx"},{"name":"NyanRowGroup","sourcePath":"components/surfaces/NyanRowGroup.jsx"}],"sourceHashes":{"brand/nyan-mark.jsx":"dc3409626c1d","components/cards/BookListRow.jsx":"1c9a64ad04a7","components/cards/NyanBookGridCard.jsx":"e42b6c6b9c4b","components/cards/NyanBookmarkCard.jsx":"43737516a9e3","components/cards/NyanContinueReadingCard.jsx":"a8e8f2101577","components/navigation/NyanPageHeader.jsx":"15d362ad06f2","components/navigation/NyanSectionHeader.jsx":"a2e31fc2700e","components/primitives/Checkbox.jsx":"a45a8ce73268","components/primitives/Icon.jsx":"3700fcab2dda","components/primitives/NyanPrimaryButton.jsx":"a2d12459f656","components/primitives/NyanSlider.jsx":"a21d05bfa5fa","components/primitives/NyanSwitch.jsx":"bc4c42d8cf48","components/primitives/PillButton.jsx":"5c71a9024fd6","components/primitives/ProgressBar.jsx":"5cb3a5de9b70","components/primitives/SearchField.jsx":"5bf5d520dec0","components/primitives/SegmentedTabControl.jsx":"6b51c1d2a1db","components/primitives/Skeleton.jsx":"4d81823d1a03","components/primitives/TextField.jsx":"d7c7fad507f3","components/reader/DisplayPanel.jsx":"f650d0f3d177","components/reader/DockFooter.jsx":"4ae790e3fcf4","components/reader/HighlightSwatchRow.jsx":"b4e26de2b0da","components/reader/InBookSearch.jsx":"498631f506e9","components/reader/Knob.jsx":"fbcee9bbe400","components/reader/OnePaperDock.jsx":"b80bf5c5eecb","components/reader/PdfControls.jsx":"9a4d717f55a1","components/reader/ReaderChapterList.jsx":"4c74b797cc42","components/reader/ReaderParagraph.jsx":"f28b79a1bee6","components/reader/ReaderSettingsBody.jsx":"4956c82986c5","components/reader/TTSPlayer.jsx":"beaabf507734","components/reader/TextPanel.jsx":"aeb9bf8d037c","components/reader/TextSelectionMenu.jsx":"ea57210bdd3e","components/reader/ThemePanel.jsx":"56c713f3cc96","components/security/PinDots.jsx":"b3b2c1346ede","components/security/PinPad.jsx":"7bd58ce93912","components/surfaces/NyanActionSheetRow.jsx":"b37e872c7f4a","components/surfaces/NyanBottomSheet.jsx":"1887a0a174ee","components/surfaces/NyanDialog.jsx":"7b689e35f6d6","components/surfaces/NyanEmptyState.jsx":"ca8380515877","components/surfaces/NyanFAB.jsx":"2c8fc01dbdfe","components/surfaces/NyanInfoCard.jsx":"934a030de5b6","components/surfaces/NyanListRow.jsx":"5a279c72d2d7","components/surfaces/NyanOptionSheet.jsx":"3f1336ef378b","components/surfaces/NyanResponse.jsx":"20cc95129368","components/surfaces/NyanRowGroup.jsx":"ac9e1dbb9e9a","prototype/app.jsx":"e977c7914f4c","screens/bundle1.jsx":"463954c7c3fc","screens/bundle2-screens.jsx":"1b00c01ddca1","screens/bundle3.jsx":"cb77f2da41f4","screens/bundle4.jsx":"19ce26319d9f"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -9191,66 +9191,91 @@ const U15Artboard = ({
 const PinDots = ({
   count,
   hasError,
-  dotColor
+  fill,
+  ring,
+  errorColor
 }) => /*#__PURE__*/React.createElement("div", {
   style: {
     display: "flex",
-    gap: 20,
+    gap: 18,
     justifyContent: "center",
-    animation: hasError ? "pin-shake 320ms ease" : "none"
+    animation: hasError ? "pin-shake 360ms var(--ease-paper)" : "none"
   }
-}, [0, 1, 2, 3].map(i => /*#__PURE__*/React.createElement("div", {
-  key: i,
-  style: {
-    width: 16,
-    height: 16,
-    borderRadius: "50%",
-    background: i < count ? dotColor : "transparent",
-    border: `1.5px solid ${hasError ? `color-mix(in srgb, ${dotColor} 38%, transparent)` : `color-mix(in srgb, ${dotColor} 56%, transparent)`}`,
-    transition: "background 120ms ease"
-  }
-})));
+}, [0, 1, 2, 3].map(i => {
+  const on = i < count;
+  const c = hasError ? errorColor : fill;
+  return /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      width: 14,
+      height: 14,
+      borderRadius: "50%",
+      background: on ? c : "transparent",
+      border: `1.5px solid ${on ? c : ring}`,
+      transform: on ? "scale(1)" : "scale(0.86)",
+      transition: "background 150ms var(--ease-paper), border-color 150ms ease, transform 150ms var(--ease-paper)"
+    }
+  });
+}));
 const NumPad = ({
   onDigit,
-  onDelete,
-  keyColor
+  onDelete
 }) => {
-  const keys = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [null, 0, "⌫"]];
+  const keys = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [null, 0, "del"]];
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       flexDirection: "column",
-      gap: 12,
+      gap: 16,
       alignItems: "center"
     }
   }, keys.map((row, ri) => /*#__PURE__*/React.createElement("div", {
     key: ri,
     style: {
       display: "flex",
-      gap: 16
+      gap: 18
     }
   }, row.map((k, ki) => k === null ? /*#__PURE__*/React.createElement("div", {
     key: "empty",
     style: {
-      width: 72,
-      height: 72
+      width: 74,
+      height: 74
     }
-  }) : /*#__PURE__*/React.createElement("button", {
-    key: k,
-    onClick: () => k === "⌫" ? onDelete() : onDigit(k),
+  }) : k === "del" ? /*#__PURE__*/React.createElement("button", {
+    key: "del",
+    onClick: onDelete,
+    className: "nyan-pinkey-ghost",
     style: {
       all: "unset",
       cursor: "pointer",
-      width: 72,
-      height: 72,
+      width: 74,
+      height: 74,
       borderRadius: "50%",
-      background: `color-mix(in srgb, ${keyColor} 10%, transparent)`,
-      border: `1px solid color-mix(in srgb, ${keyColor} 16%, transparent)`,
       display: "grid",
       placeItems: "center",
-      font: k === "⌫" ? "400 22px/1 var(--font-ui)" : "400 26px/1 var(--font-ui)",
-      color: keyColor,
-      transition: "background 100ms ease"
+      color: "var(--nyan-text-muted)"
+    }
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "ph ph-backspace",
+    style: {
+      fontSize: 23
+    }
+  })) : /*#__PURE__*/React.createElement("button", {
+    key: k,
+    onClick: () => onDigit(k),
+    className: "nyan-pinkey",
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      width: 74,
+      height: 74,
+      borderRadius: "50%",
+      background: "var(--nyan-surface)",
+      boxShadow: "var(--shadow-subtle)",
+      display: "grid",
+      placeItems: "center",
+      font: "400 27px/1 var(--font-ui)",
+      color: "var(--nyan-text)"
     }
   }, k)))));
 };
@@ -9261,95 +9286,124 @@ const PinOverlay = ({
 }) => {
   const [digits, setDigits] = useState(hasError ? [1, 2, 3, 4] : []);
   const titles = {
-    setup: "Set PIN",
-    verify: "Enter PIN",
+    setup: "Set a PIN",
+    verify: "Enter your PIN",
     change: "New PIN",
-    confirm: "Confirm PIN"
+    confirm: "Confirm your PIN"
+  };
+  const subs = {
+    setup: "Choose a 4-digit code to keep your library private.",
+    verify: "Enter your code to open your shelf.",
+    change: "Choose a new 4-digit code.",
+    confirm: "Re-enter your code to confirm."
   };
   const onDigit = d => setDigits(p => p.length < 4 ? [...p, d] : p);
   const onDelete = () => setDigits(p => p.slice(0, -1));
 
-  // Dark = ink-night takeover; Light = warm-paper takeover. Same layout, themed.
-  const bg = dark ? "#1D211E" : "var(--nyan-bg)";
-  const fg = dark ? "#E8E1D5" : "var(--nyan-text)";
-  const subtle = dark ? "color-mix(in srgb, #E8E1D5 52%, transparent)" : "var(--nyan-text-muted)";
-  const lockTint = dark ? "color-mix(in srgb, #E8E1D5 12%, transparent)" : "color-mix(in srgb, var(--nyan-primary) 12%, transparent)";
-  const lockIcon = dark ? "#E8E1D5" : "var(--nyan-primary-deep)";
+  // One Paper takeover — themed entirely by tokens (data-theme drives Sumi).
   return /*#__PURE__*/React.createElement("div", {
     "data-theme": dark ? "sumi" : undefined,
     style: {
       width: "100%",
       height: "100%",
-      background: bg,
+      background: "var(--nyan-bg)",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
       position: "relative",
-      gap: 0
+      padding: "0 28px"
     }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("style", null, `
+        .nyan-pinkey { transition: transform 150ms var(--ease-paper), box-shadow 200ms ease, background 150ms ease; }
+        .nyan-pinkey:hover { transform: translateY(-1px); box-shadow: var(--shadow-light-card); }
+        .nyan-pinkey:active { transform: scale(0.93); box-shadow: var(--shadow-grouped); background: color-mix(in srgb, var(--nyan-primary) 14%, var(--nyan-surface)); }
+        .nyan-pinkey-ghost { transition: color 150ms ease, transform 150ms var(--ease-paper); }
+        .nyan-pinkey-ghost:hover { color: var(--nyan-text-secondary); }
+        .nyan-pinkey-ghost:active { transform: scale(0.9); }
+        .nyan-pin-cancel { transition: background 150ms ease; }
+        .nyan-pin-cancel:hover { background: color-mix(in srgb, var(--nyan-text) 7%, transparent); }
+      `), /*#__PURE__*/React.createElement("button", {
+    className: "nyan-pin-cancel",
     style: {
       all: "unset",
       cursor: "pointer",
       position: "absolute",
-      top: 14,
-      right: 14,
-      width: 44,
-      height: 44,
+      top: 16,
+      right: 16,
+      width: 42,
+      height: 42,
+      borderRadius: "50%",
       display: "grid",
       placeItems: "center"
     }
   }, /*#__PURE__*/React.createElement("i", {
     className: "ph ph-x",
     style: {
-      fontSize: 22,
-      color: subtle
+      fontSize: 20,
+      color: "var(--nyan-text-muted)"
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 56,
-      height: 56,
-      borderRadius: "var(--r-card-nested)",
-      background: lockTint,
+      width: 72,
+      height: 72,
+      borderRadius: "var(--r-panel)",
+      background: "var(--nyan-surface)",
+      boxShadow: "var(--shadow-light-card)",
       display: "grid",
       placeItems: "center",
-      marginBottom: 22
+      marginBottom: 28
     }
   }, /*#__PURE__*/React.createElement("i", {
-    className: "ph ph-lock-simple",
+    className: "ph-fill ph-lock-key",
     style: {
-      fontSize: 26,
-      color: lockIcon
+      fontSize: 30,
+      color: "var(--nyan-primary)"
     }
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      font: "500 20px/1.2 var(--font-ui)",
-      color: fg,
-      letterSpacing: "0.4px",
-      marginBottom: hasError ? 16 : 48
+      font: "600 22px/1.25 var(--font-ui)",
+      color: "var(--nyan-text)",
+      letterSpacing: "-0.2px",
+      marginBottom: 8
     }
-  }, titles[mode]), hasError && /*#__PURE__*/React.createElement("div", {
+  }, titles[mode]), /*#__PURE__*/React.createElement("div", {
     style: {
-      font: "400 13px/1.3 var(--font-ui)",
-      color: subtle,
-      letterSpacing: "0.3px",
-      marginBottom: 20,
-      textAlign: "center"
+      font: "400 13.5px/1.45 var(--font-ui)",
+      color: "var(--nyan-text-muted)",
+      textAlign: "center",
+      maxWidth: 264,
+      textWrap: "balance",
+      marginBottom: hasError ? 22 : 40
     }
-  }, "PINs don't match \u2014 try again"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 48
-    }
-  }, /*#__PURE__*/React.createElement(PinDots, {
+  }, subs[mode]), /*#__PURE__*/React.createElement(PinDots, {
     count: digits.length,
     hasError: hasError,
-    dotColor: fg
-  })), /*#__PURE__*/React.createElement(NumPad, {
+    fill: "var(--nyan-primary)",
+    ring: "color-mix(in srgb, var(--nyan-text) 24%, transparent)",
+    errorColor: "var(--error-primary)"
+  }), hasError && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      marginTop: 16,
+      font: "400 13px/1.3 var(--font-ui)",
+      color: "var(--error-primary)"
+    }
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "ph-fill ph-warning-circle",
+    style: {
+      fontSize: 15
+    }
+  }), "PINs don\u2019t match \u2014 try again"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: hasError ? 30 : 46
+    }
+  }, /*#__PURE__*/React.createElement(NumPad, {
     onDigit: onDigit,
-    onDelete: onDelete,
-    keyColor: fg
-  }));
+    onDelete: onDelete
+  })));
 };
 
 /* ──────────────────────────────────────────────────────────────────────
