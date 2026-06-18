@@ -3,8 +3,8 @@ import 'package:nyan_read/core/theme/nyan_spacing.dart';
 import 'package:nyan_read/modules/bookshelf/widgets/segmented_tab_control.dart';
 
 /// Vertical inset above + below the track (drives the pinned sliver extent).
-/// Top = 0: gap above tabs comes entirely from NyanPageHeader's bottom padding (space12).
-/// Bottom = space12: matches the gap above so both sides are equal at 12pt.
+/// Top = 0: gap above tabs comes entirely from the toolbar's bottom padding (8pt).
+/// Bottom = space12: matches the visual gap below the strip before content.
 const double _kShelfTrackVerticalPaddingTop = 0;
 const double _kShelfTrackVerticalPaddingBottom = NyanSpacing.space12;
 
@@ -24,9 +24,8 @@ const double kBookshelfShelfToolbarPinnedExtent =
     _kShelfTrackVerticalPaddingBottom +
     _kShelfPinnedLayoutSlack;
 
-/// Bookshelf pinned tab strip. Per design spec the tab control is the only
-/// element in the pinned chrome; sort / view-mode / lock actions live in the
-/// [NyanPageHeader] action row above the scroll region.
+/// Bookshelf pinned tab strip. The tab control is the only element in the
+/// pinned chrome; toolbar actions live in the [_ShelfToolbarDelegate] above.
 class BookshelfShelfToolbar extends StatelessWidget {
   const BookshelfShelfToolbar({
     super.key,
@@ -66,7 +65,7 @@ class BookshelfShelfToolbar extends StatelessWidget {
   }
 }
 
-/// Pinned shelf strip: surface background + 1dp divider using [NyanTheme.divider].
+/// Pinned shelf strip: scaffold background colour, no bottom border.
 class BookshelfShelfPinnedHeaderDelegate extends SliverPersistentHeaderDelegate {
   BookshelfShelfPinnedHeaderDelegate({
     required this.extent,

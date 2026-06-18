@@ -4,25 +4,31 @@ import '../../theme/nyan_radius.dart';
 import '../../theme/nyan_spacing.dart';
 import '../nyan_theme_context.dart';
 
-/// Bordered square action button for page-header chrome — the design's
-/// `SquareAction` (BookshelfScreen U9): `surface` fill + `r-control` (14pt)
-/// rounded square + a 1px `divider` border, 44×44 min tap target.
+/// Bordered square action button for the bookshelf shelf toolbar — matches the
+/// design system's `ShelfSettingsBtn` / `ShelfToolBtn` (`_chrome.jsx`):
+/// `surface` fill + `r-control` (14pt) + 1px `divider@44%` border, 44×44 tap
+/// target, 18px icon in `textSecondary`.
 ///
-/// Distinct from [NyanRecessedIconButton] (borderless, recessed `surfaceMuted`
-/// fill) which is used for reader chrome / inset toolbars. Header actions
-/// "sit on" the page as outlined surface squares; they do not recess into it.
+/// Pass `isActive: true` to render the `ShelfToolBtn` active state (sort
+/// engaged, shelf unlocked): `primary@13%` bg tint, `primary@42%` border,
+/// `primaryDeep` icon.
 class NyanSquareActionButton extends StatelessWidget {
   const NyanSquareActionButton({
     super.key,
     required this.icon,
     required this.tooltip,
     required this.onPressed,
-    this.iconSize = NyanSpacing.space20,
+    this.isActive = false,
+    this.iconSize = 18,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback? onPressed;
+
+  /// Renders the active (tinted) state per `ShelfToolBtn active` spec.
+  final bool isActive;
+
   final double iconSize;
 
   @override
@@ -30,9 +36,19 @@ class NyanSquareActionButton extends StatelessWidget {
     final nyan = context.nyanTheme;
     final isEnabled = onPressed != null;
 
-    final iconColor = isEnabled
-        ? nyan.textPrimary
-        : nyan.textPrimary.withValues(alpha: 0.32);
+    final Color bgColor = isActive
+        ? Color.lerp(nyan.surface, nyan.primary, 0.13)!
+        : nyan.surface;
+
+    final Color borderColor = isActive
+        ? nyan.primary.withValues(alpha: 0.42)
+        : nyan.divider.withValues(alpha: 0.44);
+
+    final Color iconColor = isActive
+        ? nyan.primaryDeep
+        : (isEnabled
+            ? nyan.textSecondary
+            : nyan.textSecondary.withValues(alpha: 0.32));
 
     final radius = BorderRadius.circular(NyanRadius.control);
 
@@ -43,9 +59,9 @@ class NyanSquareActionButton extends StatelessWidget {
       ),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: nyan.surface,
+        color: bgColor,
         borderRadius: radius,
-        border: Border.all(color: nyan.divider.withValues(alpha: 0.44), width: 1),
+        border: Border.all(color: borderColor, width: 1),
       ),
       child: Icon(icon, size: iconSize, color: iconColor),
     );

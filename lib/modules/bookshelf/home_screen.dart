@@ -651,64 +651,37 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
     return CustomScrollView(
       slivers: [
+        // Spec `ShelfToolbar` (_chrome.jsx): gear (left) · spacer · search+sort+view+lock (right).
+        // Pinned so it never scrolls away — both toolbar and tab strip stay fixed.
         if (showHeaderSections)
-          SliverToBoxAdapter(
-            child: NyanPageHeader(
-              // Plain "Bookshelf" per BookshelfScreen U9; the mascot wordmark
-              // is reserved for Splash + About (design README).
-              title: loc.bookshelf,
-              actions: [
-                // Sort
-                NyanSquareActionButton(
-                  icon: NyanIcons.sort,
-                  tooltip: loc.sortBy,
-                  onPressed: () => _showSortMenu(context),
-                ),
-                // View-mode toggle — icon shows the layout you'll switch TO.
-                Builder(
-                  builder: (context) {
-                    final isGridView = _prefs.viewMode == ViewMode.grid;
-                    return NyanSquareActionButton(
-                      icon: isGridView
-                          ? NyanIcons.viewList
-                          : NyanIcons.viewGrid,
-                      tooltip: isGridView ? loc.listView : loc.gridView,
-                      onPressed: () async {
-                        await _prefs.setViewMode(
-                          isGridView ? ViewMode.list : ViewMode.grid,
-                        );
-                        setState(() {});
-                      },
-                    );
-                  },
-                ),
-                // Privacy lock (Pro only)
-                if (featureManager.isPro)
-                  NyanSquareActionButton(
-                    icon: featureManager.isPrivateShelfUnlocked
-                        ? NyanIcons.lockOpen
-                        : NyanIcons.lock,
-                    tooltip: featureManager.isPrivateShelfUnlocked
-                        ? loc.lockPrivacyShelf
-                        : loc.unlockPrivacyShelf,
-                    onPressed: () => _handlePrivacyLock(context),
-                  ),
-                // Settings
-                NyanSquareActionButton(
-                  tooltip: loc.settingsTitle,
-                  icon: NyanIcons.settings,
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SettingsPage()),
-                  ).then((_) => setState(() {})),
-                ),
-              ],
-              padding: const EdgeInsets.fromLTRB(
-                NyanSpacing.space4,
-                0,
-                NyanSpacing.space4,
-                NyanSpacing.space12,
-              ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _ShelfToolbarDelegate(
+              isGridView: _prefs.viewMode == ViewMode.grid,
+              isSortActive: _prefs.sortBy != SortBy.recency || _prefs.isAscending,
+              isPro: featureManager.isPro,
+              isPrivacyUnlocked: featureManager.isPrivateShelfUnlocked,
+              sortTooltip: loc.sortBy,
+              listViewTooltip: loc.listView,
+              gridViewTooltip: loc.gridView,
+              lockTooltip: featureManager.isPrivateShelfUnlocked
+                  ? loc.lockPrivacyShelf
+                  : loc.unlockPrivacyShelf,
+              settingsTooltip: loc.settingsTitle,
+              onSearch: () {}, // search not yet implemented
+              onSort: () => _showSortMenu(context),
+              onToggleView: () async {
+                final isGrid = _prefs.viewMode == ViewMode.grid;
+                await _prefs.setViewMode(
+                  isGrid ? ViewMode.list : ViewMode.grid,
+                );
+                setState(() {});
+              },
+              onPrivacyLock: () => _handlePrivacyLock(context),
+              onSettings: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsPage()),
+              ).then((_) => setState(() {})),
             ),
           ),
         // Pinned shelf switcher sits directly under the title, above the
@@ -782,9 +755,11 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             children: [
               SafeArea(
                 child: Padding(
+                  // No top padding: the pinned toolbar SliverPersistentHeader
+                  // provides the visual separation below the status bar.
                   padding: const EdgeInsets.fromLTRB(
                     NyanShelfUi.bookshelfPageHorizontalPadding,
-                    NyanSpacing.space12,
+                    0,
                     NyanShelfUi.bookshelfPageHorizontalPadding,
                     0,
                   ),
@@ -1471,6 +1446,128 @@ class _DeleteBooksSheetContent extends StatelessWidget {
     );
   }
 }
+
+// ── Shelf toolbar pinned delegate ─────────────────────────────────────────────
+
+/// Pinned toolbar row above the shelf tab strip.
+///
+/// Spec `ShelfToolbar` (_chrome.jsx): Settings gear on the left; flex spacer;
+/// Search · Sort · View · Lock (Pro only) on the right. Gap between trailing
+/// buttons = 6pt; outer horizontal padding 4pt (+ 12pt scaffold inset = 16pt
+/// screen edge, matching spec `"14px 16px 8px"` toolbar padding).
+class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
+  const _ShelfToolbarDelegate({
+    required this.isGridView,
+    required this.isSortActive,
+    required this.isPro,
+    required this.isPrivacyUnlocked,
+    required this.sortTooltip,
+    required this.listViewTooltip,
+    required this.gridViewTooltip,
+    required this.lockTooltip,
+    required this.settingsTooltip,
+    required this.onSearch,
+    required this.onSort,
+    required this.onToggleView,
+    required this.onPrivacyLock,
+    required this.onSettings,
+  });
+
+  final bool isGridView;
+  final bool isSortActive;
+  final bool isPro;
+  final bool isPrivacyUnlocked;
+  final String sortTooltip;
+  final String listViewTooltip;
+  final String gridViewTooltip;
+  final String lockTooltip;
+  final String settingsTooltip;
+  final VoidCallback onSearch;
+  final VoidCallback onSort;
+  final VoidCallback onToggleView;
+  final VoidCallback onPrivacyLock;
+  final VoidCallback onSettings;
+
+  // 14pt top + 44pt buttons + 8pt bottom = 66pt (spec `ShelfToolbar` padding).
+  static const double _kHeight = 66;
+
+  @override
+  double get minExtent => _kHeight;
+
+  @override
+  double get maxExtent => _kHeight;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Material(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      // 4pt inner + 12pt scaffold outer = 16pt from screen edge (spec: 16px).
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          NyanSpacing.space4,
+          14,
+          NyanSpacing.space4,
+          8,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            NyanSquareActionButton(
+              icon: NyanIcons.settings,
+              tooltip: settingsTooltip,
+              onPressed: onSettings,
+            ),
+            const Spacer(),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                NyanSquareActionButton(
+                  icon: NyanIcons.search,
+                  tooltip: 'Search',
+                  onPressed: onSearch,
+                ),
+                const SizedBox(width: 6),
+                NyanSquareActionButton(
+                  icon: NyanIcons.sort,
+                  tooltip: sortTooltip,
+                  isActive: isSortActive,
+                  onPressed: onSort,
+                ),
+                const SizedBox(width: 6),
+                NyanSquareActionButton(
+                  icon: isGridView ? NyanIcons.viewRows : NyanIcons.viewGrid,
+                  tooltip: isGridView ? listViewTooltip : gridViewTooltip,
+                  onPressed: onToggleView,
+                ),
+                if (isPro) ...[
+                  const SizedBox(width: 6),
+                  NyanSquareActionButton(
+                    icon: isPrivacyUnlocked
+                        ? NyanIcons.lockOpen
+                        : NyanIcons.lock,
+                    tooltip: lockTooltip,
+                    isActive: isPrivacyUnlocked,
+                    onPressed: onPrivacyLock,
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _ShelfToolbarDelegate old) {
+    return isGridView != old.isGridView ||
+        isSortActive != old.isSortActive ||
+        isPro != old.isPro ||
+        isPrivacyUnlocked != old.isPrivacyUnlocked;
+  }
+}
+
+// ── Imported book source ───────────────────────────────────────────────────────
 
 class _ImportedBookSource {
   final String sourceLocator;

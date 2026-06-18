@@ -128,6 +128,10 @@ class NyanIcons {
 
   // ── View / Visual ───────────────────────────────────────────────────────
   static const IconData viewList = PhosphorIconsRegular.listBullets;
+  /// Compact row-bar icon used for the bookshelf toolbar view-toggle button
+  /// (spec `_chrome.jsx ShelfToolBtn`: `ph-rows`). Distinct from [viewList]
+  /// (`ph-list-bullets`) which carries bullet points the toolbar spec omits.
+  static const IconData viewRows = PhosphorIconsRegular.rows;
   static const IconData viewGrid = PhosphorIconsRegular.squaresFour;
   static const IconData sort = PhosphorIconsRegular.arrowsDownUp;
   static const IconData sortAscending = PhosphorIconsRegular.sortAscending;
