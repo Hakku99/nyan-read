@@ -179,44 +179,61 @@ const U15Artboard = ({ dark, startIndex = 2 }) => {
    Modes: setup · verify (error) · change
    ────────────────────────────────────────────────────────────────────── */
 const PinDots = ({ count, hasError, fill, ring, errorColor }) => (
-  <div style={{ display: "flex", gap: 18, justifyContent: "center", animation: hasError ? "pin-shake 360ms var(--ease-paper)" : "none" }}>
+  <div style={{ display: "flex", gap: 17, justifyContent: "center", animation: hasError ? "pin-shake 360ms var(--ease-paper)" : "none" }}>
     {[0,1,2,3].map(i => {
       const on = i < count;
       const c = hasError ? errorColor : fill;
       return (
-        <div key={i} style={{ width: 14, height: 14, borderRadius: "50%",
-          background: on ? c : "transparent",
-          border: `1.5px solid ${on ? c : ring}`,
-          transform: on ? "scale(1)" : "scale(0.86)",
-          transition: "background 150ms var(--ease-paper), border-color 150ms ease, transform 150ms var(--ease-paper)" }} />
+        <div key={i} style={{ position: "relative", width: 13, height: 13, display: "grid", placeItems: "center" }}>
+          {/* soft halo blooms as the digit lands */}
+          <div style={{ position: "absolute", inset: -6, borderRadius: "50%",
+            background: `color-mix(in srgb, ${c} 16%, transparent)`,
+            transform: on ? "scale(1)" : "scale(0.4)", opacity: on ? 1 : 0,
+            transition: "transform 220ms var(--ease-paper), opacity 220ms ease" }} />
+          <div style={{ position: "relative", width: 13, height: 13, borderRadius: "50%",
+            background: on ? c : "transparent",
+            border: `1.5px solid ${on ? c : ring}`,
+            transform: on ? "scale(1)" : "scale(0.8)",
+            transition: "background 160ms var(--ease-paper), border-color 160ms ease, transform 160ms var(--ease-paper)" }} />
+        </div>
       );
     })}
   </div>
 );
 
-const NumPad = ({ onDigit, onDelete }) => {
-  const keys = [[1,2,3],[4,5,6],[7,8,9],[null,0,"del"]];
+const NumPad = ({ onDigit, onDelete, showBiometric }) => {
+  const keys = [[1,2,3],[4,5,6],[7,8,9],["bio",0,"del"]];
+  const ghost = { all: "unset", cursor: "pointer", width: 74, height: 74, borderRadius: "50%",
+    display: "grid", placeItems: "center", color: "var(--nyan-text-muted)" };
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 15, alignItems: "center" }}>
       {keys.map((row, ri) => (
-        <div key={ri} style={{ display: "flex", gap: 18 }}>
-          {row.map((k, ki) => k === null ? (
-            <div key="empty" style={{ width: 74, height: 74 }} />
-          ) : k === "del" ? (
-            <button key="del" onClick={onDelete} className="nyan-pinkey-ghost"
-              style={{ all: "unset", cursor: "pointer", width: 74, height: 74, borderRadius: "50%",
-                display: "grid", placeItems: "center", color: "var(--nyan-text-muted)" }}>
-              <i className="ph ph-backspace" style={{ fontSize: 23 }} />
-            </button>
-          ) : (
-            <button key={k} onClick={() => onDigit(k)} className="nyan-pinkey"
-              style={{ all: "unset", cursor: "pointer", width: 74, height: 74, borderRadius: "50%",
-                background: "var(--nyan-surface)", boxShadow: "var(--shadow-subtle)",
-                display: "grid", placeItems: "center",
-                font: "400 27px/1 var(--font-ui)", color: "var(--nyan-text)" }}>
-              {k}
-            </button>
-          ))}
+        <div key={ri} style={{ display: "flex", gap: 20 }}>
+          {row.map((k) => {
+            if (k === "bio") {
+              return showBiometric ? (
+                <button key="bio" onClick={() => onDigit(1)} className="nyan-pinkey-ghost" style={ghost} aria-label="Unlock with biometrics">
+                  <i className="ph ph-fingerprint" style={{ fontSize: 27, color: "var(--nyan-primary)" }} />
+                </button>
+              ) : <div key="bio" style={{ width: 74, height: 74 }} />;
+            }
+            if (k === "del") {
+              return (
+                <button key="del" onClick={onDelete} className="nyan-pinkey-ghost" style={ghost} aria-label="Delete">
+                  <i className="ph ph-backspace" style={{ fontSize: 24 }} />
+                </button>
+              );
+            }
+            return (
+              <button key={k} onClick={() => onDigit(k)} className="nyan-pinkey"
+                style={{ all: "unset", cursor: "pointer", width: 74, height: 74, borderRadius: "50%",
+                  background: "var(--nyan-surface)", boxShadow: "var(--shadow-subtle)",
+                  display: "grid", placeItems: "center",
+                  font: "500 27px/1 var(--font-ui)", color: "var(--nyan-text)" }}>
+                {k}
+              </button>
+            );
+          })}
         </div>
       ))}
     </div>
@@ -227,10 +244,10 @@ const PinOverlay = ({ mode = "verify", hasError, dark = true }) => {
   const [digits, setDigits] = useState(hasError ? [1,2,3,4] : []);
   const titles = { setup: "Set a PIN", verify: "Enter your PIN", change: "New PIN", confirm: "Confirm your PIN" };
   const subs = {
-    setup:   "Choose a 4-digit code to keep your library private.",
-    verify:  "Enter your code to open your shelf.",
+    setup:   "Choose a 4-digit code to keep your private shelf for your eyes only.",
+    verify:  "Enter your code to open your private shelf.",
     change:  "Choose a new 4-digit code.",
-    confirm: "Re-enter your code to confirm.",
+    confirm: "Re-enter the code once more to confirm.",
   };
 
   const onDigit = (d) => setDigits(p => p.length < 4 ? [...p, d] : p);
@@ -238,52 +255,77 @@ const PinOverlay = ({ mode = "verify", hasError, dark = true }) => {
 
   // One Paper takeover — themed entirely by tokens (data-theme drives Sumi).
   return (
-    <div data-theme={dark ? "sumi" : undefined} style={{ width: "100%", height: "100%", background: "var(--nyan-bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", padding: "0 28px" }}>
+    <div data-theme={dark ? "sumi" : undefined} style={{ width: "100%", height: "100%", background: "var(--nyan-bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", padding: "0 28px", overflow: "hidden" }}>
       <style>{`
         .nyan-pinkey { transition: transform 150ms var(--ease-paper), box-shadow 200ms ease, background 150ms ease; }
         .nyan-pinkey:hover { transform: translateY(-1px); box-shadow: var(--shadow-light-card); }
-        .nyan-pinkey:active { transform: scale(0.93); box-shadow: var(--shadow-grouped); background: color-mix(in srgb, var(--nyan-primary) 14%, var(--nyan-surface)); }
+        .nyan-pinkey:active { transform: scale(0.93); box-shadow: var(--shadow-grouped); background: color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface)); }
         .nyan-pinkey-ghost { transition: color 150ms ease, transform 150ms var(--ease-paper); }
         .nyan-pinkey-ghost:hover { color: var(--nyan-text-secondary); }
         .nyan-pinkey-ghost:active { transform: scale(0.9); }
         .nyan-pin-cancel { transition: background 150ms ease; }
         .nyan-pin-cancel:hover { background: color-mix(in srgb, var(--nyan-text) 7%, transparent); }
+        .nyan-pin-link { transition: color 150ms ease; }
+        .nyan-pin-link:hover { color: var(--nyan-primary); }
       `}</style>
+
+      {/* Soft matcha bloom behind the medallion — paper-warm, very low alpha */}
+      <div style={{ position: "absolute", top: "13%", left: "50%", transform: "translateX(-50%)", width: 360, height: 360, borderRadius: "50%", pointerEvents: "none",
+        background: "radial-gradient(circle, color-mix(in srgb, var(--nyan-primary) 15%, transparent) 0%, transparent 68%)" }} />
 
       {/* Cancel X (top right) */}
       <button className="nyan-pin-cancel" style={{ all: "unset", cursor: "pointer", position: "absolute", top: 16, right: 16, width: 42, height: 42, borderRadius: "50%", display: "grid", placeItems: "center" }}>
         <i className="ph ph-x" style={{ fontSize: 20, color: "var(--nyan-text-muted)" }} />
       </button>
 
-      {/* Lock tile — floating surface plane, matcha glyph */}
-      <div style={{ width: 72, height: 72, borderRadius: "var(--r-panel)", background: "var(--nyan-surface)", boxShadow: "var(--shadow-light-card)", display: "grid", placeItems: "center", marginBottom: 28 }}>
-        <i className="ph-fill ph-lock-key" style={{ fontSize: 30, color: "var(--nyan-primary)" }} />
-      </div>
-
-      {/* Title + supporting line */}
-      <div style={{ font: "600 22px/1.25 var(--font-ui)", color: "var(--nyan-text)", letterSpacing: "-0.2px", marginBottom: 8 }}>
-        {titles[mode]}
-      </div>
-      <div style={{ font: "400 13.5px/1.45 var(--font-ui)", color: "var(--nyan-text-muted)", textAlign: "center", maxWidth: 264, textWrap: "balance", marginBottom: hasError ? 22 : 40 }}>
-        {subs[mode]}
-      </div>
-
-      {/* PIN dots */}
-      <PinDots count={digits.length} hasError={hasError}
-        fill="var(--nyan-primary)"
-        ring="color-mix(in srgb, var(--nyan-text) 24%, transparent)"
-        errorColor="var(--error-primary)" />
-
-      {/* Error hint */}
-      {hasError && (
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 16, font: "400 13px/1.3 var(--font-ui)", color: "var(--error-primary)" }}>
-          <i className="ph-fill ph-warning-circle" style={{ fontSize: 15 }} />
-          PINs don’t match — try again
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+        {/* Lock medallion — concentric tile, matcha ring + fill glyph */}
+        <div style={{ position: "relative", width: 76, height: 76, marginBottom: 22, display: "grid", placeItems: "center" }}>
+          <div style={{ position: "absolute", inset: 0, borderRadius: "var(--radius-card)", background: "color-mix(in srgb, var(--nyan-primary) 11%, var(--nyan-surface))", boxShadow: "var(--shadow-light-card)" }} />
+          <div style={{ position: "absolute", inset: 0, borderRadius: "var(--radius-card)", border: "1px solid color-mix(in srgb, var(--nyan-primary) 26%, transparent)" }} />
+          <i className="ph-fill ph-lock-simple" style={{ position: "relative", fontSize: 31, color: "var(--nyan-primary)" }} />
         </div>
-      )}
 
-      <div style={{ marginTop: hasError ? 30 : 46 }}>
-        <NumPad onDigit={onDigit} onDelete={onDelete} />
+        {/* Eyebrow + title + supporting line */}
+        <div className="nyan-caption" style={{ marginBottom: 9 }}>Privacy Shelf</div>
+        <div style={{ font: "600 22px/1.25 var(--font-ui)", color: "var(--nyan-text)", letterSpacing: "-0.2px", marginBottom: 8 }}>
+          {titles[mode]}
+        </div>
+        <div style={{ font: "400 13.5px/1.45 var(--font-ui)", color: "var(--nyan-text-muted)", textAlign: "center", maxWidth: 270, textWrap: "balance", marginBottom: hasError ? 22 : 38 }}>
+          {subs[mode]}
+        </div>
+
+        {/* PIN dots */}
+        <PinDots count={digits.length} hasError={hasError}
+          fill="var(--nyan-primary)"
+          ring="color-mix(in srgb, var(--nyan-text) 26%, transparent)"
+          errorColor="var(--error-primary)" />
+
+        {/* Error hint */}
+        {hasError && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 16, font: "500 13px/1.3 var(--font-ui)", color: "var(--error-primary)" }}>
+            <i className="ph-fill ph-warning-circle" style={{ fontSize: 15 }} />
+            PINs don’t match — try again
+          </div>
+        )}
+
+        <div style={{ marginTop: hasError ? 28 : 42 }}>
+          <NumPad onDigit={onDigit} onDelete={onDelete} showBiometric={mode === "verify"} />
+        </div>
+
+        {/* Footer — contextual: forgot link (verify) or device-only reassurance (setup/confirm) */}
+        <div style={{ marginTop: 22, minHeight: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {mode === "verify" ? (
+            <button className="nyan-pin-link" style={{ all: "unset", cursor: "pointer", font: "500 13px/1 var(--font-ui)", color: "var(--nyan-primary-deep)" }}>
+              Forgot PIN?
+            </button>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, font: "400 12px/1 var(--font-ui)", color: "var(--nyan-text-muted)" }}>
+              <i className="ph ph-shield-check" style={{ fontSize: 14, color: "var(--nyan-primary)" }} />
+              Stored on this device only
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -535,7 +577,7 @@ const AdminPanel = ({ dark, isPro }) => {
 
 /* ──────────────────────────────────────────────────────────────────────
    U19 · BOOKSHELF SHELF TOOLBAR (PINNED HEADER)
-   NyanInfoCard wrapper + SegmentedTabControl + sort/view actions above
+   Recessed segmented track (canonical, matches U9) + sort/view actions above
    ────────────────────────────────────────────────────────────────────── */
 const BOOKS_SHELF = [
   { id: 1, title: "The Stillwater Diaries", author: "Matsuno Eri", fmt: "EPUB", pct: 42 },
@@ -562,18 +604,19 @@ const ShelfToolbarScreen = ({ dark, sort, isPro = false }) => {
       {/* Shared Shelf Toolbar — search · sort · view · privacy unlock (Pro only) */}
       <ShelfToolbar sort={sort} isPro={isPro} unlocked={isPro} onSearch={() => {}} />
 
-      {/* Pinned shelf toolbar — NyanInfoCard wrapper */}
+      {/* Pinned shelf toolbar — canonical recessed segmented track (matches U9).
+          Soft downward shadow lifts the pinned header above the scrolling list. */}
       <div style={{ padding: "0 16px 0", flexShrink: 0,
-        borderBottom: "1px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent)",
+        position: "relative", zIndex: 2,
+        boxShadow: "0 6px 14px -8px rgba(40,36,30,0.22)",
+        borderBottom: "1px solid color-mix(in srgb, var(--nyan-divider) 22%, transparent)",
         background: "var(--nyan-bg)" }}>
-        <div style={{ background: "var(--nyan-surface)", borderRadius: 16, border: "0.72px solid color-mix(in srgb, var(--nyan-divider) 36%, transparent)", padding: 12, marginBottom: 10 }}>
-          <div style={{ display: "flex", background: "color-mix(in srgb, var(--nyan-bg) 66%, var(--nyan-surface-muted))", borderRadius: 12, padding: 3, gap: 2, height: 40 }}>
-            {["Public Shelf", "Private Shelf"].map((t, i) => (
-              <button key={t} onClick={() => setTab(i)} style={{ all: "unset", cursor: "pointer", flex: 1, borderRadius: 9, background: tab === i ? "var(--nyan-surface)" : "transparent", boxShadow: tab === i ? "0 1px 3px rgba(0,0,0,0.06)" : "none", font: `${tab === i ? 600 : 500} 14px/1 var(--font-ui)`, color: tab === i ? "var(--nyan-text)" : "var(--nyan-text-muted)", display: "grid", placeItems: "center", transition: "background 160ms ease" }}>
-                {t}
-              </button>
-            ))}
-          </div>
+        <div style={{ display: "flex", background: "var(--nyan-surface-muted)", borderRadius: 14, padding: 3, gap: 2, marginBottom: 10 }}>
+          {["Public Shelf", "Private Shelf"].map((t, i) => (
+            <button key={t} onClick={() => setTab(i)} style={{ all: "unset", cursor: "pointer", flex: 1, height: 34, borderRadius: 11, background: tab === i ? "var(--nyan-surface)" : "transparent", boxShadow: tab === i ? "0 1px 3px rgba(0,0,0,0.06)" : "none", font: `${tab === i ? 600 : 500} 14px/1 var(--font-ui)`, color: tab === i ? "var(--nyan-text)" : "var(--nyan-text-muted)", display: "grid", placeItems: "center", transition: "background 160ms ease" }}>
+              {t}
+            </button>
+          ))}
         </div>
       </div>
 

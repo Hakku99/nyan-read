@@ -18,7 +18,7 @@
    Reader serif mode falls back to platform CJK serif (Songti SC / SimSun / Georgia).
    Upload the font file to assets/fonts/ to activate it; fallback stack renders until then. */
 
-/* Source Han Serif SC — awaiting font file upload */
+/* Source Han Serif SC — reading-mode serif (Regular + SemiBold bundled) */
 @font-face {
   font-family: "Source Han Serif SC";
   src: url("./assets/fonts/SourceHanSerifSC-Regular.otf") format("opentype");
@@ -27,8 +27,8 @@
 }
 @font-face {
   font-family: "Source Han Serif SC";
-  src: url("./assets/fonts/SourceHanSerifSC-Medium.otf") format("opentype");
-  font-weight: 500;
+  src: url("./assets/fonts/SourceHanSerifSC-SemiBold.otf") format("opentype");
+  font-weight: 600;
   font-display: swap;
 }
 

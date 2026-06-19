@@ -116,8 +116,9 @@ const NyanToggle = ({ on, onChange }) => (
    Settings gear → opens the Settings page; the trailing cluster is the
    in-context shelf tools: Search · Sort · List/Grid · Privacy Unlock (Pro only).
    No screen title — the Public/Private shelf tabs below carry screen identity.
-   Each tool is a 44px rounded chrome tile; an "active" tool lifts to a matcha
-   tint + outline. Self-driving for galleries or fully controllable by props. */
+   Each tool is a 44px rounded chrome tile; all tools share one resting style
+   (no active/selected tint — icon glyph alone conveys grid↔list / lock state).
+   Self-driving for galleries or fully controllable by props. */
 const ShelfSettingsBtn = ({ onClick, label = "Settings" }) => (
   <button onClick={onClick} title={label} aria-label={label} style={{
     all: "unset", cursor: "pointer", width: 44, height: 44, borderRadius: "var(--r-control)",
@@ -133,14 +134,12 @@ const ShelfSettingsBtn = ({ onClick, label = "Settings" }) => (
 const ShelfToolBtn = ({ icon, active, onClick, label }) => (
   <button onClick={onClick} title={label} aria-label={label} style={{
     all: "unset", cursor: "pointer", width: 44, height: 44, borderRadius: "var(--r-control)",
-    background: active ? "color-mix(in srgb, var(--nyan-primary) 13%, var(--nyan-surface))" : "var(--nyan-surface)",
-    border: active
-      ? "1px solid color-mix(in srgb, var(--nyan-primary) 42%, transparent)"
-      : "1px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent)",
+    background: "var(--nyan-surface)",
+    border: "1px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent)",
     display: "grid", placeItems: "center", flexShrink: 0,
     transition: "background 140ms var(--ease-paper), border-color 140ms var(--ease-paper)",
   }}>
-    <i className={`ph ph-${icon}`} style={{ fontSize: 18, color: active ? "var(--nyan-primary-deep)" : "var(--nyan-text-secondary)" }} />
+    <i className={`ph ph-${icon}`} style={{ fontSize: 18, color: "var(--nyan-text-secondary)" }} />
   </button>
 );
 

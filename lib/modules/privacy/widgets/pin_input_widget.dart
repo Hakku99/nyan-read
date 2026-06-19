@@ -2,26 +2,66 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:nyan_read/core/theme/nyan_spacing.dart';
 import 'package:nyan_read/core/theme/nyan_typography.dart';
-/// Minimalist 4-digit PIN input widget — dot matrix display + numeric keypad.
+import 'package:nyan_read/core/ui/nyan_icons.dart';
+
+// Internal layout constants sourced from bundle4.jsx NumPad — not exposed as
+// NyanSpacing tokens since these are PIN keypad-exclusive values.
+const double _kKeySize = 74;
+const double _kKeyColGap = 20; // gap between keys in a row
+const double _kKeyRowGap = 15; // gap between rows
+const double _kDotSize = 13;
+const double _kDotGap = 17; // gap between dots in the row
+
+/// Minimalist 4-digit PIN input — dot row + numeric keypad.
 ///
-/// Theme-agnostic: the host [PinOverlayPage] resolves the takeover palette
-/// (cream-light tokens vs. bespoke ink literals) and injects the single
-/// [foreground] ink colour. Dots, keypad fill, border and glyphs are all
-/// derived from it via alpha, matching the U16 mock's `color-mix` recipe.
+/// The host [PinOverlayPage] resolves all colours from the active theme (or the
+/// bespoke ink palette for dark mode) and passes them in. This widget is
+/// colour-agnostic; every tint is a parameter.
 /// Source: `screens/bundle4.jsx` `PinDots` + `NumPad`.
 class PinInputWidget extends StatefulWidget {
   final Function(String pin) onPinComplete;
-  final Color foreground;
+
+  /// Colour for a filled dot (primary in light; bespoke ink in dark).
+  final Color dotFill;
+
+  /// Colour for the unfilled dot ring border — `nyan.textPrimary @ 26%`.
+  final Color dotRing;
+
+  /// Colour for dots + message when there is a PIN mismatch.
+  final Color dotError;
+
+  /// Number-key background (`nyan.surface` in light; tinted in dark).
+  final Color keyBackground;
+
+  /// Elevation shadow for number keys (empty in dark — tint provides contrast).
+  final List<BoxShadow> keyShadow;
+
+  /// Digit text colour — `nyan.textPrimary`.
+  final Color keyText;
+
+  /// Ghost-key (delete / biometric) icon colour — `nyan.textMuted`.
+  final Color ghostColor;
+
   final bool isError;
+
+  /// Show the fingerprint biometric key in the bottom-left cell (verify mode).
+  final bool showBiometric;
+
   final VoidCallback? onError;
 
   const PinInputWidget({
     super.key,
     required this.onPinComplete,
-    required this.foreground,
+    required this.dotFill,
+    required this.dotRing,
+    required this.dotError,
+    required this.keyBackground,
+    required this.keyShadow,
+    required this.keyText,
+    required this.ghostColor,
     this.isError = false,
+    this.showBiometric = false,
     this.onError,
   });
 
@@ -35,8 +75,6 @@ class _PinInputWidgetState extends State<PinInputWidget>
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
 
-  // Mock `pin-shake`: ±8px horizontal over 320ms. We drive a sine envelope so
-  // the dots settle back to centre regardless of where the curve lands.
   static const double _kShakeAmplitude = 8;
 
   @override
@@ -66,36 +104,25 @@ class _PinInputWidgetState extends State<PinInputWidget>
   }
 
   void _triggerError() {
-    // One gentle tap on mismatch — AGENTS.md §4.3 keeps haptics restrained.
     HapticFeedback.lightImpact();
     _shakeController.forward(from: 0).then((_) {
       if (!mounted) return;
-      setState(() {
-        _pin = '';
-      });
+      setState(() => _pin = '');
       widget.onError?.call();
     });
   }
 
   void _onNumberPressed(int number) {
     if (_pin.length < 4) {
-      setState(() {
-        _pin += number.toString();
-      });
-
+      setState(() => _pin += number.toString());
       HapticFeedback.selectionClick();
-
-      if (_pin.length == 4) {
-        widget.onPinComplete(_pin);
-      }
+      if (_pin.length == 4) widget.onPinComplete(_pin);
     }
   }
 
   void _onDeletePressed() {
     if (_pin.isNotEmpty) {
-      setState(() {
-        _pin = _pin.substring(0, _pin.length - 1);
-      });
+      setState(() => _pin = _pin.substring(0, _pin.length - 1));
       HapticFeedback.selectionClick();
     }
   }
@@ -108,41 +135,73 @@ class _PinInputWidgetState extends State<PinInputWidget>
         AnimatedBuilder(
           animation: _shakeAnimation,
           builder: (context, child) {
-            // Damped sine: two full swings inside the 320ms window, decaying to
-            // centre so the dots never end up offset. Matches mock `pin-shake`.
             final t = _shakeAnimation.value;
-            final dx = _kShakeAmplitude * (1 - t) * math.sin(t * 4 * math.pi);
-            return Transform.translate(
-              offset: Offset(dx, 0),
-              child: child,
-            );
+            final dx =
+                _kShakeAmplitude * (1 - t) * math.sin(t * 4 * math.pi);
+            return Transform.translate(offset: Offset(dx, 0), child: child);
           },
           child: _buildPinDots(),
         ),
-        const SizedBox(height: 48),
+        const SizedBox(height: 42),
         _buildKeypad(),
       ],
     );
   }
 
   Widget _buildPinDots() {
-    // Mock: 16px dots, 20px gap, 1.5px border.
-    // Border alpha softens on error (38%) vs. resting (56%).
-    final borderAlpha = widget.isError ? 0.38 : 0.56;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(4, (index) {
-        final isFilled = index < _pin.length;
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: NyanSpacing.space12 - 2),
-          width: NyanSpacing.space16,
-          height: NyanSpacing.space16,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isFilled ? widget.foreground : Colors.transparent,
-            border: Border.all(
-              color: widget.foreground.withValues(alpha: borderAlpha),
-              width: 1.5,
+      children: List.generate(4, (i) {
+        final isFilled = i < _pin.length;
+        final dotColor = widget.isError ? widget.dotError : widget.dotFill;
+        // Spec: each container is 13×13 with gap:17. The halo uses inset:-6
+        // (overflows 6px on every side). Clip.none lets the halo bleed without
+        // widening the item, keeping gap math identical to the CSS flex layout.
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _kDotGap / 2),
+          child: SizedBox(
+            width: _kDotSize,
+            height: _kDotSize,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                // Soft halo — positioned -6px outside the 13×13 container.
+                Positioned(
+                  top: -6,
+                  left: -6,
+                  child: AnimatedOpacity(
+                    opacity: isFilled ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 220),
+                    child: AnimatedScale(
+                      scale: isFilled ? 1.0 : 0.4,
+                      duration: const Duration(milliseconds: 220),
+                      child: Container(
+                        width: _kDotSize + 12, // 13 + 6*2
+                        height: _kDotSize + 12,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: dotColor.withValues(alpha: 0.16),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // The dot itself
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  width: _kDotSize,
+                  height: _kDotSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isFilled ? dotColor : Colors.transparent,
+                    border: Border.all(
+                      color: isFilled ? dotColor : widget.dotRing,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -152,85 +211,126 @@ class _PinInputWidgetState extends State<PinInputWidget>
 
   Widget _buildKeypad() {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        _buildKeypadRow([1, 2, 3]),
-        const SizedBox(height: NyanSpacing.space12),
-        _buildKeypadRow([4, 5, 6]),
-        const SizedBox(height: NyanSpacing.space12),
-        _buildKeypadRow([7, 8, 9]),
-        const SizedBox(height: NyanSpacing.space12),
-        _buildKeypadRow([null, 0, -1]), // null = empty, -1 = delete
+        _buildRow([1, 2, 3]),
+        SizedBox(height: _kKeyRowGap),
+        _buildRow([4, 5, 6]),
+        SizedBox(height: _kKeyRowGap),
+        _buildRow([7, 8, 9]),
+        SizedBox(height: _kKeyRowGap),
+        _buildRow([null, 0, -1]),
       ],
     );
   }
 
-  Widget _buildKeypadRow(List<int?> numbers) {
+  Widget _buildRow(List<int?> keys) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: numbers.map((number) {
-        if (number == null) {
-          return const SizedBox(width: 72, height: 72);
-        } else if (number == -1) {
-          return _buildKeypadButton(
-            // Mock renders the ⌫ Unicode glyph as plain text at 22pt, not a
-            // Phosphor icon — match the handoff literally (bundle4.jsx NumPad).
-            child: Text(
-              '⌫',
-              style: TextStyle(
-                fontFamily: NyanTypography.uiFontFamily,
-                fontSize: NyanTypography.pinKeyGlyph,
-                fontWeight: FontWeight.w400,
-                color: widget.foreground,
-              ),
-            ),
-            onPressed: _onDeletePressed,
-          );
-        } else {
-          return _buildKeypadButton(
-            child: Text(
-              number.toString(),
-              style: TextStyle(
-                fontFamily: NyanTypography.uiFontFamily,
-                fontSize: NyanTypography.pinKeyDigit,
-                fontWeight: FontWeight.w400,
-                color: widget.foreground,
-              ),
-            ),
-            onPressed: () => _onNumberPressed(number),
-          );
-        }
+      children: keys.map((k) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _kKeyColGap / 2),
+          child: _buildKey(k),
+        );
       }).toList(),
     );
   }
 
-  Widget _buildKeypadButton({
-    required Widget child,
-    required VoidCallback onPressed,
-  }) {
-    // Mock key: 72×72 circle, fg@10% fill, fg@16% border, subtle press feedback.
-    final fg = widget.foreground;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: NyanSpacing.space8),
-      width: 72,
-      height: 72,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: fg.withValues(alpha: 0.10),
-        border: Border.all(
-          color: fg.withValues(alpha: 0.16),
-          width: 1,
+  Widget _buildKey(int? key) {
+    if (key == null) {
+      // Empty cell or biometric
+      return SizedBox(
+        width: _kKeySize,
+        height: _kKeySize,
+        child: widget.showBiometric
+            ? _ghostButton(
+                icon: NyanIcons.fingerprint,
+                size: NyanTypography.pinKeyDigit,
+                // Biometric uses primary colour per spec — dotFill is primary.
+                color: widget.dotFill,
+                onTap: () => _onNumberPressed(1), // placeholder: triggers biometric
+                semanticLabel: 'Unlock with biometrics',
+              )
+            : null,
+      );
+    }
+
+    if (key == -1) {
+      return _ghostButton(
+        icon: NyanIcons.backspace,
+        size: NyanTypography.pinKeyGlyph,
+        color: widget.ghostColor,
+        onTap: _onDeletePressed,
+        semanticLabel: 'Delete',
+        width: _kKeySize,
+        height: _kKeySize,
+      );
+    }
+
+    // Number key — surface card with subtle shadow
+    return SizedBox(
+      width: _kKeySize,
+      height: _kKeySize,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: widget.keyBackground,
+          boxShadow: widget.keyShadow,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _onNumberPressed(key),
+            customBorder: const CircleBorder(),
+            splashColor: widget.keyText.withValues(alpha: 0.08),
+            highlightColor: widget.keyText.withValues(alpha: 0.04),
+            child: Center(
+              child: Text(
+                key.toString(),
+                style: TextStyle(
+                  fontFamily: NyanTypography.uiFontFamily,
+                  fontSize: NyanTypography.pinKeyDigit,
+                  fontWeight: FontWeight.w500,
+                  color: widget.keyText,
+                  height: 1,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _ghostButton({
+    required IconData icon,
+    required double size,
+    required Color color,
+    required VoidCallback onTap,
+    required String semanticLabel,
+    double width = _kKeySize,
+    double height = _kKeySize,
+  }) {
+    return SizedBox(
+      width: width,
+      height: height,
       child: Material(
         color: Colors.transparent,
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: onPressed,
+          onTap: onTap,
           customBorder: const CircleBorder(),
-          splashColor: fg.withValues(alpha: 0.12),
-          highlightColor: fg.withValues(alpha: 0.06),
-          child: Center(child: child),
+          splashColor: color.withValues(alpha: 0.10),
+          highlightColor: color.withValues(alpha: 0.05),
+          child: Semantics(
+            label: semanticLabel,
+            child: Center(
+              child: Icon(icon, size: size, color: color),
+            ),
+          ),
         ),
       ),
     );

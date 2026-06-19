@@ -565,16 +565,34 @@ class AppLocalizationsZh extends AppLocalizations {
   String get unlock => '解锁';
 
   @override
-  String get pinEnter => '输入 PIN';
+  String get pinEyebrow => '隐私书架';
 
   @override
-  String get pinSet => '设置 PIN';
+  String get pinEnter => '输入 PIN 码';
 
   @override
-  String get pinConfirm => '确认 PIN';
+  String get pinSet => '设置 PIN 码';
+
+  @override
+  String get pinConfirm => '确认 PIN 码';
+
+  @override
+  String get pinSubtitleVerify => '输入 PIN 码以打开隐私书架。';
+
+  @override
+  String get pinSubtitleSetup => '设置一个 4 位数字 PIN 码，保护您的隐私书架。';
+
+  @override
+  String get pinSubtitleConfirm => '再次输入 PIN 码以确认。';
 
   @override
   String get pinMismatch => '两次 PIN 不一致，请重试';
+
+  @override
+  String get pinForgot => '忘记 PIN？';
+
+  @override
+  String get pinStoredDeviceOnly => '仅存储在此设备上';
 
   @override
   String get fontSize => '字体大小';

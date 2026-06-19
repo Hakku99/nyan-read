@@ -49,9 +49,9 @@ function Frame({ label, w, h, children }) {
 function App() {
   return (
     <div className="screen-wrap">
-      <Frame label="Light (Cream) · Enter PIN" w={390} h={720}><PinOverlay mode="verify" hasError={false} dark={false} /></Frame>
-      <Frame label="Dark · Set PIN" w={390} h={720}><PinOverlay mode="setup" hasError={false} dark={true} /></Frame>
-      <Frame label="Dark · error (mismatch)" w={390} h={720}><PinOverlay mode="confirm" hasError={true} dark={true} /></Frame>
+      <Frame label="Light (Cream) · Enter PIN · biometric affordance" w={390} h={770}><PinOverlay mode="verify" hasError={false} dark={false} /></Frame>
+      <Frame label="Dark · Set PIN" w={390} h={770}><PinOverlay mode="setup" hasError={false} dark={true} /></Frame>
+      <Frame label="Dark · error (mismatch)" w={390} h={770}><PinOverlay mode="confirm" hasError={true} dark={true} /></Frame>
     </div>
   );
 }

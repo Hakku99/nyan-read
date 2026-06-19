@@ -1160,29 +1160,65 @@ abstract class AppLocalizations {
   /// **'Unlock'**
   String get unlock;
 
+  /// No description provided for @pinEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Shelf'**
+  String get pinEyebrow;
+
   /// No description provided for @pinEnter.
   ///
   /// In en, this message translates to:
-  /// **'Enter PIN'**
+  /// **'Enter your PIN'**
   String get pinEnter;
 
   /// No description provided for @pinSet.
   ///
   /// In en, this message translates to:
-  /// **'Set PIN'**
+  /// **'Set a PIN'**
   String get pinSet;
 
   /// No description provided for @pinConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Confirm PIN'**
+  /// **'Confirm your PIN'**
   String get pinConfirm;
+
+  /// No description provided for @pinSubtitleVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your code to open your private shelf.'**
+  String get pinSubtitleVerify;
+
+  /// No description provided for @pinSubtitleSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a 4-digit code to keep your private shelf for your eyes only.'**
+  String get pinSubtitleSetup;
+
+  /// No description provided for @pinSubtitleConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-enter the code once more to confirm.'**
+  String get pinSubtitleConfirm;
 
   /// No description provided for @pinMismatch.
   ///
   /// In en, this message translates to:
   /// **'PINs don\'t match — try again'**
   String get pinMismatch;
+
+  /// No description provided for @pinForgot.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot PIN?'**
+  String get pinForgot;
+
+  /// No description provided for @pinStoredDeviceOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored on this device only'**
+  String get pinStoredDeviceOnly;
 
   /// No description provided for @fontSize.
   ///

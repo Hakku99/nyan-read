@@ -148,6 +148,14 @@ class NyanIcons {
   // ── Privacy ─────────────────────────────────────────────────────────────
   static const IconData lock = PhosphorIconsRegular.lockSimple;
   static const IconData lockOpen = PhosphorIconsRegular.lockSimpleOpen;
+  // U16 PIN overlay: filled lock medallion + biometric + security footer icons.
+  // These are explicit exceptions to the "Regular-only" rule (see class comment).
+  static const IconData lockFilled = PhosphorIconsFill.lockSimple;
+  // Regular stroke fingerprint — spec `ph ph-fingerprint` (not fill).
+  static const IconData fingerprint = PhosphorIconsRegular.fingerprint;
+  static const IconData shieldCheckFilled = PhosphorIconsFill.shieldCheck;
+  static const IconData warningCircleFilled = PhosphorIconsFill.warningCircle;
+  // backspace is already defined above (shared with text-editing contexts).
 
   // ── Reader / Display ────────────────────────────────────────────────────
   static const IconData sun = PhosphorIconsRegular.sun;

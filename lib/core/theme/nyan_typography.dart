@@ -48,14 +48,14 @@ class NyanTypography {
 
   /// Privacy PIN overlay keypad glyph sizes — design-system handoff exception
   /// (see AGENTS.md §4.2.5). Reserved for the U16 PIN keypad ONLY:
-  ///   [pinKeyDigit] → 26pt, the 0–9 keypad digits
-  ///   [pinKeyGlyph] → 22pt, the backspace glyph
+  ///   [pinKeyDigit] → 27pt w500, the 0–9 keypad digits
+  ///   [pinKeyGlyph] → 24pt, the backspace icon
   /// Both sit off the 6-step ladder; they MUST NOT appear in body copy,
   /// headings, or any other surface.
   ///
   /// Source: `nyan-read-design-system/project/screens/bundle4.jsx` `NumPad`
-  static const double pinKeyDigit = 26;
-  static const double pinKeyGlyph = 22;
+  static const double pinKeyDigit = 27;
+  static const double pinKeyGlyph = 24;
 
   /// "Jump to current" floating action button label — design-system handoff
   /// exception (see AGENTS.md §4.2.5). Reserved for the Chapters-sheet FAB

@@ -589,16 +589,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unlock => 'Unlock';
 
   @override
-  String get pinEnter => 'Enter PIN';
+  String get pinEyebrow => 'Privacy Shelf';
 
   @override
-  String get pinSet => 'Set PIN';
+  String get pinEnter => 'Enter your PIN';
 
   @override
-  String get pinConfirm => 'Confirm PIN';
+  String get pinSet => 'Set a PIN';
+
+  @override
+  String get pinConfirm => 'Confirm your PIN';
+
+  @override
+  String get pinSubtitleVerify => 'Enter your code to open your private shelf.';
+
+  @override
+  String get pinSubtitleSetup =>
+      'Choose a 4-digit code to keep your private shelf for your eyes only.';
+
+  @override
+  String get pinSubtitleConfirm => 'Re-enter the code once more to confirm.';
 
   @override
   String get pinMismatch => 'PINs don\'t match — try again';
+
+  @override
+  String get pinForgot => 'Forgot PIN?';
+
+  @override
+  String get pinStoredDeviceOnly => 'Stored on this device only';
 
   @override
   String get fontSize => 'Font Size';
