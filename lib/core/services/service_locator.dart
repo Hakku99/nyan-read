@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 
+import 'biometric_service.dart';
 import 'database_service.dart';
 import 'feature_manager.dart';
 import 'reader_preferences_service.dart';
@@ -102,6 +103,8 @@ Future<void> setupServiceLocator() async {
 
   // Background signature backfill: fires 15s after startup to avoid cold-start I/O racing.
   getIt<SignatureBackfillService>().scheduleBackfill();
+
+  getIt.registerSingleton<BiometricService>(BiometricService());
 
   debugPrint('--- [DI] 105. 同步服务装载完毕！ ---');
 }

@@ -242,6 +242,7 @@
   "pinMismatch": "两次 PIN 不一致，请重试",
   "pinForgot": "忘记 PIN？",
   "pinStoredDeviceOnly": "仅存储在此设备上",
+  "pinBiometricReason": "验证您的身份以打开隐私书架。",
   "fontSize": "字体大小",
   "lineHeight": "行高",
   "themeCream": "奶油",

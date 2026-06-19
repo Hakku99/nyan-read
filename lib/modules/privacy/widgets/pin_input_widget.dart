@@ -48,6 +48,9 @@ class PinInputWidget extends StatefulWidget {
   /// Show the fingerprint biometric key in the bottom-left cell (verify mode).
   final bool showBiometric;
 
+  /// Called when the biometric key is tapped. Null hides the button entirely.
+  final VoidCallback? onBiometricTap;
+
   final VoidCallback? onError;
 
   const PinInputWidget({
@@ -62,6 +65,7 @@ class PinInputWidget extends StatefulWidget {
     required this.ghostColor,
     this.isError = false,
     this.showBiometric = false,
+    this.onBiometricTap,
     this.onError,
   });
 
@@ -248,7 +252,7 @@ class _PinInputWidgetState extends State<PinInputWidget>
                 size: NyanTypography.pinKeyDigit,
                 // Biometric uses primary colour per spec — dotFill is primary.
                 color: widget.dotFill,
-                onTap: () => _onNumberPressed(1), // placeholder: triggers biometric
+                onTap: widget.onBiometricTap ?? () {},
                 semanticLabel: 'Unlock with biometrics',
               )
             : null,

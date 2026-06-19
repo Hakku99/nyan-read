@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/services/biometric_service.dart';
 import '../../core/services/pin_service.dart';
+import '../../core/services/service_locator.dart';
 import 'pin_overlay_page.dart';
 
 class PrivacyLockService {
@@ -46,7 +48,10 @@ class PrivacyLockService {
     final result = await Navigator.of(context).push<bool>(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            const PinOverlayPage(mode: PinOverlayMode.verify),
+            PinOverlayPage(
+              mode: PinOverlayMode.verify,
+              biometricService: getIt<BiometricService>(),
+            ),
         opaque: false,
         barrierDismissible: false,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

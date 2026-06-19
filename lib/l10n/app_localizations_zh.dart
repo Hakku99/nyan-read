@@ -595,6 +595,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pinStoredDeviceOnly => '仅存储在此设备上';
 
   @override
+  String get pinBiometricReason => '验证您的身份以打开隐私书架。';
+
+  @override
   String get fontSize => '字体大小';
 
   @override

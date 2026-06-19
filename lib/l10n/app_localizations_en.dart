@@ -620,6 +620,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pinStoredDeviceOnly => 'Stored on this device only';
 
   @override
+  String get pinBiometricReason =>
+      'Verify your identity to open your private shelf.';
+
+  @override
   String get fontSize => 'Font Size';
 
   @override

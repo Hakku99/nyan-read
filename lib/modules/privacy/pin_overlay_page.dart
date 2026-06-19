@@ -9,6 +9,7 @@ import 'package:nyan_read/core/theme/nyan_typography.dart';
 import 'package:nyan_read/core/theme/theme_presets.dart';
 import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
+import '../../../core/services/biometric_service.dart';
 import '../../../core/services/pin_service.dart';
 import 'widgets/pin_input_widget.dart';
 
@@ -23,11 +24,16 @@ class PinOverlayPage extends StatefulWidget {
   final VoidCallback? onSuccess;
   final VoidCallback? onCancel;
 
+  /// Injected by [PrivacyLockService]. Null in setup/change modes — the
+  /// fingerprint button is never shown outside of verify mode.
+  final BiometricService? biometricService;
+
   const PinOverlayPage({
     super.key,
     required this.mode,
     this.onSuccess,
     this.onCancel,
+    this.biometricService,
   });
 
   @override
@@ -38,6 +44,7 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
   final _pinService = PinService.instance;
   bool _isError = false;
   String? _firstPin;
+  bool _biometricAvailable = false;
 
   // Cancelled in dispose and on every new error to prevent stale callbacks.
   Timer? _errorResetTimer;
@@ -45,6 +52,17 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
   // Increments only on deliberate step transitions (not on error) so the
   // existing PinInputWidget instance can play its shake before being replaced.
   int _widgetGeneration = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.biometricService != null &&
+        widget.mode == PinOverlayMode.verify) {
+      widget.biometricService!.isAvailable().then((available) {
+        if (mounted) setState(() => _biometricAvailable = available);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -129,6 +147,16 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
 
   void _onWidgetErrorAnimationDone() {
     // Intentionally empty — error visibility is driven by _errorResetTimer.
+  }
+
+  Future<void> _handleBiometric() async {
+    final loc = AppLocalizations.of(context)!;
+    final success = await widget.biometricService!
+        .authenticate(loc.pinBiometricReason);
+    if (success && mounted) {
+      widget.onSuccess?.call();
+      Navigator.of(context).pop(true);
+    }
   }
 
   @override
@@ -265,7 +293,9 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
                       keyText: keyText,
                       ghostColor: ghostColor,
                       isError: _isError,
-                      showBiometric: widget.mode == PinOverlayMode.verify,
+                      showBiometric: _biometricAvailable &&
+                          widget.mode == PinOverlayMode.verify,
+                      onBiometricTap: _handleBiometric,
                       onError: _onWidgetErrorAnimationDone,
                     ),
 

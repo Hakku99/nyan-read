@@ -242,6 +242,7 @@
   "pinMismatch": "PINs don't match — try again",
   "pinForgot": "Forgot PIN?",
   "pinStoredDeviceOnly": "Stored on this device only",
+  "pinBiometricReason": "Verify your identity to open your private shelf.",
   "fontSize": "Font Size",
   "lineHeight": "Line Height",
   "themeCream": "Cream",

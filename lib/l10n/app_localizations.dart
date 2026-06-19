@@ -1220,6 +1220,12 @@ abstract class AppLocalizations {
   /// **'Stored on this device only'**
   String get pinStoredDeviceOnly;
 
+  /// No description provided for @pinBiometricReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your identity to open your private shelf.'**
+  String get pinBiometricReason;
+
   /// No description provided for @fontSize.
   ///
   /// In en, this message translates to:
