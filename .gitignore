@@ -21,6 +21,8 @@ migrate_working_dir/
 # Design system handoff (extracted from zip; not source of truth)
 # =========================
 .tmp-design-handoff/
+# Auto-generated preview thumbnail by the design viewer — regenerates on open.
+.design/project/.thumbnail
 
 # =========================
 # IntelliJ / Android Studio
