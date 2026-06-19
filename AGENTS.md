@@ -310,6 +310,8 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — Action Response 卡片内部间距（交付包对齐，2026-06，来源 `components/surfaces/NyanResponse.jsx`）**：全局反馈 toast `NyanResponse` 的卡片**垂直内边距固定为 10pt**（`_kCardPaddingV`，来源：`NyanResponse.jsx` `padding: "10px 12px"`；水平 12pt 走 `NyanSpacing.space12`），标题↔描述间隙固定为 **2pt**（`_kTitleDescGap`，来源：`marginTop: 2`）。这两个值仅为对齐交付包的卡片内部微距。此例外**仅限** `nyan_response.dart` 容器本身，**MUST NOT** 用于其它卡片、列表、页面级布局间距。
 
+> **例外 — 书架吸顶标签栏底部间距（交付包对齐，2026-06，来源 `screens/bundle4.jsx` `ShelfToolbarScreen`）**：`bookshelf_shelf_toolbar.dart` 的 `_kShelfTrackVerticalPaddingBottom` 固定为 **10pt**（来源：`bundle4.jsx` tab wrapper `marginBottom: 10`）。此值比 8pt 网格大 2pt（§4.6 交付包优先）。此例外**仅限**书架吸顶标签栏的底部内边距，**MUST NOT** 用于其它卡片、列表或页面级布局间距。
+
 #### 4.2.4 阴影 — `lib/core/theme/nyan_shadows.dart`
 
 三个工具方法**现在接收 `NyanTheme nyan`（不再是裸 `Color`）**，并按 `nyan.brightness` 自动选配方：
@@ -317,6 +319,7 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 - `NyanShadows.lightCard(nyan)` — 浮动 chrome（卡片、顶栏、dock、Sheet、对话框、弹出层）。
 - `NyanShadows.subtle(nyan)` — 次级浮层（Toast、轻浮动通知）。
 - `NyanShadows.settingsGrouped(nyan)` — 设置分组卡片（`NyanRowGroup`）。
+- `NyanShadows.shelfPinnedHeader(nyan)` — 书架吸顶标签栏的向下投影，**仅在 `overlapsContent == true` 时启用**（内容滚动至标签栏下方时才显示）。来源：`screens/bundle4.jsx` ShelfToolbarScreen tab wrapper `box-shadow: 0 6px 14px -8px rgba(40,36,30,.22)`；暗色使用 `Colors.black@32%`（暖墨色在深色背景下不可见）。
 
 - **Cream Light**：暖墨 drop shadow（lightCard 4%/2%@12/6px；subtle 5%@8px；grouped 1.4%@10px），墨色取自 `nyan.textPrimary`。
 - **Sumi Dark（v3 高度阶梯，2026-06 修订）**：**"暗色无阴影"旧规已废止**。暗色用 **`0.75px` 发光描边环**（`nyan.divider` 88/66/50% spread）+ 柔和黑色 ambient 承载层级，让升起的表面读成独立平面。

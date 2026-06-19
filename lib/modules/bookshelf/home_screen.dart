@@ -89,11 +89,11 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     BuildContext context,
   ) {
     const double crossAxisSpacing = NyanShelfUi.gridCrossAxisSpacing; // 12
-    const double gridSideInset = NyanSpacing.space4; // 4pt each side
+    // 16pt each side (now owned by the sliver, not the outer Padding).
+    const double gridSideInset = NyanSpacing.space16;
 
     final double screenWidth = MediaQuery.sizeOf(context).width;
     final double usedWidth =
-        2 * NyanShelfUi.bookshelfPageHorizontalPadding +
         2 * gridSideInset +
         2 * crossAxisSpacing; // 2 gaps for 3 columns
     final double cardWidth = (screenWidth - usedWidth) / 3;
@@ -707,11 +707,11 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         if (showHeaderSections && continueReadingBook != null)
           SliverToBoxAdapter(
             child: Padding(
-              // 4pt side inset matches the grid / hero rhythm. No vertical pad:
+              // 16pt side inset matches the grid / hero rhythm. No vertical pad:
               // the pinned tabs supply the gap above and the grid's own top pad
               // supplies the gap below (avoids a doubled 32pt gulf).
               padding: const EdgeInsets.symmetric(
-                horizontal: NyanSpacing.space4,
+                horizontal: NyanSpacing.space16,
               ),
               child: _buildContinueReadingSection(
                 context,
@@ -755,14 +755,10 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             children: [
               SafeArea(
                 child: Padding(
-                  // No top padding: the pinned toolbar SliverPersistentHeader
-                  // provides the visual separation below the status bar.
-                  padding: const EdgeInsets.fromLTRB(
-                    NyanShelfUi.bookshelfPageHorizontalPadding,
-                    0,
-                    NyanShelfUi.bookshelfPageHorizontalPadding,
-                    0,
-                  ),
+                  // No horizontal padding: pinned toolbar + tab-strip must be
+                  // full-viewport-width (spec: background goes edge-to-edge).
+                  // Each component manages its own 16pt inset internally.
+                  padding: EdgeInsets.zero,
                   child: vm.isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : _buildLibrarySurface(
@@ -870,9 +866,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     final topPad = NyanShelfUi.sectionGapAfterShelfChrome;
     final bottomPad = _shelfScrollBottomPadding(context);
 
-    // 4pt horizontal inset keeps grid cards slightly inset from the scroll
-    // edge, matching the continue-reading card side padding in the spec.
-    const double gridSideInset = NyanSpacing.space4;
+    // 16pt inset (outer Padding removed; each sliver owns its edge-to-content gap).
+    const double gridSideInset = NyanSpacing.space16;
 
     if (!showInlineAd) {
       return [
@@ -914,6 +909,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         child: Padding(
           padding: const EdgeInsets.symmetric(
             vertical: NyanShelfUi.gridMainAxisSpacing,
+            horizontal: NyanSpacing.space16,
           ),
           child: AdsUI.buildBookshelfInlineAd(
             context,
@@ -996,8 +992,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     final topPad = NyanShelfUi.sectionGapAfterShelfChrome;
     final bottomPad = _shelfScrollBottomPadding(context);
 
-    // 4pt horizontal inset mirrors the grid and continue-reading card side padding.
-    const double listSideInset = NyanSpacing.space4;
+    // 16pt inset (outer Padding removed; each sliver owns its edge-to-content gap).
+    const double listSideInset = NyanSpacing.space16;
 
     final decoration = _listGroupDecoration(context);
     final dividerColor = context.nyanTheme.divider.withValues(alpha: 0.34);
@@ -1453,8 +1449,7 @@ class _DeleteBooksSheetContent extends StatelessWidget {
 ///
 /// Spec `ShelfToolbar` (_chrome.jsx): Settings gear on the left; flex spacer;
 /// Search · Sort · View · Lock (Pro only) on the right. Gap between trailing
-/// buttons = 6pt; outer horizontal padding 4pt (+ 12pt scaffold inset = 16pt
-/// screen edge, matching spec `"14px 16px 8px"` toolbar padding).
+/// buttons = 6pt; 16pt horizontal padding (spec `"14px 16px 8px"` toolbar padding).
 class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
   const _ShelfToolbarDelegate({
     required this.isGridView,
@@ -1501,12 +1496,11 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Material(
       color: Theme.of(context).scaffoldBackgroundColor,
-      // 4pt inner + 12pt scaffold outer = 16pt from screen edge (spec: 16px).
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
-          NyanSpacing.space4,
+          NyanSpacing.space16,
           14,
-          NyanSpacing.space4,
+          NyanSpacing.space16,
           8,
         ),
         child: Row(
@@ -1530,7 +1524,6 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
                 NyanSquareActionButton(
                   icon: NyanIcons.sort,
                   tooltip: sortTooltip,
-                  isActive: isSortActive,
                   onPressed: onSort,
                 ),
                 const SizedBox(width: 6),
@@ -1546,7 +1539,6 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
                         ? NyanIcons.lockOpen
                         : NyanIcons.lock,
                     tooltip: lockTooltip,
-                    isActive: isPrivacyUnlocked,
                     onPressed: onPrivacyLock,
                   ),
                 ],

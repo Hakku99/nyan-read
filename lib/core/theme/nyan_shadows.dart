@@ -110,6 +110,33 @@ class NyanShadows {
         ),
       ];
 
+  /// Pinned shelf tab-strip sticky shadow — shown only when the header overlaps
+  /// scrolling content (`overlapsContent == true` in the sliver delegate).
+  ///
+  /// Source: `screens/bundle4.jsx` ShelfToolbarScreen tab wrapper:
+  ///   `box-shadow: 0 6px 14px -8px rgba(40,36,30,.22)`
+  ///
+  static List<BoxShadow> shelfPinnedHeader(NyanTheme nyan) {
+    if (nyan.brightness == Brightness.dark) {
+      return [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.32),
+          blurRadius: 14,
+          spreadRadius: -8,
+          offset: const Offset(0, 6),
+        ),
+      ];
+    }
+    return [
+      const BoxShadow(
+        color: Color.fromRGBO(40, 36, 30, 0.22),
+        blurRadius: 14,
+        spreadRadius: -8,
+        offset: Offset(0, 6),
+      ),
+    ];
+  }
+
   /// Settings grouped cards — ultra-soft lift (was inlined as `_SettingsCard`).
   static List<BoxShadow> settingsGrouped(NyanTheme nyan) {
     if (nyan.brightness == Brightness.dark) {
