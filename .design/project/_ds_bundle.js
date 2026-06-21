@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"NyanReadDesignSystem_019e2f","components":[{"name":"BookListRow","sourcePath":"components/cards/BookListRow.jsx"},{"name":"NyanBookGridCard","sourcePath":"components/cards/NyanBookGridCard.jsx"},{"name":"NyanBookmarkCard","sourcePath":"components/cards/NyanBookmarkCard.jsx"},{"name":"NyanContinueReadingCard","sourcePath":"components/cards/NyanContinueReadingCard.jsx"},{"name":"NyanPageHeader","sourcePath":"components/navigation/NyanPageHeader.jsx"},{"name":"NyanSectionHeader","sourcePath":"components/navigation/NyanSectionHeader.jsx"},{"name":"Checkbox","sourcePath":"components/primitives/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/primitives/Icon.jsx"},{"name":"NyanPrimaryButton","sourcePath":"components/primitives/NyanPrimaryButton.jsx"},{"name":"NyanSlider","sourcePath":"components/primitives/NyanSlider.jsx"},{"name":"NyanSwitch","sourcePath":"components/primitives/NyanSwitch.jsx"},{"name":"PillButton","sourcePath":"components/primitives/PillButton.jsx"},{"name":"ProgressBar","sourcePath":"components/primitives/ProgressBar.jsx"},{"name":"SearchField","sourcePath":"components/primitives/SearchField.jsx"},{"name":"SegmentedTabControl","sourcePath":"components/primitives/SegmentedTabControl.jsx"},{"name":"Skeleton","sourcePath":"components/primitives/Skeleton.jsx"},{"name":"TextField","sourcePath":"components/primitives/TextField.jsx"},{"name":"DisplayPanel","sourcePath":"components/reader/DisplayPanel.jsx"},{"name":"DockFooter","sourcePath":"components/reader/DockFooter.jsx"},{"name":"HighlightSwatchRow","sourcePath":"components/reader/HighlightSwatchRow.jsx"},{"name":"InBookSearch","sourcePath":"components/reader/InBookSearch.jsx"},{"name":"Knob","sourcePath":"components/reader/Knob.jsx"},{"name":"OnePaperDock","sourcePath":"components/reader/OnePaperDock.jsx"},{"name":"PdfControls","sourcePath":"components/reader/PdfControls.jsx"},{"name":"ReaderChapterList","sourcePath":"components/reader/ReaderChapterList.jsx"},{"name":"ReaderParagraph","sourcePath":"components/reader/ReaderParagraph.jsx"},{"name":"ReaderSettingsBody","sourcePath":"components/reader/ReaderSettingsBody.jsx"},{"name":"TTSPlayer","sourcePath":"components/reader/TTSPlayer.jsx"},{"name":"TextPanel","sourcePath":"components/reader/TextPanel.jsx"},{"name":"TextSelectionMenu","sourcePath":"components/reader/TextSelectionMenu.jsx"},{"name":"ThemePanel","sourcePath":"components/reader/ThemePanel.jsx"},{"name":"PinDots","sourcePath":"components/security/PinDots.jsx"},{"name":"PinPad","sourcePath":"components/security/PinPad.jsx"},{"name":"NyanActionSheetRow","sourcePath":"components/surfaces/NyanActionSheetRow.jsx"},{"name":"NyanBottomSheet","sourcePath":"components/surfaces/NyanBottomSheet.jsx"},{"name":"NyanDialog","sourcePath":"components/surfaces/NyanDialog.jsx"},{"name":"NyanEmptyState","sourcePath":"components/surfaces/NyanEmptyState.jsx"},{"name":"NyanFAB","sourcePath":"components/surfaces/NyanFAB.jsx"},{"name":"NyanInfoCard","sourcePath":"components/surfaces/NyanInfoCard.jsx"},{"name":"NyanListRow","sourcePath":"components/surfaces/NyanListRow.jsx"},{"name":"NyanOptionSheet","sourcePath":"components/surfaces/NyanOptionSheet.jsx"},{"name":"NyanResponse","sourcePath":"components/surfaces/NyanResponse.jsx"},{"name":"NyanRowGroup","sourcePath":"components/surfaces/NyanRowGroup.jsx"}],"sourceHashes":{"brand/nyan-mark.jsx":"dc3409626c1d","components/cards/BookListRow.jsx":"1c9a64ad04a7","components/cards/NyanBookGridCard.jsx":"e42b6c6b9c4b","components/cards/NyanBookmarkCard.jsx":"43737516a9e3","components/cards/NyanContinueReadingCard.jsx":"a8e8f2101577","components/navigation/NyanPageHeader.jsx":"15d362ad06f2","components/navigation/NyanSectionHeader.jsx":"a2e31fc2700e","components/primitives/Checkbox.jsx":"a45a8ce73268","components/primitives/Icon.jsx":"3700fcab2dda","components/primitives/NyanPrimaryButton.jsx":"a2d12459f656","components/primitives/NyanSlider.jsx":"a21d05bfa5fa","components/primitives/NyanSwitch.jsx":"bc4c42d8cf48","components/primitives/PillButton.jsx":"5c71a9024fd6","components/primitives/ProgressBar.jsx":"5cb3a5de9b70","components/primitives/SearchField.jsx":"5bf5d520dec0","components/primitives/SegmentedTabControl.jsx":"6b51c1d2a1db","components/primitives/Skeleton.jsx":"4d81823d1a03","components/primitives/TextField.jsx":"d7c7fad507f3","components/reader/DisplayPanel.jsx":"f650d0f3d177","components/reader/DockFooter.jsx":"4ae790e3fcf4","components/reader/HighlightSwatchRow.jsx":"b4e26de2b0da","components/reader/InBookSearch.jsx":"498631f506e9","components/reader/Knob.jsx":"fbcee9bbe400","components/reader/OnePaperDock.jsx":"b80bf5c5eecb","components/reader/PdfControls.jsx":"9a4d717f55a1","components/reader/ReaderChapterList.jsx":"4c74b797cc42","components/reader/ReaderParagraph.jsx":"f28b79a1bee6","components/reader/ReaderSettingsBody.jsx":"4956c82986c5","components/reader/TTSPlayer.jsx":"beaabf507734","components/reader/TextPanel.jsx":"aeb9bf8d037c","components/reader/TextSelectionMenu.jsx":"ea57210bdd3e","components/reader/ThemePanel.jsx":"56c713f3cc96","components/security/PinDots.jsx":"b3b2c1346ede","components/security/PinPad.jsx":"7bd58ce93912","components/surfaces/NyanActionSheetRow.jsx":"b37e872c7f4a","components/surfaces/NyanBottomSheet.jsx":"1887a0a174ee","components/surfaces/NyanDialog.jsx":"7b689e35f6d6","components/surfaces/NyanEmptyState.jsx":"ca8380515877","components/surfaces/NyanFAB.jsx":"2c8fc01dbdfe","components/surfaces/NyanInfoCard.jsx":"934a030de5b6","components/surfaces/NyanListRow.jsx":"5a279c72d2d7","components/surfaces/NyanOptionSheet.jsx":"3f1336ef378b","components/surfaces/NyanResponse.jsx":"20cc95129368","components/surfaces/NyanRowGroup.jsx":"ac9e1dbb9e9a","prototype/app.jsx":"e977c7914f4c","screens/bundle1.jsx":"463954c7c3fc","screens/bundle2-screens.jsx":"1b00c01ddca1","screens/bundle3.jsx":"cb77f2da41f4","screens/bundle4.jsx":"6bdb8b82171c"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"NyanReadDesignSystem_019e2f","components":[{"name":"BookListRow","sourcePath":"components/cards/BookListRow.jsx"},{"name":"NyanBookGridCard","sourcePath":"components/cards/NyanBookGridCard.jsx"},{"name":"NyanBookmarkCard","sourcePath":"components/cards/NyanBookmarkCard.jsx"},{"name":"NyanContinueReadingCard","sourcePath":"components/cards/NyanContinueReadingCard.jsx"},{"name":"NyanPageHeader","sourcePath":"components/navigation/NyanPageHeader.jsx"},{"name":"NyanSectionHeader","sourcePath":"components/navigation/NyanSectionHeader.jsx"},{"name":"Checkbox","sourcePath":"components/primitives/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/primitives/Icon.jsx"},{"name":"NyanPrimaryButton","sourcePath":"components/primitives/NyanPrimaryButton.jsx"},{"name":"NyanSlider","sourcePath":"components/primitives/NyanSlider.jsx"},{"name":"NyanSwitch","sourcePath":"components/primitives/NyanSwitch.jsx"},{"name":"PillButton","sourcePath":"components/primitives/PillButton.jsx"},{"name":"ProgressBar","sourcePath":"components/primitives/ProgressBar.jsx"},{"name":"SearchField","sourcePath":"components/primitives/SearchField.jsx"},{"name":"SegmentedTabControl","sourcePath":"components/primitives/SegmentedTabControl.jsx"},{"name":"Skeleton","sourcePath":"components/primitives/Skeleton.jsx"},{"name":"TextField","sourcePath":"components/primitives/TextField.jsx"},{"name":"DisplayPanel","sourcePath":"components/reader/DisplayPanel.jsx"},{"name":"DockFooter","sourcePath":"components/reader/DockFooter.jsx"},{"name":"HighlightSwatchRow","sourcePath":"components/reader/HighlightSwatchRow.jsx"},{"name":"InBookSearch","sourcePath":"components/reader/InBookSearch.jsx"},{"name":"Knob","sourcePath":"components/reader/Knob.jsx"},{"name":"OnePaperDock","sourcePath":"components/reader/OnePaperDock.jsx"},{"name":"PdfControls","sourcePath":"components/reader/PdfControls.jsx"},{"name":"ReaderChapterList","sourcePath":"components/reader/ReaderChapterList.jsx"},{"name":"ReaderParagraph","sourcePath":"components/reader/ReaderParagraph.jsx"},{"name":"ReaderSettingsBody","sourcePath":"components/reader/ReaderSettingsBody.jsx"},{"name":"TTSPlayer","sourcePath":"components/reader/TTSPlayer.jsx"},{"name":"TextPanel","sourcePath":"components/reader/TextPanel.jsx"},{"name":"TextSelectionMenu","sourcePath":"components/reader/TextSelectionMenu.jsx"},{"name":"ThemePanel","sourcePath":"components/reader/ThemePanel.jsx"},{"name":"PinDots","sourcePath":"components/security/PinDots.jsx"},{"name":"PinPad","sourcePath":"components/security/PinPad.jsx"},{"name":"NyanActionSheetRow","sourcePath":"components/surfaces/NyanActionSheetRow.jsx"},{"name":"NyanBottomSheet","sourcePath":"components/surfaces/NyanBottomSheet.jsx"},{"name":"NyanDialog","sourcePath":"components/surfaces/NyanDialog.jsx"},{"name":"NyanEmptyState","sourcePath":"components/surfaces/NyanEmptyState.jsx"},{"name":"NyanFAB","sourcePath":"components/surfaces/NyanFAB.jsx"},{"name":"NyanInfoCard","sourcePath":"components/surfaces/NyanInfoCard.jsx"},{"name":"NyanListRow","sourcePath":"components/surfaces/NyanListRow.jsx"},{"name":"NyanOptionSheet","sourcePath":"components/surfaces/NyanOptionSheet.jsx"},{"name":"NyanResponse","sourcePath":"components/surfaces/NyanResponse.jsx"},{"name":"NyanRowGroup","sourcePath":"components/surfaces/NyanRowGroup.jsx"}],"sourceHashes":{"brand/nyan-mark.jsx":"dc3409626c1d","components/cards/BookListRow.jsx":"1c9a64ad04a7","components/cards/NyanBookGridCard.jsx":"e42b6c6b9c4b","components/cards/NyanBookmarkCard.jsx":"43737516a9e3","components/cards/NyanContinueReadingCard.jsx":"a8e8f2101577","components/navigation/NyanPageHeader.jsx":"15d362ad06f2","components/navigation/NyanSectionHeader.jsx":"a2e31fc2700e","components/primitives/Checkbox.jsx":"a45a8ce73268","components/primitives/Icon.jsx":"3700fcab2dda","components/primitives/NyanPrimaryButton.jsx":"a2d12459f656","components/primitives/NyanSlider.jsx":"a21d05bfa5fa","components/primitives/NyanSwitch.jsx":"bc4c42d8cf48","components/primitives/PillButton.jsx":"5c71a9024fd6","components/primitives/ProgressBar.jsx":"5cb3a5de9b70","components/primitives/SearchField.jsx":"5bf5d520dec0","components/primitives/SegmentedTabControl.jsx":"6b51c1d2a1db","components/primitives/Skeleton.jsx":"4d81823d1a03","components/primitives/TextField.jsx":"d7c7fad507f3","components/reader/DisplayPanel.jsx":"f650d0f3d177","components/reader/DockFooter.jsx":"4ae790e3fcf4","components/reader/HighlightSwatchRow.jsx":"b4e26de2b0da","components/reader/InBookSearch.jsx":"498631f506e9","components/reader/Knob.jsx":"fbcee9bbe400","components/reader/OnePaperDock.jsx":"b80bf5c5eecb","components/reader/PdfControls.jsx":"9a4d717f55a1","components/reader/ReaderChapterList.jsx":"4c74b797cc42","components/reader/ReaderParagraph.jsx":"f28b79a1bee6","components/reader/ReaderSettingsBody.jsx":"4956c82986c5","components/reader/TTSPlayer.jsx":"beaabf507734","components/reader/TextPanel.jsx":"aeb9bf8d037c","components/reader/TextSelectionMenu.jsx":"ea57210bdd3e","components/reader/ThemePanel.jsx":"56c713f3cc96","components/security/PinDots.jsx":"b3b2c1346ede","components/security/PinPad.jsx":"7bd58ce93912","components/surfaces/NyanActionSheetRow.jsx":"b37e872c7f4a","components/surfaces/NyanBottomSheet.jsx":"1887a0a174ee","components/surfaces/NyanDialog.jsx":"7b689e35f6d6","components/surfaces/NyanEmptyState.jsx":"ca8380515877","components/surfaces/NyanFAB.jsx":"2c8fc01dbdfe","components/surfaces/NyanInfoCard.jsx":"934a030de5b6","components/surfaces/NyanListRow.jsx":"5a279c72d2d7","components/surfaces/NyanOptionSheet.jsx":"3f1336ef378b","components/surfaces/NyanResponse.jsx":"20cc95129368","components/surfaces/NyanRowGroup.jsx":"ac9e1dbb9e9a","prototype/app.jsx":"e977c7914f4c","screens/bundle1.jsx":"463954c7c3fc","screens/bundle2-screens.jsx":"1b00c01ddca1","screens/bundle3.jsx":"cb77f2da41f4","screens/bundle4.jsx":"38ff2f00c8cf"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -8968,16 +8968,12 @@ const SettingsPage = ({
     title: "Import Data",
     subtitle: "Restore from a backup file",
     chevron: true
-  }), /*#__PURE__*/React.createElement(ListRow, {
+  })), isPro && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SectionHdr, {
+    label: "Admin"
+  }), /*#__PURE__*/React.createElement(RowGroup, null, /*#__PURE__*/React.createElement(ListRow, {
     icon: "wrench",
     title: "Admin Panel",
-    chevron: true
-  })), isPro && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SectionHdr, {
-    label: "Pro"
-  }), /*#__PURE__*/React.createElement(RowGroup, null, /*#__PURE__*/React.createElement(ListRow, {
-    icon: "lock-open",
-    title: "Lock Privacy Shelf",
-    subtitle: "Require PIN to open",
+    subtitle: "Feature flags & privacy controls",
     chevron: true
   }))), /*#__PURE__*/React.createElement(SectionHdr, {
     label: "About"
@@ -9976,6 +9972,7 @@ const AdminPanel = ({
 }) => {
   const [proOn, setPro] = useState(isPro);
   const [unlocked, setUnlocked] = useState(false);
+  const [forcePro, setForcePro] = useState(true);
   const flags = {
     Ads: true,
     Privacy: isPro,
@@ -10057,6 +10054,41 @@ const AdminPanel = ({
     onClick: () => setUnlocked(p => !p)
   }, /*#__PURE__*/React.createElement(NyanToggle, {
     on: unlocked
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "0.5px",
+      background: "color-mix(in srgb, var(--nyan-divider) 34%, transparent)",
+      margin: "0 16px"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "12px 16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "flex-start",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "600 15px/1.2 var(--font-ui)",
+      color: "var(--nyan-text)",
+      marginBottom: 4
+    }
+  }, "Force Pro Nudge"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "400 13px/1.3 var(--font-ui)",
+      color: "var(--nyan-text-secondary)"
+    }
+  }, "Show the Pro upgrade card in the ad slot.")), /*#__PURE__*/React.createElement("div", {
+    onClick: () => setForcePro(p => !p)
+  }, /*#__PURE__*/React.createElement(NyanToggle, {
+    on: forcePro
   })))))), /*#__PURE__*/React.createElement(SectionHdr, {
     label: "Feature Flags"
   }), /*#__PURE__*/React.createElement(RowGroup, null, Object.entries(flags).map(([name, on], i) => /*#__PURE__*/React.createElement("div", {

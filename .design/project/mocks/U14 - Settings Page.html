@@ -29,7 +29,7 @@
 <div class="screen-head">
   <div class="screen-eyebrow">Nyan Read · Screen Mock</div>
   <h1>U14 · Settings Page</h1>
-  <p>Appearance / Reading (reminder sub-row interactive) / Data Management / Pro / About card. Tapping a row with choices opens the shared option-picker sheet — the last five frames show Theme Preset, Language, Page Turn, Reminder Interval and Export Data.</p>
+  <p>Appearance / Reading (reminder sub-row interactive) / Data Management / Admin / About card. Tapping a row with choices opens the shared option-picker sheet — the last five frames show Theme Preset, Language, Page Turn, Reminder Interval and Export Data.</p>
 </div>
 <div id="root"></div>
 <script src="../_ds_bundle.js"></script>
@@ -50,7 +50,7 @@ function App() {
   return (
     <div className="screen-wrap">
       <Frame label="Cream · reminder on, no Pro" w={390} h={840}><SettingsPage dark={false} reminderOn={true} isPro={false} /></Frame>
-      <Frame label="Cream · Pro section visible" w={390} h={840}><SettingsPage dark={false} reminderOn={false} isPro={true} /></Frame>
+      <Frame label="Cream · Admin section visible" w={390} h={840}><SettingsPage dark={false} reminderOn={false} isPro={true} /></Frame>
       <Frame label="Sumi Dark" w={390} h={840}><SettingsPage dark={true} reminderOn={false} isPro={false} /></Frame>
       <Frame label="Picker · Theme Preset" w={390} h={840}><SettingsWithPicker dark={false} picker="theme" /></Frame>
       <Frame label="Picker · Language" w={390} h={840}><SettingsWithPicker dark={false} picker="language" /></Frame>

@@ -42,14 +42,13 @@ const SettingsPage = ({ dark, reminderOn, isPro }) => {
         <RowGroup>
           <ListRow icon="export" title="Export Data" subtitle="Save to device or share" chevron />
           <ListRow icon="cloud-arrow-down" title="Import Data" subtitle="Restore from a backup file" chevron />
-          <ListRow icon="wrench" title="Admin Panel" chevron />
         </RowGroup>
 
         {isPro && (
           <>
-            <SectionHdr label="Pro" />
+            <SectionHdr label="Admin" />
             <RowGroup>
-              <ListRow icon="lock-open" title="Lock Privacy Shelf" subtitle="Require PIN to open" chevron />
+              <ListRow icon="wrench" title="Admin Panel" subtitle="Feature flags & privacy controls" chevron />
             </RowGroup>
           </>
         )}
@@ -517,6 +516,7 @@ const FlagBadge = ({ on, dark }) => {
 const AdminPanel = ({ dark, isPro }) => {
   const [proOn, setPro] = useState(isPro);
   const [unlocked, setUnlocked] = useState(false);
+  const [forcePro, setForcePro] = useState(true);
   const flags = { Ads: true, Privacy: isPro, TTS: false };
   return (
     <Shell dark={dark}>
@@ -544,6 +544,16 @@ const AdminPanel = ({ dark, isPro }) => {
                     <div style={{ font: "400 13px/1.3 var(--font-ui)", color: "var(--nyan-text-secondary)" }}>Bypass PIN for this session.</div>
                   </div>
                   <div onClick={() => setUnlocked(p => !p)}><NyanToggle on={unlocked} /></div>
+                </div>
+              </div>
+              <div style={{ height: "0.5px", background: "color-mix(in srgb, var(--nyan-divider) 34%, transparent)", margin: "0 16px" }} />
+              <div style={{ padding: "12px 16px" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ font: "600 15px/1.2 var(--font-ui)", color: "var(--nyan-text)", marginBottom: 4 }}>Force Pro Nudge</div>
+                    <div style={{ font: "400 13px/1.3 var(--font-ui)", color: "var(--nyan-text-secondary)" }}>Show the Pro upgrade card in the ad slot.</div>
+                  </div>
+                  <div onClick={() => setForcePro(p => !p)}><NyanToggle on={forcePro} /></div>
                 </div>
               </div>
             </>
