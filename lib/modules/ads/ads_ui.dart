@@ -32,8 +32,10 @@ class AdsUI {
     required bool adsEnabled,
     required bool isPrivateShelf,
     required bool isSelectionMode,
+    required bool isProUser,
     required int bookCount,
   }) {
+    if (isProUser) return false;
     final meetsPlacementRules = !isPrivateShelf &&
         !isSelectionMode &&
         bookCount >= minBooksForInlineShelfAd;

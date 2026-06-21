@@ -727,6 +727,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           showPrivacyTab && _tabController.index == 1,
           adsEnabled: featureManager.adsEnabled,
           isSelectionMode: isSelectionMode,
+          isProUser: featureManager.isPro,
           forceProNudge: featureManager.forceProNudge,
         ),
       ],
@@ -820,6 +821,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     bool isPrivate, {
     required bool adsEnabled,
     required bool isSelectionMode,
+    required bool isProUser,
     required bool forceProNudge,
   }) {
     if (books.isEmpty) {
@@ -855,6 +857,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           adsEnabled: adsEnabled,
           isPrivateShelf: isPrivate,
           isSelectionMode: isSelectionMode,
+          isProUser: isProUser,
           bookCount: books.length,
         );
 
@@ -862,7 +865,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       adsEnabled: adsEnabled,
       isPrivateShelf: isPrivate,
       isSelectionMode: isSelectionMode,
-      isProUser: false,
+      isProUser: isProUser,
       bookCount: books.length,
       forceProNudge: forceProNudge,
     );
