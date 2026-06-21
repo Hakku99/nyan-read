@@ -2,21 +2,27 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/ui/components/nyan_inline_ad_card.dart';
+import 'nyan_shelf_pro_nudge.dart';
 
 class AdsUI {
-  static const int bookshelfListInsertionIndex = 6;
-  static const int bookshelfGridInsertionCount = 6;
-  static const int minBooksForInlineShelfAd = bookshelfListInsertionIndex + 1;
+  // ponytail: insertion counts kept for grid split logic (after all books)
+  static const int minBooksForInlineShelfAd = 7;
 
-  static const String _sponsoredLabelZh = '\u8d5e\u52a9\u63a8\u8350';
-  static const String _titleZh = '\u53d1\u73b0\u66f4\u591a\u6545\u4e8b';
-  static const String _descriptionZh =
-      '\u8fd9\u91cc\u53ef\u4ee5\u653e\u4e00\u6761\u4e0d\u6253\u6270\u9605\u8bfb\u8282\u594f\u7684\u8d5e\u52a9\u63a8\u8350\u3002';
+  static const _sponsoredTitleZh = '为你发现更多好书';
+  static const _sponsoredTitleEn = 'More stories you may like';
+  static const _providerName = 'BookBuzz';
 
-  static const String _sponsoredLabelEn = 'Sponsored';
-  static const String _titleEn = 'Discover more stories';
-  static const String _descriptionEn =
-      'A quiet sponsored recommendation can live here without interrupting your shelf.';
+  // Placeholder suggestions — replace with real feed data when available.
+  static const _suggestionsZh = [
+    NyanMiniSuggest(title: '星海征途：舰娘纪元', author: '林深'),
+    NyanMiniSuggest(title: '我在末世种田的日子', author: '苏晚'),
+    NyanMiniSuggest(title: '长安十二时辰外传', author: '马伯庸'),
+  ];
+  static const _suggestionsEn = [
+    NyanMiniSuggest(title: 'Star Ocean: Fleet Chronicles', author: 'Lin Shen'),
+    NyanMiniSuggest(title: 'Farming at the End of Days', author: 'Su Wan'),
+    NyanMiniSuggest(title: "Chang'an: Twelve Hours Beyond", author: 'Ma Boyong'),
+  ];
 
   static void init() {
     debugPrint('AdsUI: Initialized');
@@ -31,23 +37,43 @@ class AdsUI {
     final meetsPlacementRules = !isPrivateShelf &&
         !isSelectionMode &&
         bookCount >= minBooksForInlineShelfAd;
-    final isVisible = meetsPlacementRules && (adsEnabled || kDebugMode);
+    return meetsPlacementRules && (adsEnabled || kDebugMode);
+  }
 
-    return isVisible;
+  /// Whether to show the Pro nudge in the sponsored slot (no ad available).
+  /// [forceProNudge] overrides the debug-mode suppression for testing.
+  static bool shouldShowProNudge({
+    required bool adsEnabled,
+    required bool isPrivateShelf,
+    required bool isSelectionMode,
+    required bool isProUser,
+    required int bookCount,
+    bool forceProNudge = false,
+  }) {
+    if (isProUser || isPrivateShelf || isSelectionMode) return false;
+    if (bookCount < minBooksForInlineShelfAd) return false;
+    if (forceProNudge) return true;
+    return !adsEnabled && !kDebugMode;
   }
 
   static Widget buildBookshelfInlineAd(
     BuildContext context, {
-    NyanInlineAdDensity density = NyanInlineAdDensity.regular,
+    VoidCallback? onDismiss,
   }) {
     final isChinese = Localizations.localeOf(context).languageCode == 'zh';
-
-    return NyanInlineAdCard(
-      density: density,
-      sponsoredLabel: isChinese ? _sponsoredLabelZh : _sponsoredLabelEn,
-      title: isChinese ? _titleZh : _titleEn,
-      description: isChinese ? _descriptionZh : _descriptionEn,
+    return NyanShelfDiscoverBlock(
+      title: isChinese ? _sponsoredTitleZh : _sponsoredTitleEn,
+      providerName: _providerName,
+      suggestions: isChinese ? _suggestionsZh : _suggestionsEn,
+      onDismiss: onDismiss,
     );
+  }
+
+  static Widget buildProNudge(
+    BuildContext context, {
+    VoidCallback? onUpgrade,
+  }) {
+    return NyanShelfProNudge(onUpgrade: onUpgrade);
   }
 
   static void hide() {

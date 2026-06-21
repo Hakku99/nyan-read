@@ -194,6 +194,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get adminForceUnlockPrivacyShelfSubtitle => '跳过此次会话的 PIN 校验。';
 
   @override
+  String get adminForceProNudge => '强制展示专业版引导';
+
+  @override
+  String get adminForceProNudgeSubtitle => '在广告位显示升级专业版的卡片。';
+
+  @override
   String get adminFeatureFlagsSection => '功能开关';
 
   @override

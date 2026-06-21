@@ -57,6 +57,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   late TabController _tabController;
   late final BookshelfPreferencesService _prefs;
   bool _isHeroCollapsed = false;
+  bool _adDismissed = false;
 
   BookshelfViewModel get _vm => ref.read(bookshelfViewModelRpProvider);
 
@@ -726,6 +727,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           showPrivacyTab && _tabController.index == 1,
           adsEnabled: featureManager.adsEnabled,
           isSelectionMode: isSelectionMode,
+          forceProNudge: featureManager.forceProNudge,
         ),
       ],
     );
@@ -818,6 +820,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     bool isPrivate, {
     required bool adsEnabled,
     required bool isSelectionMode,
+    required bool forceProNudge,
   }) {
     if (books.isEmpty) {
       AdsUI.hide();
@@ -846,92 +849,72 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       ];
     }
 
-    final showInlineAd = AdsUI.shouldShowBookshelfInlineAd(
+    final showInlineAd = !forceProNudge &&
+        !_adDismissed &&
+        AdsUI.shouldShowBookshelfInlineAd(
+          adsEnabled: adsEnabled,
+          isPrivateShelf: isPrivate,
+          isSelectionMode: isSelectionMode,
+          bookCount: books.length,
+        );
+
+    final showProNudge = AdsUI.shouldShowProNudge(
       adsEnabled: adsEnabled,
       isPrivateShelf: isPrivate,
       isSelectionMode: isSelectionMode,
+      isProUser: false,
       bookCount: books.length,
+      forceProNudge: forceProNudge,
     );
 
     return _prefs.viewMode == ViewMode.grid
-        ? _buildGridSlivers(context, books, showInlineAd: showInlineAd)
-        : _buildListSlivers(context, books, showInlineAd: showInlineAd);
+        ? _buildGridSlivers(context, books,
+            showInlineAd: showInlineAd, showProNudge: showProNudge)
+        : _buildListSlivers(context, books,
+            showInlineAd: showInlineAd, showProNudge: showProNudge);
   }
 
   List<Widget> _buildGridSlivers(
     BuildContext context,
     List<Book> books, {
     required bool showInlineAd,
+    required bool showProNudge,
   }) {
     final topPad = NyanShelfUi.sectionGapAfterShelfChrome;
     final bottomPad = _shelfScrollBottomPadding(context);
-
-    // 16pt inset (outer Padding removed; each sliver owns its edge-to-content gap).
     const double gridSideInset = NyanSpacing.space16;
 
-    if (!showInlineAd) {
-      return [
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            gridSideInset,
-            topPad,
-            gridSideInset,
-            bottomPad,
-          ),
-          sliver: SliverGrid(
-            gridDelegate: _bookshelfGridDelegate(context),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) => _buildGridBookTile(context, books[index]),
-              childCount: books.length,
-            ),
-          ),
-        ),
-      ];
-    }
-
-    final leadingBooks = books.take(AdsUI.bookshelfGridInsertionCount).toList();
-    final trailingBooks =
-        books.skip(AdsUI.bookshelfGridInsertionCount).toList();
+    final Widget? slotWidget = showInlineAd
+        ? AdsUI.buildBookshelfInlineAd(context,
+              onDismiss: () => setState(() => _adDismissed = true))
+        : showProNudge
+            ? AdsUI.buildProNudge(context)
+            : null;
 
     return [
       SliverPadding(
-        padding: EdgeInsets.fromLTRB(gridSideInset, topPad, gridSideInset, 0),
+        padding: EdgeInsets.fromLTRB(
+          gridSideInset,
+          topPad,
+          gridSideInset,
+          slotWidget != null ? 0 : bottomPad,
+        ),
         sliver: SliverGrid(
           gridDelegate: _bookshelfGridDelegate(context),
           delegate: SliverChildBuilderDelegate(
-            (context, index) =>
-                _buildGridBookTile(context, leadingBooks[index]),
-            childCount: leadingBooks.length,
+            (context, index) => _buildGridBookTile(context, books[index]),
+            childCount: books.length,
           ),
         ),
       ),
-      SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: NyanShelfUi.gridMainAxisSpacing,
-            horizontal: NyanSpacing.space16,
-          ),
-          child: AdsUI.buildBookshelfInlineAd(
-            context,
-            density: NyanInlineAdDensity.compact,
-          ),
-        ),
-      ),
-      if (trailingBooks.isNotEmpty)
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(gridSideInset, 0, gridSideInset, bottomPad),
-          sliver: SliverGrid(
-            gridDelegate: _bookshelfGridDelegate(context),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) =>
-                  _buildGridBookTile(context, trailingBooks[index]),
-              childCount: trailingBooks.length,
-            ),
-          ),
-        )
-      else
+      if (slotWidget != null)
         SliverToBoxAdapter(
-          child: SizedBox(height: bottomPad),
+          child: Padding(
+            // ponytail: 14pt top gap matches spec marginTop; L/R 16 standard inset
+            padding: EdgeInsets.fromLTRB(
+                gridSideInset, 14, gridSideInset, bottomPad),
+            child: slotWidget,
+          ),
         ),
     ];
   }
@@ -988,47 +971,21 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     BuildContext context,
     List<Book> books, {
     required bool showInlineAd,
+    required bool showProNudge,
   }) {
     final topPad = NyanShelfUi.sectionGapAfterShelfChrome;
     final bottomPad = _shelfScrollBottomPadding(context);
-
-    // 16pt inset (outer Padding removed; each sliver owns its edge-to-content gap).
     const double listSideInset = NyanSpacing.space16;
 
     final decoration = _listGroupDecoration(context);
-    final dividerColor = context.nyanTheme.divider.withValues(alpha: 0.34);
+    final lastIndex = books.length - 1;
 
-    if (!showInlineAd) {
-      final lastIndex = books.length - 1;
-      return [
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            listSideInset,
-            topPad,
-            listSideInset,
-            bottomPad,
-          ),
-          sliver: DecoratedSliver(
-            decoration: decoration,
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) => _buildListBookTile(
-                  context,
-                  books[index],
-                  showTopDivider: index > 0,
-                  isFirst: index == 0,
-                  isLast: index == lastIndex,
-                ),
-                childCount: books.length,
-              ),
-            ),
-          ),
-        ),
-      ];
-    }
-
-    final itemCount = books.length + 1;
-    final adIndex = AdsUI.bookshelfListInsertionIndex;
+    final Widget? slotWidget = showInlineAd
+        ? AdsUI.buildBookshelfInlineAd(context,
+              onDismiss: () => setState(() => _adDismissed = true))
+        : showProNudge
+            ? AdsUI.buildProNudge(context)
+            : null;
 
     return [
       SliverPadding(
@@ -1036,44 +993,33 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           listSideInset,
           topPad,
           listSideInset,
-          bottomPad,
+          slotWidget != null ? 0 : bottomPad,
         ),
         sliver: DecoratedSliver(
           decoration: decoration,
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                if (index == adIndex) {
-                  // Ad lives inside the grouped panel, divided like any row.
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (index > 0)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: NyanSpacing.space12,
-                          ),
-                          child: Container(height: 0.5, color: dividerColor),
-                        ),
-                      AdsUI.buildBookshelfInlineAd(context),
-                    ],
-                  );
-                }
-
-                final bookIndex = index > adIndex ? index - 1 : index;
-                return _buildListBookTile(
-                  context,
-                  books[bookIndex],
-                  showTopDivider: index > 0,
-                  isFirst: index == 0,
-                  isLast: index == itemCount - 1,
-                );
-              },
-              childCount: itemCount,
+              (context, index) => _buildListBookTile(
+                context,
+                books[index],
+                showTopDivider: index > 0,
+                isFirst: index == 0,
+                isLast: index == lastIndex,
+              ),
+              childCount: books.length,
             ),
           ),
         ),
       ),
+      if (slotWidget != null)
+        SliverToBoxAdapter(
+          child: Padding(
+            // ponytail: 14pt top gap matches spec marginTop; L/R 16 standard inset
+            padding: EdgeInsets.fromLTRB(
+                listSideInset, 14, listSideInset, bottomPad),
+            child: slotWidget,
+          ),
+        ),
     ];
   }
 

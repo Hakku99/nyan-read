@@ -464,6 +464,18 @@ abstract class AppLocalizations {
   /// **'Bypass PIN for this session.'**
   String get adminForceUnlockPrivacyShelfSubtitle;
 
+  /// No description provided for @adminForceProNudge.
+  ///
+  /// In en, this message translates to:
+  /// **'Force Pro Nudge'**
+  String get adminForceProNudge;
+
+  /// No description provided for @adminForceProNudgeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the Pro upgrade card in the ad slot.'**
+  String get adminForceProNudgeSubtitle;
+
   /// No description provided for @adminFeatureFlagsSection.
   ///
   /// In en, this message translates to:

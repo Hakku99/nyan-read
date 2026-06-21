@@ -198,6 +198,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Bypass PIN for this session.';
 
   @override
+  String get adminForceProNudge => 'Force Pro Nudge';
+
+  @override
+  String get adminForceProNudgeSubtitle =>
+      'Show the Pro upgrade card in the ad slot.';
+
+  @override
   String get adminFeatureFlagsSection => 'Feature Flags';
 
   @override

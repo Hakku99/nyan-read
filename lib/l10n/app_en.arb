@@ -68,6 +68,8 @@
   "adminProModeSubtitle": "Unlocks all Pro features in this session.",
   "adminForceUnlockPrivacyShelf": "Force Unlock Privacy Shelf",
   "adminForceUnlockPrivacyShelfSubtitle": "Bypass PIN for this session.",
+  "adminForceProNudge": "Force Pro Nudge",
+  "adminForceProNudgeSubtitle": "Show the Pro upgrade card in the ad slot.",
   "adminFeatureFlagsSection": "Feature Flags",
   "adminStateOn": "On",
   "adminStateOff": "Off",

@@ -83,6 +83,13 @@ class AdminPanel extends ConsumerWidget {
                         },
                       ),
                     ],
+                    const _AdminDivider(),
+                    _AdminSwitchRow(
+                      title: loc.adminForceProNudge,
+                      subtitle: loc.adminForceProNudgeSubtitle,
+                      value: fm.forceProNudge,
+                      onChanged: fm.setForceProNudge,
+                    ),
                   ],
                 ),
                 _AdminSectionHeader(title: loc.adminFeatureFlagsSection),

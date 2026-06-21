@@ -138,6 +138,43 @@ class NyanTypography {
   ///   `font: "400 12.5px/1.35 var(--font-ui)"`
   static const double responseDescription = 12.5;
 
+  /// U22 Discover block header title + Pro nudge upgrade button label —
+  /// design-system handoff exception (see AGENTS.md §4.2.5).
+  /// Sits between [meta] 13 and [body] 16. MUST NOT appear in body copy,
+  /// headings, list rows, or any other surface.
+  ///
+  /// Source: `screens/U22 - Sponsored Shelf Placement.html` `BottomDiscover`
+  ///   `font: "600 14.5px/1.25 var(--font-ui)"` (header title)
+  ///   `font: "600 14.5px/1 var(--font-ui)"` (upgrade button)
+  static const double discoverBlockTitle = 14.5;
+
+  /// U22 Discover block "SPONSORED" badge label — design-system handoff
+  /// exception (see AGENTS.md §4.2.5). Reserved for the sponsored badge chip
+  /// in [NyanShelfDiscoverBlock] ONLY. MUST NOT appear in body copy or any
+  /// other surface.
+  ///
+  /// Source: `screens/U22 - Sponsored Shelf Placement.html` `BottomDiscover`
+  ///   `font: "600 9.5px/1 var(--font-ui)"`, `letterSpacing: ".5px"`, uppercase
+  static const double sponsoredBadge = 9.5;
+
+  /// U22 Discover block mini-suggest tile title — design-system handoff
+  /// exception (see AGENTS.md §4.2.5). Reserved for book title text inside
+  /// [_MiniSuggestTile] ONLY. MUST NOT appear in body copy or any other
+  /// surface.
+  ///
+  /// Source: `screens/U22 - Sponsored Shelf Placement.html` `MiniSuggest`
+  ///   `font: "600 11.5px/1.3 var(--font-ui)"`
+  static const double miniSuggestTitle = 11.5;
+
+  /// U22 Discover block mini-suggest tile author — design-system handoff
+  /// exception (see AGENTS.md §4.2.5). Reserved for author text inside
+  /// [_MiniSuggestTile] ONLY. MUST NOT appear in body copy or any other
+  /// surface.
+  ///
+  /// Source: `screens/U22 - Sponsored Shelf Placement.html` `MiniSuggest`
+  ///   `font: "400 10.5px/1.2 var(--font-ui)"`
+  static const double miniSuggestAuthor = 10.5;
+
   /// Olive uppercase eyebrow label — 11pt / w500 / +0.22 letter-spacing.
   /// Pass [color] as `nyan.primaryDeep` from the active [NyanTheme].
   /// Use only for section eyebrows above grouped cards / reader settings headers.

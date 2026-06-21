@@ -121,6 +121,13 @@ class NyanIcons {
   /// Used for the "File not found" error state icon (ph-compass).
   static const IconData compass = PhosphorIconsRegular.compass;
 
+  // U22 Sponsored Shelf: filled glyphs for Discover block + Pro nudge.
+  // §4.6 delivery-package takes priority over the Regular-only rule.
+  static const IconData compassFilled = PhosphorIconsFill.compass;
+  static const IconData leafFilled = PhosphorIconsFill.leaf;
+  static const IconData sparkleFilled = PhosphorIconsFill.sparkle;
+  static const IconData checkCircleFilled = PhosphorIconsFill.checkCircle;
+
   /// Used for the "Unsupported format" error state icon (ph-file-dashed).
   static const IconData fileDashed = PhosphorIconsRegular.fileDashed;
 

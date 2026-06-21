@@ -68,6 +68,8 @@
   "adminProModeSubtitle": "解锁此次会话的全部专业功能。",
   "adminForceUnlockPrivacyShelf": "强制解锁私密书架",
   "adminForceUnlockPrivacyShelfSubtitle": "跳过此次会话的 PIN 校验。",
+  "adminForceProNudge": "强制展示专业版引导",
+  "adminForceProNudgeSubtitle": "在广告位显示升级专业版的卡片。",
   "adminFeatureFlagsSection": "功能开关",
   "adminStateOn": "开启",
   "adminStateOff": "关闭",

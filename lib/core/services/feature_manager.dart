@@ -14,6 +14,7 @@ class FeatureManager extends ChangeNotifier {
   bool _privacyShelfEnabled = false;
   bool _ttsEnabled = false;
   bool _isPrivateShelfUnlocked = false;
+  bool _forceProNudge = false;
 
   AppMode get currentMode => _currentMode;
   bool get adsEnabled => _adsEnabled;
@@ -21,6 +22,7 @@ class FeatureManager extends ChangeNotifier {
   bool get ttsEnabled => _ttsEnabled;
   bool get isPro => _currentMode == AppMode.pro;
   bool get isPrivateShelfUnlocked => _isPrivateShelfUnlocked;
+  bool get forceProNudge => _forceProNudge;
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -65,6 +67,11 @@ class FeatureManager extends ChangeNotifier {
   // Admin Overrides (for testing)
   void forceEnablePrivacyShelf(bool enable) {
     _privacyShelfEnabled = enable;
+    notifyListeners();
+  }
+
+  void setForceProNudge(bool value) {
+    _forceProNudge = value;
     notifyListeners();
   }
 }

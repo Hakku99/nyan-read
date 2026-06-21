@@ -370,6 +370,12 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — U21 删除确认 Sheet 正文字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `DeleteConfirmSheet`）**：`_DeleteBooksSheetContent` 的说明行使用 **13.5pt w400**（来源：`bundle3.jsx` `font: "400 13.5px/1.45"`）。此值介于阶梯 `meta 13` 与 `body 16` 之间（§4.6 交付包优先）。此例外**仅限** `_DeleteBooksSheetContent` 正文行，**MUST NOT** 出现在其它表面。字面量 `13.5` 直接写在该 widget 内，无独立常量（值已有先例：`NyanTypography.fabLabel = 13.5`）。
 
+> **例外 — U22 Sponsored Shelf Placement 字号（交付包对齐，2026-06，来源 `screens/U22 - Sponsored Shelf Placement.html`）**：`NyanShelfDiscoverBlock`（Option B Discover block）与 `NyanShelfProNudge`（Option C Pro nudge）引入 4 个专属字号，均落在 6 档阶梯之外（§4.6 交付包优先）：
+> - `NyanTypography.discoverBlockTitle = 14.5` — Discover block 标题 "More stories you may like"（`600 14.5px/1.25`）及 Pro nudge "Upgrade to Pro" 按钮标签（`600 14.5px/1`），**仅限**这两处，**MUST NOT** 出现在正文、列表行或其它表面。
+> - `NyanTypography.sponsoredBadge = 9.5` — "SPONSORED" 大写徽标（`600 9.5px/1`，letterSpacing 0.5），**仅限** Discover block 赞助商标识行，**MUST NOT** 出现在其它表面。
+> - `NyanTypography.miniSuggestTitle = 11.5` — Discover block 书格标题（`600 11.5px/1.3`，2 行截断），**仅限** `_MiniSuggestTile`，**MUST NOT** 出现在其它表面。
+> - `NyanTypography.miniSuggestAuthor = 10.5` — Discover block 书格作者（`400 10.5px/1.2`），**仅限** `_MiniSuggestTile`，**MUST NOT** 出现在其它表面。
+
 > **新增阴影 Token — `NyanShadows.cardSelectionGlow` / `selectionBadgeGlow`（2026-06，来源 `bundle3.jsx` `SelectBookCard`）**：选中书格封面外发光（`primary@16%` spread 3px）和 SelectCheck 徽标发光（`primary@40%` 1px drop shadow）通过 `NyanShadows.cardSelectionGlow(nyan)` / `selectionBadgeGlow(nyan)` 访问，**MUST NOT** 直接构造 `BoxShadow`。
 
 > ✅ **字体已注册（§6 Phase 0 已完成）**：`pubspec.yaml` 的 `flutter.fonts` 段已声明 `Noto Sans SC`（400/500/600）+ `Source Han Serif SC`（400/600）；字体文件存放于 `assets/fonts/`，**未纳入 Git**（体积原因）。开发者需按 `assets/fonts/README.md` 说明手动放置字体文件。缺少字体时 Flutter 打印 warning 并回落平台字体，不影响编译；但 serif 阅读模式仅在字体文件就位后生效。
@@ -388,7 +394,7 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 - **Slider**：轨道高 3–4pt 用 `surfaceMuted`，已填充段用 `primaryDeep`（亮度）或 `highlightOrange`（暖色温），thumb 10–12pt 实心同色，**无光晕、无阴影、无放大**。
 - **Card**：圆角 `NyanRadius.card`（20pt），`surface` 底，`divider` 描边；**默认无阴影**；仅在书架 hover / 次级浮层必要时使用 `NyanShadows.subtle`。
 - **书架列表视图（list view，2026-06，来源 `screens/bundle3.jsx` `BookListRow`）**：**单块分组面板**而非逐项独立卡片——外层 `surface` 底 + `NyanRadius.cardNested`（16pt）+ `NyanShadows.settingsGrouped` + `--chrome-edge` 描边（亮色透明、暗色 `divider` 环），各行**无自身边框/阴影**，行间用 0.5px `divider@34%` 发丝线（左右内缩 12pt）分隔。行内：左侧 44×58 竖向封面（`NyanRadius.chip`），标题 14pt w600 单行 + 作者独占一行（`textMuted`）+ 进度行（仅 `progress>0` 时显示：满宽 3pt 轨 + 11pt mono 百分比），尾部格式徽标 + `chevronRight`。为不破坏懒加载（§3.4），分组外观由 `DecoratedSliver` 承载、内部仍是 `SliverList.builder`。选中态走整行 `primaryDeep` 淡色填充（`context.selectionSurface`），不加逐行描边。**MUST NOT** 回退到逐项独立卡片 + 卡间留白的旧实现。
-- **Icon**：线性 1.5pt 感——图标系统为 **Phosphor Regular**，所有图标 **MUST** 来自 `lib/core/ui/nyan_icons.dart`（`NyanIcons.*`），**MUST NOT** 直接用 `Icons.*`。填充权重仅保留给"已设书签"与主题卡选中对勾（后者是全项目唯一允许的硬实心圆徽标）。
+- **Icon**：线性 1.5pt 感——图标系统为 **Phosphor Regular**，所有图标 **MUST** 来自 `lib/core/ui/nyan_icons.dart`（`NyanIcons.*`），**MUST NOT** 直接用 `Icons.*`。填充权重仅保留给"已设书签"与主题卡选中对勾，以及以下 §4.6 交付包授权的例外：`NyanIcons.compassFilled`（Discover block 头图）/ `NyanIcons.leafFilled`（Pro nudge 图标）/ `NyanIcons.sparkleFilled`（Pro nudge 升级按钮）/ `NyanIcons.checkCircleFilled`（Pro nudge 特性列表），均限定于 `NyanShelfDiscoverBlock` / `NyanShelfProNudge`，**MUST NOT** 扩散至其它组件。
 - **Haptics**：滑块拖动最多一次 `HapticFeedback.lightImpact`；翻页 **MUST NOT** 触发触感反馈。
 - **Tap target**：所有可点击元素最小 44×44pt（`NyanSpacing.minTapTarget`）。
 
@@ -400,7 +406,7 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 - ❌ 给暗色卡片写 `dark ? const [] : ...` 退订阴影（v3 发光环已承载平面分离）；
 - ❌ Pill / 选项 chip 用 `StadiumBorder`（已废止，改用 `NyanRadius.chip` 12pt 方圆角 + outline-on-select）；
 - ❌ 高饱和色（iOS 蓝、Material 紫、霓虹任何色）；
-- ❌ 大面积线性/径向渐变（亮度弹层的玻璃拟态模糊是经维护者批准的唯一例外）；
+- ❌ 大面积线性/径向渐变（已批准的例外：①亮度弹层玻璃拟态模糊；② U22 `NyanShelfProNudge` 渐变背景 + 叶片图标 + Upgrade 按钮，来源 `screens/U22 - Sponsored Shelf Placement.html` `ProNudge`，§4.6 交付包优先）；
 - ❌ `Icons.xxx_filled` 填充图标（对勾徽标除外）；
 - ❌ 卡片之间加 `Divider`（层次用 `surfaceMuted` 背景色差代替）；
 - ❌ 字重越界（仅允许 `w400 / w500 / w600`，`w700+` 一律 reject）；
