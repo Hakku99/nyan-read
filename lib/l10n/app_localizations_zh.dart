@@ -167,6 +167,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pro => '专业版';
 
   @override
+  String get admin => '管理';
+
+  @override
+  String get adminPanelSubtitle => '功能开关与隐私控制';
+
+  @override
   String get about => '关于';
 
   @override

@@ -410,6 +410,18 @@ abstract class AppLocalizations {
   /// **'Pro'**
   String get pro;
 
+  /// No description provided for @admin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get admin;
+
+  /// No description provided for @adminPanelSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature flags & privacy controls'**
+  String get adminPanelSubtitle;
+
   /// No description provided for @about.
   ///
   /// In en, this message translates to:

@@ -169,6 +169,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pro => 'Pro';
 
   @override
+  String get admin => 'Admin';
+
+  @override
+  String get adminPanelSubtitle => 'Feature flags & privacy controls';
+
+  @override
   String get about => 'About';
 
   @override

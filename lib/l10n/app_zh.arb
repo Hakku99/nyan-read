@@ -59,6 +59,8 @@
   "upgradeToPro": "升级到专业版",
   "upgradeToProSubtitle": "解锁私密书架等专业功能",
   "pro": "专业版",
+  "admin": "管理",
+  "adminPanelSubtitle": "功能开关与隐私控制",
   "about": "关于",
   "lockPrivacyShelfSubtitle": "需要 PIN 码才能打开",
   "adminPanel": "管理面板",

@@ -346,34 +346,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           showChevron: true,
                           onTap: () => _handleImportData(context),
                         ),
-                        // Admin Panel — visible in the spec's Data Management
-                        // section. Routes to /admin for internal/debugging use.
-                        NyanListRow(
-                          leadingIcon: NyanIcons.adminPanel,
-                          title: loc.adminPanel,
-                          showChevron: true,
-                          onTap: () => context.push('/admin'),
-                        ),
                       ],
                     ),
 
-                    // ── Pro — only shown when the user is Pro ─────────────
-                    // Spec (bundle4.jsx): no Pro section when isPro=false.
+                    // ── Admin — only shown when the user is Pro ───────────
+                    // Spec (bundle4.jsx): Admin section with subtitle only when isPro=true.
                     if (featureManager.isPro) ...[
                       NyanSectionHeader(
-                        title: loc.pro,
+                        title: loc.admin,
                         withLeadingDot: true,
                       ),
                       NyanRowGroup(
                         children: [
-                          if (featureManager.privacyShelfEnabled)
-                            NyanListRow(
-                              leadingIcon: NyanIcons.lockOpen,
-                              title: loc.lockPrivacyShelf,
-                              subtitle: loc.lockPrivacyShelfSubtitle,
-                              showChevron: true,
-                              onTap: () => context.push('/admin'),
-                            ),
+                          NyanListRow(
+                            leadingIcon: NyanIcons.adminPanel,
+                            title: loc.adminPanel,
+                            subtitle: loc.adminPanelSubtitle,
+                            showChevron: true,
+                            onTap: () => context.push('/admin'),
+                          ),
                         ],
                       ),
                     ],

@@ -59,6 +59,8 @@
   "upgradeToPro": "Upgrade to Pro",
   "upgradeToProSubtitle": "Unlock Privacy Shelf and more",
   "pro": "Pro",
+  "admin": "Admin",
+  "adminPanelSubtitle": "Feature flags & privacy controls",
   "about": "About",
   "lockPrivacyShelfSubtitle": "Require PIN to open",
   "adminPanel": "Admin Panel",
