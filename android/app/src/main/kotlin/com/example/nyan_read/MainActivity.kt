@@ -14,6 +14,10 @@ import java.util.UUID
 class MainActivity : FlutterActivity() {
     companion object {
         private const val CHANNEL = "com.example.nyan_read/book_source"
+        // readUriBytes loads the whole file into a ByteArray on the main thread; guard
+        // against OOM on unusually large files (>100 MB). Callers that need to handle
+        // larger files should use copyUriToTempFile + stream-read instead.
+        private const val MAX_MEMORY_READ_BYTES = 100L * 1024L * 1024L
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -97,6 +101,18 @@ class MainActivity : FlutterActivity() {
 
     private fun readUriBytes(uriString: String): ByteArray {
         val uri = Uri.parse(uriString)
+        // Check file size before allocating — avoids OOM on very large files.
+        contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+            val sizeBytes = pfd.statSize
+            if (sizeBytes > MAX_MEMORY_READ_BYTES) {
+                val sizeMb = sizeBytes / (1024L * 1024L)
+                throw IllegalStateException(
+                    "File too large to load into memory (${sizeMb} MB). " +
+                    "Maximum supported size for in-memory reading is " +
+                    "${MAX_MEMORY_READ_BYTES / (1024L * 1024L)} MB."
+                )
+            }
+        }
         contentResolver.openInputStream(uri)?.use { input ->
             return input.readBytes()
         }

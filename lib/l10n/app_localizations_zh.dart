@@ -988,4 +988,32 @@ class AppLocalizationsZh extends AppLocalizations {
   String exportFailed(String error) {
     return '导出失败：$error';
   }
+
+  @override
+  String get searchHint => '搜索书名或作者';
+
+  @override
+  String get searchRecent => '最近';
+
+  @override
+  String get searchClear => '清除';
+
+  @override
+  String searchResultCount(int count, String query) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '找到 $count 条\"$query\"的结果',
+      one: '找到 $count 条\"$query\"的结果',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchNoMatchTitle(String query) {
+    return '没有匹配\"$query\"的书籍';
+  }
+
+  @override
+  String get searchNoMatchSubtitle => '换个书名或作者名试试。';
 }

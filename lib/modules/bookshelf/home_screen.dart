@@ -33,6 +33,7 @@ import 'widgets/import_book_sheet.dart';
 import 'widgets/bookshelf_shelf_toolbar.dart';
 import 'widgets/bookshelf_sort_sheet.dart';
 import 'widgets/segmented_tab_control.dart';
+import 'book_search_page.dart';
 import 'bookshelf_view_model.dart';
 import 'bookshelf_view_model_provider.dart';
 
@@ -669,7 +670,15 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                   ? loc.lockPrivacyShelf
                   : loc.unlockPrivacyShelf,
               settingsTooltip: loc.settingsTitle,
-              onSearch: () {}, // search not yet implemented
+              onSearch: () {
+                final isPrivate = showPrivacyTab && _tabController.index == 1;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BookSearchPage(isPrivate: isPrivate),
+                  ),
+                );
+              },
               onSort: () => _showSortMenu(context),
               onToggleView: () async {
                 final isGrid = _prefs.viewMode == ViewMode.grid;

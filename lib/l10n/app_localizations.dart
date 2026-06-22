@@ -1933,6 +1933,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Export failed: {error}'**
   String exportFailed(String error);
+
+  /// No description provided for @searchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search title or author'**
+  String get searchHint;
+
+  /// No description provided for @searchRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get searchRecent;
+
+  /// No description provided for @searchClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get searchClear;
+
+  /// No description provided for @searchResultCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} result for \"{query}\"} other{{count} results for \"{query}\"}}'**
+  String searchResultCount(int count, String query);
+
+  /// No description provided for @searchNoMatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No books match \"{query}\"'**
+  String searchNoMatchTitle(String query);
+
+  /// No description provided for @searchNoMatchSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different title or author name.'**
+  String get searchNoMatchSubtitle;
 }
 
 class _AppLocalizationsDelegate

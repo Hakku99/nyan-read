@@ -25,6 +25,10 @@ class NyanIcons {
 
   // ── Navigation ──────────────────────────────────────────────────────────
   static const IconData back = PhosphorIconsRegular.arrowLeft;
+  static const IconData arrowLeft = PhosphorIconsRegular.arrowLeft;
+  static const IconData arrowUpLeft = PhosphorIconsRegular.arrowUpLeft;
+  static const IconData clockCounterClockwise =
+      PhosphorIconsRegular.clockCounterClockwise;
   static const IconData close = PhosphorIconsRegular.x;
   static const IconData chevronRight = PhosphorIconsRegular.caretRight;
   static const IconData chevronLeft = PhosphorIconsRegular.caretLeft;

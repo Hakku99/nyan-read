@@ -502,5 +502,22 @@
         "type": "String"
       }
     }
-  }
+  },
+  "searchHint": "Search title or author",
+  "searchRecent": "Recent",
+  "searchClear": "Clear",
+  "searchResultCount": "{count, plural, one{{count} result for \"{query}\"} other{{count} results for \"{query}\"}}",
+  "@searchResultCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "query": { "type": "String" }
+    }
+  },
+  "searchNoMatchTitle": "No books match \"{query}\"",
+  "@searchNoMatchTitle": {
+    "placeholders": {
+      "query": { "type": "String" }
+    }
+  },
+  "searchNoMatchSubtitle": "Try a different title or author name."
 }

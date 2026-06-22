@@ -485,5 +485,22 @@
         "type": "String"
       }
     }
-  }
+  },
+  "searchHint": "搜索书名或作者",
+  "searchRecent": "最近",
+  "searchClear": "清除",
+  "searchResultCount": "{count, plural, one{找到 {count} 条\"{query}\"的结果} other{找到 {count} 条\"{query}\"的结果}}",
+  "@searchResultCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "query": { "type": "String" }
+    }
+  },
+  "searchNoMatchTitle": "没有匹配\"{query}\"的书籍",
+  "@searchNoMatchTitle": {
+    "placeholders": {
+      "query": { "type": "String" }
+    }
+  },
+  "searchNoMatchSubtitle": "换个书名或作者名试试。"
 }

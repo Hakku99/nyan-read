@@ -14,18 +14,22 @@ class BookshelfPreferencesService {
   static const String _keySortBy = 'bookshelf_sort_by';
   static const String _keyIsAscending = 'bookshelf_sort_ascending';
   static const String _keyDeleteFiles = 'bookshelf_delete_files_on_remove';
+  static const String _keyRecentSearches = 'bookshelf_recent_searches';
+  static const int _maxRecentSearches = 5;
 
   // Default values
   ViewMode _viewMode = ViewMode.grid;
   SortBy _sortBy = SortBy.recency;
   bool _isAscending = false; // Default to descending for Recency
   bool _deleteFilesOnRemove = false;
+  List<String> _recentSearches = [];
 
   // Getters
   ViewMode get viewMode => _viewMode;
   SortBy get sortBy => _sortBy;
   bool get isAscending => _isAscending;
   bool get deleteFilesOnRemove => _deleteFilesOnRemove;
+  List<String> get recentSearches => List.unmodifiable(_recentSearches);
 
   /// Initialize the service and load saved preferences
   Future<void> initialize() async {
@@ -53,6 +57,9 @@ class BookshelfPreferencesService {
 
     // Load delete files setting
     _deleteFilesOnRemove = _prefs!.getBool(_keyDeleteFiles) ?? false;
+
+    // Load recent searches
+    _recentSearches = _prefs!.getStringList(_keyRecentSearches) ?? [];
   }
 
   /// Set view mode and persist
@@ -103,6 +110,22 @@ class BookshelfPreferencesService {
   Future<void> setDeleteFilesOnRemove(bool value) async {
     _deleteFilesOnRemove = value;
     await _prefs?.setBool(_keyDeleteFiles, value);
+  }
+
+  /// Prepend [query] to recent searches, dedupe, cap at [_maxRecentSearches].
+  Future<void> addRecentSearch(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return;
+    _recentSearches = [
+      trimmed,
+      ..._recentSearches.where((s) => s != trimmed),
+    ].take(_maxRecentSearches).toList();
+    await _prefs?.setStringList(_keyRecentSearches, _recentSearches);
+  }
+
+  Future<void> clearRecentSearches() async {
+    _recentSearches = [];
+    await _prefs?.remove(_keyRecentSearches);
   }
 
   /// Get SQL ORDER BY clause based on current sort preference

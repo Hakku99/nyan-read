@@ -1031,4 +1031,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String exportFailed(String error) {
     return 'Export failed: $error';
   }
+
+  @override
+  String get searchHint => 'Search title or author';
+
+  @override
+  String get searchRecent => 'Recent';
+
+  @override
+  String get searchClear => 'Clear';
+
+  @override
+  String searchResultCount(int count, String query) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count results for \"$query\"',
+      one: '$count result for \"$query\"',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String searchNoMatchTitle(String query) {
+    return 'No books match \"$query\"';
+  }
+
+  @override
+  String get searchNoMatchSubtitle => 'Try a different title or author name.';
 }
