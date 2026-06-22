@@ -35,85 +35,7 @@ class _NotesListPageState extends State<NotesListPage> {
   List<Highlight> _highlights = [];
   bool _isLoading = true;
 
-  bool get _isZh =>
-      Localizations.localeOf(context).languageCode.startsWith('zh');
-
-  String _headerSubtitle() {
-    if (_isZh) {
-      return '\u300a${widget.bookTitle}\u300b';
-    }
-    return widget.bookTitle;
-  }
-
-  String _contextTitle() {
-    if (_isZh) {
-      return '\u7247\u6bb5\u4e0e\u6279\u6ce8';
-    }
-    return 'Reading notes';
-  }
-
-  String _contextDescription() {
-    if (_isZh) {
-      return '\u70b9\u5f00\u53ef\u56de\u5230\u539f\u6587\uff0c\u957f\u6309\u53ef\u7f16\u8f91\uff0c\u5de6\u6ed1\u53ef\u5220\u9664\u3002';
-    }
-    return 'Tap to return, long-press to edit, swipe left to delete.';
-  }
-
-  String _emptyStateTitle() {
-    if (_isZh) {
-      return '\u8fd8\u6ca1\u6709\u7559\u4e0b\u7247\u6bb5';
-    }
-    return 'No reading notes yet';
-  }
-
-  String _emptyStateDescription() {
-    if (_isZh) {
-      return '\u60f3\u56de\u770b\u7684\u53e5\u5b50\u4e0e\u6279\u6ce8\uff0c\u4f1a\u6536\u5728\u8fd9\u91cc\u3002';
-    }
-    return 'Lines worth returning to will gather here.';
-  }
-
-  String _emptyStateHint() {
-    if (_isZh) {
-      return '\u9605\u8bfb\u65f6\u957f\u6309\u6587\u5b57\u5373\u53ef\u521b\u5efa\u9ad8\u4eae';
-    }
-    return 'Long-press while reading to save a highlight or note.';
-  }
-
-  String _noteTagLabel() {
-    if (_isZh) {
-      return '\u6279\u6ce8';
-    }
-    return 'Note';
-  }
-
-  String _deleteActionLabel() {
-    if (_isZh) {
-      return '\u5220\u9664';
-    }
-    return 'Delete';
-  }
-
-  String _deleteFailedMessage(String error) {
-    if (_isZh) {
-      return '\u5220\u9664\u9ad8\u4eae\u5931\u8d25\uff1a$error';
-    }
-    return 'Failed to delete highlight: $error';
-  }
-
-  String _highlightLabel(int index) {
-    if (_isZh) {
-      return '\u9ad8\u4eae $index';
-    }
-    return 'Highlight $index';
-  }
-
-  String _paragraphLabel(int paragraphIndex) {
-    if (_isZh) {
-      return '\u6bb5\u843d ${paragraphIndex + 1}';
-    }
-    return 'Paragraph ${paragraphIndex + 1}';
-  }
+  AppLocalizations get _loc => AppLocalizations.of(context)!;
 
   String _formatDateLabel(DateTime date) {
     final month = date.month.toString().padLeft(2, '0');
@@ -122,9 +44,7 @@ class _NotesListPageState extends State<NotesListPage> {
   }
 
   String _formatSectionDate(String dateLabel) {
-    if (dateLabel.isEmpty) {
-      return _isZh ? '\u66f4\u65e9' : 'Earlier';
-    }
+    if (dateLabel.isEmpty) return _loc.timeEarlier;
     return dateLabel.replaceAll('-', '.');
   }
 
@@ -190,7 +110,7 @@ class _NotesListPageState extends State<NotesListPage> {
       });
       SnackBarUtils.show(
         context,
-        _deleteFailedMessage(e.toString()),
+        _loc.failedToDeleteHighlight(e.toString()),
         tone: NyanSnackTone.error,
       );
     }
@@ -239,7 +159,7 @@ class _NotesListPageState extends State<NotesListPage> {
             children: [
               NyanPageHeader(
                 title: loc.notesAndHighlightsTitle(_highlights.length),
-                subtitle: _headerSubtitle(),
+                subtitle: _loc.notesBookSubtitle(widget.bookTitle),
                 titleStyle: theme.textTheme.titleLarge?.copyWith(
                   fontSize: NyanTypography.section,
                   fontWeight: FontWeight.w600,
@@ -323,7 +243,7 @@ class _NotesListPageState extends State<NotesListPage> {
             ),
           ),
         ),
-        title: _emptyStateTitle(),
+        title: _loc.notesEmptyTitle,
         // Empty-state title uses 18pt — exception per design spec
         // (bundle3.jsx NotesList empty state: "600 18px/1.25").
         // Same exception pattern as Reader Error View and Sheet title.
@@ -333,7 +253,7 @@ class _NotesListPageState extends State<NotesListPage> {
           height: 1.25,
           color: nyanTheme.textPrimary.withValues(alpha: isDark ? 0.88 : 0.84),
         ),
-        description: _emptyStateDescription(),
+        description: _loc.notesEmptyDescription,
         descriptionStyle: theme.textTheme.bodyMedium?.copyWith(
           fontSize: 14,
           height: 1.4,
@@ -343,7 +263,7 @@ class _NotesListPageState extends State<NotesListPage> {
         descriptionSpacing: NyanSpacing.space12 - 2, // ~10pt gap to hint
         actionSpacing: NyanSpacing.space12,
         action: Text(
-          _emptyStateHint(),
+          _loc.notesEmptyHint,
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall?.copyWith(
             fontSize: 13,
@@ -457,7 +377,7 @@ class _NotesListPageState extends State<NotesListPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _contextTitle(),
+                  _loc.notesContextTitle,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
@@ -469,7 +389,7 @@ class _NotesListPageState extends State<NotesListPage> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  _contextDescription(),
+                  _loc.notesContextDescription,
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontSize: 12.5,
                     color: nyanTheme.textSecondary.withValues(
@@ -559,7 +479,7 @@ class _NotesListPageState extends State<NotesListPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _deleteActionLabel(),
+                    _loc.delete,
                     style: theme.textTheme.labelSmall?.copyWith(
                       fontSize: 12,
                       color: nyanTheme.errorPrimaryTextColor.withValues(
@@ -589,7 +509,7 @@ class _NotesListPageState extends State<NotesListPage> {
   Widget _buildHighlightCard(Highlight highlight, int index) {
     final note = highlight.note?.trim();
     final excerpt = highlight.selectedText.trim();
-    final meta = _paragraphLabel(highlight.paragraphIndex);
+    final meta = _loc.paragraphIndex(highlight.paragraphIndex + 1);
 
     return Dismissible(
       key: Key(highlight.id),
@@ -603,10 +523,10 @@ class _NotesListPageState extends State<NotesListPage> {
       secondaryBackground: _buildDeleteRevealBackground(),
       onDismissed: (_) => _deleteHighlight(highlight),
       child: NyanHighlightCard(
-        label: _highlightLabel(index + 1),
+        label: _loc.highlightName(index + 1),
         excerpt: excerpt,
         note: note,
-        noteTagLabel: _noteTagLabel(),
+        noteTagLabel: _loc.noteTagLabel,
         meta: meta,
         highlightColor: _parseColor(highlight.colorCode),
         onTap: widget.onJumpToHighlight == null

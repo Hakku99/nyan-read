@@ -30,8 +30,6 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
   List<Map<String, dynamic>> _bookmarks = [];
   bool _isLoading = true;
 
-  bool get _isZh =>
-      Localizations.localeOf(context).languageCode.startsWith('zh');
   AppLocalizations get _loc => AppLocalizations.of(context)!;
 
   String _formatCreatedAt(dynamic createdAt) {
@@ -46,17 +44,8 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
   }
 
   String _formatSectionDate(String dateLabel) {
-    if (dateLabel.isEmpty) {
-      return _isZh ? '\u66f4\u65e9' : 'Earlier';
-    }
+    if (dateLabel.isEmpty) return _loc.timeEarlier;
     return dateLabel.replaceAll('-', '.');
-  }
-
-  String _bookmarkMetaLabel(int index) {
-    if (_isZh) {
-      return '\u4e66\u7b7e $index';
-    }
-    return 'Bookmark $index';
   }
 
   @override
@@ -462,7 +451,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
     final contentSnippet =
         (bookmark['content_snippet'] ?? '').toString().trim();
     final id = bookmark['id'] as String;
-    final bookmarkLabel = _bookmarkMetaLabel(bookmark['index'] as int);
+    final bookmarkLabel = _loc.bookmarkName(bookmark['index'] as int);
     final excerpt = contentSnippet.isNotEmpty
         ? contentSnippet
         : (note.isNotEmpty ? note : bookmarkLabel);

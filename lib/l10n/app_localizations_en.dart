@@ -1059,4 +1059,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchNoMatchSubtitle => 'Try a different title or author name.';
+
+  @override
+  String errorDeletingBooks(String error) {
+    return 'Error deleting books: $error';
+  }
+
+  @override
+  String undoFailed(String error) {
+    return 'Undo failed: $error';
+  }
+
+  @override
+  String errorMovingBooks(String error) {
+    return 'Error moving books: $error';
+  }
+
+  @override
+  String get timeEarlier => 'Earlier';
+
+  @override
+  String notesBookSubtitle(String title) {
+    return '$title';
+  }
+
+  @override
+  String get notesContextTitle => 'Reading notes';
+
+  @override
+  String get notesContextDescription =>
+      'Tap to return, long-press to edit, swipe left to delete.';
+
+  @override
+  String get notesEmptyTitle => 'No reading notes yet';
+
+  @override
+  String get notesEmptyDescription =>
+      'Lines worth returning to will gather here.';
+
+  @override
+  String get notesEmptyHint =>
+      'Long-press while reading to save a highlight or note.';
+
+  @override
+  String get noteTagLabel => 'Note';
+
+  @override
+  String failedToDeleteHighlight(String error) {
+    return 'Failed to delete highlight: $error';
+  }
 }

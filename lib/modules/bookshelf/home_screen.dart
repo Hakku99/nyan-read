@@ -153,7 +153,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       if (!context.mounted) return;
       SnackBarUtils.show(
         context,
-        'Error deleting books: $e',
+        AppLocalizations.of(context)!.errorDeletingBooks(e.toString()),
         tone: NyanSnackTone.error,
       );
     }
@@ -167,7 +167,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       if (!context.mounted) return;
       SnackBarUtils.show(
         context,
-        'Undo failed: $e',
+        AppLocalizations.of(context)!.undoFailed(e.toString()),
         tone: NyanSnackTone.error,
       );
     }
@@ -192,7 +192,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       if (!context.mounted) return;
       SnackBarUtils.show(
         context,
-        'Error moving books: $e',
+        AppLocalizations.of(context)!.errorMovingBooks(e.toString()),
         tone: NyanSnackTone.error,
       );
     }

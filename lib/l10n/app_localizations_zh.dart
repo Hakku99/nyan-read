@@ -1016,4 +1016,50 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get searchNoMatchSubtitle => '换个书名或作者名试试。';
+
+  @override
+  String errorDeletingBooks(String error) {
+    return '删除书籍失败：$error';
+  }
+
+  @override
+  String undoFailed(String error) {
+    return '撤销失败：$error';
+  }
+
+  @override
+  String errorMovingBooks(String error) {
+    return '移动书籍失败：$error';
+  }
+
+  @override
+  String get timeEarlier => '更早';
+
+  @override
+  String notesBookSubtitle(String title) {
+    return '《$title》';
+  }
+
+  @override
+  String get notesContextTitle => '片段与批注';
+
+  @override
+  String get notesContextDescription => '点开可回到原文，长按可编辑，左滑可删除。';
+
+  @override
+  String get notesEmptyTitle => '还没有留下片段';
+
+  @override
+  String get notesEmptyDescription => '想回看的句子与批注，会收在这里。';
+
+  @override
+  String get notesEmptyHint => '阅读时长按文字即可创建高亮';
+
+  @override
+  String get noteTagLabel => '批注';
+
+  @override
+  String failedToDeleteHighlight(String error) {
+    return '删除高亮失败：$error';
+  }
 }

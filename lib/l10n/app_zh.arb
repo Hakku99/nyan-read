@@ -502,5 +502,52 @@
       "query": { "type": "String" }
     }
   },
-  "searchNoMatchSubtitle": "换个书名或作者名试试。"
+  "searchNoMatchSubtitle": "换个书名或作者名试试。",
+  "errorDeletingBooks": "删除书籍失败：{error}",
+  "@errorDeletingBooks": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "undoFailed": "撤销失败：{error}",
+  "@undoFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorMovingBooks": "移动书籍失败：{error}",
+  "@errorMovingBooks": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "timeEarlier": "更早",
+  "notesBookSubtitle": "《{title}》",
+  "@notesBookSubtitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "notesContextTitle": "片段与批注",
+  "notesContextDescription": "点开可回到原文，长按可编辑，左滑可删除。",
+  "notesEmptyTitle": "还没有留下片段",
+  "notesEmptyDescription": "想回看的句子与批注，会收在这里。",
+  "notesEmptyHint": "阅读时长按文字即可创建高亮",
+  "noteTagLabel": "批注",
+  "failedToDeleteHighlight": "删除高亮失败：{error}",
+  "@failedToDeleteHighlight": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

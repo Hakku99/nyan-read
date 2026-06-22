@@ -1969,6 +1969,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try a different title or author name.'**
   String get searchNoMatchSubtitle;
+
+  /// No description provided for @errorDeletingBooks.
+  ///
+  /// In en, this message translates to:
+  /// **'Error deleting books: {error}'**
+  String errorDeletingBooks(String error);
+
+  /// No description provided for @undoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo failed: {error}'**
+  String undoFailed(String error);
+
+  /// No description provided for @errorMovingBooks.
+  ///
+  /// In en, this message translates to:
+  /// **'Error moving books: {error}'**
+  String errorMovingBooks(String error);
+
+  /// No description provided for @timeEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get timeEarlier;
+
+  /// No description provided for @notesBookSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{title}'**
+  String notesBookSubtitle(String title);
+
+  /// No description provided for @notesContextTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading notes'**
+  String get notesContextTitle;
+
+  /// No description provided for @notesContextDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to return, long-press to edit, swipe left to delete.'**
+  String get notesContextDescription;
+
+  /// No description provided for @notesEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No reading notes yet'**
+  String get notesEmptyTitle;
+
+  /// No description provided for @notesEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Lines worth returning to will gather here.'**
+  String get notesEmptyDescription;
+
+  /// No description provided for @notesEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Long-press while reading to save a highlight or note.'**
+  String get notesEmptyHint;
+
+  /// No description provided for @noteTagLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get noteTagLabel;
+
+  /// No description provided for @failedToDeleteHighlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete highlight: {error}'**
+  String failedToDeleteHighlight(String error);
 }
 
 class _AppLocalizationsDelegate

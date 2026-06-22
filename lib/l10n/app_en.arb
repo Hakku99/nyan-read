@@ -519,5 +519,52 @@
       "query": { "type": "String" }
     }
   },
-  "searchNoMatchSubtitle": "Try a different title or author name."
+  "searchNoMatchSubtitle": "Try a different title or author name.",
+  "errorDeletingBooks": "Error deleting books: {error}",
+  "@errorDeletingBooks": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "undoFailed": "Undo failed: {error}",
+  "@undoFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorMovingBooks": "Error moving books: {error}",
+  "@errorMovingBooks": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "timeEarlier": "Earlier",
+  "notesBookSubtitle": "{title}",
+  "@notesBookSubtitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "notesContextTitle": "Reading notes",
+  "notesContextDescription": "Tap to return, long-press to edit, swipe left to delete.",
+  "notesEmptyTitle": "No reading notes yet",
+  "notesEmptyDescription": "Lines worth returning to will gather here.",
+  "notesEmptyHint": "Long-press while reading to save a highlight or note.",
+  "noteTagLabel": "Note",
+  "failedToDeleteHighlight": "Failed to delete highlight: {error}",
+  "@failedToDeleteHighlight": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }
