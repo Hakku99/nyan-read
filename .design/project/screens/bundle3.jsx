@@ -383,46 +383,76 @@ const BookshelfSearch = ({ dark, query = "", focused = true, initView = "list" }
 /* ──────────────────────────────────────────────────────────────────────
    U10 · BOOK DETAILS PAGE
    ────────────────────────────────────────────────────────────────────── */
-const BookDetails = ({ dark, unavailable }) => (
+const BookDetails = ({ dark, unavailable }) => {
+  const pct = 42;
+  const stats = [
+    { label: "Format", value: "EPUB" },
+    { label: "Progress", value: unavailable ? "—" : `${pct}%` },
+    { label: "Added", value: "Nov 4" },
+  ];
+  return (
   <Shell dark={dark}>
-    <PageHdr dark={dark} title="Book Details" />
+    <PageHdr dark={dark} title="Book Details" actions={
+      <button style={{ all: "unset", cursor: "pointer", width: 40, height: 40, borderRadius: "var(--r-control)", display: "grid", placeItems: "center", flexShrink: 0 }} aria-label="More">
+        <i className="ph ph-dots-three-vertical" style={{ fontSize: 20, color: "var(--nyan-text)" }} />
+      </button>
+    } />
     <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 32px" }}>
-      {/* Hero cover */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <div style={{ width: 120, height: 156, borderRadius: 16, background: unavailable ? "var(--nyan-surface-muted)" : "color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface))", border: unavailable ? "1px solid color-mix(in srgb, var(--error-primary) 22%, transparent)" : "0.5px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent)", display: "grid", placeItems: "center", position: "relative" }}>
+      {/* Hero — lifted cover, format chip, title, author, progress ribbon */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 20 }}>
+        <div style={{ position: "relative", width: 128, height: 170, borderRadius: 20,
+          background: unavailable ? "var(--nyan-surface-muted)" : "color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface))",
+          border: unavailable ? "1px solid color-mix(in srgb, var(--error-primary) 22%, transparent)" : "0.5px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent)",
+          boxShadow: unavailable ? "none" : "var(--shadow-light-card)",
+          display: "grid", placeItems: "center", overflow: "hidden" }}>
           {unavailable
-            ? <i className="ph ph-warning-circle" style={{ fontSize: 40, color: "var(--error-primary)" }} />
-            : <i className="ph ph-book-open" style={{ fontSize: 44, color: "var(--nyan-primary)" }} />}
+            ? <i className="ph ph-warning-circle" style={{ fontSize: 42, color: "var(--error-primary)" }} />
+            : <i className="ph ph-book-open" style={{ fontSize: 46, color: "var(--nyan-primary)" }} />}
+          {!unavailable && (
+            <div style={{ position: "absolute", top: 8, right: 8, height: 18, padding: "0 7px", borderRadius: 999, background: "color-mix(in srgb, var(--nyan-surface) 90%, transparent)", border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent)", display: "flex", alignItems: "center", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)" }}>
+              <span style={{ font: "600 9px/1 var(--font-ui)", color: "var(--nyan-primary-deep)" }}>EPUB</span>
+            </div>
+          )}
         </div>
-        <div style={{ font: "600 20px/1.3 var(--font-ui)", color: "var(--nyan-text)", letterSpacing: "-0.1px", textAlign: "center" }}>The Stillwater Diaries</div>
-        <div style={{ font: "400 13px/1.3 var(--font-ui)", color: "var(--nyan-text-secondary)", textAlign: "center" }}>Matsuno Eri</div>
-        {/* CTA row */}
-        <div style={{ display: "flex", gap: 8, width: "100%" }}>
-          <button style={{ all: "unset", cursor: unavailable ? "not-allowed" : "pointer", flex: 1, height: 50, borderRadius: 16, background: unavailable ? "color-mix(in srgb, var(--nyan-primary) 42%, var(--nyan-surface-muted))" : "var(--nyan-primary)", font: "600 16px/1 var(--font-ui)", color: "var(--nyan-surface)", display: "grid", placeItems: "center", opacity: unavailable ? 0.55 : 1 }}>
-            {unavailable ? "File unavailable" : "Continue Reading"}
-          </button>
-          <button style={{ all: "unset", cursor: "pointer", width: 50, height: 50, borderRadius: 16, background: "var(--nyan-surface)", border: "1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent)", display: "grid", placeItems: "center", flexShrink: 0 }}>
-            <i className="ph ph-export" style={{ fontSize: 20, color: "var(--nyan-text)" }} />
-          </button>
-        </div>
-        {unavailable && (
-          <div style={{ width: "100%", background: "var(--error-bg)", borderRadius: 12, border: "1px solid color-mix(in srgb, var(--error-accent) 60%, transparent)", padding: "10px 12px", display: "flex", gap: 8, alignItems: "flex-start" }}>
-            <i className="ph ph-info" style={{ fontSize: 15, color: "var(--error-primary)", flexShrink: 0, marginTop: 1 }} />
-            <div style={{ font: "400 13px/1.4 var(--font-ui)", color: "var(--error-primary)" }}>This book seems to have lost its way. The file cannot be found.</div>
+        <div style={{ font: "600 21px/1.3 var(--font-ui)", color: "var(--nyan-text)", letterSpacing: "-0.2px", textAlign: "center", marginTop: 16 }}>The Stillwater Diaries</div>
+        <div style={{ font: "400 13px/1.3 var(--font-ui)", color: "var(--nyan-text-secondary)", textAlign: "center", marginTop: 5 }}>Matsuno Eri</div>
+        {!unavailable && pct > 0 && (
+          <div style={{ width: 168, marginTop: 14, display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ height: 4, borderRadius: 999, background: "color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface-muted))", overflow: "hidden" }}>
+              <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: "var(--nyan-primary)" }} />
+            </div>
+            <div style={{ font: "500 11px/1 var(--font-ui)", color: "var(--nyan-text-muted)", textAlign: "center", letterSpacing: "0.2px" }}>{pct}% · last read 2 days ago</div>
           </div>
         )}
       </div>
-      {/* Overview section */}
-      <SectionHdr label="Overview" />
-      <RowGroup>
-        {[["Title","The Stillwater Diaries"],["Author","Matsuno Eri"],["Format","EPUB"],["Privacy","Public Shelf"],["Reading Progress","42%"],["Added","2025-11-04"]].map(([l,v]) => (
-          <div key={l} style={{ display: "flex", alignItems: "center", padding: "12px 16px", minHeight: 44 }}>
-            <span style={{ font: "500 13px/1.2 var(--font-ui)", color: "var(--nyan-text-secondary)", flex: 1 }}>{l}</span>
-            <span style={{ font: "500 14px/1.2 var(--font-ui)", color: "var(--nyan-text)", textAlign: "right" }}>{v}</span>
-          </div>
+      {/* CTA */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <button style={{ all: "unset", cursor: unavailable ? "not-allowed" : "pointer", flex: 1, height: 50, borderRadius: "var(--r-card-nested)", background: unavailable ? "color-mix(in srgb, var(--nyan-primary) 42%, var(--nyan-surface-muted))" : "var(--nyan-primary)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: unavailable ? 0.55 : 1 }}>
+          {!unavailable && <i className="ph ph-book-open" style={{ fontSize: 18, color: "var(--nyan-surface)" }} />}
+          <span style={{ font: "600 16px/1 var(--font-ui)", color: "var(--nyan-surface)" }}>{unavailable ? "File unavailable" : "Continue Reading"}</span>
+        </button>
+        <button style={{ all: "unset", cursor: unavailable ? "not-allowed" : "pointer", width: 50, height: 50, borderRadius: "var(--r-card-nested)", background: "var(--nyan-surface)", border: "1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent)", display: "grid", placeItems: "center", flexShrink: 0, opacity: unavailable ? 0.5 : 1 }} aria-label="Share" aria-disabled={unavailable}>
+          <i className="ph ph-export" style={{ fontSize: 20, color: "var(--nyan-text)" }} />
+        </button>
+      </div>
+      {unavailable && (
+        <div style={{ background: "var(--error-bg)", borderRadius: "var(--r-card-nested)", border: "1px solid color-mix(in srgb, var(--error-accent) 60%, transparent)", padding: "12px 14px", display: "flex", gap: 9, alignItems: "flex-start", marginBottom: 16 }}>
+          <i className="ph ph-info" style={{ fontSize: 16, color: "var(--error-primary)", flexShrink: 0, marginTop: 1 }} />
+          <div style={{ font: "400 13px/1.45 var(--font-ui)", color: "var(--error-primary)" }}>This book seems to have lost its way. The file cannot be found.</div>
+        </div>
+      )}
+      {/* Stat trio — glanceable summary */}
+      <div style={{ display: "flex", background: "var(--nyan-surface)", borderRadius: "var(--r-card-nested)", border: "1px solid var(--chrome-edge)", boxShadow: "var(--shadow-grouped)", overflow: "hidden", marginBottom: 24 }}>
+        {stats.map((s, i) => (
+          <React.Fragment key={s.label}>
+            {i > 0 && <div style={{ width: "0.5px", background: "color-mix(in srgb, var(--nyan-divider) 40%, transparent)", margin: "14px 0" }} />}
+            <div style={{ flex: 1, padding: "15px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <div style={{ font: "600 17px/1 var(--font-ui)", color: "var(--nyan-text)" }}>{s.value}</div>
+              <div style={{ font: "500 10px/1 var(--font-ui)", color: "var(--nyan-text-muted)", letterSpacing: "0.5px", textTransform: "uppercase" }}>{s.label}</div>
+            </div>
+          </React.Fragment>
         ))}
-      </RowGroup>
-      <div style={{ height: 24 }} />
+      </div>
       {/* Source section */}
       <SectionHdr label="Source" />
       <RowGroup>
@@ -438,7 +468,8 @@ const BookDetails = ({ dark, unavailable }) => (
       </RowGroup>
     </div>
   </Shell>
-);
+  );
+};
 
 /* ──────────────────────────────────────────────────────────────────────
    U11 · IMPORT BOOK SHEET
@@ -789,6 +820,10 @@ const SelectBookCard = ({ book, selected }) => (
       </div>
       {selected && <div style={{ position: "absolute", inset: 0, background: "color-mix(in srgb, var(--nyan-primary) 12%, transparent)" }} />}
       <div style={{ position: "absolute", top: 7, left: 7 }}><SelectCheck on={selected} /></div>
+      {/* open-detail affordance — separate hit target from the selection check */}
+      <button title="Open details" aria-label="Open details" style={{ all: "unset", cursor: "pointer", position: "absolute", bottom: 6, right: 6, width: 24, height: 24, borderRadius: "50%", background: "color-mix(in srgb, var(--nyan-surface) 90%, transparent)", border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 50%, transparent)", boxShadow: "0 1px 3px rgba(0,0,0,.12)", display: "grid", placeItems: "center", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)" }}>
+        <i className="ph ph-arrow-up-right" style={{ fontSize: 13, color: "var(--nyan-primary-deep)" }} />
+      </button>
     </div>
     {book.pct > 0 && (
       <div style={{ height: 3, borderRadius: 999, background: "color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface))", overflow: "hidden" }}>
@@ -818,6 +853,10 @@ const SelectBookListRow = ({ book, selected }) => (
     <div style={{ height: 18, padding: "0 7px", flexShrink: 0, borderRadius: 999, background: "var(--nyan-surface-muted)", border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent)", display: "flex", alignItems: "center" }}>
       <span style={{ font: "600 9px/1 var(--font-ui)", color: "var(--nyan-primary-deep)" }}>{book.fmt}</span>
     </div>
+    {/* open-detail affordance — a distinct drill-in target alongside row selection */}
+    <button title="Open details" aria-label="Open details" style={{ all: "unset", cursor: "pointer", width: 32, height: 32, borderRadius: "50%", flexShrink: 0, display: "grid", placeItems: "center", background: "var(--nyan-surface-muted)", border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent)" }}>
+      <i className="ph ph-caret-right" style={{ fontSize: 15, color: "var(--nyan-text-secondary)" }} />
+    </button>
   </div>
 );
 
@@ -835,7 +874,9 @@ const SelectionHeader = ({ count }) => (
 );
 
 const SelectActionBar = ({ count }) => {
+  const single = count === 1;
   const actions = [
+    ...(single ? [{ icon: "book-open", label: "Details", accent: true }] : []),
     { icon: "lock-simple", label: "Make Private" },
     { icon: "export",      label: "Export" },
     { icon: "trash",       label: "Delete", danger: true },
@@ -858,35 +899,76 @@ const SelectActionBar = ({ count }) => {
   );
 };
 
-const DeleteConfirmSheet = ({ count }) => (
+const DeleteConfirmSheet = ({ count, books = [] }) => (
   <div style={{ position: "absolute", inset: 0, zIndex: 50 }}>
     <div style={{ position: "absolute", inset: 0, background: "var(--scrim)", backdropFilter: "blur(var(--scrim-blur))", WebkitBackdropFilter: "blur(var(--scrim-blur))", animation: "nyanFade 220ms ease-out" }} />
     <div style={{ position: "absolute", left: "var(--inset)", right: "var(--inset)", bottom: "var(--inset)",
-      background: "var(--nyan-surface)", border: "1px solid var(--chrome-edge)", borderRadius: "var(--r-sheet)",
+      background: "var(--nyan-surface-raised, var(--nyan-surface))", border: "1px solid var(--chrome-edge)", borderRadius: "var(--r-sheet)",
       boxShadow: "var(--shadow-light-card)", overflow: "hidden", animation: "nyanSlideUp 280ms cubic-bezier(0.33,0.9,0.36,1)" }}>
-      <div style={{ padding: "24px 20px 18px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-        <div style={{ width: 56, height: 56, borderRadius: "var(--r-card-nested)", background: "var(--error-bg)", border: "0.7px solid color-mix(in srgb, var(--error-primary) 22%, transparent)", display: "grid", placeItems: "center", marginBottom: 14 }}>
-          <i className="ph ph-trash" style={{ fontSize: 26, color: "var(--error-primary)" }} />
-        </div>
-        <div style={{ font: "600 18px/1.25 var(--font-ui)", color: "var(--nyan-text)", marginBottom: 8 }}>Delete {count} books?</div>
-        <div style={{ font: "400 13.5px/1.5 var(--font-ui)", color: "var(--nyan-text-secondary)", maxWidth: 282, textWrap: "pretty" }}>Their reading progress, bookmarks and notes are removed too. The source files on your device are kept.</div>
+      {/* grabber — consistency with every other One Paper sheet */}
+      <div style={{ paddingTop: 10, display: "flex", justifyContent: "center" }}>
+        <div style={{ width: 40, height: 5, borderRadius: 999, background: "var(--grabber)" }} />
       </div>
-      <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-        <button style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", height: 50, borderRadius: 16, background: "var(--error-primary)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <i className="ph ph-trash" style={{ fontSize: 18, color: "var(--nyan-surface)" }} />
-          <span style={{ font: "600 15px/1 var(--font-ui)", color: "var(--nyan-surface)" }}>Delete {count} books</span>
+      <div style={{ padding: "18px 24px 4px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+        {/* error chip — single rounded-square container */}
+        <div style={{ width: 48, height: 48, borderRadius: "var(--r-card-nested)", display: "grid", placeItems: "center",
+          background: "var(--error-bg)", border: "0.7px solid color-mix(in srgb, var(--error-primary) 26%, transparent)", marginBottom: 14 }}>
+          <i className="ph ph-trash" style={{ fontSize: 23, color: "var(--error-primary)" }} />
+        </div>
+        <div style={{ font: "600 19px/1.25 var(--font-ui)", color: "var(--nyan-text)", letterSpacing: "-0.2px", marginBottom: 8 }}>Delete {count} books?</div>
+        <div style={{ font: "400 13.5px/1.5 var(--font-ui)", color: "var(--nyan-text-secondary)", maxWidth: 286, textWrap: "pretty" }}>Their reading progress, bookmarks and notes are removed too.</div>
+      </div>
+      {/* recessed preview of exactly what's going — gives the destructive action a face */}
+      {books.length > 0 && (
+        <div style={{ padding: "16px 16px 0" }}>
+          <div style={{ background: "var(--nyan-surface-muted)", borderRadius: "var(--r-card-nested)", border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 50%, transparent)", overflow: "hidden" }}>
+            {books.map((b, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <div style={{ height: "0.5px", background: "color-mix(in srgb, var(--nyan-divider) 40%, transparent)", margin: "0 12px" }} />}
+                <div style={{ display: "flex", alignItems: "center", gap: 11, padding: "9px 12px" }}>
+                  <div style={{ width: 30, height: 40, borderRadius: 8, flexShrink: 0, background: "color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface))", border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 36%, transparent)", display: "grid", placeItems: "center" }}>
+                    <i className="ph ph-book-open" style={{ fontSize: 15, color: "var(--nyan-primary)" }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ font: "500 13.5px/1.25 var(--font-ui)", color: "var(--nyan-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.title}</div>
+                    <div style={{ font: "400 11.5px/1.3 var(--font-ui)", color: "var(--nyan-text-muted)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.author}</div>
+                  </div>
+                  <div style={{ height: 17, padding: "0 7px", flexShrink: 0, borderRadius: 999, background: "var(--nyan-surface)", border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent)", display: "flex", alignItems: "center" }}>
+                    <span style={{ font: "600 9px/1 var(--font-ui)", color: "var(--nyan-primary-deep)" }}>{b.fmt}</span>
+                  </div>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* opt-in: also remove the source files from the device (defaults off — files kept) */}
+      <div style={{ padding: "14px 16px 0" }}>
+        <div role="checkbox" aria-checked="false" style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 13px", borderRadius: "var(--r-card-nested)", background: "var(--nyan-surface-muted)", border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 50%, transparent)", cursor: "pointer" }}>
+          <div style={{ width: 22, height: 22, borderRadius: 7, flexShrink: 0, border: "1.5px solid color-mix(in srgb, var(--nyan-text) 28%, transparent)", background: "var(--nyan-surface)" }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ font: "500 13.5px/1.3 var(--font-ui)", color: "var(--nyan-text)" }}>Also delete files from device</div>
+            <div style={{ font: "400 11.5px/1.35 var(--font-ui)", color: "var(--nyan-text-muted)", marginTop: 1, textWrap: "pretty" }}>The original EPUB/PDF files will be permanently removed, not just the shelf entries.</div>
+          </div>
+        </div>
+      </div>
+      <div style={{ padding: "16px", display: "flex", gap: 9 }}>
+        <button style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", flex: 1, height: 50, borderRadius: "var(--r-card-nested)", background: "transparent", border: "1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent)", display: "grid", placeItems: "center", font: "600 15px/1 var(--font-ui)", color: "var(--nyan-text-secondary)" }}>Cancel</button>
+        <button style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", flex: 1, height: 50, borderRadius: "var(--r-card-nested)", background: "var(--error-primary)", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+          <i className="ph ph-trash" style={{ fontSize: 17, color: "var(--nyan-surface)" }} />
+          <span style={{ font: "600 15px/1 var(--font-ui)", color: "var(--nyan-surface)" }}>Delete</span>
         </button>
-        <button style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", height: 50, borderRadius: 16, background: "var(--nyan-surface-muted)", border: "1px solid var(--nyan-divider)", display: "grid", placeItems: "center", font: "600 15px/1 var(--font-ui)", color: "var(--nyan-text)" }}>Cancel</button>
       </div>
     </div>
   </div>
 );
 
-const BookshelfManage = ({ dark, view = "grid", phase = "select" }) => {
+const BookshelfManage = ({ dark, view = "grid", phase = "select", selectIds = SELECT_IDS }) => {
   const selecting = phase === "select" || phase === "confirm" || phase === "deleting";
-  const items = BOOKS.concat(BOOKS).slice(0, 6).map((b, i) => ({ key: i, book: b, selected: SELECT_IDS.includes(i) }));
+  const items = BOOKS.concat(BOOKS).slice(0, 6).map((b, i) => ({ key: i, book: b, selected: selectIds.includes(i) }));
   const visible = phase === "deleted" ? items.filter(it => !it.selected) : items;
-  const count = SELECT_IDS.length;
+  const selectedBooks = items.filter(it => it.selected).map(it => it.book);
+  const count = selectIds.length;
   return (
     <Shell dark={dark}>
       <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -916,7 +998,7 @@ const BookshelfManage = ({ dark, view = "grid", phase = "select" }) => {
           )}
         </div>
         {phase === "select"   && <SelectActionBar count={count} />}
-        {phase === "confirm"  && <DeleteConfirmSheet count={count} />}
+        {phase === "confirm"  && <DeleteConfirmSheet count={count} books={selectedBooks} />}
         {phase === "deleting" && <NyanResponse placement="bottom" status="loading" title={`Deleting ${count} books…`} />}
         {phase === "deleted"  && <NyanResponse placement="bottom" status="success" title={`${count} books deleted`} action={{ label: "Undo" }} />}
       </div>

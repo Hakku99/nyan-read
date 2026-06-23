@@ -131,7 +131,7 @@ const ShelfSettingsBtn = ({ onClick, label = "Settings" }) => (
   </button>
 );
 
-const ShelfToolBtn = ({ icon, active, onClick, label }) => (
+const ShelfToolBtn = ({ icon, onClick, label }) => (
   <button onClick={onClick} title={label} aria-label={label} style={{
     all: "unset", cursor: "pointer", width: 44, height: 44, borderRadius: "var(--r-control)",
     background: "var(--nyan-surface)",
@@ -161,13 +161,13 @@ const ShelfToolbar = ({
       <div style={{ flex: 1, minWidth: 0 }} />
       <div style={{ display: "flex", gap: 6 }}>
         <ShelfToolBtn icon="magnifying-glass" onClick={onSearch} label="Search" />
-        <ShelfToolBtn icon="arrows-down-up" active={sort}
+        <ShelfToolBtn icon="arrows-down-up"
           onClick={onToggleSort || (() => setSortS(s => !s))} label="Sort order" />
         <ShelfToolBtn icon={view === "grid" ? "rows" : "squares-four"}
           onClick={onToggleView || (() => setViewS(v => v === "grid" ? "list" : "grid"))}
           label={view === "grid" ? "List view" : "Grid view"} />
         {isPro && (
-          <ShelfToolBtn icon={unlocked ? "lock-simple-open" : "lock-simple"} active={unlocked}
+          <ShelfToolBtn icon={unlocked ? "lock-simple-open" : "lock-simple"}
             onClick={onToggleUnlock || (() => setUnlockedS(u => !u))}
             label={unlocked ? "Privacy shelf unlocked" : "Unlock privacy shelf"} />
         )}

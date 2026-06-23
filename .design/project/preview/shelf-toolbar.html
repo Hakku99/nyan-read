@@ -27,11 +27,6 @@
     display: grid; place-items: center;
   }
   .tool i { font-size: 18px; color: var(--nyan-text-secondary); }
-  .tool.active {
-    background: color-mix(in srgb, var(--nyan-primary) 13%, var(--nyan-surface));
-    border-color: color-mix(in srgb, var(--nyan-primary) 42%, transparent);
-  }
-  .tool.active i { color: var(--nyan-primary-deep); }
   .card { background: var(--nyan-surface); border: 1px solid var(--chrome-edge); border-radius: var(--r-sheet); box-shadow: var(--shadow-grouped); padding: 14px 16px; }
   .note { font: 400 12.5px/1.4 var(--font-ui); color: var(--nyan-text-secondary); margin: 8px 2px 0; }
 </style>
@@ -54,20 +49,20 @@
   </div>
 
   <div>
-    <div class="eyebrow">Sort active · Pro (privacy unlock)</div>
+    <div class="eyebrow">Pro mode · list view</div>
     <div class="card">
       <div class="bar">
         <div class="lead"><i class="ph ph-gear-six"></i></div>
         <div class="spacer"></div>
         <div class="tools">
           <div class="tool"><i class="ph ph-magnifying-glass"></i></div>
-          <div class="tool active"><i class="ph ph-sort-ascending"></i></div>
+          <div class="tool"><i class="ph ph-arrows-down-up"></i></div>
           <div class="tool"><i class="ph ph-squares-four"></i></div>
-          <div class="tool active"><i class="ph ph-lock-simple-open"></i></div>
+          <div class="tool"><i class="ph ph-lock-simple"></i></div>
         </div>
       </div>
     </div>
-    <div class="note">An active tool lifts to a matcha tint + outline. The lock tool is shown only when Pro mode is enabled.</div>
+    <div class="note">Every tool shares one resting style — no persistent active state; the icons mirror U19 exactly. In list view the toggle shows the grid icon you'd switch to. The privacy-unlock lock appears only when Pro mode is enabled.</div>
   </div>
 </body>
 </html>

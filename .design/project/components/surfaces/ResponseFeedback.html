@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Components" name="Response Feedback" subtitle="NyanResponse · U20 inventory + dismiss behaviour" viewport="440x2480" -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=440, initial-scale=1" />
+  <title>Response Feedback · Nyan Read</title>
+  <link rel="stylesheet" href="../../colors_and_type.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <style>
+    html, body { margin: 0; padding: 0; }
+    body { padding: 20px 16px 48px; background: var(--nyan-bg); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script src="../../_ds_bundle.js"></script>
+<script>
+(function () {
+  var NS = window[Object.keys(window).filter(function (k) {
+    return k.indexOf('NyanReadDesignSystem_') === 0;
+  })[0]];
+  var h = React.createElement;
+
+  var STATUS = {
+    success: { icon: 'check-circle',   spin: false, fg: 'var(--nyan-success)',
+               tile: 'color-mix(in srgb, var(--nyan-success) 13%, var(--nyan-surface))' },
+    error:   { icon: 'warning-circle', spin: false, fg: 'var(--error-primary)',
+               tile: 'var(--error-bg)' },
+    info:    { icon: 'info',           spin: false, fg: 'var(--reader-info-blue)',
+               tile: 'color-mix(in srgb, var(--reader-info-blue) 13%, var(--nyan-surface))' },
+    skipped: { icon: 'skip-forward',   spin: false, fg: 'var(--nyan-text-muted)',
+               tile: 'var(--nyan-surface-muted)' },
+    loading: { icon: 'circle-notch',   spin: true,  fg: 'var(--nyan-primary)',
+               tile: 'color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface))' },
+  };
+
+  /* ═══ Shared bits ═══════════════════════════════════════════════════════ */
+  function Section(title) {
+    return h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, margin: '22px 0 12px' } },
+      h('span', { style: {
+        font: '600 10px/1 var(--font-ui)', letterSpacing: '0.6px',
+        textTransform: 'uppercase', color: 'var(--nyan-primary-deep)', flexShrink: 0,
+      } }, title),
+      h('div', { style: { flex: 1, height: '0.5px', background: 'var(--nyan-divider)' } })
+    );
+  }
+
+  /* ═══ TAB 1 · U20 inventory ═════════════════════════════════════════════ */
+  var GROUPS = [
+    { screen: 'Bookshelf', file: 'home_screen.dart', items: [
+      { n: 1,  status: 'loading', title: 'Removed 2 books', meta: '_deleteSelectedBooks · delete in-flight' },
+      { n: 2,  status: 'success', title: 'Removed 2 books', action: { label: 'Undo' }, meta: '_deleteSelectedBooks · delete done' },
+      { n: 3,  status: 'error', title: 'Error deleting books: FileSystemException', meta: '_deleteSelectedBooks catch', hardcoded: true },
+      { n: 4,  status: 'error', title: 'Undo failed: FileSystemException', meta: '_undoDelete catch', hardcoded: true },
+      { n: 5,  status: 'info', title: 'Export Data', meta: '_showExportNotice · feature stub' },
+      { n: 6,  status: 'error', title: 'Error moving books: FileSystemException', meta: '_moveSelectedBooks catch', hardcoded: true },
+      { n: 7,  status: 'loading', title: 'Importing', description: 'Placing books onto your shelf...', meta: '_importBook · in-flight (only call site with description:)' },
+      { n: 8,  status: 'success', title: 'Imported 3 books', meta: '_importBook · done (shelf = "Public Shelf" / "Private Shelf")' },
+      { n: 9,  status: 'skipped', title: 'Skipped 2 duplicate items.', meta: '_importBook · all selected files were duplicates' },
+      { n: 10, status: 'error', title: 'Import failed: FileSystemException', meta: '_importBook catch' },
+      { n: 11, status: 'info', title: 'Privacy Shelf Locked', meta: '_handlePrivacyLock · no tone: arg → default info' },
+    ]},
+    { screen: 'Settings', file: 'settings_page.dart', items: [
+      { n: 12, status: 'error', title: 'Export failed: FileSystemException', meta: '_handleExportData catch' },
+      { n: 13, status: 'success', title: 'Export saved to device', meta: '_saveToDevice · file picker confirmed' },
+      { n: 14, status: 'success', title: 'Successfully restored 4 books!', meta: '_handleImportData · restore done' },
+      { n: 15, status: 'error', title: 'Import failed: FileSystemException', meta: '_handleImportData catch' },
+    ]},
+    { screen: 'Book Details', file: 'book_details_page.dart', items: [
+      { n: 16, status: 'info', title: 'File path copied to clipboard', meta: 'Copy Path row onTap · no tone: arg → default info' },
+    ]},
+    { screen: 'Reader', file: 'reader_page.dart', items: [
+      { n: 17, status: 'success', title: 'Bookmark added', meta: '_handleAddBookmarkFromTopOverlay · bookmark icon tapped' },
+    ]},
+    { screen: 'Highlights & Notes', file: 'notes_list_page.dart', items: [
+      { n: 18, status: 'error', title: 'Failed to delete highlight: FileSystemException', meta: '_deleteHighlight catch · swipe-to-delete DB error' },
+    ]},
+    { screen: 'Bookmarks', file: 'bookmark_list_page.dart', items: [
+      { n: 19, status: 'info', title: 'Failed to delete bookmark: FileSystemException', meta: '_deleteBookmark catch · missing tone: NyanSnackTone.error — renders as info', bug: true },
+    ]},
+  ];
+
+  function LegendRow(color, label) {
+    return h('div', { style: { display: 'flex', alignItems: 'center', gap: 6 } },
+      h('div', { style: { width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 } }),
+      h('span', { style: { font: '400 11px/1 var(--font-ui)', color: 'var(--nyan-text-secondary)' } }, label)
+    );
+  }
+
+  function Inventory() {
+    return h('div', null,
+      GROUPS.map(function (group, gi) {
+        return h('div', { key: gi, style: { marginBottom: 28 } },
+          h('div', { style: { marginBottom: 12 } },
+            h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 } },
+              h('span', { style: {
+                font: '600 10px/1 var(--font-ui)', letterSpacing: '0.6px',
+                textTransform: 'uppercase', color: 'var(--nyan-primary-deep)', flexShrink: 0,
+              } }, group.screen),
+              h('div', { style: { flex: 1, height: '0.5px', background: 'var(--nyan-divider)' } })
+            ),
+            h('code', { style: { font: '400 10.5px/1 var(--font-mono)', color: 'var(--nyan-text-muted)' } }, group.file)
+          ),
+          h('div', { style: { display: 'flex', flexDirection: 'column', gap: 10 } },
+            group.items.map(function (item) {
+              var metaColor = item.bug ? 'var(--error-primary)' : item.hardcoded ? 'var(--error-secondary)' : 'var(--nyan-text-muted)';
+              return h('div', { key: item.n },
+                h('div', { style: { position: 'relative' } },
+                  item.bug && h('div', { style: {
+                    position: 'absolute', inset: '-3px',
+                    borderRadius: 'calc(var(--r-card-nested) + 3px)',
+                    border: '1.5px dashed var(--error-primary)', pointerEvents: 'none', zIndex: 1,
+                  } }),
+                  h(NS.NyanResponse, {
+                    status: item.status, title: item.title,
+                    description: item.description || undefined,
+                    action: item.action || undefined,
+                  })
+                ),
+                h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: 5, marginTop: 5, paddingLeft: 2 } },
+                  h('span', { style: { font: '600 10.5px/1.35 var(--font-ui)', color: metaColor, flexShrink: 0 } }, '#' + item.n),
+                  h('span', { style: { font: '400 10.5px/1.35 var(--font-ui)', color: metaColor } }, '\u00B7 ' + item.meta)
+                ),
+                item.bug && h('div', { style: { marginTop: 10 } },
+                  h('div', { style: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 } },
+                    h('span', { style: { font: '500 10px/1 var(--font-ui)', color: 'var(--nyan-text-muted)', letterSpacing: '0.2px' } }, 'EXPECTED'),
+                    h('div', { style: { flex: 1, height: '0.5px', background: 'var(--nyan-divider)' } }),
+                    h('code', { style: {
+                      font: '400 10px/1 var(--font-mono)', color: 'var(--nyan-primary-deep)',
+                      background: 'color-mix(in srgb, var(--nyan-primary) 10%, transparent)',
+                      padding: '2px 6px', borderRadius: 'var(--r-chip)',
+                    } }, 'tone: NyanSnackTone.error')
+                  ),
+                  h(NS.NyanResponse, { status: 'error', title: item.title })
+                )
+              );
+            })
+          )
+        );
+      }),
+      h('div', { style: {
+        marginTop: 4, padding: '12px 14px', background: 'var(--nyan-surface)',
+        border: '1px solid var(--nyan-divider)', borderRadius: 'var(--r-card-nested)',
+        boxShadow: 'var(--shadow-grouped)', display: 'flex', flexDirection: 'column', gap: 8,
+      } },
+        h('div', { style: { font: '600 9.5px/1 var(--font-ui)', letterSpacing: '0.6px', textTransform: 'uppercase', color: 'var(--nyan-text-muted)', marginBottom: 2 } }, 'Annotation key'),
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
+          LegendRow('var(--nyan-text-muted)', 'Correct — tone and string both as expected'),
+          LegendRow('var(--error-secondary)', 'Hardcoded English string — won\u2019t localise to Chinese'),
+          LegendRow('var(--error-primary)', 'Bug — error case rendered as info (missing tone)')
+        )
+      )
+    );
+  }
+
+  /* ═══ TAB 2 · Dismiss behaviour ═════════════════════════════════════════ */
+  function Toast(p) {
+    var s = STATUS[p.status] || STATUS.success;
+    var hasClose = !!p.showClose;
+    var nowrap = !!p.description || hasClose;
+    var st = React.useState({ dx: 0, dragging: false, gone: false });
+    var state = st[0], set = st[1];
+    var drag = React.useRef(null);
+
+    function leave(dir) {
+      set(function (v) { return Object.assign({}, v, { dx: dir * 480, dragging: false, gone: true }); });
+      setTimeout(function () { p.onDismiss && p.onDismiss(); }, 240);
+    }
+    function down(e) {
+      if (e.target.closest('[data-action]')) return;
+      drag.current = { x0: e.clientX, moved: false };
+      e.currentTarget.setPointerCapture(e.pointerId);
+      set(function (v) { return Object.assign({}, v, { dragging: true }); });
+    }
+    function move(e) {
+      if (!drag.current) return;
+      var dx = e.clientX - drag.current.x0;
+      if (Math.abs(dx) > 4) drag.current.moved = true;
+      set(function (v) { return Object.assign({}, v, { dx: dx }); });
+    }
+    function up() {
+      if (!drag.current) return;
+      var dx = state.dx, moved = drag.current.moved;
+      drag.current = null;
+      if (Math.abs(dx) > 80) { leave(dx < 0 ? -1 : 1); return; }
+      if (!moved) { leave(-1); return; }
+      set(function (v) { return Object.assign({}, v, { dx: 0, dragging: false }); });
+    }
+    var opacity = state.gone ? 0 : Math.max(0, 1 - Math.abs(state.dx) / 220);
+
+    return h('div', {
+      role: 'status', onPointerDown: down, onPointerMove: move, onPointerUp: up,
+      style: {
+        display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
+        background: 'var(--nyan-surface)', border: '1px solid var(--chrome-edge)',
+        borderRadius: 'var(--r-card-nested)', boxShadow: 'var(--shadow-subtle)',
+        padding: '10px 12px', minHeight: 56,
+        transform: 'translateX(' + state.dx + 'px)', opacity: opacity,
+        transition: state.dragging ? 'none' : 'transform 240ms var(--ease-paper), opacity 240ms var(--ease-paper)',
+        touchAction: 'pan-y', userSelect: 'none',
+      },
+    },
+      h('div', { style: { width: 36, height: 36, flexShrink: 0, borderRadius: 'var(--r-chip)', background: s.tile, display: 'grid', placeItems: 'center' } },
+        h('i', { className: 'ph ph-' + s.icon, style: { fontSize: 20, color: s.fg, animation: s.spin ? 'nyan-spin 900ms linear infinite' : undefined } })
+      ),
+      h('div', { style: { flex: 1, minWidth: 0 } },
+        h('div', { style: { font: '600 14px/1.25 var(--font-ui)', color: 'var(--nyan-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: nowrap ? 'nowrap' : 'normal' } }, p.title),
+        p.description && h('div', { style: { font: '400 12.5px/1.35 var(--font-ui)', color: 'var(--nyan-text-secondary)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, p.description)
+      ),
+      p.action && h('button', { 'data-action': '1', style: {
+        all: 'unset', cursor: 'pointer', flexShrink: 0, height: 32, padding: '0 12px',
+        borderRadius: 'var(--r-chip)', font: '600 13px/1 var(--font-ui)', color: 'var(--nyan-primary-deep)',
+        background: 'color-mix(in srgb, var(--nyan-primary) 10%, transparent)',
+      } }, p.action.label),
+      hasClose && h('span', { title: 'Dismiss', style: { flexShrink: 0, width: 44, height: 44, margin: '-6px -6px -6px 0', borderRadius: 'var(--r-chip)', display: 'grid', placeItems: 'center' } },
+        h('i', { className: 'ph ph-x', style: { fontSize: 16, color: 'var(--nyan-text-muted)' } })
+      )
+    );
+  }
+
+  var SEED = [
+    { id: 'a', status: 'success', title: 'Bookmark added', cap: 'tap anywhere → gone instantly' },
+    { id: 'b', status: 'error', title: 'Failed to delete bookmark: FileSystemException', showClose: true, cap: 'error · ✕ hint shown; tap OR swipe still works' },
+    { id: 'c', status: 'success', title: 'Removed 2 books', action: { label: 'Undo' }, cap: 'tap card → dismiss · tap Undo → undo (pill is its own target)' },
+    { id: 'd', status: 'info', title: 'File path copied to clipboard', cap: 'swipe left / right → fling away' },
+    { id: 'e', status: 'skipped', title: 'Skipped 2 duplicate items.', cap: 'no waiting for the 3.5s timeout' },
+  ];
+
+  function ruleRow(icon, text) {
+    return h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: 9 } },
+      h('i', { className: 'ph ph-' + icon, style: { fontSize: 15, color: 'var(--nyan-primary-deep)', marginTop: 1, flexShrink: 0 } }),
+      h('span', { style: { font: '400 12px/1.4 var(--font-ui)', color: 'var(--nyan-text-secondary)' } }, text)
+    );
+  }
+
+  function Dismiss() {
+    var ls = React.useState(SEED); var list = ls[0], setList = ls[1];
+    function dismiss(id) { setList(function (v) { return v.filter(function (t) { return t.id !== id; }); }); }
+    return h('div', null,
+      Section('Live · try it'),
+      list.length === 0
+        ? h('div', { style: { padding: '28px 16px', textAlign: 'center', border: '1px dashed var(--nyan-divider)', borderRadius: 'var(--r-card-nested)', font: '400 12.5px/1.4 var(--font-ui)', color: 'var(--nyan-text-muted)' } }, 'All dismissed — no waiting required.')
+        : h('div', { style: { display: 'flex', flexDirection: 'column', gap: 14 } },
+            list.map(function (t) {
+              return h('div', { key: t.id },
+                h(Toast, Object.assign({}, t, { onDismiss: function () { dismiss(t.id); } })),
+                h('div', { style: { font: '400 10.5px/1.35 var(--font-ui)', color: 'var(--nyan-text-muted)', marginTop: 5, paddingLeft: 2 } }, t.cap)
+              );
+            })
+          ),
+      h('button', {
+        onClick: function () { setList(SEED); },
+        style: {
+          all: 'unset', cursor: 'pointer', marginTop: 18, display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '8px 14px', borderRadius: 'var(--r-chip)',
+          background: 'color-mix(in srgb, var(--nyan-primary) 10%, transparent)',
+          font: '600 12px/1 var(--font-ui)', color: 'var(--nyan-primary-deep)',
+        },
+      }, h('i', { className: 'ph ph-arrow-counter-clockwise', style: { fontSize: 14 } }), 'Replay all'),
+      Section('The rule'),
+      h('div', { style: { padding: '12px 14px', background: 'var(--nyan-surface)', border: '1px solid var(--nyan-divider)', borderRadius: 'var(--r-card-nested)', boxShadow: 'var(--shadow-grouped)', display: 'flex', flexDirection: 'column', gap: 8 } },
+        ruleRow('hand-tap', 'Tap anywhere on the card to dismiss — no aiming at a tiny ✕'),
+        ruleRow('arrows-horizontal', 'Swipe left or right to fling it away'),
+        ruleRow('x-circle', '✕ stays errors-only — a hint it\u2019s dismissible, not the sole exit'),
+        ruleRow('cursor-click', 'On Undo toasts the pill is its own target; tapping elsewhere dismisses')
+      )
+    );
+  }
+
+  /* ═══ Shell with tabs ═══════════════════════════════════════════════════ */
+  function Tab(label, active, onClick) {
+    return h('button', {
+      onClick: onClick,
+      style: {
+        all: 'unset', cursor: 'pointer', flex: 1, textAlign: 'center',
+        padding: '7px 10px', borderRadius: 'var(--r-control)',
+        font: '600 12px/1 var(--font-ui)',
+        color: active ? 'var(--nyan-primary-deep)' : 'var(--nyan-text-muted)',
+        background: active ? 'var(--nyan-surface)' : 'transparent',
+        boxShadow: active ? 'var(--shadow-grouped)' : 'none',
+      },
+    }, label);
+  }
+
+  function App() {
+    var ds = React.useState(false); var dark = ds[0], setDark = ds[1];
+    var ts = React.useState('inv'); var tab = ts[0], setTab = ts[1];
+    React.useEffect(function () {
+      document.documentElement.setAttribute('data-theme', dark ? 'sumi' : '');
+      document.body.style.background = 'var(--nyan-bg)';
+    }, [dark]);
+
+    return h('div', { style: { maxWidth: 408, margin: '0 auto' } },
+      h('div', { style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 } },
+        h('div', null,
+          h('div', { style: { font: '600 15px/1.2 var(--font-ui)', color: 'var(--nyan-text)', letterSpacing: '-0.1px' } }, 'Response Feedback'),
+          h('div', { style: { font: '400 12px/1.4 var(--font-ui)', color: 'var(--nyan-text-secondary)', marginTop: 3 } }, 'NyanResponse · the one shared action toast')
+        ),
+        h('button', {
+          onClick: function () { setDark(!dark); },
+          style: {
+            all: 'unset', cursor: 'pointer', flexShrink: 0,
+            padding: '5px 11px', borderRadius: 'var(--r-chip)',
+            background: 'var(--nyan-surface)', border: '1px solid var(--nyan-divider)',
+            font: '500 11.5px/1 var(--font-ui)', color: 'var(--nyan-text-secondary)',
+            boxShadow: 'var(--shadow-grouped)',
+          },
+        }, dark ? '\u2600\uFE0E Light' : '\u25D1 Dark')
+      ),
+      h('div', { style: { display: 'flex', gap: 4, padding: 4, marginBottom: 20, background: 'var(--nyan-surface-muted)', borderRadius: 'var(--r-control)' } },
+        Tab('U20 inventory · 19', tab === 'inv', function () { setTab('inv'); }),
+        Tab('Dismiss behaviour', tab === 'dis', function () { setTab('dis'); })
+      ),
+      tab === 'inv' ? h(Inventory, null) : h(Dismiss, null)
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(h(App, null));
+})();
+</script>
+</body>
+</html>

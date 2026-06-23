@@ -55,6 +55,7 @@ function Selecting() {
   return (
     <div className="screen-wrap">
       <Frame label="Cream · grid · 2 selected" w={W} h={H}><BookshelfManage dark={false} view="grid" phase="select" /></Frame>
+      <Frame label="Cream · grid · 1 selected (Details)" w={W} h={H}><BookshelfManage dark={false} view="grid" phase="select" selectIds={[0]} /></Frame>
       <Frame label="Cream · list · 2 selected" w={W} h={H}><BookshelfManage dark={false} view="list" phase="select" /></Frame>
       <Frame label="Sumi Dark · grid · 2 selected" w={W} h={H}><BookshelfManage dark={true} view="grid" phase="select" /></Frame>
       <Frame label="Sumi Dark · list · 2 selected" w={W} h={H}><BookshelfManage dark={true} view="list" phase="select" /></Frame>

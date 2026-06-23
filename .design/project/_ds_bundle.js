@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"NyanReadDesignSystem_019e2f","components":[{"name":"BookListRow","sourcePath":"components/cards/BookListRow.jsx"},{"name":"NyanBookGridCard","sourcePath":"components/cards/NyanBookGridCard.jsx"},{"name":"NyanBookmarkCard","sourcePath":"components/cards/NyanBookmarkCard.jsx"},{"name":"NyanContinueReadingCard","sourcePath":"components/cards/NyanContinueReadingCard.jsx"},{"name":"NyanPageHeader","sourcePath":"components/navigation/NyanPageHeader.jsx"},{"name":"NyanSectionHeader","sourcePath":"components/navigation/NyanSectionHeader.jsx"},{"name":"Checkbox","sourcePath":"components/primitives/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/primitives/Icon.jsx"},{"name":"NyanPrimaryButton","sourcePath":"components/primitives/NyanPrimaryButton.jsx"},{"name":"NyanSlider","sourcePath":"components/primitives/NyanSlider.jsx"},{"name":"NyanSwitch","sourcePath":"components/primitives/NyanSwitch.jsx"},{"name":"PillButton","sourcePath":"components/primitives/PillButton.jsx"},{"name":"ProgressBar","sourcePath":"components/primitives/ProgressBar.jsx"},{"name":"SearchField","sourcePath":"components/primitives/SearchField.jsx"},{"name":"SegmentedTabControl","sourcePath":"components/primitives/SegmentedTabControl.jsx"},{"name":"Skeleton","sourcePath":"components/primitives/Skeleton.jsx"},{"name":"TextField","sourcePath":"components/primitives/TextField.jsx"},{"name":"DisplayPanel","sourcePath":"components/reader/DisplayPanel.jsx"},{"name":"DockFooter","sourcePath":"components/reader/DockFooter.jsx"},{"name":"HighlightSwatchRow","sourcePath":"components/reader/HighlightSwatchRow.jsx"},{"name":"InBookSearch","sourcePath":"components/reader/InBookSearch.jsx"},{"name":"Knob","sourcePath":"components/reader/Knob.jsx"},{"name":"OnePaperDock","sourcePath":"components/reader/OnePaperDock.jsx"},{"name":"PdfControls","sourcePath":"components/reader/PdfControls.jsx"},{"name":"ReaderChapterList","sourcePath":"components/reader/ReaderChapterList.jsx"},{"name":"ReaderParagraph","sourcePath":"components/reader/ReaderParagraph.jsx"},{"name":"ReaderSettingsBody","sourcePath":"components/reader/ReaderSettingsBody.jsx"},{"name":"TTSPlayer","sourcePath":"components/reader/TTSPlayer.jsx"},{"name":"TextPanel","sourcePath":"components/reader/TextPanel.jsx"},{"name":"TextSelectionMenu","sourcePath":"components/reader/TextSelectionMenu.jsx"},{"name":"ThemePanel","sourcePath":"components/reader/ThemePanel.jsx"},{"name":"PinDots","sourcePath":"components/security/PinDots.jsx"},{"name":"PinPad","sourcePath":"components/security/PinPad.jsx"},{"name":"NyanActionSheetRow","sourcePath":"components/surfaces/NyanActionSheetRow.jsx"},{"name":"NyanBottomSheet","sourcePath":"components/surfaces/NyanBottomSheet.jsx"},{"name":"NyanDialog","sourcePath":"components/surfaces/NyanDialog.jsx"},{"name":"NyanEmptyState","sourcePath":"components/surfaces/NyanEmptyState.jsx"},{"name":"NyanFAB","sourcePath":"components/surfaces/NyanFAB.jsx"},{"name":"NyanInfoCard","sourcePath":"components/surfaces/NyanInfoCard.jsx"},{"name":"NyanListRow","sourcePath":"components/surfaces/NyanListRow.jsx"},{"name":"NyanOptionSheet","sourcePath":"components/surfaces/NyanOptionSheet.jsx"},{"name":"NyanResponse","sourcePath":"components/surfaces/NyanResponse.jsx"},{"name":"NyanRowGroup","sourcePath":"components/surfaces/NyanRowGroup.jsx"}],"sourceHashes":{"brand/nyan-mark.jsx":"dc3409626c1d","components/cards/BookListRow.jsx":"1c9a64ad04a7","components/cards/NyanBookGridCard.jsx":"e42b6c6b9c4b","components/cards/NyanBookmarkCard.jsx":"43737516a9e3","components/cards/NyanContinueReadingCard.jsx":"a8e8f2101577","components/navigation/NyanPageHeader.jsx":"15d362ad06f2","components/navigation/NyanSectionHeader.jsx":"a2e31fc2700e","components/primitives/Checkbox.jsx":"a45a8ce73268","components/primitives/Icon.jsx":"3700fcab2dda","components/primitives/NyanPrimaryButton.jsx":"a2d12459f656","components/primitives/NyanSlider.jsx":"a21d05bfa5fa","components/primitives/NyanSwitch.jsx":"bc4c42d8cf48","components/primitives/PillButton.jsx":"5c71a9024fd6","components/primitives/ProgressBar.jsx":"5cb3a5de9b70","components/primitives/SearchField.jsx":"5bf5d520dec0","components/primitives/SegmentedTabControl.jsx":"6b51c1d2a1db","components/primitives/Skeleton.jsx":"4d81823d1a03","components/primitives/TextField.jsx":"d7c7fad507f3","components/reader/DisplayPanel.jsx":"f650d0f3d177","components/reader/DockFooter.jsx":"4ae790e3fcf4","components/reader/HighlightSwatchRow.jsx":"b4e26de2b0da","components/reader/InBookSearch.jsx":"498631f506e9","components/reader/Knob.jsx":"fbcee9bbe400","components/reader/OnePaperDock.jsx":"b80bf5c5eecb","components/reader/PdfControls.jsx":"9a4d717f55a1","components/reader/ReaderChapterList.jsx":"4c74b797cc42","components/reader/ReaderParagraph.jsx":"f28b79a1bee6","components/reader/ReaderSettingsBody.jsx":"4956c82986c5","components/reader/TTSPlayer.jsx":"beaabf507734","components/reader/TextPanel.jsx":"aeb9bf8d037c","components/reader/TextSelectionMenu.jsx":"ea57210bdd3e","components/reader/ThemePanel.jsx":"56c713f3cc96","components/security/PinDots.jsx":"b3b2c1346ede","components/security/PinPad.jsx":"7bd58ce93912","components/surfaces/NyanActionSheetRow.jsx":"b37e872c7f4a","components/surfaces/NyanBottomSheet.jsx":"1887a0a174ee","components/surfaces/NyanDialog.jsx":"7b689e35f6d6","components/surfaces/NyanEmptyState.jsx":"ca8380515877","components/surfaces/NyanFAB.jsx":"2c8fc01dbdfe","components/surfaces/NyanInfoCard.jsx":"934a030de5b6","components/surfaces/NyanListRow.jsx":"5a279c72d2d7","components/surfaces/NyanOptionSheet.jsx":"3f1336ef378b","components/surfaces/NyanResponse.jsx":"20cc95129368","components/surfaces/NyanRowGroup.jsx":"ac9e1dbb9e9a","prototype/app.jsx":"e977c7914f4c","screens/bundle1.jsx":"463954c7c3fc","screens/bundle2-screens.jsx":"1b00c01ddca1","screens/bundle3.jsx":"cb77f2da41f4","screens/bundle4.jsx":"38ff2f00c8cf"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"NyanReadDesignSystem_019e2f","components":[{"name":"BookListRow","sourcePath":"components/cards/BookListRow.jsx"},{"name":"NyanBookGridCard","sourcePath":"components/cards/NyanBookGridCard.jsx"},{"name":"NyanBookmarkCard","sourcePath":"components/cards/NyanBookmarkCard.jsx"},{"name":"NyanContinueReadingCard","sourcePath":"components/cards/NyanContinueReadingCard.jsx"},{"name":"NyanPageHeader","sourcePath":"components/navigation/NyanPageHeader.jsx"},{"name":"NyanSectionHeader","sourcePath":"components/navigation/NyanSectionHeader.jsx"},{"name":"Checkbox","sourcePath":"components/primitives/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/primitives/Icon.jsx"},{"name":"NyanPrimaryButton","sourcePath":"components/primitives/NyanPrimaryButton.jsx"},{"name":"NyanSlider","sourcePath":"components/primitives/NyanSlider.jsx"},{"name":"NyanSwitch","sourcePath":"components/primitives/NyanSwitch.jsx"},{"name":"PillButton","sourcePath":"components/primitives/PillButton.jsx"},{"name":"ProgressBar","sourcePath":"components/primitives/ProgressBar.jsx"},{"name":"SearchField","sourcePath":"components/primitives/SearchField.jsx"},{"name":"SegmentedTabControl","sourcePath":"components/primitives/SegmentedTabControl.jsx"},{"name":"Skeleton","sourcePath":"components/primitives/Skeleton.jsx"},{"name":"TextField","sourcePath":"components/primitives/TextField.jsx"},{"name":"DisplayPanel","sourcePath":"components/reader/DisplayPanel.jsx"},{"name":"DockFooter","sourcePath":"components/reader/DockFooter.jsx"},{"name":"HighlightSwatchRow","sourcePath":"components/reader/HighlightSwatchRow.jsx"},{"name":"InBookSearch","sourcePath":"components/reader/InBookSearch.jsx"},{"name":"Knob","sourcePath":"components/reader/Knob.jsx"},{"name":"OnePaperDock","sourcePath":"components/reader/OnePaperDock.jsx"},{"name":"PdfControls","sourcePath":"components/reader/PdfControls.jsx"},{"name":"ReaderChapterList","sourcePath":"components/reader/ReaderChapterList.jsx"},{"name":"ReaderParagraph","sourcePath":"components/reader/ReaderParagraph.jsx"},{"name":"ReaderSettingsBody","sourcePath":"components/reader/ReaderSettingsBody.jsx"},{"name":"TTSPlayer","sourcePath":"components/reader/TTSPlayer.jsx"},{"name":"TextPanel","sourcePath":"components/reader/TextPanel.jsx"},{"name":"TextSelectionMenu","sourcePath":"components/reader/TextSelectionMenu.jsx"},{"name":"ThemePanel","sourcePath":"components/reader/ThemePanel.jsx"},{"name":"PinDots","sourcePath":"components/security/PinDots.jsx"},{"name":"PinPad","sourcePath":"components/security/PinPad.jsx"},{"name":"NyanActionSheetRow","sourcePath":"components/surfaces/NyanActionSheetRow.jsx"},{"name":"NyanBottomSheet","sourcePath":"components/surfaces/NyanBottomSheet.jsx"},{"name":"NyanDialog","sourcePath":"components/surfaces/NyanDialog.jsx"},{"name":"NyanEmptyState","sourcePath":"components/surfaces/NyanEmptyState.jsx"},{"name":"NyanFAB","sourcePath":"components/surfaces/NyanFAB.jsx"},{"name":"NyanInfoCard","sourcePath":"components/surfaces/NyanInfoCard.jsx"},{"name":"NyanListRow","sourcePath":"components/surfaces/NyanListRow.jsx"},{"name":"NyanOptionSheet","sourcePath":"components/surfaces/NyanOptionSheet.jsx"},{"name":"NyanResponse","sourcePath":"components/surfaces/NyanResponse.jsx"},{"name":"NyanRowGroup","sourcePath":"components/surfaces/NyanRowGroup.jsx"}],"sourceHashes":{"brand/nyan-mark.jsx":"dc3409626c1d","components/cards/BookListRow.jsx":"1c9a64ad04a7","components/cards/NyanBookGridCard.jsx":"e42b6c6b9c4b","components/cards/NyanBookmarkCard.jsx":"43737516a9e3","components/cards/NyanContinueReadingCard.jsx":"a8e8f2101577","components/navigation/NyanPageHeader.jsx":"15d362ad06f2","components/navigation/NyanSectionHeader.jsx":"a2e31fc2700e","components/primitives/Checkbox.jsx":"a45a8ce73268","components/primitives/Icon.jsx":"3700fcab2dda","components/primitives/NyanPrimaryButton.jsx":"a2d12459f656","components/primitives/NyanSlider.jsx":"a21d05bfa5fa","components/primitives/NyanSwitch.jsx":"bc4c42d8cf48","components/primitives/PillButton.jsx":"5c71a9024fd6","components/primitives/ProgressBar.jsx":"5cb3a5de9b70","components/primitives/SearchField.jsx":"5bf5d520dec0","components/primitives/SegmentedTabControl.jsx":"6b51c1d2a1db","components/primitives/Skeleton.jsx":"4d81823d1a03","components/primitives/TextField.jsx":"d7c7fad507f3","components/reader/DisplayPanel.jsx":"f650d0f3d177","components/reader/DockFooter.jsx":"4ae790e3fcf4","components/reader/HighlightSwatchRow.jsx":"b4e26de2b0da","components/reader/InBookSearch.jsx":"498631f506e9","components/reader/Knob.jsx":"fbcee9bbe400","components/reader/OnePaperDock.jsx":"b80bf5c5eecb","components/reader/PdfControls.jsx":"9a4d717f55a1","components/reader/ReaderChapterList.jsx":"4c74b797cc42","components/reader/ReaderParagraph.jsx":"f28b79a1bee6","components/reader/ReaderSettingsBody.jsx":"4956c82986c5","components/reader/TTSPlayer.jsx":"beaabf507734","components/reader/TextPanel.jsx":"aeb9bf8d037c","components/reader/TextSelectionMenu.jsx":"ea57210bdd3e","components/reader/ThemePanel.jsx":"56c713f3cc96","components/security/PinDots.jsx":"b3b2c1346ede","components/security/PinPad.jsx":"7bd58ce93912","components/surfaces/NyanActionSheetRow.jsx":"b37e872c7f4a","components/surfaces/NyanBottomSheet.jsx":"1887a0a174ee","components/surfaces/NyanDialog.jsx":"7b689e35f6d6","components/surfaces/NyanEmptyState.jsx":"ca8380515877","components/surfaces/NyanFAB.jsx":"2c8fc01dbdfe","components/surfaces/NyanInfoCard.jsx":"934a030de5b6","components/surfaces/NyanListRow.jsx":"5a279c72d2d7","components/surfaces/NyanOptionSheet.jsx":"3f1336ef378b","components/surfaces/NyanResponse.jsx":"20cc95129368","components/surfaces/NyanRowGroup.jsx":"ac9e1dbb9e9a","prototype/app.jsx":"e977c7914f4c","screens/bundle1.jsx":"463954c7c3fc","screens/bundle2-screens.jsx":"1b00c01ddca1","screens/bundle3.jsx":"25c4e2ea8c37","screens/bundle4.jsx":"38ff2f00c8cf"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -7138,175 +7138,286 @@ const BookshelfSearch = ({
 const BookDetails = ({
   dark,
   unavailable
-}) => /*#__PURE__*/React.createElement(Shell, {
-  dark: dark
-}, /*#__PURE__*/React.createElement(PageHdr, {
-  dark: dark,
-  title: "Book Details"
-}), /*#__PURE__*/React.createElement("div", {
-  style: {
-    flex: 1,
-    overflowY: "auto",
-    padding: "0 16px 32px"
-  }
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 16
-  }
-}, /*#__PURE__*/React.createElement("div", {
-  style: {
-    width: 120,
-    height: 156,
-    borderRadius: 16,
-    background: unavailable ? "var(--nyan-surface-muted)" : "color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface))",
-    border: unavailable ? "1px solid color-mix(in srgb, var(--error-primary) 22%, transparent)" : "0.5px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent)",
-    display: "grid",
-    placeItems: "center",
-    position: "relative"
-  }
-}, unavailable ? /*#__PURE__*/React.createElement("i", {
-  className: "ph ph-warning-circle",
-  style: {
-    fontSize: 40,
-    color: "var(--error-primary)"
-  }
-}) : /*#__PURE__*/React.createElement("i", {
-  className: "ph ph-book-open",
-  style: {
-    fontSize: 44,
-    color: "var(--nyan-primary)"
-  }
-})), /*#__PURE__*/React.createElement("div", {
-  style: {
-    font: "600 20px/1.3 var(--font-ui)",
-    color: "var(--nyan-text)",
-    letterSpacing: "-0.1px",
-    textAlign: "center"
-  }
-}, "The Stillwater Diaries"), /*#__PURE__*/React.createElement("div", {
-  style: {
-    font: "400 13px/1.3 var(--font-ui)",
-    color: "var(--nyan-text-secondary)",
-    textAlign: "center"
-  }
-}, "Matsuno Eri"), /*#__PURE__*/React.createElement("div", {
-  style: {
-    display: "flex",
-    gap: 8,
-    width: "100%"
-  }
-}, /*#__PURE__*/React.createElement("button", {
-  style: {
-    all: "unset",
-    cursor: unavailable ? "not-allowed" : "pointer",
-    flex: 1,
-    height: 50,
-    borderRadius: 16,
-    background: unavailable ? "color-mix(in srgb, var(--nyan-primary) 42%, var(--nyan-surface-muted))" : "var(--nyan-primary)",
-    font: "600 16px/1 var(--font-ui)",
-    color: "var(--nyan-surface)",
-    display: "grid",
-    placeItems: "center",
-    opacity: unavailable ? 0.55 : 1
-  }
-}, unavailable ? "File unavailable" : "Continue Reading"), /*#__PURE__*/React.createElement("button", {
-  style: {
-    all: "unset",
-    cursor: "pointer",
-    width: 50,
-    height: 50,
-    borderRadius: 16,
-    background: "var(--nyan-surface)",
-    border: "1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent)",
-    display: "grid",
-    placeItems: "center",
-    flexShrink: 0
-  }
-}, /*#__PURE__*/React.createElement("i", {
-  className: "ph ph-export",
-  style: {
-    fontSize: 20,
-    color: "var(--nyan-text)"
-  }
-}))), unavailable && /*#__PURE__*/React.createElement("div", {
-  style: {
-    width: "100%",
-    background: "var(--error-bg)",
-    borderRadius: 12,
-    border: "1px solid color-mix(in srgb, var(--error-accent) 60%, transparent)",
-    padding: "10px 12px",
-    display: "flex",
-    gap: 8,
-    alignItems: "flex-start"
-  }
-}, /*#__PURE__*/React.createElement("i", {
-  className: "ph ph-info",
-  style: {
-    fontSize: 15,
-    color: "var(--error-primary)",
-    flexShrink: 0,
-    marginTop: 1
-  }
-}), /*#__PURE__*/React.createElement("div", {
-  style: {
-    font: "400 13px/1.4 var(--font-ui)",
-    color: "var(--error-primary)"
-  }
-}, "This book seems to have lost its way. The file cannot be found."))), /*#__PURE__*/React.createElement(SectionHdr, {
-  label: "Overview"
-}), /*#__PURE__*/React.createElement(RowGroup, null, [["Title", "The Stillwater Diaries"], ["Author", "Matsuno Eri"], ["Format", "EPUB"], ["Privacy", "Public Shelf"], ["Reading Progress", "42%"], ["Added", "2025-11-04"]].map(([l, v]) => /*#__PURE__*/React.createElement("div", {
-  key: l,
-  style: {
-    display: "flex",
-    alignItems: "center",
-    padding: "12px 16px",
-    minHeight: 44
-  }
-}, /*#__PURE__*/React.createElement("span", {
-  style: {
-    font: "500 13px/1.2 var(--font-ui)",
-    color: "var(--nyan-text-secondary)",
-    flex: 1
-  }
-}, l), /*#__PURE__*/React.createElement("span", {
-  style: {
-    font: "500 14px/1.2 var(--font-ui)",
-    color: "var(--nyan-text)",
-    textAlign: "right"
-  }
-}, v)))), /*#__PURE__*/React.createElement("div", {
-  style: {
-    height: 24
-  }
-}), /*#__PURE__*/React.createElement(SectionHdr, {
-  label: "Source"
-}), /*#__PURE__*/React.createElement(RowGroup, null, /*#__PURE__*/React.createElement(ListRow, {
-  icon: "folder-open",
-  title: "Original Path",
-  subtitle: unavailable ? "File not found" : "stillwater_diaries.epub"
-}), /*#__PURE__*/React.createElement(ListRow, {
-  icon: "copy",
-  title: "Copy Path"
-}), /*#__PURE__*/React.createElement(ListRow, {
-  icon: "clock",
-  title: "Last Opened",
-  subtitle: "2025-11-28 14:22:09"
-})), /*#__PURE__*/React.createElement("div", {
-  style: {
-    height: 24
-  }
-}), /*#__PURE__*/React.createElement(SectionHdr, {
-  label: "Highlights & Notes"
-}), /*#__PURE__*/React.createElement(RowGroup, null, /*#__PURE__*/React.createElement(ListRow, {
-  icon: "bookmark",
-  title: "Highlights & Notes",
-  subtitle: "No highlights yet",
-  chevron: true
-}))));
+}) => {
+  const pct = 42;
+  const stats = [{
+    label: "Format",
+    value: "EPUB"
+  }, {
+    label: "Progress",
+    value: unavailable ? "—" : `${pct}%`
+  }, {
+    label: "Added",
+    value: "Nov 4"
+  }];
+  return /*#__PURE__*/React.createElement(Shell, {
+    dark: dark
+  }, /*#__PURE__*/React.createElement(PageHdr, {
+    dark: dark,
+    title: "Book Details",
+    actions: /*#__PURE__*/React.createElement("button", {
+      style: {
+        all: "unset",
+        cursor: "pointer",
+        width: 40,
+        height: 40,
+        borderRadius: "var(--r-control)",
+        display: "grid",
+        placeItems: "center",
+        flexShrink: 0
+      },
+      "aria-label": "More"
+    }, /*#__PURE__*/React.createElement("i", {
+      className: "ph ph-dots-three-vertical",
+      style: {
+        fontSize: 20,
+        color: "var(--nyan-text)"
+      }
+    }))
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      overflowY: "auto",
+      padding: "0 16px 32px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      marginBottom: 20
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      width: 128,
+      height: 170,
+      borderRadius: 20,
+      background: unavailable ? "var(--nyan-surface-muted)" : "color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface))",
+      border: unavailable ? "1px solid color-mix(in srgb, var(--error-primary) 22%, transparent)" : "0.5px solid color-mix(in srgb, var(--nyan-divider) 30%, transparent)",
+      boxShadow: unavailable ? "none" : "var(--shadow-light-card)",
+      display: "grid",
+      placeItems: "center",
+      overflow: "hidden"
+    }
+  }, unavailable ? /*#__PURE__*/React.createElement("i", {
+    className: "ph ph-warning-circle",
+    style: {
+      fontSize: 42,
+      color: "var(--error-primary)"
+    }
+  }) : /*#__PURE__*/React.createElement("i", {
+    className: "ph ph-book-open",
+    style: {
+      fontSize: 46,
+      color: "var(--nyan-primary)"
+    }
+  }), !unavailable && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      top: 8,
+      right: 8,
+      height: 18,
+      padding: "0 7px",
+      borderRadius: 999,
+      background: "color-mix(in srgb, var(--nyan-surface) 90%, transparent)",
+      border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent)",
+      display: "flex",
+      alignItems: "center",
+      backdropFilter: "blur(3px)",
+      WebkitBackdropFilter: "blur(3px)"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "600 9px/1 var(--font-ui)",
+      color: "var(--nyan-primary-deep)"
+    }
+  }, "EPUB"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "600 21px/1.3 var(--font-ui)",
+      color: "var(--nyan-text)",
+      letterSpacing: "-0.2px",
+      textAlign: "center",
+      marginTop: 16
+    }
+  }, "The Stillwater Diaries"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "400 13px/1.3 var(--font-ui)",
+      color: "var(--nyan-text-secondary)",
+      textAlign: "center",
+      marginTop: 5
+    }
+  }, "Matsuno Eri"), !unavailable && pct > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 168,
+      marginTop: 14,
+      display: "flex",
+      flexDirection: "column",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 4,
+      borderRadius: 999,
+      background: "color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface-muted))",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: `${pct}%`,
+      height: "100%",
+      borderRadius: 999,
+      background: "var(--nyan-primary)"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "500 11px/1 var(--font-ui)",
+      color: "var(--nyan-text-muted)",
+      textAlign: "center",
+      letterSpacing: "0.2px"
+    }
+  }, pct, "% \xB7 last read 2 days ago"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    style: {
+      all: "unset",
+      cursor: unavailable ? "not-allowed" : "pointer",
+      flex: 1,
+      height: 50,
+      borderRadius: "var(--r-card-nested)",
+      background: unavailable ? "color-mix(in srgb, var(--nyan-primary) 42%, var(--nyan-surface-muted))" : "var(--nyan-primary)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      opacity: unavailable ? 0.55 : 1
+    }
+  }, !unavailable && /*#__PURE__*/React.createElement("i", {
+    className: "ph ph-book-open",
+    style: {
+      fontSize: 18,
+      color: "var(--nyan-surface)"
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      font: "600 16px/1 var(--font-ui)",
+      color: "var(--nyan-surface)"
+    }
+  }, unavailable ? "File unavailable" : "Continue Reading")), /*#__PURE__*/React.createElement("button", {
+    style: {
+      all: "unset",
+      cursor: unavailable ? "not-allowed" : "pointer",
+      width: 50,
+      height: 50,
+      borderRadius: "var(--r-card-nested)",
+      background: "var(--nyan-surface)",
+      border: "1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent)",
+      display: "grid",
+      placeItems: "center",
+      flexShrink: 0,
+      opacity: unavailable ? 0.5 : 1
+    },
+    "aria-label": "Share",
+    "aria-disabled": unavailable
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "ph ph-export",
+    style: {
+      fontSize: 20,
+      color: "var(--nyan-text)"
+    }
+  }))), unavailable && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "var(--error-bg)",
+      borderRadius: "var(--r-card-nested)",
+      border: "1px solid color-mix(in srgb, var(--error-accent) 60%, transparent)",
+      padding: "12px 14px",
+      display: "flex",
+      gap: 9,
+      alignItems: "flex-start",
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "ph ph-info",
+    style: {
+      fontSize: 16,
+      color: "var(--error-primary)",
+      flexShrink: 0,
+      marginTop: 1
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "400 13px/1.45 var(--font-ui)",
+      color: "var(--error-primary)"
+    }
+  }, "This book seems to have lost its way. The file cannot be found.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      background: "var(--nyan-surface)",
+      borderRadius: "var(--r-card-nested)",
+      border: "1px solid var(--chrome-edge)",
+      boxShadow: "var(--shadow-grouped)",
+      overflow: "hidden",
+      marginBottom: 24
+    }
+  }, stats.map((s, i) => /*#__PURE__*/React.createElement(React.Fragment, {
+    key: s.label
+  }, i > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "0.5px",
+      background: "color-mix(in srgb, var(--nyan-divider) 40%, transparent)",
+      margin: "14px 0"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      padding: "15px 8px",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "600 17px/1 var(--font-ui)",
+      color: "var(--nyan-text)"
+    }
+  }, s.value), /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "500 10px/1 var(--font-ui)",
+      color: "var(--nyan-text-muted)",
+      letterSpacing: "0.5px",
+      textTransform: "uppercase"
+    }
+  }, s.label))))), /*#__PURE__*/React.createElement(SectionHdr, {
+    label: "Source"
+  }), /*#__PURE__*/React.createElement(RowGroup, null, /*#__PURE__*/React.createElement(ListRow, {
+    icon: "folder-open",
+    title: "Original Path",
+    subtitle: unavailable ? "File not found" : "stillwater_diaries.epub"
+  }), /*#__PURE__*/React.createElement(ListRow, {
+    icon: "copy",
+    title: "Copy Path"
+  }), /*#__PURE__*/React.createElement(ListRow, {
+    icon: "clock",
+    title: "Last Opened",
+    subtitle: "2025-11-28 14:22:09"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 24
+    }
+  }), /*#__PURE__*/React.createElement(SectionHdr, {
+    label: "Highlights & Notes"
+  }), /*#__PURE__*/React.createElement(RowGroup, null, /*#__PURE__*/React.createElement(ListRow, {
+    icon: "bookmark",
+    title: "Highlights & Notes",
+    subtitle: "No highlights yet",
+    chevron: true
+  }))));
+};
 
 /* ──────────────────────────────────────────────────────────────────────
    U11 · IMPORT BOOK SHEET
@@ -8400,6 +8511,32 @@ const SelectBookCard = ({
   }
 }, /*#__PURE__*/React.createElement(SelectCheck, {
   on: selected
+})), /*#__PURE__*/React.createElement("button", {
+  title: "Open details",
+  "aria-label": "Open details",
+  style: {
+    all: "unset",
+    cursor: "pointer",
+    position: "absolute",
+    bottom: 6,
+    right: 6,
+    width: 24,
+    height: 24,
+    borderRadius: "50%",
+    background: "color-mix(in srgb, var(--nyan-surface) 90%, transparent)",
+    border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 50%, transparent)",
+    boxShadow: "0 1px 3px rgba(0,0,0,.12)",
+    display: "grid",
+    placeItems: "center",
+    backdropFilter: "blur(3px)",
+    WebkitBackdropFilter: "blur(3px)"
+  }
+}, /*#__PURE__*/React.createElement("i", {
+  className: "ph ph-arrow-up-right",
+  style: {
+    fontSize: 13,
+    color: "var(--nyan-primary-deep)"
+  }
 }))), book.pct > 0 && /*#__PURE__*/React.createElement("div", {
   style: {
     height: 3,
@@ -8518,7 +8655,28 @@ const SelectBookListRow = ({
     font: "600 9px/1 var(--font-ui)",
     color: "var(--nyan-primary-deep)"
   }
-}, book.fmt)));
+}, book.fmt)), /*#__PURE__*/React.createElement("button", {
+  title: "Open details",
+  "aria-label": "Open details",
+  style: {
+    all: "unset",
+    cursor: "pointer",
+    width: 32,
+    height: 32,
+    borderRadius: "50%",
+    flexShrink: 0,
+    display: "grid",
+    placeItems: "center",
+    background: "var(--nyan-surface-muted)",
+    border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent)"
+  }
+}, /*#__PURE__*/React.createElement("i", {
+  className: "ph ph-caret-right",
+  style: {
+    fontSize: 15,
+    color: "var(--nyan-text-secondary)"
+  }
+})));
 const SelectionHeader = ({
   count
 }) => /*#__PURE__*/React.createElement("div", {
@@ -8577,7 +8735,12 @@ const SelectionHeader = ({
 const SelectActionBar = ({
   count
 }) => {
-  const actions = [{
+  const single = count === 1;
+  const actions = [...(single ? [{
+    icon: "book-open",
+    label: "Details",
+    accent: true
+  }] : []), {
     icon: "lock-simple",
     label: "Make Private"
   }, {
@@ -8639,7 +8802,8 @@ const SelectActionBar = ({
   }, a.label)))));
 };
 const DeleteConfirmSheet = ({
-  count
+  count,
+  books = []
 }) => /*#__PURE__*/React.createElement("div", {
   style: {
     position: "absolute",
@@ -8661,7 +8825,7 @@ const DeleteConfirmSheet = ({
     left: "var(--inset)",
     right: "var(--inset)",
     bottom: "var(--inset)",
-    background: "var(--nyan-surface)",
+    background: "var(--nyan-surface-raised, var(--nyan-surface))",
     border: "1px solid var(--chrome-edge)",
     borderRadius: "var(--r-sheet)",
     boxShadow: "var(--shadow-light-card)",
@@ -8670,7 +8834,20 @@ const DeleteConfirmSheet = ({
   }
 }, /*#__PURE__*/React.createElement("div", {
   style: {
-    padding: "24px 20px 18px",
+    paddingTop: 10,
+    display: "flex",
+    justifyContent: "center"
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    width: 40,
+    height: 5,
+    borderRadius: 999,
+    background: "var(--grabber)"
+  }
+})), /*#__PURE__*/React.createElement("div", {
+  style: {
+    padding: "18px 24px 4px",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -8678,58 +8855,198 @@ const DeleteConfirmSheet = ({
   }
 }, /*#__PURE__*/React.createElement("div", {
   style: {
-    width: 56,
-    height: 56,
+    width: 48,
+    height: 48,
     borderRadius: "var(--r-card-nested)",
-    background: "var(--error-bg)",
-    border: "0.7px solid color-mix(in srgb, var(--error-primary) 22%, transparent)",
     display: "grid",
     placeItems: "center",
+    background: "var(--error-bg)",
+    border: "0.7px solid color-mix(in srgb, var(--error-primary) 26%, transparent)",
     marginBottom: 14
   }
 }, /*#__PURE__*/React.createElement("i", {
   className: "ph ph-trash",
   style: {
-    fontSize: 26,
+    fontSize: 23,
     color: "var(--error-primary)"
   }
 })), /*#__PURE__*/React.createElement("div", {
   style: {
-    font: "600 18px/1.25 var(--font-ui)",
+    font: "600 19px/1.25 var(--font-ui)",
     color: "var(--nyan-text)",
+    letterSpacing: "-0.2px",
     marginBottom: 8
   }
 }, "Delete ", count, " books?"), /*#__PURE__*/React.createElement("div", {
   style: {
     font: "400 13.5px/1.5 var(--font-ui)",
     color: "var(--nyan-text-secondary)",
-    maxWidth: 282,
+    maxWidth: 286,
     textWrap: "pretty"
   }
-}, "Their reading progress, bookmarks and notes are removed too. The source files on your device are kept.")), /*#__PURE__*/React.createElement("div", {
+}, "Their reading progress, bookmarks and notes are removed too.")), books.length > 0 && /*#__PURE__*/React.createElement("div", {
   style: {
-    padding: "0 16px 16px",
+    padding: "16px 16px 0"
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    background: "var(--nyan-surface-muted)",
+    borderRadius: "var(--r-card-nested)",
+    border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 50%, transparent)",
+    overflow: "hidden"
+  }
+}, books.map((b, i) => /*#__PURE__*/React.createElement(React.Fragment, {
+  key: i
+}, i > 0 && /*#__PURE__*/React.createElement("div", {
+  style: {
+    height: "0.5px",
+    background: "color-mix(in srgb, var(--nyan-divider) 40%, transparent)",
+    margin: "0 12px"
+  }
+}), /*#__PURE__*/React.createElement("div", {
+  style: {
     display: "flex",
-    flexDirection: "column",
-    gap: 10
+    alignItems: "center",
+    gap: 11,
+    padding: "9px 12px"
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    width: 30,
+    height: 40,
+    borderRadius: 8,
+    flexShrink: 0,
+    background: "color-mix(in srgb, var(--nyan-primary) 12%, var(--nyan-surface))",
+    border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 36%, transparent)",
+    display: "grid",
+    placeItems: "center"
+  }
+}, /*#__PURE__*/React.createElement("i", {
+  className: "ph ph-book-open",
+  style: {
+    fontSize: 15,
+    color: "var(--nyan-primary)"
+  }
+})), /*#__PURE__*/React.createElement("div", {
+  style: {
+    flex: 1,
+    minWidth: 0
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    font: "500 13.5px/1.25 var(--font-ui)",
+    color: "var(--nyan-text)",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis"
+  }
+}, b.title), /*#__PURE__*/React.createElement("div", {
+  style: {
+    font: "400 11.5px/1.3 var(--font-ui)",
+    color: "var(--nyan-text-muted)",
+    marginTop: 1,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis"
+  }
+}, b.author)), /*#__PURE__*/React.createElement("div", {
+  style: {
+    height: 17,
+    padding: "0 7px",
+    flexShrink: 0,
+    borderRadius: 999,
+    background: "var(--nyan-surface)",
+    border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 44%, transparent)",
+    display: "flex",
+    alignItems: "center"
+  }
+}, /*#__PURE__*/React.createElement("span", {
+  style: {
+    font: "600 9px/1 var(--font-ui)",
+    color: "var(--nyan-primary-deep)"
+  }
+}, b.fmt))))))), /*#__PURE__*/React.createElement("div", {
+  style: {
+    padding: "14px 16px 0"
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  role: "checkbox",
+  "aria-checked": "false",
+  style: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "11px 13px",
+    borderRadius: "var(--r-card-nested)",
+    background: "var(--nyan-surface-muted)",
+    border: "0.5px solid color-mix(in srgb, var(--nyan-divider) 50%, transparent)",
+    cursor: "pointer"
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    flexShrink: 0,
+    border: "1.5px solid color-mix(in srgb, var(--nyan-text) 28%, transparent)",
+    background: "var(--nyan-surface)"
+  }
+}), /*#__PURE__*/React.createElement("div", {
+  style: {
+    flex: 1,
+    minWidth: 0
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    font: "500 13.5px/1.3 var(--font-ui)",
+    color: "var(--nyan-text)"
+  }
+}, "Also delete files from device"), /*#__PURE__*/React.createElement("div", {
+  style: {
+    font: "400 11.5px/1.35 var(--font-ui)",
+    color: "var(--nyan-text-muted)",
+    marginTop: 1,
+    textWrap: "pretty"
+  }
+}, "The original EPUB/PDF files will be permanently removed, not just the shelf entries.")))), /*#__PURE__*/React.createElement("div", {
+  style: {
+    padding: "16px",
+    display: "flex",
+    gap: 9
   }
 }, /*#__PURE__*/React.createElement("button", {
   style: {
     all: "unset",
     cursor: "pointer",
     boxSizing: "border-box",
+    flex: 1,
     height: 50,
-    borderRadius: 16,
+    borderRadius: "var(--r-card-nested)",
+    background: "transparent",
+    border: "1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent)",
+    display: "grid",
+    placeItems: "center",
+    font: "600 15px/1 var(--font-ui)",
+    color: "var(--nyan-text-secondary)"
+  }
+}, "Cancel"), /*#__PURE__*/React.createElement("button", {
+  style: {
+    all: "unset",
+    cursor: "pointer",
+    boxSizing: "border-box",
+    flex: 1,
+    height: 50,
+    borderRadius: "var(--r-card-nested)",
     background: "var(--error-primary)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8
+    gap: 7
   }
 }, /*#__PURE__*/React.createElement("i", {
   className: "ph ph-trash",
   style: {
-    fontSize: 18,
+    fontSize: 17,
     color: "var(--nyan-surface)"
   }
 }), /*#__PURE__*/React.createElement("span", {
@@ -8737,34 +9054,22 @@ const DeleteConfirmSheet = ({
     font: "600 15px/1 var(--font-ui)",
     color: "var(--nyan-surface)"
   }
-}, "Delete ", count, " books")), /*#__PURE__*/React.createElement("button", {
-  style: {
-    all: "unset",
-    cursor: "pointer",
-    boxSizing: "border-box",
-    height: 50,
-    borderRadius: 16,
-    background: "var(--nyan-surface-muted)",
-    border: "1px solid var(--nyan-divider)",
-    display: "grid",
-    placeItems: "center",
-    font: "600 15px/1 var(--font-ui)",
-    color: "var(--nyan-text)"
-  }
-}, "Cancel"))));
+}, "Delete")))));
 const BookshelfManage = ({
   dark,
   view = "grid",
-  phase = "select"
+  phase = "select",
+  selectIds = SELECT_IDS
 }) => {
   const selecting = phase === "select" || phase === "confirm" || phase === "deleting";
   const items = BOOKS.concat(BOOKS).slice(0, 6).map((b, i) => ({
     key: i,
     book: b,
-    selected: SELECT_IDS.includes(i)
+    selected: selectIds.includes(i)
   }));
   const visible = phase === "deleted" ? items.filter(it => !it.selected) : items;
-  const count = SELECT_IDS.length;
+  const selectedBooks = items.filter(it => it.selected).map(it => it.book);
+  const count = selectIds.length;
   return /*#__PURE__*/React.createElement(Shell, {
     dark: dark
   }, /*#__PURE__*/React.createElement("div", {
@@ -8829,7 +9134,8 @@ const BookshelfManage = ({
   })))))), phase === "select" && /*#__PURE__*/React.createElement(SelectActionBar, {
     count: count
   }), phase === "confirm" && /*#__PURE__*/React.createElement(DeleteConfirmSheet, {
-    count: count
+    count: count,
+    books: selectedBooks
   }), phase === "deleting" && /*#__PURE__*/React.createElement(NyanResponse, {
     placement: "bottom",
     status: "loading",
