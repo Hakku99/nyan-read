@@ -249,7 +249,7 @@ class _PinInputWidgetState extends State<PinInputWidget>
         child: widget.showBiometric
             ? _ghostButton(
                 icon: NyanIcons.fingerprint,
-                size: NyanTypography.pinKeyDigit,
+                size: NyanTypography.pinKeyGlyph,
                 // Biometric uses primary colour per spec — dotFill is primary.
                 color: widget.dotFill,
                 onTap: widget.onBiometricTap ?? () {},

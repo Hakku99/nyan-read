@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 
 /// Thin wrapper around [LocalAuthentication] for biometric / device-credential
@@ -13,7 +14,8 @@ class BiometricService {
     try {
       if (!await _auth.canCheckBiometrics) return false;
       return (await _auth.getAvailableBiometrics()).isNotEmpty;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[BiometricService] isAvailable error: $e');
       return false;
     }
   }
@@ -29,7 +31,8 @@ class BiometricService {
           stickyAuth: true,
         ),
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[BiometricService] authenticate error: $e');
       return false;
     }
   }
