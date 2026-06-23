@@ -462,6 +462,7 @@ class _NyanResponseOverlayState extends State<NyanResponseOverlay>
 
   Timer? _timer;
   bool _exiting = false;
+  bool _isDragging = false;
 
   @override
   void initState() {
@@ -489,7 +490,7 @@ class _NyanResponseOverlayState extends State<NyanResponseOverlay>
   }
 
   Future<void> _beginExit() async {
-    if (_exiting) return;
+    if (_exiting || _isDragging) return;
     _exiting = true;
     _timer?.cancel();
     await _cardCtrl.reverse();
@@ -525,14 +526,44 @@ class _NyanResponseOverlayState extends State<NyanResponseOverlay>
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               const Expanded(child: IgnorePointer(child: SizedBox.expand())),
-              ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxWidth),
-                child: FadeTransition(
-                  opacity: _fade,
-                  child: SlideTransition(
-                    position: _slide,
-                    // Card shell is static — only the content inside crossfades.
-                    child: _CardShell(controller: widget.controller),
+              Dismissible(
+                key: const ValueKey('nyan-toast'),
+                direction: DismissDirection.horizontal,
+                // Transparent backgrounds so no colour bleeds in during the swipe.
+                background: const SizedBox.shrink(),
+                secondaryBackground: const SizedBox.shrink(),
+                onUpdate: (details) {
+                  final dragging = details.progress > 0 && !details.reached;
+                  if (dragging && !_isDragging) {
+                    // Drag started — pause auto-dismiss timer.
+                    _isDragging = true;
+                    _timer?.cancel();
+                    _timer = null;
+                  } else if (!dragging && _isDragging && !details.reached) {
+                    // Snapped back — reschedule remaining duration.
+                    _isDragging = false;
+                    if (!_exiting) {
+                      _scheduleTimer(
+                          widget.controller._payloadNotifier.value.duration);
+                    }
+                  }
+                },
+                onDismissed: (_) {
+                  _timer?.cancel();
+                  if (!_exiting) {
+                    _exiting = true;
+                    widget.onClosed();
+                  }
+                },
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: FadeTransition(
+                    opacity: _fade,
+                    child: SlideTransition(
+                      position: _slide,
+                      // Card shell is static — only the content inside crossfades.
+                      child: _CardShell(controller: widget.controller),
+                    ),
                   ),
                 ),
               ),
