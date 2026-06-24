@@ -368,7 +368,9 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — Action Response 卡片描述字号（交付包对齐，2026-06，来源 `components/surfaces/NyanResponse.jsx`）**：`NyanResponse` 的描述行使用 **12.5pt w400**、行高 1.35（来源：`NyanResponse.jsx` `font: "400 12.5px/1.35"`）。此值介于阶梯 `caption 11` 与 `meta 13` 之间（§4.6 交付包优先）。此例外**仅限** `NyanResponse` 描述行，**MUST NOT** 出现在正文、列表行或其它表面。常量定义见 `NyanTypography.responseDescription`（12.5）。
 
-> **例外 — U21 书架选择标题字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `SelectionHeader`）**：`home_screen.dart` 的选择模式 AppBar 标题（如 "2 Selected"）使用 **18pt w600**、字距 -0.2（来源：`bundle3.jsx` `font: "600 18px/1.15"`, `letterSpacing: "-0.2px"`）。此值介于阶梯 `body 16` 与 `section 20` 之间（§4.6 交付包优先）。此例外**仅限** `_buildSelectionAppBar` 标题和 `_DeleteBooksSheetContent` 标题，**MUST NOT** 出现在正文、列表行或其它表面。常量定义见 `NyanTypography.selectionHeaderTitle`（18）。
+> **例外 — U21 书架选择标题字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `SelectionHeader`）**：`home_screen.dart` 的选择模式 AppBar 标题（如 "2 Selected"）使用 **18pt w600**、字距 -0.2（来源：`bundle3.jsx` `font: "600 18px/1.15"`, `letterSpacing: "-0.2px"`）。此值介于阶梯 `body 16` 与 `section 20` 之间（§4.6 交付包优先）。此例外**仅限** `_buildSelectionAppBar` 标题，**MUST NOT** 出现在正文、列表行或其它表面。常量定义见 `NyanTypography.selectionHeaderTitle`（18）。
+
+> **例外 — U21 删除确认 Sheet 标题字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `DeleteConfirmSheet`）**：`_DeleteBooksSheetContent` 的标题（"Delete N books?"）使用 **19pt w600**、字距 -0.2（来源：`bundle3.jsx` `font: "600 19px/1.25"`, `letterSpacing: "-0.2px"`）。此值介于阶梯 `body 16` 与 `section 20` 之间（§4.6 交付包优先）。此例外**仅限** `_DeleteBooksSheetContent` 标题行，**MUST NOT** 出现在正文、列表行或其它表面。常量定义见 `NyanTypography.deleteConfirmTitle`（19）。
 
 > **例外 — U21 删除确认 Sheet 正文字号（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `DeleteConfirmSheet`）**：`_DeleteBooksSheetContent` 的说明行使用 **13.5pt w400**（来源：`bundle3.jsx` `font: "400 13.5px/1.45"`）。此值介于阶梯 `meta 13` 与 `body 16` 之间（§4.6 交付包优先）。此例外**仅限** `_DeleteBooksSheetContent` 正文行，**MUST NOT** 出现在其它表面。字面量 `13.5` 直接写在该 widget 内，无独立常量（值已有先例：`NyanTypography.fabLabel = 13.5`）。
 

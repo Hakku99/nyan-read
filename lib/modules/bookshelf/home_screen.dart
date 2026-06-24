@@ -117,18 +117,22 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     if (vm.selectedCount == 0) return;
 
     final deletedCount = vm.selectedCount;
+    final books = vm.selectedBooks;
 
-    // U21 spec: bottom sheet confirm (no deleteFiles toggle).
-    final confirmed = await showNyanSheet<bool>(
+    // U21 spec: bottom sheet confirm with book list + "also delete files" toggle.
+    final result = await showNyanSheet<({bool confirmed, bool alsoDeleteFiles})>(
       context: context,
+      isDismissible: false,
       builder: (sheetCtx) => _DeleteBooksSheetContent(
-        bookCount: deletedCount,
-        onDelete: () => Navigator.pop(sheetCtx, true),
-        onCancel: () => Navigator.pop(sheetCtx, false),
+        books: books,
+        onDelete: (alsoDelete) =>
+            Navigator.pop(sheetCtx, (confirmed: true, alsoDeleteFiles: alsoDelete)),
+        onCancel: () =>
+            Navigator.pop(sheetCtx, (confirmed: false, alsoDeleteFiles: false)),
       ),
     );
 
-    if (confirmed != true || !context.mounted) return;
+    if (result == null || !result.confirmed || !context.mounted) return;
 
     final loc = AppLocalizations.of(context)!;
 
@@ -140,8 +144,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     );
 
     try {
-      // Spec does not include a "delete files" toggle; preserve source files.
-      await vm.deleteSelectedBooks(false);
+      await vm.deleteSelectedBooks(result.alsoDeleteFiles);
       if (!context.mounted) return;
       SnackBarUtils.show(
         context,
@@ -1253,30 +1256,35 @@ class _SelectActionBar extends StatelessWidget {
 ///
 /// Per bundle3.jsx `DeleteConfirmSheet`: 56×56 error icon container,
 /// 18pt/600 title, 13.5pt/400 body, full-width Delete and Cancel buttons.
-class _DeleteBooksSheetContent extends StatelessWidget {
+class _DeleteBooksSheetContent extends StatefulWidget {
   const _DeleteBooksSheetContent({
-    required this.bookCount,
+    required this.books,
     required this.onDelete,
     required this.onCancel,
   });
 
-  final int bookCount;
-  final VoidCallback onDelete;
+  final List<Book> books;
+  final void Function(bool alsoDeleteFiles) onDelete;
   final VoidCallback onCancel;
+
+  @override
+  State<_DeleteBooksSheetContent> createState() =>
+      _DeleteBooksSheetContentState();
+}
+
+class _DeleteBooksSheetContentState extends State<_DeleteBooksSheetContent> {
+  bool _alsoDeleteFiles = false;
 
   @override
   Widget build(BuildContext context) {
     final nyan = context.nyanTheme;
     final loc = AppLocalizations.of(context)!;
     final isDark = nyan.brightness == Brightness.dark;
-    // Matches NyanOnePaperSheet surface logic — highest layer in dark.
     final surface = isDark ? nyan.surfaceRaised : nyan.surface;
     final chromeEdge = isDark ? nyan.divider : Colors.transparent;
     final borderRadius = BorderRadius.circular(NyanRadius.sheet);
+    final bookCount = widget.books.length;
 
-    // Spec DeleteConfirmSheet has NO grabber pill — this is a destructive
-    // confirmation that must not be accidentally dismissed by swipe. The surface
-    // treatment (shadow + clip + border) mirrors NyanOnePaperSheet without the grabber.
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: borderRadius,
@@ -1295,142 +1303,278 @@ class _DeleteBooksSheetContent extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ── Upper section: icon + title + body ───────────────────
-                // Spec: padding 24px top, 20px sides, 18px bottom; all center-aligned.
+                // ── Grabber ───────────────────────────────────────────────
+                // Spec: paddingTop 10, 40×5 pill, grabber colour.
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: nyan.primary.withValues(
+                          alpha: isDark ? 0.50 : 0.36,
+                        ),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ── Icon + title + body ───────────────────────────────────
+                // Spec: padding "18px 24px 4px".
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    NyanSpacing.space20,
                     NyanSpacing.space24,
-                    NyanSpacing.space20,
                     18,
+                    NyanSpacing.space24,
+                    4,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // 56×56 error icon container — r-cardNested, errorBg, errorPrimary@22% border.
+                      // 48×48 error icon container — r-cardNested, errorBg, errorPrimary@26% border.
                       Container(
-                        width: 56,
-                        height: 56,
+                        width: 48,
+                        height: 48,
                         decoration: BoxDecoration(
                           color: nyan.errorBackgroundColor,
                           borderRadius:
                               BorderRadius.circular(NyanRadius.cardNested),
                           border: Border.all(
-                            color:
-                                nyan.errorPrimaryTextColor.withValues(alpha: 0.22),
+                            color: nyan.errorPrimaryTextColor.withValues(
+                                alpha: 0.26),
                             width: 0.7,
                           ),
                         ),
                         child: Icon(
                           NyanIcons.delete,
-                          size: 26,
+                          size: 23,
                           color: nyan.errorPrimaryTextColor,
                         ),
                       ),
-                      // Spec: marginBottom 14 between icon and title.
                       const SizedBox(height: 14),
-                      // Title: 18pt/600, center-aligned.
+                      // Title: 19pt/600/letterSpacing-0.2.
                       Text(
                         loc.deleteBooksTitle(bookCount),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: NyanTypography.uiFontFamily,
-                          fontSize: NyanTypography.selectionHeaderTitle,
+                          fontSize: NyanTypography.deleteConfirmTitle,
                           fontWeight: FontWeight.w600,
                           height: 1.25,
+                          letterSpacing: -0.2,
                           color: nyan.textPrimary,
                         ),
                       ),
                       const SizedBox(height: NyanSpacing.space8),
-                      // Body: 13.5pt/400/1.5, center-aligned.
-                      Text(
-                        loc.actionCannotBeUndone,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: NyanTypography.uiFontFamily,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w400,
-                          height: 1.5,
-                          color: nyan.textSecondary,
+                      // Body: 13.5pt/400/1.5 — progress + bookmarks only (source file
+                      // note moved to the "also delete" checkbox description below).
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 286),
+                        child: Text(
+                          loc.actionCannotBeUndone,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: NyanTypography.uiFontFamily,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w400,
+                            height: 1.5,
+                            color: nyan.textSecondary,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                // ── Button section ───────────────────────────────────────
-                // Spec: padding 0 top, 16px sides, 16px bottom; gap 10 between buttons.
+                // ── Recessed book list ────────────────────────────────────
+                // Spec: padding "16px 16px 0"; surfaceMuted recessed panel.
+                if (widget.books.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                        NyanSpacing.space16, NyanSpacing.space16, NyanSpacing.space16, 0),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: nyan.surfaceMuted,
+                        borderRadius:
+                            BorderRadius.circular(NyanRadius.cardNested),
+                        border: Border.all(
+                          color: nyan.divider.withValues(alpha: 0.50),
+                          width: 0.5,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius:
+                            BorderRadius.circular(NyanRadius.cardNested),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (int i = 0; i < widget.books.length; i++) ...[
+                              if (i > 0)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: NyanSpacing.space12),
+                                  child: Container(
+                                    height: 0.5,
+                                    color: nyan.divider.withValues(alpha: 0.40),
+                                  ),
+                                ),
+                              _BookPreviewRow(book: widget.books[i]),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // ── "Also delete files" checkbox ──────────────────────────
+                // Spec: padding "14px 16px 0"; surfaceMuted row, r-cardNested.
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    NyanSpacing.space16,
-                    0,
-                    NyanSpacing.space16,
-                    NyanSpacing.space16,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Delete button — h=50, r-cardNested, errorPrimary bg.
-                      // Spec label: "Delete {n} books" with count; font 600 15px.
-                      GestureDetector(
-                        onTap: onDelete,
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: nyan.errorPrimaryTextColor,
-                            borderRadius:
-                                BorderRadius.circular(NyanRadius.cardNested),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                NyanIcons.delete,
-                                size: 18,
-                                color: Colors.white,
+                      NyanSpacing.space16, 14, NyanSpacing.space16, 0),
+                  child: GestureDetector(
+                    onTap: () =>
+                        setState(() => _alsoDeleteFiles = !_alsoDeleteFiles),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: nyan.surfaceMuted,
+                        borderRadius:
+                            BorderRadius.circular(NyanRadius.cardNested),
+                        border: Border.all(
+                          color: nyan.divider.withValues(alpha: 0.50),
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 13, vertical: 11),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 22×22 checkbox square — r=7, border 1.5pt.
+                            Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: _alsoDeleteFiles
+                                    ? nyan.errorPrimaryTextColor
+                                    : nyan.surface,
+                                borderRadius: BorderRadius.circular(7),
+                                border: Border.all(
+                                  color: _alsoDeleteFiles
+                                      ? nyan.errorPrimaryTextColor
+                                      : nyan.textPrimary.withValues(alpha: 0.28),
+                                  width: 1.5,
+                                ),
                               ),
-                              const SizedBox(width: NyanSpacing.space8),
-                              Text(
-                                loc.deleteBooksButton(bookCount),
-                                style: const TextStyle(
+                              child: _alsoDeleteFiles
+                                  ? const Icon(Icons.check,
+                                      size: 14, color: Colors.white)
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    loc.alsoDeleteFilesFromDevice,
+                                    style: TextStyle(
+                                      fontFamily: NyanTypography.uiFontFamily,
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w500,
+                                      height: 1.3,
+                                      color: nyan.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 1),
+                                  Text(
+                                    loc.alsoDeleteFilesFromDeviceDesc,
+                                    style: TextStyle(
+                                      fontFamily: NyanTypography.uiFontFamily,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w400,
+                                      height: 1.35,
+                                      color: nyan.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ── Buttons ───────────────────────────────────────────────
+                // Spec: padding 16px all sides; Cancel + Delete side by side, gap 9.
+                Padding(
+                  padding: const EdgeInsets.all(NyanSpacing.space16),
+                  child: Row(
+                    children: [
+                      // Cancel — transparent bg, divider@60% border, textSecondary.
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: widget.onCancel,
+                          child: Container(
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius:
+                                  BorderRadius.circular(NyanRadius.cardNested),
+                              border: Border.all(
+                                color: nyan.divider.withValues(alpha: 0.60),
+                                width: 1.0,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                loc.cancel,
+                                style: TextStyle(
                                   fontFamily: NyanTypography.uiFontFamily,
-                                  // Off-ladder 15pt: spec DeleteConfirmSheet button, §4.6.
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                   height: 1.0,
-                                  color: Colors.white,
+                                  color: nyan.textSecondary,
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                      // Spec gap: 10px between buttons.
-                      const SizedBox(height: 10),
-                      // Cancel button — h=50, r-cardNested, surfaceMuted bg, divider border.
-                      GestureDetector(
-                        onTap: onCancel,
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: nyan.surfaceMuted,
-                            borderRadius:
-                                BorderRadius.circular(NyanRadius.cardNested),
-                            border: Border.all(color: nyan.divider, width: 1.0),
-                          ),
-                          child: Center(
-                            child: Text(
-                              loc.cancel,
-                              style: TextStyle(
-                                fontFamily: NyanTypography.uiFontFamily,
-                                // Off-ladder 15pt: spec DeleteConfirmSheet button, §4.6.
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                height: 1.0,
-                                color: nyan.textPrimary,
-                              ),
+                      const SizedBox(width: 9),
+                      // Delete — errorPrimary bg, trash icon + "Delete".
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => widget.onDelete(_alsoDeleteFiles),
+                          child: Container(
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: nyan.errorPrimaryTextColor,
+                              borderRadius:
+                                  BorderRadius.circular(NyanRadius.cardNested),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(NyanIcons.delete,
+                                    size: 17, color: nyan.surface),
+                                const SizedBox(width: 7),
+                                Text(
+                                  loc.deleteButton,
+                                  style: TextStyle(
+                                    fontFamily: NyanTypography.uiFontFamily,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.0,
+                                    color: nyan.surface,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -1442,6 +1586,98 @@ class _DeleteBooksSheetContent extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// Recessed row inside the delete confirm book list preview.
+class _BookPreviewRow extends StatelessWidget {
+  const _BookPreviewRow({required this.book});
+  final Book book;
+
+  @override
+  Widget build(BuildContext context) {
+    final nyan = context.nyanTheme;
+    final fmt = book.format.toUpperCase();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      child: Row(
+        children: [
+          // 30×40 cover thumbnail.
+          Container(
+            width: 30,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Color.lerp(nyan.surface, nyan.primary, 0.12),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: nyan.divider.withValues(alpha: 0.36),
+                width: 0.5,
+              ),
+            ),
+            child: Icon(NyanIcons.book, size: 15, color: nyan.primary),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  book.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: NyanTypography.uiFontFamily,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w500,
+                    height: 1.25,
+                    color: nyan.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  book.author,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: NyanTypography.uiFontFamily,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w400,
+                    height: 1.3,
+                    color: nyan.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Format badge — 17pt tall pill, primaryDeep label 9/600.
+          Container(
+            height: 17,
+            padding: const EdgeInsets.symmetric(horizontal: 7),
+            decoration: BoxDecoration(
+              color: nyan.surface,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: nyan.divider.withValues(alpha: 0.44),
+                width: 0.5,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                fmt,
+                style: TextStyle(
+                  fontFamily: NyanTypography.uiFontFamily,
+                  fontSize: NyanTypography.shelfFormatChip,
+                  fontWeight: FontWeight.w600,
+                  height: 1.0,
+                  color: nyan.primaryDeep,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

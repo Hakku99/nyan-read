@@ -46,6 +46,13 @@ class BookshelfViewModel extends ChangeNotifier {
   // --- Derived State ---
   bool isBookSelected(String bookId) => _selectedBookIds.contains(bookId);
 
+  List<Book> get selectedBooks {
+    final byId = {
+      for (final b in _publicBooks.followedBy(_privateBooks)) b.id: b,
+    };
+    return _selectedBookIds.map((id) => byId[id]).whereType<Book>().toList();
+  }
+
   // --- Actions ---
 
   Future<void> loadBooks() async {

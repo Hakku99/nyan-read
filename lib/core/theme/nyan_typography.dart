@@ -129,6 +129,15 @@ class NyanTypography {
   ///   `font: "600 18px/1.15 var(--font-ui)"`, `letterSpacing: -0.2px`
   static const double selectionHeaderTitle = 18.0;
 
+  /// Delete-confirm sheet title — U21 design-system handoff exception
+  /// (see AGENTS.md §4.2.5). Reserved for the `_DeleteBooksSheetContent` title
+  /// ("Delete N books?") ONLY. Sits between [body] 16 and [section] 20;
+  /// it MUST NOT appear in body copy, list rows, or any other surface.
+  ///
+  /// Source: `screens/bundle3.jsx` `DeleteConfirmSheet`
+  ///   `font: "600 19px/1.25 var(--font-ui)"`, `letterSpacing: -0.2px`
+  static const double deleteConfirmTitle = 19.0;
+
   /// Shared response toast (`NyanResponse`) description — design-system handoff
   /// exception (see AGENTS.md §4.2.5). Reserved for the [NyanResponse]
   /// description line ONLY. Sits between [caption] 11 and [meta] 13; it MUST

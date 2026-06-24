@@ -1025,7 +1025,7 @@ abstract class AppLocalizations {
   /// No description provided for @actionCannotBeUndone.
   ///
   /// In en, this message translates to:
-  /// **'Their reading progress, bookmarks and notes are removed too. The source files on your device are kept.'**
+  /// **'Their reading progress, bookmarks and notes are removed too.'**
   String get actionCannotBeUndone;
 
   /// No description provided for @deleteBooksButton.
@@ -1039,6 +1039,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Also delete local files'**
   String get alsoDeleteLocalFiles;
+
+  /// No description provided for @alsoDeleteFilesFromDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Also delete files from device'**
+  String get alsoDeleteFilesFromDevice;
+
+  /// No description provided for @alsoDeleteFilesFromDeviceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The original EPUB/PDF files will be permanently removed, not just the shelf entries.'**
+  String get alsoDeleteFilesFromDeviceDesc;
+
+  /// No description provided for @deleteButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteButton;
 
   /// No description provided for @deletedBooks.
   ///

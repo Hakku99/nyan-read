@@ -491,7 +491,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionCannotBeUndone =>
-      'Their reading progress, bookmarks and notes are removed too. The source files on your device are kept.';
+      'Their reading progress, bookmarks and notes are removed too.';
 
   @override
   String deleteBooksButton(int count) {
@@ -506,6 +506,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get alsoDeleteLocalFiles => 'Also delete local files';
+
+  @override
+  String get alsoDeleteFilesFromDevice => 'Also delete files from device';
+
+  @override
+  String get alsoDeleteFilesFromDeviceDesc =>
+      'The original EPUB/PDF files will be permanently removed, not just the shelf entries.';
+
+  @override
+  String get deleteButton => 'Delete';
 
   @override
   String deletedBooks(int count) {

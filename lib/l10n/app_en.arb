@@ -175,7 +175,7 @@
       }
     }
   },
-  "actionCannotBeUndone": "Their reading progress, bookmarks and notes are removed too. The source files on your device are kept.",
+  "actionCannotBeUndone": "Their reading progress, bookmarks and notes are removed too.",
   "deleteBooksButton": "{count, plural, one{Delete {count} book} other{Delete {count} books}}",
   "@deleteBooksButton": {
     "placeholders": {
@@ -185,6 +185,9 @@
     }
   },
   "alsoDeleteLocalFiles": "Also delete local files",
+  "alsoDeleteFilesFromDevice": "Also delete files from device",
+  "alsoDeleteFilesFromDeviceDesc": "The original EPUB/PDF files will be permanently removed, not just the shelf entries.",
+  "deleteButton": "Delete",
   "deletedBooks": "{count, plural, one{Removed {count} book} other{Removed {count} books}}",
   "@deletedBooks": {
     "placeholders": {
