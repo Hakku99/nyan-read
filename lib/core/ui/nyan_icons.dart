@@ -107,6 +107,11 @@ class NyanIcons {
   /// (spec `bundle3.jsx` `SelectionHeader`: `ph ph-list-checks`).
   static const IconData listChecks = PhosphorIconsRegular.listChecks;
 
+  /// "Open details" affordance arrow — selection-mode grid card bottom-right
+  /// button and list-row circle button (spec `bundle3.jsx` `SelectBookCard` /
+  /// `SelectBookListRow`: `ph-arrow-up-right` / `ph-caret-right`).
+  static const IconData arrowUpRight = PhosphorIconsRegular.arrowUpRight;
+
   // ── System / Settings ───────────────────────────────────────────────────
   static const IconData settings = PhosphorIconsRegular.gearSix;
   static const IconData tune = PhosphorIconsRegular.slidersHorizontal;

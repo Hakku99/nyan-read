@@ -28,6 +28,10 @@ class AnimatedBookCardList extends StatefulWidget {
   final VoidCallback onLongPress;
   final VoidCallback? onSelectionToggle;
 
+  /// Tapped on the trailing › circle button in selection mode.
+  /// Opens book details without affecting the selection state.
+  final VoidCallback? onOpenDetails;
+
   /// Draw a hairline divider above this row (every row except the group's first).
   final bool showTopDivider;
 
@@ -45,6 +49,7 @@ class AnimatedBookCardList extends StatefulWidget {
     required this.onTap,
     required this.onLongPress,
     this.onSelectionToggle,
+    this.onOpenDetails,
     this.showTopDivider = false,
     this.isFirst = false,
     this.isLast = false,
@@ -159,9 +164,11 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                 borderRadius: tintRadius,
               ),
               child: Padding(
+                // ponytail: 10pt vertical matches spec bundle3.jsx BookListRow/SelectBookListRow
+                // "padding: 10px 12px" — §4.6 delivery-bundle takes priority over 8pt grid.
                 padding: const EdgeInsets.symmetric(
                   horizontal: NyanSpacing.space12,
-                  vertical: NyanSpacing.space12,
+                  vertical: 10,
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -324,15 +331,38 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
                       ),
                     ),
 
-                    // Trailing chevron (hidden in selection mode)
-                    if (!widget.isSelectionMode) ...[
-                      const SizedBox(width: NyanSpacing.space8),
+                    // Trailing › button — always visible.
+                    // Selection mode: 32×32 circle (spec SelectBookListRow).
+                    // Normal mode: plain icon (spec BookListRow).
+                    const SizedBox(width: NyanSpacing.space8),
+                    if (widget.isSelectionMode)
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: widget.onOpenDetails,
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: nyan.surfaceMuted,
+                            border: Border.all(
+                              color: nyan.divider.withValues(alpha: 0.44),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Icon(
+                            NyanIcons.chevronRight,
+                            size: 15,
+                            color: nyan.textSecondary,
+                          ),
+                        ),
+                      )
+                    else
                       Icon(
                         NyanIcons.chevronRight,
                         size: 15,
                         color: nyan.textMuted,
                       ),
-                    ],
                   ],
                 ),
               ),

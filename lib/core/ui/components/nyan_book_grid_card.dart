@@ -24,6 +24,10 @@ class NyanBookGridCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
+  /// Tapped when the ↗ affordance button is pressed in selection mode.
+  /// Opens book details without affecting the selection state.
+  final VoidCallback? onOpenDetails;
+
   const NyanBookGridCard({
     super.key,
     required this.book,
@@ -31,6 +35,7 @@ class NyanBookGridCard extends StatelessWidget {
     required this.isSelectionMode,
     required this.onTap,
     required this.onLongPress,
+    this.onOpenDetails,
   });
 
   @override
@@ -109,26 +114,64 @@ class NyanBookGridCard extends StatelessWidget {
                             nyan: nyan,
                           ),
                         ),
+                      // ↗ open-detail affordance — bottom-right per spec
+                      // SelectBookCard. Navigates to book details independently
+                      // of selection toggle. Only shown in selection mode.
+                      if (isSelectionMode)
+                        Positioned(
+                          bottom: 6,
+                          right: 6,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: onOpenDetails,
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: nyan.surface.withValues(alpha: 0.90),
+                                border: Border.all(
+                                  color: nyan.divider.withValues(alpha: 0.50),
+                                  width: 0.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.12),
+                                    blurRadius: 3,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                NyanIcons.arrowUpRight,
+                                size: 13,
+                                color: nyan.primaryDeep,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 6),
 
-              // ── Progress bar ─────────────────────────────────────────────
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: NyanShelfUi.progressBarHeight, // 3pt
-                  backgroundColor: Color.alphaBlend(
-                    nyan.primary.withValues(alpha: 0.16),
-                    nyan.surface,
+              // ── Progress bar — only when reading has started (spec: pct > 0)
+              if (progress > 0) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: NyanShelfUi.progressBarHeight, // 3pt
+                    backgroundColor: Color.alphaBlend(
+                      nyan.primary.withValues(alpha: 0.16),
+                      nyan.surface,
+                    ),
+                    valueColor: AlwaysStoppedAnimation<Color>(nyan.primary),
                   ),
-                  valueColor: AlwaysStoppedAnimation<Color>(nyan.primary),
                 ),
-              ),
-              const SizedBox(height: 6),
+                const SizedBox(height: 6),
+              ],
 
               // ── Title ────────────────────────────────────────────────────
               // Reserve 2-line height so all cards in a row share the same rhythm.

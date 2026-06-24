@@ -29,6 +29,7 @@ import '../../core/utils/book_import_fingerprint.dart';
 import '../../core/utils/book_source_platform.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/utils/title_sort_key.dart';
+import 'book_details_page.dart';
 import 'widgets/import_book_sheet.dart';
 import 'widgets/bookshelf_shelf_toolbar.dart';
 import 'widgets/bookshelf_sort_sheet.dart';
@@ -791,13 +792,29 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                   right: NyanSpacing.space12,
                   bottom:
                       NyanSpacing.space12 + MediaQuery.viewPaddingOf(context).bottom,
-                  child: _SelectActionBar(
-                    isOnPrivateTab: isOnPrivateTab,
-                    showMakePrivate: featureManager.isPro,
-                    onMakePrivate: () =>
-                        _moveSelectedBooks(context, !isOnPrivateTab),
-                    onExport: () => _showExportNotice(context),
-                    onDelete: () => _deleteSelectedBooks(context),
+                  child: ListenableBuilder(
+                    listenable: vm,
+                    builder: (context, _) {
+                      final singleBook = vm.selectedCount == 1
+                          ? vm.publicBooks
+                              .followedBy(vm.privateBooks)
+                              .where((b) =>
+                                  vm.selectedBookIds.contains(b.id))
+                              .firstOrNull
+                          : null;
+                      return _SelectActionBar(
+                        isOnPrivateTab: isOnPrivateTab,
+                        showMakePrivate: featureManager.isPro,
+                        selectedCount: vm.selectedCount,
+                        onMakePrivate: () =>
+                            _moveSelectedBooks(context, !isOnPrivateTab),
+                        onExport: () => _showExportNotice(context),
+                        onDelete: () => _deleteSelectedBooks(context),
+                        onDetails: singleBook != null
+                            ? () => _openBookDetails(context, singleBook)
+                            : null,
+                      );
+                    },
                   ),
                 ),
             ],
@@ -931,6 +948,15 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     ];
   }
 
+  void _openBookDetails(BuildContext context, Book book) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BookDetailsPage(book: book, bookData: book.toMap()),
+      ),
+    ).then((_) => _vm.loadBooks());
+  }
+
   Widget _buildGridBookTile(BuildContext context, Book book) {
     return ListenableBuilder(
       listenable: _vm,
@@ -956,6 +982,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               vm.toggleSelectionMode(active: true, initialBookId: book.id);
             }
           },
+          onOpenDetails: () => _openBookDetails(context, book),
         );
       },
     );
@@ -1071,6 +1098,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             }
           },
           onSelectionToggle: () => vm.toggleBookSelection(book.id),
+          onOpenDetails: () => _openBookDetails(context, book),
         );
       },
     );
@@ -1088,9 +1116,11 @@ class _SelectActionBar extends StatelessWidget {
   const _SelectActionBar({
     required this.isOnPrivateTab,
     required this.showMakePrivate,
+    required this.selectedCount,
     required this.onMakePrivate,
     required this.onExport,
     required this.onDelete,
+    this.onDetails,
   });
 
   /// True when the active tab is the private shelf (flips the Make Private label
@@ -1100,9 +1130,16 @@ class _SelectActionBar extends StatelessWidget {
   /// Whether the Make Private / Public action is shown (Pro feature gate).
   final bool showMakePrivate;
 
+  /// Current selection count — drives the Details button (shown when == 1).
+  final int selectedCount;
+
   final VoidCallback onMakePrivate;
   final VoidCallback onExport;
   final VoidCallback onDelete;
+
+  /// Navigates to the details of the single selected book. Only called when
+  /// [selectedCount] == 1 (spec `SelectActionBar`: Details shown for single).
+  final VoidCallback? onDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -1174,6 +1211,15 @@ class _SelectActionBar extends StatelessWidget {
       child: IntrinsicHeight(
         child: Row(
           children: [
+            // Details — only when exactly 1 book is selected (spec SelectActionBar).
+            if (selectedCount == 1 && onDetails != null) ...[
+              action(
+                icon: NyanIcons.book,
+                label: loc.viewDetails,
+                onTap: onDetails!,
+              ),
+              hairline(),
+            ],
             if (showMakePrivate) ...[
               action(
                 icon: NyanIcons.lock,

@@ -312,6 +312,8 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 
 > **例外 — 书架吸顶标签栏底部间距（交付包对齐，2026-06，来源 `screens/bundle4.jsx` `ShelfToolbarScreen`）**：`bookshelf_shelf_toolbar.dart` 的 `_kShelfTrackVerticalPaddingBottom` 固定为 **10pt**（来源：`bundle4.jsx` tab wrapper `marginBottom: 10`）。此值比 8pt 网格大 2pt（§4.6 交付包优先）。此例外**仅限**书架吸顶标签栏的底部内边距，**MUST NOT** 用于其它卡片、列表或页面级布局间距。
 
+> **例外 — 书架列表行垂直内边距（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `BookListRow` / `SelectBookListRow`）**：`animated_book_card.dart`（`AnimatedBookCardList`）的行垂直内边距固定为 **10pt**（来源：`bundle3.jsx` `padding: "10px 12px"`）。此值比 8pt 网格大 2pt（§4.6 交付包优先）。此例外**仅限** `AnimatedBookCardList` 行内边距，**MUST NOT** 用于卡片、页面或其它列表级布局间距。
+
 #### 4.2.4 阴影 — `lib/core/theme/nyan_shadows.dart`
 
 三个工具方法**现在接收 `NyanTheme nyan`（不再是裸 `Color`）**，并按 `nyan.brightness` 自动选配方：
@@ -377,6 +379,8 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 > - `NyanTypography.miniSuggestAuthor = 10.5` — Discover block 书格作者（`400 10.5px/1.2`），**仅限** `_MiniSuggestTile`，**MUST NOT** 出现在其它表面。
 
 > **新增阴影 Token — `NyanShadows.cardSelectionGlow` / `selectionBadgeGlow`（2026-06，来源 `bundle3.jsx` `SelectBookCard`）**：选中书格封面外发光（`primary@16%` spread 3px）和 SelectCheck 徽标发光（`primary@40%` 1px drop shadow）通过 `NyanShadows.cardSelectionGlow(nyan)` / `selectionBadgeGlow(nyan)` 访问，**MUST NOT** 直接构造 `BoxShadow`。
+
+> **书架选择模式 open-detail 快捷按钮（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `SelectBookCard` / `SelectBookListRow`）**：选择模式下每个书格封面右下角显示一个 **24×24 圆形 ↗ 按钮**（`ph-arrow-up-right`，`NyanIcons.arrowUpRight`，`primaryDeep` 色，`surface@90%` 毛玻璃底 + `divider@50%` 描边 + `0 1px 3px rgba(0,0,0,.12)` 阴影）；列表行右侧显示一个 **32×32 圆形 › 按钮**（`ph-caret-right`，`textSecondary` 色，`surfaceMuted` 底 + `divider@44%` 描边），两者点击均独立导航至书籍详情页，**不改变当前选中状态**。非选择模式下列表行只显示等宽的裸图标（无圆圈）。**MUST NOT** 在其它场景使用这两个按钮的圆形容器样式。
 
 > ✅ **字体已注册（§6 Phase 0 已完成）**：`pubspec.yaml` 的 `flutter.fonts` 段已声明 `Noto Sans SC`（400/500/600）+ `Source Han Serif SC`（400/600）；字体文件存放于 `assets/fonts/`，**未纳入 Git**（体积原因）。开发者需按 `assets/fonts/README.md` 说明手动放置字体文件。缺少字体时 Flutter 打印 warning 并回落平台字体，不影响编译；但 serif 阅读模式仅在字体文件就位后生效。
 
