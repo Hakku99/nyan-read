@@ -32,10 +32,10 @@
   "pageAnimFade": "Directional Fade",
   "pageAnimPaper": "Paper",
   "pageAnimNone": "None",
-  "readingReminder": "Reading Reminder",
-  "readingReminderSubtitle": "Chapter seek and position",
-  "reminderInterval": "Reminder Interval",
-  "reminderIntervalSubtitle": "How often to nudge you back to reading.",
+  "readingReminder": "Rest Reminder",
+  "readingReminderSubtitle": "Nudge me to take a break while reading",
+  "reminderInterval": "Rest Interval",
+  "reminderIntervalSubtitle": "How long to read before we suggest a break.",
   "reminderMinutes": "{minutes} min",
   "@reminderMinutes": {
     "placeholders": {
@@ -44,11 +44,11 @@
       }
     }
   },
-  "reminderEvery15min": "Every 15 min",
-  "reminderEvery30min": "Every 30 min",
+  "reminderEvery15min": "Every 15 minutes",
+  "reminderEvery30min": "Every 30 minutes",
+  "reminderEvery45min": "Every 45 minutes",
   "reminderEveryHour": "Every hour",
-  "reminderEvery2hours": "Every 2 hours",
-  "reminderDaily": "Daily",
+  "reminderEvery90min": "Every 90 minutes",
   "dataManagement": "Data Management",
   "deleteFilesOnRemove": "Delete Files on Remove",
   "deleteFilesOnRemoveSubtitle": "Remove source files when deleting a book",

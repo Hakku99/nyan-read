@@ -105,16 +105,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pageAnimNone => '无';
 
   @override
-  String get readingReminder => '阅读提醒';
+  String get readingReminder => '休息提醒';
 
   @override
-  String get readingReminderSubtitle => '章节跳转与阅读位置';
+  String get readingReminderSubtitle => '提示我稍作休息';
 
   @override
-  String get reminderInterval => '提醒间隔';
+  String get reminderInterval => '休息间隔';
 
   @override
-  String get reminderIntervalSubtitle => '多久提醒你回来阅读一次';
+  String get reminderIntervalSubtitle => '阅读多久后提醒你休息。';
 
   @override
   String reminderMinutes(int minutes) {
@@ -128,13 +128,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reminderEvery30min => '每 30 分钟';
 
   @override
+  String get reminderEvery45min => '每 45 分钟';
+
+  @override
   String get reminderEveryHour => '每小时';
 
   @override
-  String get reminderEvery2hours => '每 2 小时';
-
-  @override
-  String get reminderDaily => '每天';
+  String get reminderEvery90min => '每 90 分钟';
 
   @override
   String get dataManagement => '数据管理';

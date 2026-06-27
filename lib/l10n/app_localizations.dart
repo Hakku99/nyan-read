@@ -293,25 +293,25 @@ abstract class AppLocalizations {
   /// No description provided for @readingReminder.
   ///
   /// In en, this message translates to:
-  /// **'Reading Reminder'**
+  /// **'Rest Reminder'**
   String get readingReminder;
 
   /// No description provided for @readingReminderSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Chapter seek and position'**
+  /// **'Nudge me to take a break while reading'**
   String get readingReminderSubtitle;
 
   /// No description provided for @reminderInterval.
   ///
   /// In en, this message translates to:
-  /// **'Reminder Interval'**
+  /// **'Rest Interval'**
   String get reminderInterval;
 
   /// No description provided for @reminderIntervalSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'How often to nudge you back to reading.'**
+  /// **'How long to read before we suggest a break.'**
   String get reminderIntervalSubtitle;
 
   /// No description provided for @reminderMinutes.
@@ -323,14 +323,20 @@ abstract class AppLocalizations {
   /// No description provided for @reminderEvery15min.
   ///
   /// In en, this message translates to:
-  /// **'Every 15 min'**
+  /// **'Every 15 minutes'**
   String get reminderEvery15min;
 
   /// No description provided for @reminderEvery30min.
   ///
   /// In en, this message translates to:
-  /// **'Every 30 min'**
+  /// **'Every 30 minutes'**
   String get reminderEvery30min;
+
+  /// No description provided for @reminderEvery45min.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 45 minutes'**
+  String get reminderEvery45min;
 
   /// No description provided for @reminderEveryHour.
   ///
@@ -338,17 +344,11 @@ abstract class AppLocalizations {
   /// **'Every hour'**
   String get reminderEveryHour;
 
-  /// No description provided for @reminderEvery2hours.
+  /// No description provided for @reminderEvery90min.
   ///
   /// In en, this message translates to:
-  /// **'Every 2 hours'**
-  String get reminderEvery2hours;
-
-  /// No description provided for @reminderDaily.
-  ///
-  /// In en, this message translates to:
-  /// **'Daily'**
-  String get reminderDaily;
+  /// **'Every 90 minutes'**
+  String get reminderEvery90min;
 
   /// No description provided for @dataManagement.
   ///

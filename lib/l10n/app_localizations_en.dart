@@ -105,17 +105,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pageAnimNone => 'None';
 
   @override
-  String get readingReminder => 'Reading Reminder';
+  String get readingReminder => 'Rest Reminder';
 
   @override
-  String get readingReminderSubtitle => 'Chapter seek and position';
+  String get readingReminderSubtitle =>
+      'Nudge me to take a break while reading';
 
   @override
-  String get reminderInterval => 'Reminder Interval';
+  String get reminderInterval => 'Rest Interval';
 
   @override
   String get reminderIntervalSubtitle =>
-      'How often to nudge you back to reading.';
+      'How long to read before we suggest a break.';
 
   @override
   String reminderMinutes(int minutes) {
@@ -123,19 +124,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get reminderEvery15min => 'Every 15 min';
+  String get reminderEvery15min => 'Every 15 minutes';
 
   @override
-  String get reminderEvery30min => 'Every 30 min';
+  String get reminderEvery30min => 'Every 30 minutes';
+
+  @override
+  String get reminderEvery45min => 'Every 45 minutes';
 
   @override
   String get reminderEveryHour => 'Every hour';
 
   @override
-  String get reminderEvery2hours => 'Every 2 hours';
-
-  @override
-  String get reminderDaily => 'Daily';
+  String get reminderEvery90min => 'Every 90 minutes';
 
   @override
   String get dataManagement => 'Data Management';

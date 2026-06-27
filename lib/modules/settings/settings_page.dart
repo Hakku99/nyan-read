@@ -31,7 +31,7 @@ const double _kHPad = NyanSpacing.space16;
 const String _kAppVersion = 'v1.0.0';
 
 // ── Valid reminder interval values (minutes) in picker order ─────────────────
-const List<int> _kReminderIntervals = [15, 30, 60, 120, 1440];
+const List<int> _kReminderIntervals = [15, 30, 45, 60, 90];
 
 // ── Loading / dismiss helpers ─────────────────────────────────────────────────
 
@@ -529,12 +529,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         return loc.reminderEvery15min;
       case 30:
         return loc.reminderEvery30min;
+      case 45:
+        return loc.reminderEvery45min;
       case 60:
         return loc.reminderEveryHour;
-      case 120:
-        return loc.reminderEvery2hours;
-      case 1440:
-        return loc.reminderDaily;
+      case 90:
+        return loc.reminderEvery90min;
       default:
         return loc.reminderMinutes(minutes);
     }
