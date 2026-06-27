@@ -52,11 +52,11 @@ const NyanDialog = ({ open, onClose, icon, title, message, tone = "default", con
         {children}
         <div style={{ display: "flex", gap: 8, width: "100%", marginTop: 4 }}>
           {!hideCancel && (
-            <NyanPrimaryButton label={cancelLabel} variant="ghost" expanded onPress={onCancel || onClose} style={{ flex: 1, background: "var(--nyan-surface-muted)", color: "var(--nyan-text-secondary)" }} />
+            <NyanPrimaryButton label={cancelLabel} variant="ghost" expanded onPress={onCancel || onClose} style={{ flex: 1, background: "color-mix(in srgb, var(--nyan-text) 6%, transparent)", color: "var(--nyan-text-secondary)" }} />
           )}
           <NyanPrimaryButton
             label={confirmLabel} expanded onPress={onConfirm}
-            style={{ flex: 1, ...(danger ? { background: "var(--error-primary)", color: "var(--nyan-surface)" } : null) }}
+            style={{ flex: 1, ...(danger ? { background: "var(--error-primary)", color: "var(--nyan-surface)", boxShadow: "0 6px 16px -6px color-mix(in srgb, var(--error-primary) 60%, transparent)" } : null) }}
           />
         </div>
       </div>

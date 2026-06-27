@@ -787,7 +787,7 @@ const NotesList = ({ dark, empty, phase }) => {
    U9b · BOOKSHELF SELECT & DELETE (MULTI-SELECT EDIT MODE)
    Entered via long-press / “Select” — the Shelf Toolbar becomes a selection bar
    (Cancel · N selected · Select all), every cover/row gains a check, and a
-   floating action bar offers Make Private / Export / Delete. Deleting routes
+   floating action bar offers Make Private / Delete. Deleting routes
    through a destructive confirm sheet → a Deleting… progress response → an
    undoable “deleted” response. Works in grid + list, Cream + Sumi.
    ────────────────────────────────────────────────────────────────────── */
@@ -878,23 +878,28 @@ const SelectActionBar = ({ count }) => {
   const actions = [
     ...(single ? [{ icon: "book-open", label: "Details", accent: true }] : []),
     { icon: "lock-simple", label: "Make Private" },
-    { icon: "export",      label: "Export" },
     { icon: "trash",       label: "Delete", danger: true },
   ];
   const disabled = count === 0;
   return (
     <div style={{ position: "absolute", left: "var(--inset)", right: "var(--inset)", bottom: "var(--inset)",
       background: "var(--nyan-surface)", border: "1px solid var(--chrome-edge)", borderRadius: "var(--r-dock)",
-      boxShadow: "var(--shadow-light-card)", padding: "7px 6px", display: "flex", opacity: disabled ? 0.5 : 1, zIndex: 40 }}>
-      {actions.map((a, i) => (
-        <React.Fragment key={a.label}>
-          {i > 0 && <div style={{ width: "0.5px", alignSelf: "stretch", margin: "8px 0", background: "color-mix(in srgb, var(--nyan-divider) 40%, transparent)" }} />}
-          <button style={{ all: "unset", cursor: "pointer", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, padding: "8px 4px", borderRadius: 12 }}>
-            <i className={`ph ph-${a.icon}`} style={{ fontSize: 22, color: a.danger ? "var(--error-primary)" : "var(--nyan-primary-deep)" }} />
-            <span style={{ font: "500 11px/1 var(--font-ui)", color: a.danger ? "var(--error-primary)" : "var(--nyan-text-secondary)" }}>{a.label}</span>
+      boxShadow: "var(--shadow-light-card)", padding: 8, display: "flex", gap: 6, opacity: disabled ? 0.5 : 1, zIndex: 40 }}>
+      {actions.map((a) => {
+        const tone = a.danger ? "var(--error-primary)" : "var(--nyan-primary-deep)";
+        const tint = a.danger
+          ? "color-mix(in srgb, var(--error-primary) 11%, var(--nyan-surface))"
+          : "color-mix(in srgb, var(--nyan-primary) 13%, var(--nyan-surface))";
+        return (
+          <button key={a.label} style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", flex: 1, minWidth: 0,
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 7, padding: "11px 6px", borderRadius: 16 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 13, background: tint, display: "grid", placeItems: "center" }}>
+              <i className={`ph ph-${a.icon}`} style={{ fontSize: 21, color: tone }} />
+            </div>
+            <span style={{ font: "500 11.5px/1 var(--font-ui)", color: a.danger ? "var(--error-primary)" : "var(--nyan-text-secondary)", whiteSpace: "nowrap", letterSpacing: "0.1px" }}>{a.label}</span>
           </button>
-        </React.Fragment>
-      ))}
+        );
+      })}
     </div>
   );
 };
@@ -952,9 +957,9 @@ const DeleteConfirmSheet = ({ count, books = [] }) => (
           </div>
         </div>
       </div>
-      <div style={{ padding: "16px", display: "flex", gap: 9 }}>
-        <button style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", flex: 1, height: 50, borderRadius: "var(--r-card-nested)", background: "transparent", border: "1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent)", display: "grid", placeItems: "center", font: "600 15px/1 var(--font-ui)", color: "var(--nyan-text-secondary)" }}>Cancel</button>
-        <button style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", flex: 1, height: 50, borderRadius: "var(--r-card-nested)", background: "var(--error-primary)", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+      <div style={{ padding: "16px", display: "flex", gap: 10 }}>
+        <button style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", flex: 1, height: 50, borderRadius: "var(--r-card-nested)", background: "color-mix(in srgb, var(--nyan-text) 6%, transparent)", display: "grid", placeItems: "center", font: "600 15px/1 var(--font-ui)", color: "var(--nyan-text-secondary)" }}>Cancel</button>
+        <button style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", flex: 1, height: 50, borderRadius: "var(--r-card-nested)", background: "var(--error-primary)", boxShadow: "0 6px 16px -6px color-mix(in srgb, var(--error-primary) 60%, transparent)", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
           <i className="ph ph-trash" style={{ fontSize: 17, color: "var(--nyan-surface)" }} />
           <span style={{ font: "600 15px/1 var(--font-ui)", color: "var(--nyan-surface)" }}>Delete</span>
         </button>

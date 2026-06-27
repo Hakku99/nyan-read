@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"NyanReadDesignSystem_019e2f","components":[{"name":"BookListRow","sourcePath":"components/cards/BookListRow.jsx"},{"name":"NyanBookGridCard","sourcePath":"components/cards/NyanBookGridCard.jsx"},{"name":"NyanBookmarkCard","sourcePath":"components/cards/NyanBookmarkCard.jsx"},{"name":"NyanContinueReadingCard","sourcePath":"components/cards/NyanContinueReadingCard.jsx"},{"name":"NyanPageHeader","sourcePath":"components/navigation/NyanPageHeader.jsx"},{"name":"NyanSectionHeader","sourcePath":"components/navigation/NyanSectionHeader.jsx"},{"name":"Checkbox","sourcePath":"components/primitives/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/primitives/Icon.jsx"},{"name":"NyanPrimaryButton","sourcePath":"components/primitives/NyanPrimaryButton.jsx"},{"name":"NyanSlider","sourcePath":"components/primitives/NyanSlider.jsx"},{"name":"NyanSwitch","sourcePath":"components/primitives/NyanSwitch.jsx"},{"name":"PillButton","sourcePath":"components/primitives/PillButton.jsx"},{"name":"ProgressBar","sourcePath":"components/primitives/ProgressBar.jsx"},{"name":"SearchField","sourcePath":"components/primitives/SearchField.jsx"},{"name":"SegmentedTabControl","sourcePath":"components/primitives/SegmentedTabControl.jsx"},{"name":"Skeleton","sourcePath":"components/primitives/Skeleton.jsx"},{"name":"TextField","sourcePath":"components/primitives/TextField.jsx"},{"name":"DisplayPanel","sourcePath":"components/reader/DisplayPanel.jsx"},{"name":"DockFooter","sourcePath":"components/reader/DockFooter.jsx"},{"name":"HighlightSwatchRow","sourcePath":"components/reader/HighlightSwatchRow.jsx"},{"name":"InBookSearch","sourcePath":"components/reader/InBookSearch.jsx"},{"name":"Knob","sourcePath":"components/reader/Knob.jsx"},{"name":"OnePaperDock","sourcePath":"components/reader/OnePaperDock.jsx"},{"name":"PdfControls","sourcePath":"components/reader/PdfControls.jsx"},{"name":"ReaderChapterList","sourcePath":"components/reader/ReaderChapterList.jsx"},{"name":"ReaderParagraph","sourcePath":"components/reader/ReaderParagraph.jsx"},{"name":"ReaderSettingsBody","sourcePath":"components/reader/ReaderSettingsBody.jsx"},{"name":"TTSPlayer","sourcePath":"components/reader/TTSPlayer.jsx"},{"name":"TextPanel","sourcePath":"components/reader/TextPanel.jsx"},{"name":"TextSelectionMenu","sourcePath":"components/reader/TextSelectionMenu.jsx"},{"name":"ThemePanel","sourcePath":"components/reader/ThemePanel.jsx"},{"name":"PinDots","sourcePath":"components/security/PinDots.jsx"},{"name":"PinPad","sourcePath":"components/security/PinPad.jsx"},{"name":"NyanActionSheetRow","sourcePath":"components/surfaces/NyanActionSheetRow.jsx"},{"name":"NyanBottomSheet","sourcePath":"components/surfaces/NyanBottomSheet.jsx"},{"name":"NyanDialog","sourcePath":"components/surfaces/NyanDialog.jsx"},{"name":"NyanEmptyState","sourcePath":"components/surfaces/NyanEmptyState.jsx"},{"name":"NyanFAB","sourcePath":"components/surfaces/NyanFAB.jsx"},{"name":"NyanInfoCard","sourcePath":"components/surfaces/NyanInfoCard.jsx"},{"name":"NyanListRow","sourcePath":"components/surfaces/NyanListRow.jsx"},{"name":"NyanOptionSheet","sourcePath":"components/surfaces/NyanOptionSheet.jsx"},{"name":"NyanResponse","sourcePath":"components/surfaces/NyanResponse.jsx"},{"name":"NyanRowGroup","sourcePath":"components/surfaces/NyanRowGroup.jsx"}],"sourceHashes":{"brand/nyan-mark.jsx":"dc3409626c1d","components/cards/BookListRow.jsx":"1c9a64ad04a7","components/cards/NyanBookGridCard.jsx":"e42b6c6b9c4b","components/cards/NyanBookmarkCard.jsx":"43737516a9e3","components/cards/NyanContinueReadingCard.jsx":"a8e8f2101577","components/navigation/NyanPageHeader.jsx":"15d362ad06f2","components/navigation/NyanSectionHeader.jsx":"a2e31fc2700e","components/primitives/Checkbox.jsx":"a45a8ce73268","components/primitives/Icon.jsx":"3700fcab2dda","components/primitives/NyanPrimaryButton.jsx":"a2d12459f656","components/primitives/NyanSlider.jsx":"a21d05bfa5fa","components/primitives/NyanSwitch.jsx":"bc4c42d8cf48","components/primitives/PillButton.jsx":"5c71a9024fd6","components/primitives/ProgressBar.jsx":"5cb3a5de9b70","components/primitives/SearchField.jsx":"5bf5d520dec0","components/primitives/SegmentedTabControl.jsx":"6b51c1d2a1db","components/primitives/Skeleton.jsx":"4d81823d1a03","components/primitives/TextField.jsx":"d7c7fad507f3","components/reader/DisplayPanel.jsx":"f650d0f3d177","components/reader/DockFooter.jsx":"4ae790e3fcf4","components/reader/HighlightSwatchRow.jsx":"b4e26de2b0da","components/reader/InBookSearch.jsx":"498631f506e9","components/reader/Knob.jsx":"fbcee9bbe400","components/reader/OnePaperDock.jsx":"b80bf5c5eecb","components/reader/PdfControls.jsx":"9a4d717f55a1","components/reader/ReaderChapterList.jsx":"4c74b797cc42","components/reader/ReaderParagraph.jsx":"f28b79a1bee6","components/reader/ReaderSettingsBody.jsx":"4956c82986c5","components/reader/TTSPlayer.jsx":"beaabf507734","components/reader/TextPanel.jsx":"aeb9bf8d037c","components/reader/TextSelectionMenu.jsx":"ea57210bdd3e","components/reader/ThemePanel.jsx":"56c713f3cc96","components/security/PinDots.jsx":"b3b2c1346ede","components/security/PinPad.jsx":"7bd58ce93912","components/surfaces/NyanActionSheetRow.jsx":"b37e872c7f4a","components/surfaces/NyanBottomSheet.jsx":"1887a0a174ee","components/surfaces/NyanDialog.jsx":"7b689e35f6d6","components/surfaces/NyanEmptyState.jsx":"ca8380515877","components/surfaces/NyanFAB.jsx":"2c8fc01dbdfe","components/surfaces/NyanInfoCard.jsx":"934a030de5b6","components/surfaces/NyanListRow.jsx":"5a279c72d2d7","components/surfaces/NyanOptionSheet.jsx":"3f1336ef378b","components/surfaces/NyanResponse.jsx":"20cc95129368","components/surfaces/NyanRowGroup.jsx":"ac9e1dbb9e9a","prototype/app.jsx":"e977c7914f4c","screens/bundle1.jsx":"463954c7c3fc","screens/bundle2-screens.jsx":"1b00c01ddca1","screens/bundle3.jsx":"25c4e2ea8c37","screens/bundle4.jsx":"38ff2f00c8cf"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"NyanReadDesignSystem_019e2f","components":[{"name":"BookListRow","sourcePath":"components/cards/BookListRow.jsx"},{"name":"NyanBookGridCard","sourcePath":"components/cards/NyanBookGridCard.jsx"},{"name":"NyanBookmarkCard","sourcePath":"components/cards/NyanBookmarkCard.jsx"},{"name":"NyanContinueReadingCard","sourcePath":"components/cards/NyanContinueReadingCard.jsx"},{"name":"NyanPageHeader","sourcePath":"components/navigation/NyanPageHeader.jsx"},{"name":"NyanSectionHeader","sourcePath":"components/navigation/NyanSectionHeader.jsx"},{"name":"Checkbox","sourcePath":"components/primitives/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/primitives/Icon.jsx"},{"name":"NyanPrimaryButton","sourcePath":"components/primitives/NyanPrimaryButton.jsx"},{"name":"NyanSlider","sourcePath":"components/primitives/NyanSlider.jsx"},{"name":"NyanSwitch","sourcePath":"components/primitives/NyanSwitch.jsx"},{"name":"PillButton","sourcePath":"components/primitives/PillButton.jsx"},{"name":"ProgressBar","sourcePath":"components/primitives/ProgressBar.jsx"},{"name":"SearchField","sourcePath":"components/primitives/SearchField.jsx"},{"name":"SegmentedTabControl","sourcePath":"components/primitives/SegmentedTabControl.jsx"},{"name":"Skeleton","sourcePath":"components/primitives/Skeleton.jsx"},{"name":"TextField","sourcePath":"components/primitives/TextField.jsx"},{"name":"DisplayPanel","sourcePath":"components/reader/DisplayPanel.jsx"},{"name":"DockFooter","sourcePath":"components/reader/DockFooter.jsx"},{"name":"HighlightSwatchRow","sourcePath":"components/reader/HighlightSwatchRow.jsx"},{"name":"InBookSearch","sourcePath":"components/reader/InBookSearch.jsx"},{"name":"Knob","sourcePath":"components/reader/Knob.jsx"},{"name":"OnePaperDock","sourcePath":"components/reader/OnePaperDock.jsx"},{"name":"PdfControls","sourcePath":"components/reader/PdfControls.jsx"},{"name":"ReaderChapterList","sourcePath":"components/reader/ReaderChapterList.jsx"},{"name":"ReaderParagraph","sourcePath":"components/reader/ReaderParagraph.jsx"},{"name":"ReaderSettingsBody","sourcePath":"components/reader/ReaderSettingsBody.jsx"},{"name":"TTSPlayer","sourcePath":"components/reader/TTSPlayer.jsx"},{"name":"TextPanel","sourcePath":"components/reader/TextPanel.jsx"},{"name":"TextSelectionMenu","sourcePath":"components/reader/TextSelectionMenu.jsx"},{"name":"ThemePanel","sourcePath":"components/reader/ThemePanel.jsx"},{"name":"PinDots","sourcePath":"components/security/PinDots.jsx"},{"name":"PinPad","sourcePath":"components/security/PinPad.jsx"},{"name":"NyanActionSheetRow","sourcePath":"components/surfaces/NyanActionSheetRow.jsx"},{"name":"NyanBottomSheet","sourcePath":"components/surfaces/NyanBottomSheet.jsx"},{"name":"NyanDialog","sourcePath":"components/surfaces/NyanDialog.jsx"},{"name":"NyanEmptyState","sourcePath":"components/surfaces/NyanEmptyState.jsx"},{"name":"NyanFAB","sourcePath":"components/surfaces/NyanFAB.jsx"},{"name":"NyanInfoCard","sourcePath":"components/surfaces/NyanInfoCard.jsx"},{"name":"NyanListRow","sourcePath":"components/surfaces/NyanListRow.jsx"},{"name":"NyanOptionSheet","sourcePath":"components/surfaces/NyanOptionSheet.jsx"},{"name":"NyanResponse","sourcePath":"components/surfaces/NyanResponse.jsx"},{"name":"NyanRowGroup","sourcePath":"components/surfaces/NyanRowGroup.jsx"}],"sourceHashes":{"brand/nyan-mark.jsx":"dc3409626c1d","components/cards/BookListRow.jsx":"1c9a64ad04a7","components/cards/NyanBookGridCard.jsx":"e42b6c6b9c4b","components/cards/NyanBookmarkCard.jsx":"43737516a9e3","components/cards/NyanContinueReadingCard.jsx":"a8e8f2101577","components/navigation/NyanPageHeader.jsx":"15d362ad06f2","components/navigation/NyanSectionHeader.jsx":"a2e31fc2700e","components/primitives/Checkbox.jsx":"a45a8ce73268","components/primitives/Icon.jsx":"3700fcab2dda","components/primitives/NyanPrimaryButton.jsx":"a2d12459f656","components/primitives/NyanSlider.jsx":"a21d05bfa5fa","components/primitives/NyanSwitch.jsx":"bc4c42d8cf48","components/primitives/PillButton.jsx":"5c71a9024fd6","components/primitives/ProgressBar.jsx":"5cb3a5de9b70","components/primitives/SearchField.jsx":"5bf5d520dec0","components/primitives/SegmentedTabControl.jsx":"6b51c1d2a1db","components/primitives/Skeleton.jsx":"4d81823d1a03","components/primitives/TextField.jsx":"d7c7fad507f3","components/reader/DisplayPanel.jsx":"f650d0f3d177","components/reader/DockFooter.jsx":"4ae790e3fcf4","components/reader/HighlightSwatchRow.jsx":"b4e26de2b0da","components/reader/InBookSearch.jsx":"498631f506e9","components/reader/Knob.jsx":"fbcee9bbe400","components/reader/OnePaperDock.jsx":"b80bf5c5eecb","components/reader/PdfControls.jsx":"9a4d717f55a1","components/reader/ReaderChapterList.jsx":"4c74b797cc42","components/reader/ReaderParagraph.jsx":"f28b79a1bee6","components/reader/ReaderSettingsBody.jsx":"4956c82986c5","components/reader/TTSPlayer.jsx":"beaabf507734","components/reader/TextPanel.jsx":"aeb9bf8d037c","components/reader/TextSelectionMenu.jsx":"ea57210bdd3e","components/reader/ThemePanel.jsx":"56c713f3cc96","components/security/PinDots.jsx":"b3b2c1346ede","components/security/PinPad.jsx":"7bd58ce93912","components/surfaces/NyanActionSheetRow.jsx":"b37e872c7f4a","components/surfaces/NyanBottomSheet.jsx":"1887a0a174ee","components/surfaces/NyanDialog.jsx":"ccaf97bfa604","components/surfaces/NyanEmptyState.jsx":"ca8380515877","components/surfaces/NyanFAB.jsx":"2c8fc01dbdfe","components/surfaces/NyanInfoCard.jsx":"934a030de5b6","components/surfaces/NyanListRow.jsx":"5a279c72d2d7","components/surfaces/NyanOptionSheet.jsx":"3f1336ef378b","components/surfaces/NyanResponse.jsx":"20cc95129368","components/surfaces/NyanRowGroup.jsx":"ac9e1dbb9e9a","prototype/app.jsx":"e977c7914f4c","screens/bundle1.jsx":"463954c7c3fc","screens/bundle2-screens.jsx":"1b00c01ddca1","screens/bundle3.jsx":"eac1ccd60218","screens/bundle4.jsx":"9ad5e7b92ccd"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -3378,7 +3378,7 @@ const NyanDialog = ({
     onPress: onCancel || onClose,
     style: {
       flex: 1,
-      background: "var(--nyan-surface-muted)",
+      background: "color-mix(in srgb, var(--nyan-text) 6%, transparent)",
       color: "var(--nyan-text-secondary)"
     }
   }), /*#__PURE__*/React.createElement(__ds_scope.NyanPrimaryButton, {
@@ -3389,7 +3389,8 @@ const NyanDialog = ({
       flex: 1,
       ...(danger ? {
         background: "var(--error-primary)",
-        color: "var(--nyan-surface)"
+        color: "var(--nyan-surface)",
+        boxShadow: "0 6px 16px -6px color-mix(in srgb, var(--error-primary) 60%, transparent)"
       } : null)
     }
   }))), /*#__PURE__*/React.createElement("style", null, `
@@ -8411,7 +8412,7 @@ const NotesList = ({
    U9b · BOOKSHELF SELECT & DELETE (MULTI-SELECT EDIT MODE)
    Entered via long-press / “Select” — the Shelf Toolbar becomes a selection bar
    (Cancel · N selected · Select all), every cover/row gains a check, and a
-   floating action bar offers Make Private / Export / Delete. Deleting routes
+   floating action bar offers Make Private / Delete. Deleting routes
    through a destructive confirm sheet → a Deleting… progress response → an
    undoable “deleted” response. Works in grid + list, Cream + Sumi.
    ────────────────────────────────────────────────────────────────────── */
@@ -8744,9 +8745,6 @@ const SelectActionBar = ({
     icon: "lock-simple",
     label: "Make Private"
   }, {
-    icon: "export",
-    label: "Export"
-  }, {
     icon: "trash",
     label: "Delete",
     danger: true
@@ -8762,44 +8760,54 @@ const SelectActionBar = ({
       border: "1px solid var(--chrome-edge)",
       borderRadius: "var(--r-dock)",
       boxShadow: "var(--shadow-light-card)",
-      padding: "7px 6px",
+      padding: 8,
       display: "flex",
+      gap: 6,
       opacity: disabled ? 0.5 : 1,
       zIndex: 40
     }
-  }, actions.map((a, i) => /*#__PURE__*/React.createElement(React.Fragment, {
-    key: a.label
-  }, i > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: "0.5px",
-      alignSelf: "stretch",
-      margin: "8px 0",
-      background: "color-mix(in srgb, var(--nyan-divider) 40%, transparent)"
-    }
-  }), /*#__PURE__*/React.createElement("button", {
-    style: {
-      all: "unset",
-      cursor: "pointer",
-      flex: 1,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: 5,
-      padding: "8px 4px",
-      borderRadius: 12
-    }
-  }, /*#__PURE__*/React.createElement("i", {
-    className: `ph ph-${a.icon}`,
-    style: {
-      fontSize: 22,
-      color: a.danger ? "var(--error-primary)" : "var(--nyan-primary-deep)"
-    }
-  }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      font: "500 11px/1 var(--font-ui)",
-      color: a.danger ? "var(--error-primary)" : "var(--nyan-text-secondary)"
-    }
-  }, a.label)))));
+  }, actions.map(a => {
+    const tone = a.danger ? "var(--error-primary)" : "var(--nyan-primary-deep)";
+    const tint = a.danger ? "color-mix(in srgb, var(--error-primary) 11%, var(--nyan-surface))" : "color-mix(in srgb, var(--nyan-primary) 13%, var(--nyan-surface))";
+    return /*#__PURE__*/React.createElement("button", {
+      key: a.label,
+      style: {
+        all: "unset",
+        cursor: "pointer",
+        boxSizing: "border-box",
+        flex: 1,
+        minWidth: 0,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 7,
+        padding: "11px 6px",
+        borderRadius: 16
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 40,
+        height: 40,
+        borderRadius: 13,
+        background: tint,
+        display: "grid",
+        placeItems: "center"
+      }
+    }, /*#__PURE__*/React.createElement("i", {
+      className: `ph ph-${a.icon}`,
+      style: {
+        fontSize: 21,
+        color: tone
+      }
+    })), /*#__PURE__*/React.createElement("span", {
+      style: {
+        font: "500 11.5px/1 var(--font-ui)",
+        color: a.danger ? "var(--error-primary)" : "var(--nyan-text-secondary)",
+        whiteSpace: "nowrap",
+        letterSpacing: "0.1px"
+      }
+    }, a.label));
+  }));
 };
 const DeleteConfirmSheet = ({
   count,
@@ -9012,7 +9020,7 @@ const DeleteConfirmSheet = ({
   style: {
     padding: "16px",
     display: "flex",
-    gap: 9
+    gap: 10
   }
 }, /*#__PURE__*/React.createElement("button", {
   style: {
@@ -9022,8 +9030,7 @@ const DeleteConfirmSheet = ({
     flex: 1,
     height: 50,
     borderRadius: "var(--r-card-nested)",
-    background: "transparent",
-    border: "1px solid color-mix(in srgb, var(--nyan-divider) 60%, transparent)",
+    background: "color-mix(in srgb, var(--nyan-text) 6%, transparent)",
     display: "grid",
     placeItems: "center",
     font: "600 15px/1 var(--font-ui)",
@@ -9038,6 +9045,7 @@ const DeleteConfirmSheet = ({
     height: 50,
     borderRadius: "var(--r-card-nested)",
     background: "var(--error-primary)",
+    boxShadow: "0 6px 16px -6px color-mix(in srgb, var(--error-primary) 60%, transparent)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -9245,14 +9253,14 @@ const SettingsPage = ({
     chevron: true
   }), /*#__PURE__*/React.createElement(ListRow, {
     icon: "bell",
-    title: "Reading Reminder",
-    subtitle: "Chapter seek and position",
+    title: "Rest Reminder",
+    subtitle: "Nudge me to take a break while reading",
     trailing: /*#__PURE__*/React.createElement(NyanToggle, {
       on: reminder
     })
   }), reminder && /*#__PURE__*/React.createElement(ListRow, {
     indent: true,
-    title: "Reminder Interval",
+    title: "Rest Interval",
     subtitle: "Every 30 min",
     chevron: true
   }), /*#__PURE__*/React.createElement(ListRow, {
@@ -9376,10 +9384,10 @@ const SETTINGS_PICKERS = {
     }]
   },
   reminder: {
-    title: "Reminder Interval",
-    subtitle: "How often to nudge you back to reading.",
+    title: "Rest Interval",
+    subtitle: "How long to read before we suggest a break.",
     selected: 1,
-    options: ["Every 15 minutes", "Every 30 minutes", "Every hour", "Every 2 hours", "Daily"]
+    options: ["Every 15 minutes", "Every 30 minutes", "Every 45 minutes", "Every hour", "Every 90 minutes"]
   },
   export: {
     title: "Export Data",
@@ -9656,7 +9664,7 @@ const PinOverlay = ({
       alignItems: "center",
       justifyContent: "center",
       position: "relative",
-      padding: "0 28px",
+      padding: "max(54px, env(safe-area-inset-top)) 28px max(18px, env(safe-area-inset-bottom))",
       overflow: "hidden"
     }
   }, /*#__PURE__*/React.createElement("style", null, `
@@ -9682,27 +9690,7 @@ const PinOverlay = ({
       pointerEvents: "none",
       background: "radial-gradient(circle, color-mix(in srgb, var(--nyan-primary) 15%, transparent) 0%, transparent 68%)"
     }
-  }), /*#__PURE__*/React.createElement("button", {
-    className: "nyan-pin-cancel",
-    style: {
-      all: "unset",
-      cursor: "pointer",
-      position: "absolute",
-      top: 16,
-      right: 16,
-      width: 42,
-      height: 42,
-      borderRadius: "50%",
-      display: "grid",
-      placeItems: "center"
-    }
-  }, /*#__PURE__*/React.createElement("i", {
-    className: "ph ph-x",
-    style: {
-      fontSize: 20,
-      color: "var(--nyan-text-muted)"
-    }
-  })), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: "relative",
       display: "flex",
@@ -9796,9 +9784,24 @@ const PinOverlay = ({
       minHeight: 18,
       display: "flex",
       alignItems: "center",
-      justifyContent: "center"
+      justifyContent: "center",
+      gap: 18
     }
-  }, mode === "verify" ? /*#__PURE__*/React.createElement("button", {
+  }, mode === "verify" ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    className: "nyan-pin-link",
+    style: {
+      all: "unset",
+      cursor: "pointer",
+      font: "500 13px/1 var(--font-ui)",
+      color: "var(--nyan-text-muted)"
+    }
+  }, "Cancel"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "1px",
+      height: 13,
+      background: "color-mix(in srgb, var(--nyan-divider) 70%, transparent)"
+    }
+  }), /*#__PURE__*/React.createElement("button", {
     className: "nyan-pin-link",
     style: {
       all: "unset",
@@ -9806,7 +9809,7 @@ const PinOverlay = ({
       font: "500 13px/1 var(--font-ui)",
       color: "var(--nyan-primary-deep)"
     }
-  }, "Forgot PIN?") : /*#__PURE__*/React.createElement("div", {
+  }, "Forgot PIN?")) : /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       alignItems: "center",

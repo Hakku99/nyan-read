@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<!-- @dsCard group="Screens" name="U16b — Forgot PIN Flow" subtitle="Recovery sheet · biometric path · reset confirmation" viewport="1840x1180" -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>U16b · Forgot PIN Flow — Nyan Read</title>
+  <link rel="stylesheet" href="../colors_and_type.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    html, body { margin: 0; padding: 0; min-height: 100%; background: #ECE6D8; font-family: var(--font-ui); }
+    * { box-sizing: border-box; }
+
+    /* head — identical scale to U16 */
+    .screen-head { padding: 40px 40px 8px; max-width: 1100px; }
+    .screen-eyebrow { font: 500 11px/1 var(--font-ui); letter-spacing: 2px; text-transform: uppercase; color: var(--nyan-primary-deep); }
+    .screen-head h1 { font: 600 26px/1.2 var(--font-ui); letter-spacing: -0.3px; color: var(--nyan-text); margin: 12px 0 0; }
+    .screen-head p { font: 400 14.5px/1.5 var(--font-ui); color: var(--nyan-text-secondary); margin: 8px 0 0; max-width: 800px; text-wrap: pretty; }
+
+    /* flow rows — generous top/bottom padding per the request */
+    .flow-label { font: 500 11px/1 var(--font-ui); letter-spacing: 1.8px; text-transform: uppercase; color: var(--nyan-primary-deep); display: flex; align-items: center; gap: 10px; padding: 40px 40px 0; }
+    .flow-label::after { content: ""; flex: 1; height: 1px; background: color-mix(in srgb, var(--nyan-divider) 60%, transparent); }
+    .screen-wrap { display: flex; flex-wrap: wrap; gap: 30px; padding: 30px 40px 52px; align-items: flex-start; }
+
+    /* frame — identical to U16 */
+    .frame { display: flex; flex-direction: column; gap: 11px; }
+    .frame-body { border-radius: 26px; overflow: hidden; background: var(--nyan-bg); box-shadow: 0 22px 55px -22px rgba(40,36,30,.45), 0 4px 14px -8px rgba(40,36,30,.22); border: 1px solid rgba(63,58,52,.07); }
+    .frame-label { font: 500 12px/1.35 var(--font-ui); letter-spacing: .2px; color: var(--nyan-text-muted); text-align: center; max-width: 390px; }
+    .frame-label b { font-weight: 600; color: var(--nyan-text-secondary); }
+
+    /* arrow connector */
+    .arrow { display: flex; align-items: center; padding-top: 380px; color: color-mix(in srgb, var(--nyan-text-muted) 50%, transparent); }
+
+    /* path B note */
+    .path-b { margin: 30px 40px 0; padding: 18px 22px; background: var(--nyan-surface); border-radius: 16px; border: 1px solid color-mix(in srgb, var(--nyan-divider) 50%, transparent); display: flex; gap: 14px; align-items: flex-start; max-width: 760px; }
+    .path-b-icon { width: 38px; height: 38px; flex-shrink: 0; border-radius: 12px; background: color-mix(in srgb, var(--nyan-primary) 9%, var(--nyan-surface-muted)); display: grid; place-items: center; }
+
+    /* numpad key states — mirror PinOverlay so reused NumPad behaves identically */
+    .nyan-pinkey { transition: transform 150ms var(--ease-paper), box-shadow 200ms ease, background 150ms ease; }
+    .nyan-pinkey:hover { transform: translateY(-1px); box-shadow: var(--shadow-light-card); }
+    .nyan-pinkey:active { transform: scale(0.93); box-shadow: var(--shadow-grouped); background: color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface)); }
+    .nyan-pinkey-ghost { transition: color 150ms ease, transform 150ms var(--ease-paper); }
+    .nyan-pinkey-ghost:hover { color: var(--nyan-text-secondary); }
+    .nyan-pinkey-ghost:active { transform: scale(0.9); }
+
+    @keyframes bio-outer { 0%,100%{opacity:.30;transform:scale(1)} 50%{opacity:.08;transform:scale(1.12)} }
+    @keyframes bio-inner { 0%,100%{opacity:.46;transform:scale(1)} 50%{opacity:.16;transform:scale(1.06)} }
+    @keyframes bio-glyph { 0%,100%{opacity:1} 50%{opacity:.46} }
+    @keyframes sheet-up  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body>
+
+<div class="screen-head">
+  <div class="screen-eyebrow">Nyan Read · Screen Mock</div>
+  <h1>U16b · Forgot PIN — Recovery Flow</h1>
+  <p>Companion to U16. The PIN is stored on-device only, so recovery delegates to something the device already trusts.
+     Three paths by friction: <strong>Biometrics</strong> (frictionless, nothing erased) →
+     <strong>Device Passcode</strong> (OS handoff) →
+     <strong>Erase &amp; Reset</strong> (last resort, private shelf wiped with explicit warning).
+     Built from the same <code style="font:500 12px/1 var(--font-ui);background:var(--nyan-surface);border:1px solid var(--nyan-divider);border-radius:6px;padding:1px 6px;">PinOverlay</code> primitives as U16.</p>
+</div>
+
+<div id="root"></div>
+
+<script src="../_ds_bundle.js"></script>
+<script>(function () { var k = Object.keys(window).filter(function (n) { return n.indexOf("NyanReadDesignSystem_") === 0; })[0]; if (k) { Object.assign(window, window[k]); } })();</script>
+<script type="text/babel" src="../screens/_chrome.jsx"></script>
+<script type="text/babel" src="../screens/bundle4.jsx"></script>
+<script type="text/babel">
+const { useState } = React;
+
+/* Pull the real, shared primitives so icon/button sizes match U16 exactly */
+const { PinDots, NumPad, PinOverlay } = window;
+
+const DOT_PROPS = {
+  fill: "var(--nyan-primary)",
+  ring: "color-mix(in srgb, var(--nyan-text) 26%, transparent)",
+  errorColor: "var(--error-primary)",
+};
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Shared chrome — replicates PinOverlay's exact medallion / bloom / type
+   ───────────────────────────────────────────────────────────────────────── */
+const Medallion = ({ icon = "ph-fill ph-lock-simple" }) => (
+  <div style={{ position:"relative", width:76, height:76, marginBottom:22, display:"grid", placeItems:"center" }}>
+    <div style={{ position:"absolute", inset:0, borderRadius:"var(--radius-card)", background:"color-mix(in srgb, var(--nyan-primary) 11%, var(--nyan-surface))", boxShadow:"var(--shadow-light-card)" }} />
+    <div style={{ position:"absolute", inset:0, borderRadius:"var(--radius-card)", border:"1px solid color-mix(in srgb, var(--nyan-primary) 26%, transparent)" }} />
+    <i className={icon} style={{ position:"relative", fontSize:31, color:"var(--nyan-primary)" }} />
+  </div>
+);
+
+const Bloom = () => (
+  <div style={{ position:"absolute", top:"13%", left:"50%", transform:"translateX(-50%)", width:360, height:360, borderRadius:"50%", pointerEvents:"none",
+    background:"radial-gradient(circle, color-mix(in srgb, var(--nyan-primary) 15%, transparent) 0%, transparent 68%)" }} />
+);
+
+const PinTakeover = ({ dark, dimmed = false, children }) => (
+  <div data-theme={dark ? "sumi" : undefined} style={{
+    width:"100%", height:"100%", background:"var(--nyan-bg)",
+    display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+    position:"relative", padding:"max(54px, env(safe-area-inset-top)) 28px max(18px, env(safe-area-inset-bottom))", overflow:"hidden",
+  }}>
+    <Bloom />
+    <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center", width:"100%",
+      opacity: dimmed ? 0.32 : 1, transition:"opacity 280ms ease" }}>
+      {children}
+    </div>
+  </div>
+);
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SCREEN 1 — Verify PIN + Forgot PIN recovery sheet
+   (background is the REAL PinOverlay for perfect parity with U16)
+   ───────────────────────────────────────────────────────────────────────── */
+const ScreenRecoverySheet = ({ dark }) => (
+  <div data-theme={dark ? "sumi" : undefined} style={{ position:"relative", width:"100%", height:"100%", overflow:"hidden" }}>
+    {/* dimmed real PinOverlay underneath */}
+    <div style={{ position:"absolute", inset:0, filter:"saturate(0.96)" }}>
+      <PinOverlay mode="verify" hasError={false} dark={dark} />
+    </div>
+
+    {/* scrim */}
+    <div style={{ position:"absolute", inset:0, background:"var(--scrim)", backdropFilter:"blur(var(--scrim-blur))", WebkitBackdropFilter:"blur(var(--scrim-blur))" }} />
+
+    {/* recovery sheet — uses the same sheet tokens as U17 (--inset / --chrome-edge / --grabber) */}
+    <div style={{
+      position:"absolute", left:"var(--inset)", right:"var(--inset)", bottom:"var(--inset)",
+      background:"var(--nyan-surface)", borderRadius:"var(--radius-card)",
+      border:"1px solid var(--chrome-edge)", boxShadow:"0 -6px 32px rgba(30,26,22,0.18)",
+      animation:"sheet-up 260ms var(--ease-paper) both",
+    }}>
+      <div style={{ paddingTop:10, display:"flex", justifyContent:"center" }}>
+        <div style={{ width:40, height:5, borderRadius:999, background:"var(--grabber)" }} />
+      </div>
+
+      <div style={{ padding:"16px 20px 26px" }}>
+        <div style={{ marginBottom:18 }}>
+          <div style={{ font:"600 18px/1.25 var(--font-ui)", color:"var(--nyan-text)", letterSpacing:"-0.15px", marginBottom:6 }}>Forgot your PIN?</div>
+          <div style={{ font:"400 13px/1.5 var(--font-ui)", color:"var(--nyan-text-muted)", textWrap:"pretty" }}>
+            Your PIN lives only on this device — we can't look it up. Confirm it's you one of these ways to set a new PIN with nothing lost.
+          </div>
+        </div>
+
+        {/* Primary recovery methods */}
+        <RecoveryRow icon="ph-fingerprint" title="Use Biometrics" sub="Face ID or fingerprint" emphasis />
+        <RecoveryRow icon="ph-device-mobile" title="Use Device Passcode" sub="Your phone's lock-screen code" />
+
+        {/* Last-resort block — visually separated, clearly the only fallback */}
+        <div style={{ display:"flex", alignItems:"center", gap:10, margin:"18px 2px 12px" }}>
+          <div style={{ flex:1, height:"0.5px", background:"color-mix(in srgb, var(--nyan-divider) 55%, transparent)" }} />
+          <span style={{ font:"500 11px/1 var(--font-ui)", letterSpacing:"0.6px", textTransform:"uppercase", color:"var(--nyan-text-muted)" }}>If neither works</span>
+          <div style={{ flex:1, height:"0.5px", background:"color-mix(in srgb, var(--nyan-divider) 55%, transparent)" }} />
+        </div>
+
+        <div style={{ background:"color-mix(in srgb, var(--error-primary) 5%, var(--nyan-surface-muted))", border:"1px solid color-mix(in srgb, var(--error-primary) 14%, transparent)", borderRadius:"var(--radius-card)", padding:"15px 16px" }}>
+          <div style={{ font:"400 12.5px/1.55 var(--font-ui)", color:"var(--nyan-text-secondary)", textWrap:"pretty", marginBottom:13 }}>
+            The only remaining option is to <strong style={{ fontWeight:600, color:"var(--nyan-text)" }}>erase your private shelf</strong>. This clears its contents, then lets you set a fresh PIN and start the shelf over.
+          </div>
+          <button style={{ all:"unset", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%", height:46, borderRadius:14, background:"color-mix(in srgb, var(--error-primary) 9%, var(--nyan-surface))", border:"1px solid color-mix(in srgb, var(--error-primary) 30%, transparent)", font:"600 14px/1 var(--font-ui)", color:"var(--error-primary)" }}>
+            <i className="ph ph-trash" style={{ fontSize:17 }} />
+            Erase Private Shelf
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const RecoveryRow = ({ icon, title, sub, emphasis, danger }) => {
+  const accent = danger ? "var(--error-primary)" : "var(--nyan-primary)";
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:14, padding:"12px 14px", borderRadius:16, cursor:"pointer", marginBottom: danger ? 0 : 9,
+      background: emphasis ? "color-mix(in srgb, var(--nyan-primary) 7%, var(--nyan-surface-muted))" : (danger ? "transparent" : "var(--nyan-surface-muted)"),
+      border: emphasis ? "1px solid color-mix(in srgb, var(--nyan-primary) 18%, transparent)" : (danger ? "1px solid transparent" : "1px solid color-mix(in srgb, var(--nyan-divider) 55%, transparent)") }}>
+      <div style={{ width:44, height:44, flex:"none", borderRadius:"var(--r-card-nested)", display:"grid", placeItems:"center",
+        background:`color-mix(in srgb, ${accent} ${danger ? 9 : 13}%, var(--nyan-surface))` }}>
+        <i className={`ph ${icon}`} style={{ fontSize:22, color:accent, opacity: danger ? 0.82 : 1 }} />
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ font:"600 14.5px/1.2 var(--font-ui)", color: danger ? "var(--error-primary)" : "var(--nyan-text)", marginBottom:3 }}>{title}</div>
+        <div style={{ font:"400 12px/1.3 var(--font-ui)", color: danger ? "var(--nyan-text-muted)" : "var(--nyan-text-secondary)" }}>{sub}</div>
+      </div>
+      <i className="ph ph-caret-right" style={{ fontSize:15, color:"var(--nyan-text-muted)", flexShrink:0 }} />
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SCREEN 2A — Biometric prompt
+   ───────────────────────────────────────────────────────────────────────── */
+const ScreenBiometric = ({ dark }) => (
+  <div data-theme={dark ? "sumi" : undefined} style={{
+    width:"100%", height:"100%", background:"var(--nyan-bg)",
+    display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+    position:"relative", padding:"max(54px, env(safe-area-inset-top)) 32px max(18px, env(safe-area-inset-bottom))", overflow:"hidden",
+  }}>
+    <Bloom />
+    <div style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center" }}>
+      {/* animated rings + glyph */}
+      <div style={{ position:"relative", width:108, height:108, marginBottom:30 }}>
+        <div style={{ position:"absolute", inset:-14, borderRadius:"50%", border:"1.5px solid color-mix(in srgb, var(--nyan-primary) 30%, transparent)", animation:"bio-outer 1.8s ease-in-out infinite" }} />
+        <div style={{ position:"absolute", inset:-5, borderRadius:"50%", border:"1px solid color-mix(in srgb, var(--nyan-primary) 40%, transparent)", animation:"bio-inner 1.8s ease-in-out 0.25s infinite" }} />
+        <div style={{ position:"absolute", inset:0, borderRadius:"var(--radius-card)", background:"color-mix(in srgb, var(--nyan-primary) 11%, var(--nyan-surface))", boxShadow:"var(--shadow-light-card)", border:"1px solid color-mix(in srgb, var(--nyan-primary) 20%, transparent)", display:"grid", placeItems:"center" }}>
+          <i className="ph ph-fingerprint" style={{ fontSize:44, color:"var(--nyan-primary)", animation:"bio-glyph 1.8s ease-in-out 0.1s infinite" }} />
+        </div>
+      </div>
+
+      <div style={{ font:"600 22px/1.25 var(--font-ui)", color:"var(--nyan-text)", letterSpacing:"-0.2px", marginBottom:9 }}>Touch the sensor</div>
+      <div style={{ font:"400 13.5px/1.45 var(--font-ui)", color:"var(--nyan-text-muted)", maxWidth:255, textWrap:"balance" }}>
+        Place your finger on the sensor to verify it's you — nothing will be changed.
+      </div>
+
+      <button className="nyan-pinkey-ghost" style={{ all:"unset", cursor:"pointer", marginTop:38, height:44, padding:"0 22px", display:"flex", alignItems:"center", gap:7,
+        font:"500 14px/1 var(--font-ui)", color:"var(--nyan-text-muted)", borderRadius:99, border:"1px solid color-mix(in srgb, var(--nyan-divider) 65%, transparent)" }}>
+        Cancel
+      </button>
+    </div>
+  </div>
+);
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SCREEN 3 — Set new PIN (shared endpoint, reuses PinDots + NumPad)
+   ───────────────────────────────────────────────────────────────────────── */
+const ScreenSetNewPin = ({ dark, verified }) => {
+  const [digits, setDigits] = useState([1, 2]);
+  return (
+    <PinTakeover dark={dark}>
+      <Medallion icon="ph-fill ph-check-circle" />
+      <div className="nyan-caption" style={{ marginBottom:9, color: verified ? "var(--nyan-primary-deep)" : undefined }}>
+        {verified ? "Identity verified" : "Shelf reset"}
+      </div>
+      <div style={{ font:"600 22px/1.25 var(--font-ui)", color:"var(--nyan-text)", letterSpacing:"-0.2px", marginBottom:8 }}>Set a new PIN</div>
+      <div style={{ font:"400 13.5px/1.45 var(--font-ui)", color:"var(--nyan-text-muted)", textAlign:"center", maxWidth:270, textWrap:"balance", marginBottom:38 }}>
+        Choose a new 4-digit code for your private shelf.
+      </div>
+
+      <PinDots count={digits.length} hasError={false} {...DOT_PROPS} />
+
+      <div style={{ marginTop:42 }}>
+        <NumPad
+          onDigit={d => setDigits(p => p.length < 4 ? [...p, d] : p)}
+          onDelete={() => setDigits(p => p.slice(0, -1))}
+          showBiometric={false}
+        />
+      </div>
+
+      <div style={{ marginTop:22, minHeight:18, display:"flex", alignItems:"center", justifyContent:"center", gap:6, font:"400 12px/1 var(--font-ui)", color:"var(--nyan-text-muted)" }}>
+        <i className="ph ph-shield-check" style={{ fontSize:14, color:"var(--nyan-primary)" }} />
+        Stored on this device only
+      </div>
+    </PinTakeover>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SCREEN 2C — Erase confirmation
+   ───────────────────────────────────────────────────────────────────────── */
+const ScreenEraseConfirm = ({ dark }) => (
+  <div data-theme={dark ? "sumi" : undefined} style={{ position:"relative", width:"100%", height:"100%", overflow:"hidden" }}>
+    <div style={{ position:"absolute", inset:0 }}>
+      <PinOverlay mode="verify" hasError={false} dark={dark} />
+    </div>
+    <div style={{ position:"absolute", inset:0, background:"var(--scrim)", backdropFilter:"blur(var(--scrim-blur))", WebkitBackdropFilter:"blur(var(--scrim-blur))" }} />
+
+    <div style={{
+      position:"absolute", left:"var(--inset)", right:"var(--inset)", bottom:"var(--inset)",
+      background:"var(--nyan-surface)", borderRadius:"var(--radius-card)",
+      border:"1px solid var(--chrome-edge)", boxShadow:"0 -6px 32px rgba(30,26,22,0.18)",
+      animation:"sheet-up 260ms var(--ease-paper) both",
+    }}>
+      <div style={{ paddingTop:10, display:"flex", justifyContent:"center" }}>
+        <div style={{ width:40, height:5, borderRadius:999, background:"var(--grabber)" }} />
+      </div>
+
+      <div style={{ padding:"18px 22px 28px" }}>
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", marginBottom:20 }}>
+          <div style={{ width:56, height:56, borderRadius:"50%", background:"color-mix(in srgb, var(--error-primary) 10%, var(--nyan-surface))", border:"1px solid color-mix(in srgb, var(--error-primary) 20%, transparent)", display:"grid", placeItems:"center", marginBottom:14 }}>
+            <i className="ph-fill ph-warning" style={{ fontSize:26, color:"var(--error-primary)", opacity:0.88 }} />
+          </div>
+          <div style={{ font:"600 18px/1.25 var(--font-ui)", color:"var(--nyan-text)", letterSpacing:"-0.15px", marginBottom:9 }}>Erase Private Shelf?</div>
+          <div style={{ font:"400 13px/1.55 var(--font-ui)", color:"var(--nyan-text-muted)", maxWidth:300, textWrap:"pretty" }}>
+            This permanently removes <strong style={{ color:"var(--nyan-text-secondary)", fontWeight:600 }}>all books in your private shelf</strong>, along with their bookmarks, highlights and notes, then resets the PIN. Your public shelf is unaffected.
+          </div>
+        </div>
+
+        <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
+          <button style={{ all:"unset", cursor:"pointer", width:"100%", height:52, borderRadius:16, background:"var(--error-primary)", display:"grid", placeItems:"center", font:"600 15px/1 var(--font-ui)", color:"#FFFDF8", letterSpacing:"-0.1px" }}>
+            Erase &amp; Reset PIN
+          </button>
+          <button style={{ all:"unset", cursor:"pointer", width:"100%", height:46, borderRadius:16, background:"var(--nyan-surface-muted)", border:"1px solid color-mix(in srgb, var(--nyan-divider) 55%, transparent)", display:"grid", placeItems:"center", font:"500 14px/1 var(--font-ui)", color:"var(--nyan-text-secondary)" }}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+/* ─────────────────────────────────────────────────────────────────────────
+   LAYOUT
+   ───────────────────────────────────────────────────────────────────────── */
+const Frame = ({ label, w = 390, h = 770, children }) => (
+  <div className="frame">
+    <div className="frame-body" style={{ width:w, height:h }}>{children}</div>
+    <div className="frame-label">{label}</div>
+  </div>
+);
+
+const Arrow = () => (
+  <div className="arrow"><i className="ph ph-arrow-right" style={{ fontSize:20 }} /></div>
+);
+
+function App() {
+  return (
+    <div>
+      {/* PATH A */}
+      <div className="flow-label">Path A · Biometrics — frictionless, zero data loss</div>
+      <div className="screen-wrap">
+        <Frame label={<span><b>1 · Forgot PIN?</b> · Dark · recovery sheet</span>}><ScreenRecoverySheet dark={true} /></Frame>
+        <Arrow />
+        <Frame label={<span><b>2 · Biometric prompt</b> · sensor waiting</span>}><ScreenBiometric dark={true} /></Frame>
+        <Arrow />
+        <Frame label={<span><b>3 · Set new PIN</b> · identity confirmed</span>}><ScreenSetNewPin dark={true} verified={true} /></Frame>
+      </div>
+
+      {/* PATH B — note */}
+      <div className="path-b">
+        <div className="path-b-icon"><i className="ph ph-device-mobile" style={{ fontSize:18, color:"var(--nyan-primary)" }} /></div>
+        <div>
+          <div style={{ font:"600 14px/1.2 var(--font-ui)", color:"var(--nyan-text)", marginBottom:5 }}>Path B · Device Passcode — OS handoff, no Nyan UI</div>
+          <div style={{ font:"400 13px/1.5 var(--font-ui)", color:"var(--nyan-text-secondary)", textWrap:"pretty" }}>
+            "Use Device Passcode" invokes the platform auth prompt directly
+            (<code style={{ font:"500 12px/1 var(--font-ui)", background:"var(--nyan-surface-muted)", border:"1px solid var(--nyan-divider)", borderRadius:6, padding:"1px 6px" }}>LocalAuthentication</code> on iOS,
+            <code style={{ font:"500 12px/1 var(--font-ui)", background:"var(--nyan-surface-muted)", border:"1px solid var(--nyan-divider)", borderRadius:6, padding:"1px 6px", marginLeft:4 }}>BiometricPrompt</code> on Android).
+            The OS owns that UI entirely; on success it returns control and Nyan shows Step 3 above. No screen design needed.
+          </div>
+        </div>
+      </div>
+
+      {/* PATH C */}
+      <div className="flow-label">Path C · Erase &amp; Reset — last resort, private shelf wiped</div>
+      <div className="screen-wrap">
+        <Frame label={<span><b>1 · Forgot PIN?</b> · Light · recovery sheet</span>}><ScreenRecoverySheet dark={false} /></Frame>
+        <Arrow />
+        <Frame label={<span><b>2 · Erase confirmation</b> · explicit loss audit</span>}><ScreenEraseConfirm dark={false} /></Frame>
+        <Arrow />
+        <Frame label={<span><b>3 · Set new PIN</b> · shelf now empty</span>}><ScreenSetNewPin dark={false} verified={false} /></Frame>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

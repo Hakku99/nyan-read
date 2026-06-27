@@ -31,9 +31,9 @@ const SettingsPage = ({ dark, reminderOn, isPro }) => {
         <SectionHdr label="Reading" />
         <RowGroup>
           <ListRow icon="book-open" title="Page Turn Mode" subtitle="Left & Right" chevron />
-          <ListRow icon="bell" title="Reading Reminder" subtitle="Chapter seek and position" trailing={<NyanToggle on={reminder} />} />
+          <ListRow icon="bell" title="Rest Reminder" subtitle="Nudge me to take a break while reading" trailing={<NyanToggle on={reminder} />} />
           {reminder && (
-            <ListRow indent title="Reminder Interval" subtitle="Every 30 min" chevron />
+            <ListRow indent title="Rest Interval" subtitle="Every 30 min" chevron />
           )}
           <ListRow icon="trash" title="Delete Files on Remove" subtitle="Remove source files when deleting a book" trailing={<NyanToggle on={false} />} />
         </RowGroup>
@@ -99,8 +99,8 @@ const SETTINGS_PICKERS = {
     ],
   },
   reminder: {
-    title: "Reminder Interval", subtitle: "How often to nudge you back to reading.", selected: 1,
-    options: ["Every 15 minutes", "Every 30 minutes", "Every hour", "Every 2 hours", "Daily"],
+    title: "Rest Interval", subtitle: "How long to read before we suggest a break.", selected: 1,
+    options: ["Every 15 minutes", "Every 30 minutes", "Every 45 minutes", "Every hour", "Every 90 minutes"],
   },
   export: {
     title: "Export Data", subtitle: "Choose where your reading data goes.", variant: "action",
@@ -254,7 +254,7 @@ const PinOverlay = ({ mode = "verify", hasError, dark = true }) => {
 
   // One Paper takeover — themed entirely by tokens (data-theme drives Sumi).
   return (
-    <div data-theme={dark ? "sumi" : undefined} style={{ width: "100%", height: "100%", background: "var(--nyan-bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", padding: "0 28px", overflow: "hidden" }}>
+    <div data-theme={dark ? "sumi" : undefined} style={{ width: "100%", height: "100%", background: "var(--nyan-bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", padding: "max(54px, env(safe-area-inset-top)) 28px max(18px, env(safe-area-inset-bottom))", overflow: "hidden" }}>
       <style>{`
         .nyan-pinkey { transition: transform 150ms var(--ease-paper), box-shadow 200ms ease, background 150ms ease; }
         .nyan-pinkey:hover { transform: translateY(-1px); box-shadow: var(--shadow-light-card); }
@@ -271,11 +271,6 @@ const PinOverlay = ({ mode = "verify", hasError, dark = true }) => {
       {/* Soft matcha bloom behind the medallion — paper-warm, very low alpha */}
       <div style={{ position: "absolute", top: "13%", left: "50%", transform: "translateX(-50%)", width: 360, height: 360, borderRadius: "50%", pointerEvents: "none",
         background: "radial-gradient(circle, color-mix(in srgb, var(--nyan-primary) 15%, transparent) 0%, transparent 68%)" }} />
-
-      {/* Cancel X (top right) */}
-      <button className="nyan-pin-cancel" style={{ all: "unset", cursor: "pointer", position: "absolute", top: 16, right: 16, width: 42, height: 42, borderRadius: "50%", display: "grid", placeItems: "center" }}>
-        <i className="ph ph-x" style={{ fontSize: 20, color: "var(--nyan-text-muted)" }} />
-      </button>
 
       <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
         {/* Lock medallion — concentric tile, matcha ring + fill glyph */}
@@ -313,11 +308,17 @@ const PinOverlay = ({ mode = "verify", hasError, dark = true }) => {
         </div>
 
         {/* Footer — contextual: forgot link (verify) or device-only reassurance (setup/confirm) */}
-        <div style={{ marginTop: 22, minHeight: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ marginTop: 22, minHeight: 18, display: "flex", alignItems: "center", justifyContent: "center", gap: 18 }}>
           {mode === "verify" ? (
-            <button className="nyan-pin-link" style={{ all: "unset", cursor: "pointer", font: "500 13px/1 var(--font-ui)", color: "var(--nyan-primary-deep)" }}>
-              Forgot PIN?
-            </button>
+            <React.Fragment>
+              <button className="nyan-pin-link" style={{ all: "unset", cursor: "pointer", font: "500 13px/1 var(--font-ui)", color: "var(--nyan-text-muted)" }}>
+                Cancel
+              </button>
+              <div style={{ width: "1px", height: 13, background: "color-mix(in srgb, var(--nyan-divider) 70%, transparent)" }} />
+              <button className="nyan-pin-link" style={{ all: "unset", cursor: "pointer", font: "500 13px/1 var(--font-ui)", color: "var(--nyan-primary-deep)" }}>
+                Forgot PIN?
+              </button>
+            </React.Fragment>
           ) : (
             <div style={{ display: "flex", alignItems: "center", gap: 6, font: "400 12px/1 var(--font-ui)", color: "var(--nyan-text-muted)" }}>
               <i className="ph ph-shield-check" style={{ fontSize: 14, color: "var(--nyan-primary)" }} />
