@@ -215,6 +215,7 @@ class NyanIcons {
   static const IconData playFilled = PhosphorIconsFill.play;
   static const IconData skipNext = PhosphorIconsRegular.skipForward;
   static const IconData skipPrevious = PhosphorIconsRegular.skipBack;
+  static const IconData fastForward = PhosphorIconsRegular.fastForward;
 
   // ── Page turn ────────────────────────────────────────────────────────────
   /// Horizontal arrows (↔) — "Left & Right" page turn mode in Settings picker.

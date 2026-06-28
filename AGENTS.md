@@ -380,6 +380,11 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 > - `NyanTypography.miniSuggestTitle = 11.5` — Discover block 书格标题（`600 11.5px/1.3`，2 行截断），**仅限** `_MiniSuggestTile`，**MUST NOT** 出现在其它表面。
 > - `NyanTypography.miniSuggestAuthor = 10.5` — Discover block 书格作者（`400 10.5px/1.2`），**仅限** `_MiniSuggestTile`，**MUST NOT** 出现在其它表面。
 
+> **例外 — U23 Rest Reminder 覆层字号与字重（交付包对齐，2026-06，来源 `screens/U23 - Rest Reminder.html` `RestCountdown`）**：`RestReminderOverlay` 引入 2 个专属字号与 1 个字重例外，均落在规则范围之外（§4.6 交付包优先）：
+> - `NyanTypography.restReminderTimer = 46` — 倒计时数字（`300 46px/1`），**本代码库唯一的 w300 例外**，轻字重出于设计意图（平静感），**仅限** `RestReminderOverlay` 倒计时数字，**MUST NOT** 出现在正文、列表行或其它表面。
+> - `NyanTypography.restReminderTitle = 21` — "Rest your eyes" 标题（`600 21px/1.25`），介于 `section 20` 与 `display 32` 之间，**仅限** `RestReminderOverlay` 标题，**MUST NOT** 出现在其它表面。
+> - **"Continue reading" 按钮**使用 `StadiumBorder`（radius 999）——此为全屏深色遮罩上的独立 CTA，与分段 chip 语义不同，是交付包明确规格（`border-radius: 999`）。**仅限** `RestReminderOverlay` 内的该按钮，**MUST NOT** 扩散至其它场景。
+
 > **新增阴影 Token — `NyanShadows.cardSelectionGlow` / `selectionBadgeGlow`（2026-06，来源 `bundle3.jsx` `SelectBookCard`）**：选中书格封面外发光（`primary@16%` spread 3px）和 SelectCheck 徽标发光（`primary@40%` 1px drop shadow）通过 `NyanShadows.cardSelectionGlow(nyan)` / `selectionBadgeGlow(nyan)` 访问，**MUST NOT** 直接构造 `BoxShadow`。
 
 > **书架选择模式 open-detail 快捷按钮（交付包对齐，2026-06，来源 `screens/bundle3.jsx` `SelectBookCard` / `SelectBookListRow`）**：选择模式下每个书格封面右下角显示一个 **24×24 圆形 ↗ 按钮**（`ph-arrow-up-right`，`NyanIcons.arrowUpRight`，`primaryDeep` 色，`surface@90%` 毛玻璃底 + `divider@50%` 描边 + `0 1px 3px rgba(0,0,0,.12)` 阴影）；列表行右侧显示一个 **32×32 圆形 › 按钮**（`ph-caret-right`，`textSecondary` 色，`surfaceMuted` 底 + `divider@44%` 描边），两者点击均独立导航至书籍详情页，**不改变当前选中状态**。非选择模式下列表行只显示等宽的裸图标（无圆圈）。**MUST NOT** 在其它场景使用这两个按钮的圆形容器样式。
@@ -410,7 +415,7 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 - ❌ `CircularProgressIndicator` 的默认蓝色（必须显式指定 `valueColor: AlwaysStoppedAnimation(nyan.primary)`）；
 - ❌ 自造 `BoxShadow`（必须走 `NyanShadows.*` 工具；亮色 ≤12px blur，暗色 v3 阶梯的 ambient 可达 24px 但仅限 token 内部）；
 - ❌ 给暗色卡片写 `dark ? const [] : ...` 退订阴影（v3 发光环已承载平面分离）；
-- ❌ Pill / 选项 chip 用 `StadiumBorder`（已废止，改用 `NyanRadius.chip` 12pt 方圆角 + outline-on-select）；
+- ❌ Pill / 选项 chip 用 `StadiumBorder`（已废止，改用 `NyanRadius.chip` 12pt 方圆角 + outline-on-select；**例外**：`RestReminderOverlay` 的 "Continue reading" 按钮，见 §4.2.5 U23 注）；
 - ❌ 高饱和色（iOS 蓝、Material 紫、霓虹任何色）；
 - ❌ 大面积线性/径向渐变（已批准的例外：①亮度弹层玻璃拟态模糊；② U22 `NyanShelfProNudge` 渐变背景 + 叶片图标 + Upgrade 按钮，来源 `screens/U22 - Sponsored Shelf Placement.html` `ProNudge`，§4.6 交付包优先）；
 - ❌ `Icons.xxx_filled` 填充图标（对勾徽标除外）；

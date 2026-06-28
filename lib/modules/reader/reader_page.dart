@@ -31,8 +31,10 @@ import 'widgets/chapter_list_widget.dart';
 import 'widgets/one_paper_dock.dart';
 import 'widgets/reader_brightness_popover.dart';
 import 'widgets/smooth_page_reader.dart';
+import '../../core/services/reading_reminder_service.dart';
 import '../../core/ui/nyan_icons.dart';
 import '../../core/utils/snackbar_utils.dart';
+import 'widgets/rest_reminder_overlay.dart';
 export 'controllers/reader_controller.dart';
 
 part 'reader_page_overlay.dart';
@@ -47,7 +49,8 @@ class ReaderPage extends ConsumerStatefulWidget {
   ConsumerState<ReaderPage> createState() => _ReaderPageState();
 }
 
-class _ReaderPageState extends ConsumerState<ReaderPage> {
+class _ReaderPageState extends ConsumerState<ReaderPage>
+    with WidgetsBindingObserver {
   late Future<Map<String, dynamic>?> _bookFuture;
   late final BrightnessController _brightnessController;
   ReaderController? _boundController;
@@ -92,6 +95,14 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   final GlobalKey<SmoothPageReaderState> _smoothPageReaderKey =
       GlobalKey<SmoothPageReaderState>();
 
+  // ── Rest reminder ─────────────────────────────────────────────────────────
+  late final ReadingReminderService _reminderService;
+  Timer? _readingIntervalTimer;
+  Timer? _countdownTimer;
+  bool _showRestReminder = false;
+  final ValueNotifier<int> _restSecondsRemaining = ValueNotifier(20);
+  static const int _kRestCountdownSeconds = 20;
+
   @override
   void initState() {
     super.initState();
@@ -108,10 +119,19 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     // Left-edge drag reuses the same popover as the sun button — one UI for
     // brightness regardless of entry point.
     _brightnessController.isAdjusting.addListener(_onBrightnessAdjustingChanged);
+    _reminderService = ref.read(readingReminderRpProvider);
+    _reminderService.addListener(_onReminderSettingsChanged);
+    WidgetsBinding.instance.addObserver(this);
+    _setupReadingTimer();
   }
 
   @override
   void dispose() {
+    _readingIntervalTimer?.cancel();
+    _countdownTimer?.cancel();
+    _restSecondsRemaining.dispose();
+    _reminderService.removeListener(_onReminderSettingsChanged);
+    WidgetsBinding.instance.removeObserver(this);
     _pageTurnLockTimer?.cancel();
     _chapterSyncDebounce?.cancel();
     _sheetCloseTimer?.cancel();
@@ -135,6 +155,51 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       });
     } else {
       _closeBrightnessPopover();
+    }
+  }
+
+  // ── Rest reminder logic ───────────────────────────────────────────────────
+
+  void _setupReadingTimer() {
+    _readingIntervalTimer?.cancel();
+    if (!_reminderService.isEnabled || _showRestReminder) return;
+    _readingIntervalTimer = Timer(
+      Duration(minutes: _reminderService.intervalMinutes),
+      _triggerRestReminder,
+    );
+  }
+
+  void _onReminderSettingsChanged() => _setupReadingTimer();
+
+  void _triggerRestReminder() {
+    if (!mounted) return;
+    _restSecondsRemaining.value = _kRestCountdownSeconds;
+    setState(() => _showRestReminder = true);
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      final next = _restSecondsRemaining.value - 1;
+      if (next <= 0) {
+        t.cancel();
+        _finishRestReminder();
+      } else {
+        _restSecondsRemaining.value = next;
+      }
+    });
+  }
+
+  void _finishRestReminder() {
+    if (!mounted) return;
+    _countdownTimer?.cancel();
+    setState(() => _showRestReminder = false);
+    _setupReadingTimer();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _readingIntervalTimer?.cancel();
+    } else if (state == AppLifecycleState.resumed && !_showRestReminder) {
+      _setupReadingTimer();
     }
   }
 
@@ -598,6 +663,29 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                             controller: _brightnessController,
                             onDismiss: _closeBrightnessPopover,
                           ),
+
+                          // 8. Rest Reminder overlay — full-screen eye-rest
+                          // nudge after the configured reading interval.
+                          // Listener(opaque) ensures the reader body's
+                          // HitTestBehavior.opaque GestureDetector (item 1)
+                          // is never reached by the hit-test walk while the
+                          // overlay is visible, so the "Continue reading"
+                          // button wins the gesture arena uncontested.
+                          if (_showRestReminder)
+                            Positioned.fill(
+                              child: Listener(
+                                behavior: HitTestBehavior.opaque,
+                                child: ValueListenableBuilder<int>(
+                                  valueListenable: _restSecondsRemaining,
+                                  builder: (_, remaining, __) =>
+                                      RestReminderOverlay(
+                                    remaining: remaining,
+                                    total: _kRestCountdownSeconds,
+                                    onSkip: _finishRestReminder,
+                                  ),
+                                ),
+                              ),
+                            ),
 
                         ],
                       ),

@@ -184,6 +184,25 @@ class NyanTypography {
   ///   `font: "400 10.5px/1.2 var(--font-ui)"`
   static const double miniSuggestAuthor = 10.5;
 
+  /// Rest Reminder overlay countdown timer digit — U23 design-system handoff
+  /// exception (see AGENTS.md §4.2.5). This is the **sole w300 weight
+  /// exception** in the codebase — the lighter weight is intentional per spec
+  /// for a calming countdown feel. Reserved for [RestReminderOverlay] timer
+  /// digit ONLY; MUST NOT appear in body copy, headings, or any other surface.
+  ///
+  /// Source: `screens/U23 - Rest Reminder.html` `RestCountdown`
+  ///   `font: "300 46px/1 var(--font-ui)"`
+  static const double restReminderTimer = 46.0;
+
+  /// Rest Reminder overlay title — U23 design-system handoff exception
+  /// (see AGENTS.md §4.2.5). Sits between [section] 20 and [display] 32.
+  /// Reserved for the "Rest your eyes" heading in [RestReminderOverlay] ONLY;
+  /// MUST NOT appear in body copy, list rows, or any other surface.
+  ///
+  /// Source: `screens/U23 - Rest Reminder.html` `RestCountdown`
+  ///   `font: "600 21px/1.25 var(--font-ui)"`
+  static const double restReminderTitle = 21.0;
+
   /// Olive uppercase eyebrow label — 11pt / w500 / +0.22 letter-spacing.
   /// Pass [color] as `nyan.primaryDeep` from the active [NyanTheme].
   /// Use only for section eyebrows above grouped cards / reader settings headers.
