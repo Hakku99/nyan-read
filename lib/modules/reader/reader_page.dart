@@ -35,6 +35,7 @@ import '../../core/services/reading_reminder_service.dart';
 import '../../core/ui/nyan_icons.dart';
 import '../../core/utils/snackbar_utils.dart';
 import 'widgets/rest_reminder_overlay.dart';
+import '../settings/settings_page.dart';
 export 'controllers/reader_controller.dart';
 
 part 'reader_page_overlay.dart';
@@ -585,8 +586,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                               ),
                               onToggleBrightness: _toggleBrightnessPopover,
                               brightnessActive: _brightnessPopoverOpen,
-                              onOpenSettings: () =>
-                                  _toggleSheet(DockAction.settings, controller),
+                              onOpenSettings: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const SettingsPage(),
+                                ),
+                              ),
                             ),
                           ),
 
