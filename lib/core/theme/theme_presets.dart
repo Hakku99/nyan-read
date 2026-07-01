@@ -26,6 +26,13 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
   /// in Cream Light it reuses [surface] (the elevation ladder is dark-only —
   /// light lift is carried by the soft `lightCard` shadow instead).
   final Color surfaceRaised;
+
+  /// A field / tray / inner card NESTED inside a floating overlay (e.g. a
+  /// reader-settings `Knob` inside the dock-sheet). In Sumi Dark it steps one
+  /// rung ABOVE [surfaceRaised] (`#3A3A3A`) so inputs never sink into a
+  /// near-black hole; in Cream Light it reuses [surfaceMuted] (the recessed
+  /// muted fill — Sumi is the only theme that has to lift it).
+  final Color overlayField;
   final Color background;
   final Color textPrimary;
   final Color textSecondary;
@@ -56,6 +63,7 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
     required this.surface,
     required this.surfaceMuted,
     required this.surfaceRaised,
+    required this.overlayField,
     required this.background,
     required this.textPrimary,
     required this.textSecondary,
@@ -78,10 +86,11 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
   });
 
   Color get onPrimary => brightness == Brightness.dark
-      ? const Color(0xFF1C1B1A)
+      ? NyanColors.inkNightOnPrimary
       : NyanColors.white;
   Color get onSecondary => NyanColors.white;
-  Color get onError => NyanColors.white;
+  // Cream-on-fill in BOTH themes — destructive fills are always dark-clay.
+  Color get onError => NyanColors.onErrorFill;
   Color get inverseBorder => brightness == Brightness.dark
       ? NyanColors.white.withValues(alpha: 0.08)
       : divider;
@@ -250,6 +259,7 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
     Color? surface,
     Color? surfaceMuted,
     Color? surfaceRaised,
+    Color? overlayField,
     Color? background,
     Color? textPrimary,
     Color? textSecondary,
@@ -278,6 +288,7 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
       surface: surface ?? this.surface,
       surfaceMuted: surfaceMuted ?? this.surfaceMuted,
       surfaceRaised: surfaceRaised ?? this.surfaceRaised,
+      overlayField: overlayField ?? this.overlayField,
       background: background ?? this.background,
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
@@ -318,6 +329,7 @@ class NyanTheme extends ThemeExtension<NyanTheme> {
       surface: Color.lerp(surface, other.surface, t)!,
       surfaceMuted: Color.lerp(surfaceMuted, other.surfaceMuted, t)!,
       surfaceRaised: Color.lerp(surfaceRaised, other.surfaceRaised, t)!,
+      overlayField: Color.lerp(overlayField, other.overlayField, t)!,
       background: Color.lerp(background, other.background, t)!,
       textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
@@ -355,6 +367,7 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     preset: ThemePreset.creamLight,
     name: 'Cream Light',
     primary: NyanColors.creamPrimary,
+    overlayField: NyanColors.creamSurfaceMuted,
     primaryDeep: NyanColors.creamPrimaryDeep,
     surface: NyanColors.creamSurface,
     surfaceMuted: NyanColors.creamSurfaceMuted,
@@ -390,19 +403,22 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     surface: NyanColors.inkNightSurface,
     surfaceMuted: NyanColors.inkNightSurfaceMuted,
     surfaceRaised: NyanColors.inkNightSurfaceRaised,
+    overlayField: NyanColors.inkNightOverlayField,
     background: NyanColors.inkNightBackground,
     textPrimary: NyanColors.inkNightTextMain,
     textSecondary: NyanColors.inkNightTextSecondary,
     textMuted: NyanColors.inkNightTextMuted,
-    accent: NyanColors.highlightOrange,
+    // v6 Mono: brand accent is off-white, not warm orange (no chromatic accent
+    // in the dark). highlightOrange survives only as warmth/warning semantics.
+    accent: NyanColors.inkNightPrimaryDeep,
     divider: NyanColors.inkNightDivider,
-    // v3 ladder: explicit card edge is brighter than the divider hairline.
+    // v6 ladder: explicit card edge is brighter than the divider hairline.
     borderColor: NyanColors.inkNightBorder,
     brightness: Brightness.dark,
-    // inkNightBackground (~7.6:1) on inkNightPrimary (green) button passes AAA.
-    // inkNightTextMain was 1.65:1 — critical AA failure, Fix #1.
-    primaryButtonBackground: NyanColors.inkNightPrimary,
-    primaryButtonForeground: NyanColors.inkNightBackground,
+    // v6 Mono inversion: off-white fill (#ECECEC) carries a DARK ink label
+    // (#1A1A1A), the inverse of Cream Light's cream-on-matcha.
+    primaryButtonBackground: NyanColors.inkNightPrimaryFill,
+    primaryButtonForeground: NyanColors.inkNightOnPrimary,
     successColor: NyanColors.inkNightSuccess,
     warningColor: NyanColors.highlightOrange,
     infoColor: NyanColors.readerInfoBlue,
@@ -410,10 +426,9 @@ final Map<ThemePreset, NyanTheme> themePresets = {
     errorPrimaryTextColor: NyanColors.errorPrimaryDark,
     errorSecondaryTextColor: NyanColors.errorSecondaryDark,
     errorAccentColor: NyanColors.errorAccentDark,
-    // inkNightBackground (~7.6:1) on inkNightPrimary (green) FAB passes AAA.
-    // inkNightTextMain was 1.65:1 — critical AA failure, Fix #1.
-    fabBackground: NyanColors.inkNightPrimary,
-    fabForeground: NyanColors.inkNightBackground,
+    // FAB is the off-white accent fill carrying a dark ink glyph.
+    fabBackground: NyanColors.inkNightPrimaryDeep,
+    fabForeground: NyanColors.inkNightOnPrimary,
   ),
 };
 

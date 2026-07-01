@@ -227,26 +227,34 @@
 
 **主题敏感色（MUST 通过 `NyanTheme` 扩展访问）：**
 
-> **Sumi Dark 色阶已按设计系统交付包（2026-06）重新调校为 v3 高度阶梯（elevation ladder）**：
-> 暗色用"色调"承载层级——表面随升起逐级**变亮**（`bg < surfaceMuted < surface < surfaceRaised`，相邻保持可见亮度差）。
+> **Sumi Dark 已按设计系统交付包（2026-06）重做为 v6 MONO（中性灰表面 + 单色 off-white 强调）**：
+> 暗色**不再**建立在抹茶/橄榄家族上——抹茶是 **Cream Light 专属**品牌色。暗色里**没有任何彩色品牌强调**：
+> - **表面是真中性灰阶梯**（零棕零绿），用"色调"承载层级，表面随升起逐级**变亮**（`bg < surfaceMuted < surface < surfaceRaised < overlayField`，相邻 ~1.5:1）；无纯黑/纯白。
+> - **强调是单色 off-white**：主按钮是 off-white **实底 + 深墨标签**（与亮色的 cream-on-matcha 互为反相），其余"强调"元素（链接、选中描边、进度、图标）就是 light-on-dark。层次靠 fill / outline / weight，不靠 hue。
+> - **浮层规则**：浮动面（dock/bar/menu/dialog/sheet）必须**明确高于其身后的面**——包括 Sumi 阅读画布 `#242424`（比平面卡片 `surface` 还亮）——故走 `surfaceRaised`，**MUST NOT** 用 `surface`；浮层**内部**嵌套的输入框/托盘/内层卡走 `overlayField`（更亮），不得沉进近黑洞。
+> - 暗色唯一保留的彩色是**暖陶土错误红**（仅 danger）。
 
-| 语义 | creamLight 值 | sumiDark 值 | `NyanTheme` 字段 |
+| 语义 | creamLight 值 | sumiDark v6 值 | `NyanTheme` 字段 |
 |---|---|---|---|
-| 页面主背景（纸色 / 暗色页底） | `#F6F3EA` | `#181B16` | `background` |
-| 卡片/面板表面（+1 层） | `#FFFDF8` | `#242922` | `surface` |
-| 嵌入式凹陷表面（Tab 槽、Slider 轨道，刚高于页底） | `#F1ECDD` | `#1D211B` | `surfaceMuted` |
-| 最高浮层（对话框 / Sheet / 弹出层；亮色复用 surface） | `#FFFDF8` | `#2E342B` | `surfaceRaised` |
-| 正文文字 | `#3F3A34` | `#ECE6DB` | `textPrimary` |
-| 次级文字（说明 / 副标题） | `#5F5950` | `#BBB3A6` | `textSecondary` |
-| 三级文字（占位 / 单位） | `#6B6559` | `#9A948B` | `textMuted` |
-| 主强色（抹茶绿按钮底） | `#6E7A55` | `#A9B690` | `primary` |
-| 深强色（选中描边 / accent） | `#5A6644` | `#B7C69E` | `primaryDeep` / `accent` |
-| 分隔线（暖调描边） | `#E5DED2` | `#3D443A` | `divider` |
-| 卡片硬描边（暗色发光环用） | `#E5DED2` | `#474E42` | `borderColor` |
+| 页面主背景（纸色 / 暗色页底） | `#F6F3EA` | `#121212` | `background` |
+| 卡片/面板表面（平面卡片/栏） | `#FFFDF8` | `#1E1E1E` | `surface` |
+| 嵌入式凹陷表面（Tab 槽、Slider 轨道） | `#F1ECDD` | `#181818` | `surfaceMuted` |
+| 浮动层（对话框 / Sheet / 弹出层 / dock / 浮动栏；亮色复用 surface） | `#FFFDF8` | `#303030` | `surfaceRaised` |
+| 浮层内嵌字段/托盘/内层卡（Knob 等；新增；亮色复用 surfaceMuted） | `#F1ECDD` | `#3A3A3A` | `inkNightOverlayField`（字段待 Phase C 接入） |
+| 正文文字 | `#3F3A34` | `#ECECEC` | `textPrimary` |
+| 次级文字（说明 / 副标题） | `#5F5950` | `#ABABAB` | `textSecondary` |
+| 三级文字（占位 / 单位） | `#6B6559` | `#8A8A8A` | `textMuted` |
+| 主强色（按钮文字/图标/进度/tint） | `#6E7A55` | `#E2E2E2` | `primary` |
+| 深强色（链接 / 选中描边 / FAB 底） | `#5A6644` | `#F4F4F4` | `primaryDeep` / `accent` |
+| 实底按钮背景（亮色复用 primaryDeep） | `#5A6644` | `#ECECEC` | `primaryButtonBackground`（暗=`inkNightPrimaryFill`） |
+| 实底按钮文字/图标（亮色 cream，暗色深墨） | `#FFFDF8` | `#1A1A1A` | `onPrimary`（暗=`inkNightOnPrimary`） |
+| 分隔线（亮色暖调；暗色中性） | `#E5DED2` | `#333333` | `divider` |
+| 卡片硬描边（暗色发光环用） | `#E5DED2` | `#474747` | `borderColor` |
 
-**错误色（暖陶土，非临床红）**——设计系统交付包要求错误状态读起来"平静、在地"而非"刺眼的 Material 红"：
+**错误色（暖陶土，非临床红；暗色为唯一保留彩色，仅 danger）**——设计系统交付包要求错误状态读起来"平静、在地"而非"刺眼的 Material 红"：
 creamLight `errorBackground #FBF2EC` / `errorPrimary #9C5C49` / `errorSecondary #8A6A55` / `errorAccent #ECD9CC`；
-sumiDark `#241D18` / `#CE9A86` / `#B6967F` / `#3A2D24`。
+sumiDark v6 `#3A2420` / `#E59B85` / `#D29A83` / `#573730`（bg/accent 提亮以让 danger tile 浮离 `#121212` 页底）。
+**破坏性按钮实底**：`errorFill`（亮色复用 `errorPrimary`，暗色 `#C24A38`）+ `onError = #FBF3E6`（两套主题均为 cream/近白）。
 
 > **U8 Reader Error View 用色说明（2026-06，来源 `bundle2-screens.jsx` `ErrorView`）**：
 > - **页面背景**：错误页使用 `nyan.background`（标准页底色），**MUST NOT** 用 `errorBackground`。
@@ -259,8 +267,9 @@ sumiDark `#241D18` / `#CE9A86` / `#B6967F` / `#3A2D24`。
 **原子常量（只在 `nyan_colors.dart` 与 `theme_presets.dart` 内部使用，业务代码 MUST NOT 直接引用）：**
 
 - cream 系列：`creamBackground / creamSurface / creamSurfaceMuted / creamPrimary / creamPrimaryDeep / creamTextMain / creamTextSecondary / creamTextMuted / creamDivider`
-- ink 系列：`inkNightBackground / inkNightSurface / inkNightSurfaceMuted / inkNightSurfaceRaised / inkNightPrimary / inkNightTextMain / inkNightTextSecondary / inkNightTextMuted / inkNightDivider`
-- ink 深阶：`inkNightPrimaryDeep`（dark preset 的 accent/深强调）、`inkNightBorder`（v3 阶梯的卡片硬描边/发光环）
+- ink 系列：`inkNightBackground / inkNightSurface / inkNightSurfaceMuted / inkNightSurfaceRaised / inkNightOverlayField / inkNightPrimary / inkNightTextMain / inkNightTextSecondary / inkNightTextMuted / inkNightDivider`
+- ink 深阶：`inkNightPrimaryDeep`（dark preset 的 accent/深强调）、`inkNightBorder`（v6 阶梯的卡片硬描边/发光环）
+- ink v6 Mono 强调：`inkNightPrimaryFill`（off-white 实底按钮背景）、`inkNightOnPrimary`（实底上的深墨标签 `#1A1A1A`）、`inkNightSelectFill`（选中对勾 + 封面环）；错误实底 `errorFillDark` + `onErrorFill`（cream，两套主题通用）
 
 **语义色（固定值，不随主题切换，可直接引用）：**
 
@@ -324,7 +333,7 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 - `NyanShadows.shelfPinnedHeader(nyan)` — 书架吸顶标签栏的向下投影，**仅在 `overlapsContent == true` 时启用**（内容滚动至标签栏下方时才显示）。来源：`screens/bundle4.jsx` ShelfToolbarScreen tab wrapper `box-shadow: 0 6px 14px -8px rgba(40,36,30,.22)`；暗色使用 `Colors.black@32%`（暖墨色在深色背景下不可见）。
 
 - **Cream Light**：暖墨 drop shadow（lightCard 4%/2%@12/6px；subtle 5%@8px；grouped 1.4%@10px），墨色取自 `nyan.textPrimary`。
-- **Sumi Dark（v3 高度阶梯，2026-06 修订）**：**"暗色无阴影"旧规已废止**。暗色用 **`0.75px` 发光描边环**（`nyan.divider` 88/66/50% spread）+ 柔和黑色 ambient 承载层级，让升起的表面读成独立平面。
+- **Sumi Dark（v6 MONO 中性灰阶梯，2026-06 修订）**：**"暗色无阴影"旧规已废止**。暗色用 **`0.75px` 中性描边环**（`nyan.border` / `nyan.divider` spread）+ 柔和黑色 ambient 承载层级，让升起的表面读成独立平面。环色随 v6 中性 token 自动更新（无暖墨）。
   - CSS 还含 `inset 0 1px 0 white@5%` 顶部 catch-light；Flutter `BoxShadow` 无 inset 模式，故该 1px 内高光**不在阴影 token 内**——需要的浮层（对话框/Sheet）在自身 decoration 上加 `Border(top: white@5%)` 顶边补上（见 `NyanBottomSheet` / 亮度弹层）。
 
 **MUST NOT** 自造 `BoxShadow`；需要新阴影先在 token 内定义。**MUST NOT** 再写 `dark ? const [] : ...` 给暗色卡片退订阴影——环已承载平面分离。

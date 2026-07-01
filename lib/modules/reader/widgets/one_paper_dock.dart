@@ -169,7 +169,9 @@ class OnePaperDock extends StatelessWidget {
         curve: _kEasePaper,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: nyan.surface,
+          // Floats over the reader canvas (Sumi #242424 > flat surface #1E1E1E),
+          // so it must rise to surfaceRaised to out-step the page behind it.
+          color: nyan.surfaceRaised,
           border: Border.all(color: chromeEdge, width: 1),
           borderRadius: BorderRadius.circular(
             sheetOpen ? NyanRadius.sheet : NyanRadius.dock,

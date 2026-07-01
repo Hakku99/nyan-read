@@ -663,6 +663,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           SliverPersistentHeader(
             pinned: true,
             delegate: _ShelfToolbarDelegate(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               isGridView: _prefs.viewMode == ViewMode.grid,
               isSortActive: _prefs.sortBy != SortBy.recency || _prefs.isAscending,
               isPro: featureManager.isPro,
@@ -1692,6 +1693,7 @@ class _BookPreviewRow extends StatelessWidget {
 /// buttons = 6pt; 16pt horizontal padding (spec `"14px 16px 8px"` toolbar padding).
 class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
   const _ShelfToolbarDelegate({
+    required this.backgroundColor,
     required this.isGridView,
     required this.isSortActive,
     required this.isPro,
@@ -1708,6 +1710,7 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
     required this.onSettings,
   });
 
+  final Color backgroundColor;
   final bool isGridView;
   final bool isSortActive;
   final bool isPro;
@@ -1735,7 +1738,7 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Material(
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: backgroundColor,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           NyanSpacing.space16,
@@ -1792,7 +1795,8 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(covariant _ShelfToolbarDelegate old) {
-    return isGridView != old.isGridView ||
+    return backgroundColor != old.backgroundColor ||
+        isGridView != old.isGridView ||
         isSortActive != old.isSortActive ||
         isPro != old.isPro ||
         isPrivacyUnlocked != old.isPrivacyUnlocked;

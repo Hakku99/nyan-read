@@ -26,7 +26,8 @@ class FeatureManager extends ChangeNotifier {
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-    final isPro = prefs.getBool('is_pro_mode') ?? false;
+    // ponytail: debug builds always start as Pro so the admin panel is reachable.
+    final isPro = kDebugMode || (prefs.getBool('is_pro_mode') ?? false);
     _setMode(isPro ? AppMode.pro : AppMode.free);
   }
 
