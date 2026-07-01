@@ -56,7 +56,7 @@ const NyanDialog = ({ open, onClose, icon, title, message, tone = "default", con
           )}
           <NyanPrimaryButton
             label={confirmLabel} expanded onPress={onConfirm}
-            style={{ flex: 1, ...(danger ? { background: "var(--error-primary)", color: "var(--nyan-surface)", boxShadow: "0 6px 16px -6px color-mix(in srgb, var(--error-primary) 60%, transparent)" } : null) }}
+            style={{ flex: 1, ...(danger ? { background: "var(--error-fill)", color: "var(--nyan-on-error)", boxShadow: "0 6px 16px -6px color-mix(in srgb, var(--error-fill) 60%, transparent)" } : null) }}
           />
         </div>
       </div>

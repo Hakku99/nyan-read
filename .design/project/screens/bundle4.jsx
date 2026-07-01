@@ -80,8 +80,8 @@ const SETTINGS_PICKERS = {
     title: "Theme Preset", subtitle: "How Nyan Read looks while you read.", selected: 0,
     options: [
       { label: "Cream Light", hint: "Warm paper — the default", swatch: "#F7F5EF" },
-      { label: "Sumi Dark", hint: "Ink night for low light", swatch: "#262422" },
-      { label: "Match System", hint: "Follow your device setting", swatch: "linear-gradient(135deg, #F7F5EF 50%, #262422 50%)" },
+      { label: "Sumi Dark", hint: "Ink night for low light", swatch: "#242424" },
+      { label: "Match System", hint: "Follow your device setting", swatch: "linear-gradient(135deg, #F7F5EF 50%, #242424 50%)" },
     ],
   },
   language: {
@@ -136,10 +136,43 @@ const SettingsWithPicker = ({ dark, picker }) => {
    the 3 actions). This shows the resting dock (collapsed, footer only) over
    a reader page. Tap the ‹ › stepper to move chapters.
    ────────────────────────────────────────────────────────────────────── */
+/* ReaderTopBar — the immersive reader header. Same floating-object language as
+   the OnePaperDock at the bottom: surface-raised panel, chrome-edge hairline,
+   r-dock radius, light-card shadow. Back caret · centered title+author (both
+   ellipsised) · brightness / bookmark / overflow actions. Pairs with the dock
+   so the chrome reads as one matched top+bottom set. */
+const ReaderTopBar = ({ title, author, onBack, onBrightness, onBookmark, onMore, bookmarked = false }) => {
+  const iconBtn = { all: "unset", cursor: "pointer", width: 40, height: 40, borderRadius: "var(--r-chip)", display: "grid", placeItems: "center", flex: "none", color: "var(--nyan-text-secondary)", transition: "background 150ms var(--ease-paper)" };
+  return (
+    <div className="nyan-readerbar" style={{
+      position: "absolute", zIndex: 9, left: "var(--inset)", right: "var(--inset)", top: "var(--inset)",
+      background: "var(--nyan-surface-raised)",
+      border: "1px solid var(--chrome-edge)",
+      borderRadius: "var(--r-dock)",
+      boxShadow: "var(--shadow-light-card)",
+      display: "flex", alignItems: "center", gap: 2, padding: "7px 8px",
+    }}>
+      <style>{`
+        .nyan-readerbar button { transition: background 150ms var(--ease-paper), transform 150ms var(--ease-paper); }
+        .nyan-readerbar button:hover { background: color-mix(in srgb, var(--nyan-text) 7%, transparent); }
+        .nyan-readerbar button:active { transform: scale(0.9); }
+      `}</style>
+      <button onClick={onBack} aria-label="Back" style={{ ...iconBtn, color: "var(--nyan-text)" }}><i className="ph ph-arrow-left" style={{ fontSize: 22 }} /></button>
+      <div style={{ flex: 1, minWidth: 0, textAlign: "center", padding: "0 4px" }}>
+        <div style={{ font: "600 15px/1.25 var(--font-ui)", color: "var(--nyan-text)", letterSpacing: "-0.2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
+        <div style={{ font: "400 12px/1.3 var(--font-ui)", color: "var(--nyan-text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 1 }}>{author}</div>
+      </div>
+      <button onClick={onBrightness} aria-label="Brightness" style={iconBtn}><i className="ph ph-sun" style={{ fontSize: 21 }} /></button>
+      <button onClick={onBookmark} aria-label="Bookmark" style={iconBtn}><i className={bookmarked ? "ph-fill ph-bookmark-simple" : "ph ph-bookmark-simple"} style={{ fontSize: 21, color: bookmarked ? "var(--nyan-primary-deep)" : undefined }} /></button>
+      <button onClick={onMore} aria-label="More" style={iconBtn}><i className="ph ph-dots-three" style={{ fontSize: 21 }} /></button>
+    </div>
+  );
+};
+
 const ReaderCanvasBg = ({ dark, children }) => (
-  <div style={{ position: "relative", width: "100%", height: "100%", background: dark ? "#262422" : "#F7F5EF", overflow: "hidden" }}>
-    <div style={{ position: "absolute", inset: 0, padding: "44px 28px 24px", pointerEvents: "none" }}>
-      <div style={{ font: "400 13.5px/1.85 var(--font-ui)", color: dark ? "#E5DED3" : "#4A453E", opacity: 0.55, textIndent: "2em" }}>
+  <div style={{ position: "relative", width: "100%", height: "100%", background: dark ? "#242424" : "#F7F5EF", overflow: "hidden" }}>
+    <div style={{ position: "absolute", inset: 0, padding: "104px 28px 24px", pointerEvents: "none" }}>
+      <div style={{ font: "400 13.5px/1.85 var(--font-ui)", color: dark ? "#E2E2E2" : "#4A453E", opacity: 0.55, textIndent: "2em" }}>
         The cat sat on the threshold for a long while, watching the rain darken the stones and the wisteria release its scent into the late spring evening.
       </div>
     </div>
@@ -153,6 +186,7 @@ const U15Artboard = ({ dark, startIndex = 2 }) => {
   return (
     <div data-theme={dark ? "sumi" : undefined} style={{ width: "100%", height: "100%" }}>
       <ReaderCanvasBg dark={dark}>
+        <ReaderTopBar title="The Left Hand of Darkness" author="Ursula K. Le Guin" />
         <OnePaperDock
           visible
           sheetOpen={false}
@@ -226,7 +260,8 @@ const NumPad = ({ onDigit, onDelete, showBiometric }) => {
             return (
               <button key={k} onClick={() => onDigit(k)} className="nyan-pinkey"
                 style={{ all: "unset", cursor: "pointer", width: 74, height: 74, borderRadius: "50%",
-                  background: "var(--nyan-surface)", boxShadow: "var(--shadow-subtle)",
+                  background: "var(--nyan-surface-raised)", boxShadow: "var(--shadow-light-card)",
+                  border: "1px solid var(--chrome-edge)",
                   display: "grid", placeItems: "center",
                   font: "500 27px/1 var(--font-ui)", color: "var(--nyan-text)" }}>
                 {k}
@@ -258,7 +293,7 @@ const PinOverlay = ({ mode = "verify", hasError, dark = true }) => {
       <style>{`
         .nyan-pinkey { transition: transform 150ms var(--ease-paper), box-shadow 200ms ease, background 150ms ease; }
         .nyan-pinkey:hover { transform: translateY(-1px); box-shadow: var(--shadow-light-card); }
-        .nyan-pinkey:active { transform: scale(0.93); box-shadow: var(--shadow-grouped); background: color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface)); }
+        .nyan-pinkey:active { transform: scale(0.93); box-shadow: var(--shadow-grouped); background: color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface-raised)); }
         .nyan-pinkey-ghost { transition: color 150ms ease, transform 150ms var(--ease-paper); }
         .nyan-pinkey-ghost:hover { color: var(--nyan-text-secondary); }
         .nyan-pinkey-ghost:active { transform: scale(0.9); }
@@ -361,10 +396,10 @@ const TTSSheet = ({ dark }) => {
 
   return (
     <div data-theme={dark ? "sumi" : undefined}
-      style={{ position: "relative", width: "100%", height: "100%", background: dark ? "#262422" : "#F7F5EF", overflow: "hidden" }}>
+      style={{ position: "relative", width: "100%", height: "100%", background: dark ? "#242424" : "#F7F5EF", overflow: "hidden" }}>
       {/* reader prose behind */}
       <div style={{ position: "absolute", inset: 0, padding: "44px 28px 24px", pointerEvents: "none" }}>
-        <div style={{ font: "400 13.5px/1.85 var(--font-ui)", color: dark ? "#E5DED3" : "#4A453E", opacity: 0.5, textIndent: "2em" }}>
+        <div style={{ font: "400 13.5px/1.85 var(--font-ui)", color: dark ? "#E2E2E2" : "#4A453E", opacity: 0.5, textIndent: "2em" }}>
           The cat sat on the threshold for a long while, watching the rain darken the stones and the wisteria release its scent into the late spring evening.
         </div>
       </div>
@@ -452,10 +487,10 @@ const TTS_PARAS = [
 
 const TTSActiveReading = ({ dark }) => {
   const [playing, setPlaying] = useState(true);
-  const ink = dark ? "#E5DED3" : "#4A453E";
+  const ink = dark ? "#E2E2E2" : "#4A453E";
   return (
     <div data-theme={dark ? "sumi" : undefined}
-      style={{ position: "relative", width: "100%", height: "100%", background: dark ? "#262422" : "#F7F5EF", overflow: "hidden" }}>
+      style={{ position: "relative", width: "100%", height: "100%", background: dark ? "#242424" : "#F7F5EF", overflow: "hidden" }}>
       {/* Auto-scrolling prose; the spoken sentence is highlighted in matcha */}
       <div style={{ position: "absolute", inset: 0, padding: "52px 26px 120px", overflow: "hidden" }}>
         <div style={{ font: `400 12px/1.4 ${"var(--font-ui)"}`, color: ink, opacity: 0.5, marginBottom: 20, letterSpacing: 0.4 }}>Chapter 3 · A Cup of Still Water</div>
@@ -475,7 +510,7 @@ const TTSActiveReading = ({ dark }) => {
 
       {/* Floating mini-player — slim dock, inset, lightCard */}
       <div style={{ position: "absolute", left: "var(--inset)", right: "var(--inset)", bottom: "var(--inset)",
-        background: "var(--nyan-surface)", border: "1px solid var(--chrome-edge)", borderRadius: "var(--r-dock)",
+        background: "var(--nyan-surface-raised)", border: "1px solid var(--chrome-edge)", borderRadius: "var(--r-dock)",
         boxShadow: "var(--shadow-light-card)", overflow: "hidden" }}>
         {/* speaking progress hairline */}
         <div style={{ height: 3, background: "color-mix(in srgb, var(--nyan-text) 11%, transparent)" }}>
@@ -659,4 +694,4 @@ const ShelfToolbarScreen = ({ dark, sort, isPro = false }) => {
    ────────────────────────────────────────────────────────────────────── */
 
 /* ── Exports ─────────────────────────────────────────────────────────────── */
-Object.assign(window, { SettingsPage, SETTINGS_PICKERS, SettingsWithPicker, ReaderCanvasBg, U15Artboard, PinDots, NumPad, PinOverlay, TTS_SPEEDS, TTSSheet, TTS_PARAS, TTSActiveReading, FlagBadge, AdminPanel, BOOKS_SHELF, SmallBookCard, ShelfToolbarScreen });
+Object.assign(window, { SettingsPage, SETTINGS_PICKERS, SettingsWithPicker, ReaderCanvasBg, ReaderTopBar, U15Artboard, PinDots, NumPad, PinOverlay, TTS_SPEEDS, TTSSheet, TTS_PARAS, TTSActiveReading, FlagBadge, AdminPanel, BOOKS_SHELF, SmallBookCard, ShelfToolbarScreen });

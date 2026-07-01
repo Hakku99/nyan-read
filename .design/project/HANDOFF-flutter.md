@@ -43,18 +43,27 @@ error:#A85A38 on errorBg:#FBF2EC
 > build pixel-for-pixel, use the `-src` set; otherwise adopt these (they pass
 > WCAG AA). Decide once and record it.
 
-### Sumi Dark — REVISED (elevation by tone, not shadow)
+### Sumi Dark — v6 MONO (neutral surfaces, off-white accent)
 ```dart
-bg:#181B16  surface:#242922  surfaceMuted:#1D211B  surfaceRaised:#2E342B
-divider:#3D443A  border:#474E42
-text:#ECE6DB  textSecondary:#BBB3A6  textMuted:#9A948B
-primary:#A9B690  primaryDeep:#B7C69E  success:#94C194
+bg:#121212  surface:#1E1E1E  surfaceMuted:#181818  surfaceRaised:#303030
+overlayField:#3A3A3A  divider:#333333  border:#474747
+text:#ECECEC  textSecondary:#ABABAB  textMuted:#8A8A8A
+primary:#E2E2E2  primaryDeep:#F4F4F4  success:#8FBF8F
+primaryFill:#ECECEC  onPrimary:#1A1A1A  selectFill:#ECECEC
+errorFill:#C24A38  onError:#FBF3E6
 ```
-The old rule *"Sumi Dark has no shadows"* is **retired**. Dark elevation =
-lighter surface as it rises + a luminous hairline ring + a 1px inset top
-catch-light. Port the shadow tokens (`--shadow-light-card` etc.) which now carry
-a ring + ambient in dark. Add the new **`surfaceRaised`** layer for
-dialogs/sheets/popovers.
+The dark theme is **true-neutral grey + a MONO (off-white) accent** — no brown,
+no green, no amber. The primary button is an **off-white fill with a DARK ink
+label** (`onPrimary:#1A1A1A`) — the inverse of light mode's cream-on-matcha.
+The only chromatic color left in the dark is the clay error red (danger only).
+Reader paper variants are neutral too: Sumi `#242424`, Charcoal `#141414`.
+The old rule *"Sumi Dark has no shadows"* stays **retired** — dark elevation =
+lighter surface as it rises + a neutral hairline ring + a 1px inset top
+catch-light; port the shadow tokens (`--shadow-light-card` etc.). Use the
+**`surfaceRaised`** layer for dialogs/sheets/popovers/floating mini-players (it
+must clearly out-step the page behind it), and **`overlayField`** for any field
+or tray nested *inside* an overlay — it steps UP (lighter) so inputs never sink
+into a near-black hole.
 
 ### Scale, radii, spacing
 - **Type:** 6 sizes (32 / 24 / 20 / 16 / 13 / 11) · 3 weights (400 / 500 / 600). The 11px size is the olive eyebrow caption only (`.nyan-caption` / `--fz-caption`), never body. UI face Noto Sans SC; reader serif Source Han Serif SC.

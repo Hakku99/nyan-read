@@ -137,7 +137,7 @@ const U5Artboard = ({ dark }) => (
   <ReaderBg dark={dark}>
     <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
       {/* Highlighted excerpt */}
-      <div style={{ maxWidth: 290, font: "400 15px/1.6 var(--font-ui)", color: dark ? "#E5DED3" : "#4A453E", textAlign: "center" }}>
+      <div style={{ maxWidth: 290, font: "400 15px/1.6 var(--font-ui)", color: dark ? "#E2E2E2" : "#4A453E", textAlign: "center" }}>
         <span style={{ background: "#D8C06B80", borderRadius: 3, padding: "1px 0" }}>
           only the bell and the rain felt honest
         </span>

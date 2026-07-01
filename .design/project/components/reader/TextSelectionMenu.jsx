@@ -20,7 +20,7 @@ const TextSelectionMenu = ({ actions, onAction, selectedPen, onSelectPen, pens, 
   return (
     <div style={{
       display: "inline-flex", alignItems: "center",
-      background: "var(--nyan-surface)", borderRadius: "var(--r-card)",
+      background: "var(--nyan-surface-raised)", borderRadius: "var(--r-card)",
       border: "1px solid var(--chrome-edge)", boxShadow: "var(--shadow-light-card)",
       padding: "6px 8px", gap: 4, ...style,
     }}>

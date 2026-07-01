@@ -917,8 +917,8 @@ const DeleteConfirmSheet = ({ count, books = [] }) => (
       <div style={{ padding: "18px 24px 4px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
         {/* error chip — single rounded-square container */}
         <div style={{ width: 48, height: 48, borderRadius: "var(--r-card-nested)", display: "grid", placeItems: "center",
-          background: "var(--error-bg)", border: "0.7px solid color-mix(in srgb, var(--error-primary) 26%, transparent)", marginBottom: 14 }}>
-          <i className="ph ph-trash" style={{ fontSize: 23, color: "var(--error-primary)" }} />
+          background: "var(--error-bg)", border: "0.7px solid color-mix(in srgb, var(--error-fill) 40%, transparent)", marginBottom: 14 }}>
+          <i className="ph-fill ph-trash" style={{ fontSize: 23, color: "var(--error-fill)" }} />
         </div>
         <div style={{ font: "600 19px/1.25 var(--font-ui)", color: "var(--nyan-text)", letterSpacing: "-0.2px", marginBottom: 8 }}>Delete {count} books?</div>
         <div style={{ font: "400 13.5px/1.5 var(--font-ui)", color: "var(--nyan-text-secondary)", maxWidth: 286, textWrap: "pretty" }}>Their reading progress, bookmarks and notes are removed too.</div>
@@ -959,9 +959,9 @@ const DeleteConfirmSheet = ({ count, books = [] }) => (
       </div>
       <div style={{ padding: "16px", display: "flex", gap: 10 }}>
         <button style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", flex: 1, height: 50, borderRadius: "var(--r-card-nested)", background: "color-mix(in srgb, var(--nyan-text) 6%, transparent)", display: "grid", placeItems: "center", font: "600 15px/1 var(--font-ui)", color: "var(--nyan-text-secondary)" }}>Cancel</button>
-        <button style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", flex: 1, height: 50, borderRadius: "var(--r-card-nested)", background: "var(--error-primary)", boxShadow: "0 6px 16px -6px color-mix(in srgb, var(--error-primary) 60%, transparent)", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
-          <i className="ph ph-trash" style={{ fontSize: 17, color: "var(--nyan-surface)" }} />
-          <span style={{ font: "600 15px/1 var(--font-ui)", color: "var(--nyan-surface)" }}>Delete</span>
+        <button style={{ all: "unset", cursor: "pointer", boxSizing: "border-box", flex: 1, height: 50, borderRadius: "var(--r-card-nested)", background: "var(--error-fill)", boxShadow: "0 6px 16px -6px color-mix(in srgb, var(--error-fill) 60%, transparent)", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+          <i className="ph ph-trash" style={{ fontSize: 17, color: "var(--nyan-on-error)" }} />
+          <span style={{ font: "600 15px/1 var(--font-ui)", color: "var(--nyan-on-error)" }}>Delete</span>
         </button>
       </div>
     </div>

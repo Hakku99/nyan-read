@@ -51,9 +51,9 @@ function Frame({ label, w, h, children }) {
 const READER_SAMPLE = "The cat sat on the threshold for a long while, watching the rain darken the stones and the wisteria release its scent into the late spring evening. She would sometimes say that an hour spent with a book and a cup of barley tea was the truest measure of a quiet life, and that nothing of consequence was ever lost in the time it took to turn a page slowly.";
 function ReaderBackdrop({ dark }) {
   return (
-    <div style={{ position: "absolute", inset: 0, padding: "48px 28px 24px", pointerEvents: "none", overflow: "hidden", background: dark ? "#262422" : "#F7F5EF" }}>
-      <div style={{ font: "600 17px/1.4 var(--font-serif)", color: dark ? "#E5DED3" : "#4A453E", opacity: 0.7, marginBottom: 16 }}>Chapter Four · The Long Rain</div>
-      <div style={{ font: "400 15px/1.95 var(--font-serif)", color: dark ? "#E5DED3" : "#4A453E", opacity: 0.5, textIndent: "1.6em" }}>{READER_SAMPLE}</div>
+    <div style={{ position: "absolute", inset: 0, padding: "48px 28px 24px", pointerEvents: "none", overflow: "hidden", background: dark ? "#242424" : "#F7F5EF" }}>
+      <div style={{ font: "600 17px/1.4 var(--font-serif)", color: dark ? "#E2E2E2" : "#4A453E", opacity: 0.7, marginBottom: 16 }}>Chapter Four · The Long Rain</div>
+      <div style={{ font: "400 15px/1.95 var(--font-serif)", color: dark ? "#E2E2E2" : "#4A453E", opacity: 0.5, textIndent: "1.6em" }}>{READER_SAMPLE}</div>
     </div>
   );
 }

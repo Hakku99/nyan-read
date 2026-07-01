@@ -111,9 +111,9 @@
             {/* Centered brightness dialog */}
             <div style={{ width: "100%", maxWidth: 320,
               background: dark
-                ? "color-mix(in srgb, var(--nyan-surface) 88%, transparent)"
+                ? "color-mix(in srgb, var(--nyan-surface-raised) 96%, transparent)"
                 : "color-mix(in srgb, var(--nyan-surface) 82%, transparent)",
-              border: "1px solid color-mix(in srgb, var(--nyan-surface) 70%, var(--chrome-edge))",
+              border: "1px solid color-mix(in srgb, var(--nyan-border) 80%, var(--chrome-edge))",
               borderRadius: "var(--r-sheet)", boxShadow: "var(--shadow-light-card)",
               backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
               padding: 22 }}>
@@ -198,7 +198,7 @@
         <div style={{ position: "relative", width: "100%", maxWidth: 350 }}>
         <div style={{
           width: "100%",
-          background: "var(--nyan-surface)",
+          background: "var(--nyan-surface-raised)",
           borderRadius: "var(--r-dock)",
           border: "1px solid var(--chrome-edge)",
           boxShadow: "var(--shadow-light-card)",
@@ -230,7 +230,7 @@
 
           {/* ── Excerpt preview card ── */}
           <div style={{
-            background: `color-mix(in srgb, ${sel.ink} 6%, var(--nyan-surface-muted))`,
+            background: `color-mix(in srgb, ${sel.ink} 6%, var(--nyan-overlay-field))`,
             border: `1px solid color-mix(in srgb, ${sel.ink} 14%, var(--nyan-divider))`,
             borderRadius: 16,
             padding: "9px 14px",
@@ -258,7 +258,7 @@
 
           {/* ── Color picker — clean filled swatches, matcha selection ring ── */}
           <div style={{
-            background: "var(--nyan-surface-muted)",
+            background: "var(--nyan-overlay-field)",
             borderRadius: 16,
             padding: "10px 14px",
             display: "flex",
@@ -280,7 +280,7 @@
                     display: "grid", placeItems: "center",
                     background: c.fill,
                     boxShadow: active
-                      ? "0 0 0 2px var(--nyan-surface-muted), 0 0 0 3px var(--nyan-primary-deep)"
+                      ? "0 0 0 2px var(--nyan-overlay-field), 0 0 0 3px var(--nyan-primary-deep)"
                       : "inset 0 0 0 1px color-mix(in srgb, " + c.ink + " 20%, transparent)",
                     transition: "box-shadow 160ms var(--ease-paper)",
                   }}
@@ -292,7 +292,7 @@
 
           {/* ── Note textarea ── */}
           <div style={{
-            background: "color-mix(in srgb, var(--nyan-surface-muted) 88%, var(--nyan-surface))",
+            background: "var(--nyan-overlay-field)",
             borderRadius: 16,
             border: inputBorder,
             padding: "12px 15px",

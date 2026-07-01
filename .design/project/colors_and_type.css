@@ -56,6 +56,8 @@
   --nyan-bg:              #F6F3EA;   /* page background (paper) */
   --nyan-surface:         #FFFDF8;   /* cards, sheets, panels */
   --nyan-surface-muted:   #F1ECDD;   /* recessed: tab tracks, slider rails */
+  --nyan-surface-raised:  #FFFDF8;   /* FLOATING (dialogs/sheets/popovers) = surface on paper (Sumi lifts it) */
+  --nyan-overlay-field:   #F1ECDD;   /* field/tray nested inside an overlay = recessed muted (Sumi lifts it) */
   --nyan-divider:         #E5DED2;   /* warm hairline rule */
   --nyan-border:          #E5DED2;
 
@@ -70,8 +72,13 @@
   --nyan-primary-deep:    #5A6644;   /* was #7E8B61 · 3.59 → 6.04:1 AA */
   --nyan-success:         #4F6B1E;   /* was #6B8E23 · 3.74 → 5.98:1 AA */
 
-  /* Selection-check fill — deliberately theme-STABLE (not overridden in Sumi) so the
-     selected checkmark is always a deep-matcha circle with a WHITE tick in both themes. */
+  /* Button-fill indirection (theme-stable; Sumi Dark overrides these for light-on-fill).
+     In Cream Light they resolve to the matcha fill + cream text — i.e. UNCHANGED. */
+  --nyan-primary-fill:    var(--nyan-primary);   /* solid button background */
+  --nyan-on-primary:      var(--nyan-surface);   /* text / icon ON a solid fill */
+
+  /* Selection-check fill — matcha in Cream Light; Sumi Dark overrides it to off-white.
+     The selected check is a filled circle with an --nyan-on-primary tick. */
   --nyan-select-fill:     #6E7A55;
 
   /* Source-fidelity tokens (use only when matching live Flutter app pixel-for-pixel) */
@@ -87,10 +94,10 @@
   --reader-bg-cream:      #F7F5EF;
   --reader-bg-sepia:      #EDE3C7;
   --reader-ink-sepia:     #5C4F3F;
-  --reader-bg-sumi:       #262422;
-  --reader-ink-sumi:      #E5DED3;
-  --reader-bg-charcoal:   #141312;
-  --reader-ink-charcoal:  #F1EBDD;
+  --reader-bg-sumi:       #242424;
+  --reader-ink-sumi:      #E2E2E2;
+  --reader-bg-charcoal:   #141414;
+  --reader-ink-charcoal:  #ECECEC;
 
   /* ── Highlight pens (fixed; not theme-sensitive) ──────────────────────── */
   --hl-yellow:            #F2E58A;
@@ -114,6 +121,8 @@
   --error-primary:        #9C5C49;
   --error-secondary:      #8A6A55;
   --error-accent:         #ECD9CC;
+  --error-fill:           var(--error-primary);  /* destructive button background (Sumi overrides) */
+  --nyan-on-error:        #FBF3E6;  /* text/icon ON a destructive fill — cream/near-white in BOTH themes */
 
   /* ── Radii (NyanRadius) ───────────────────────────────────────────────── */
   --radius-small:  14px;   /* tab capsule, chip */
@@ -186,42 +195,71 @@
 }
 
 /* ── Sumi Dark ─────────────────────────────────────────────────────────────
-   Dark-mode elevation doctrine (revised v4 — widened ladder):
-   In the dark, depth is carried by TONE, reinforced by a luminous hairline.
-   v3's ladder was too compressed — adjacent surfaces sat ~1.17:1 apart and
-   the eye, with no hue step to help, read the whole screen as one olive
-   field. v4 deepens the page void and lifts each surface decisively so every
-   adjacent step lands ~1.4–1.5:1, still inside the warm-sumi family (no pure
-   black/white). The ring + inset catch-light are kept and strengthened so a
-   card reads as a distinct plane even where the tonal step is subtle.
+   Dark-mode doctrine (revised v6 — NEUTRAL surfaces, MONO accent):
+   The dark theme is NO LONGER built on the matcha/olive family OR the amber/
+   honey accent (v5). Matcha is the brand accent for CREAM LIGHT ONLY. In the
+   dark there is no chromatic brand accent at all:
+     • Surfaces are a TRUE-NEUTRAL grey ladder — zero brown, zero green tint —
+       so nothing casts a color over a long reading session. Depth is carried
+       by TONE (steps land ~1.5:1 apart) plus the hairline ring; no pure
+       black / white (#121212 void, #ECECEC ink).
+     • The accent is MONO — an OFF-WHITE. There is no hue: the primary button
+       is an off-white fill carrying a DARK label, and "accent" elements
+       (links, selected outline, progress, icons) are simply light-on-dark.
+       Hierarchy comes from fill / outline / weight, not color. This removed
+       the eye-fatiguing warmth of the amber while keeping the paper calm.
+     • Buttons carry DARK (ink) text on the off-white fill — the inverse of
+       Cream Light, handled by the same theme-stable indirections defined in
+       :root: --nyan-primary-fill (solid button background) and
+       --nyan-on-primary (the text/icon on it). In Cream Light they resolve to
+       the matcha fill + cream text, so the LIGHT theme is unchanged.
+     • The ONLY chromatic color left in the dark is the warm CLAY error red —
+       reserved for danger/destructive, never a brand accent.
 
-     ELEVATION LADDER (lightest = closest)   ·   step vs. layer below
-       raised   #3E453A   dialogs · popovers · menus · sheets   (~1.27 over surface)
-       surface  #31372E   cards · panels · bars                 (~1.48 over page)
-       muted    #1A1E15   recessed: tab tracks, slider rails     (inset — darker than surface)
-       bg       #14170F   page void                             (base, darkest)
+     ELEVATION LADDER (lightest = closest)   ·   a FLOATING surface must clearly
+     out-step whatever sits behind it — including the Sumi reading canvas
+     (#242424), which is LIGHTER than a flat page card — and a container NESTED
+     inside an overlay steps UP (lighter), never down into a near-black hole.
+       field    #3A3A3A   filled field / tray / inner card INSIDE a raised overlay
+       raised   #303030   dialogs · sheets · popovers · docks · floating bars   (clears the void AND the #242424 canvas)
+       surface  #1E1E1E   flat cards · panels · bars on the page
+       muted    #181818   recessed: tab tracks, slider rails
+       bg       #121212   page void                                          (base, darkest)
    ────────────────────────────────────────────────────────────────────────── */
 [data-theme="sumi"], .nyan-sumi {
-  --nyan-bg:             #14170F;   /* page void — deepened for headroom */
-  --nyan-surface:        #31372E;   /* cards / panels / bars — clearly lifted (~1.48 over page) */
-  --nyan-surface-muted:  #1A1E15;   /* recessed track — reads as an inset on a card */
-  --nyan-surface-raised: #3E453A;   /* dialogs / sheets / popovers — highest */
-  --nyan-divider:        #4C5448;   /* hairline — reads as a line on surface (~1.6:1) */
-  --nyan-border:         #5A6253;   /* explicit card edge when needed (~2:1 on surface) */
+  /* Surfaces — true-neutral grey, zero brown/green tint, no pure black. */
+  --nyan-bg:             #121212;   /* page void — darkest */
+  --nyan-surface:        #1E1E1E;   /* cards / panels / bars (~1.5 over page) */
+  --nyan-surface-muted:  #181818;   /* recessed track — inset, sits above the void */
+  --nyan-surface-raised: #303030;   /* FLOATING: dialogs / sheets / popovers / docks / bars — clears the void AND the #242424 reading canvas */
+  --nyan-overlay-field:  #3A3A3A;   /* filled field / tray / inner card INSIDE a raised overlay — lighter than the float, never a dark hole */
+  --nyan-divider:        #333333;   /* neutral hairline on surface */
+  --nyan-border:         #474747;   /* explicit card edge / raised hairline ring — crisp against the void */
 
-  /* AA-revised foregrounds (re-checked against the lighter v4 surface) */
-  --nyan-text:           #ECE6DB;   /* primary ink — 9.8:1 AAA on surface */
-  --nyan-text-secondary: #BBB3A6;   /* 5.9:1 AA on surface */
-  --nyan-text-muted:     #A39D93;   /* lifted from #9A948B → 4.5:1 AA on the lighter surface */
+  /* Foregrounds — neutral, no pure white */
+  --nyan-text:           #ECECEC;   /* primary ink — ~13:1 AAA on surface */
+  --nyan-text-secondary: #ABABAB;   /* ~6.5:1 AA on surface */
+  --nyan-text-muted:     #8A8A8A;   /* ~4.5:1 AA on surface */
 
-  --nyan-primary:        #A9B690;   /* light sage accent · dark text on fill */
-  --nyan-primary-deep:   #B7C69E;   /* brighter — links / ghost text pop on lifted cards */
-  --nyan-success:        #94C194;
+  /* Accent — MONO / off-white (dark theme only; matcha is Cream-Light-only).
+     No hue: "color" is light-on-dark; hierarchy is fill / outline / weight. */
+  --nyan-primary:        #E2E2E2;   /* accent text · icons · progress · tints */
+  --nyan-primary-deep:   #F4F4F4;   /* links / selected outlines / ghost text / FAB fill */
+  --nyan-primary-fill:   #ECECEC;   /* SOLID button background — carries DARK ink label */
+  --nyan-on-primary:     #1A1A1A;   /* dark ink text / icon ON the off-white fill (label, check tick) */
+  --nyan-select-fill:    #ECECEC;   /* selection check + cover ring — off-white in the dark */
+  --nyan-success:        #8FBF8F;   /* semantic success stays green — not a brand accent */
 
-  --error-bg:            #241D18;
-  --error-primary:       #CE9A86;
-  --error-secondary:     #B6967F;
-  --error-accent:        #3A2D24;
+  /* Error — warm clay; the one chromatic accent kept, for danger only.
+     bg/accent are raised in luminance so a danger tile/card clearly LIFTS off
+     the #121212 void (the old #2A1B18 was nearly the same luminance as the
+     page — muddy, low-contrast). Danger is still carried by the clay icon /
+     text / fill; the tinted surface only frames it. */
+  --error-bg:            #3A2420;   /* danger tile / card fill — lifts off void & neutral surface */
+  --error-primary:       #E59B85;   /* clay accent — error text + icons (brightened for AA on the tile) */
+  --error-secondary:     #D29A83;   /* danger row text */
+  --error-accent:        #573730;   /* danger hairline / border — visible against the tile */
+  --error-fill:          #C24A38;   /* destructive button background — carries cream text */
 
   /* Elevation = luminous hairline ring + inset top catch-light + gentle ambient.
      The ring is what makes a card read as a distinct plane in the dark; the

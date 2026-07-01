@@ -34,7 +34,7 @@ const TextPanel = ({ t, setT }) => (
         <PillButton label="Sans" selected={!t.serif} onPress={() => setT({ ...t, serif: false })} style={{ flex: 1 }} />
         <PillButton label="Serif" selected={t.serif} onPress={() => setT({ ...t, serif: true })} style={{ flex: 1 }} />
       </div>
-      <div style={{ marginTop: 12, padding: 14, background: "var(--nyan-surface)", borderRadius: "var(--r-chip)", font: `400 ${t.fontSize}px/${t.lineHeight} ${t.serif ? "var(--font-serif)" : "var(--font-ui)"}`, color: "var(--nyan-text)" }}>The cat sat on the threshold for a long while. 喵阅</div>
+      <div style={{ marginTop: 12, padding: 14, background: "var(--nyan-surface-raised)", borderRadius: "var(--r-chip)", font: `400 ${t.fontSize}px/${t.lineHeight} ${t.serif ? "var(--font-serif)" : "var(--font-ui)"}`, color: "var(--nyan-text)" }}>The cat sat on the threshold for a long while. 喵阅</div>
     </Knob>
   </div>
 );
