@@ -430,9 +430,8 @@ class DockFooter extends StatelessWidget {
   }
 }
 
-/// Chapter stepper caret. Visual icon is 20pt; the hit target is expanded to
-/// 40pt (the spec draws a 36pt transparent box — we round up toward the 44pt
-/// tap floor without changing the visible glyph).
+/// Chapter stepper caret. Visual icon is 20pt; hit target is the spec's
+/// 44pt (`DockFooter.jsx` `step()`), matching `NyanSpacing.minTapTarget`.
 class _StepCaret extends StatelessWidget {
   const _StepCaret({
     required this.icon,
@@ -449,8 +448,8 @@ class _StepCaret extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 40,
-      height: 40,
+      width: NyanSpacing.minTapTarget,
+      height: NyanSpacing.minTapTarget,
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(NyanRadius.chip),

@@ -35,14 +35,16 @@ class NyanShadows {
   static List<BoxShadow> lightCard(NyanTheme nyan) {
     if (nyan.brightness == Brightness.dark) {
       return [
-        _ring(nyan.divider, 0.88),
+        // Spec ring token is --nyan-border (a crisper ring than --nyan-divider
+        // used by subtle/settingsGrouped below) — colors_and_type.css:271.
+        _ring(nyan.borderColor, 0.92),
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.44),
-          blurRadius: 24,
-          offset: const Offset(0, 10),
+          color: Colors.black.withValues(alpha: 0.46),
+          blurRadius: 28,
+          offset: const Offset(0, 12),
         ),
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.34),
+          color: Colors.black.withValues(alpha: 0.36),
           blurRadius: 8,
           offset: const Offset(0, 3),
         ),
@@ -67,9 +69,9 @@ class NyanShadows {
   static List<BoxShadow> subtle(NyanTheme nyan) {
     if (nyan.brightness == Brightness.dark) {
       return [
-        _ring(nyan.divider, 0.66),
+        _ring(nyan.divider, 0.85),
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.34),
+          color: Colors.black.withValues(alpha: 0.36),
           blurRadius: 14,
           offset: const Offset(0, 4),
         ),
@@ -141,9 +143,9 @@ class NyanShadows {
   static List<BoxShadow> settingsGrouped(NyanTheme nyan) {
     if (nyan.brightness == Brightness.dark) {
       return [
-        _ring(nyan.divider, 0.50),
+        _ring(nyan.divider, 0.70),
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.24),
+          color: Colors.black.withValues(alpha: 0.26),
           blurRadius: 8,
           offset: const Offset(0, 2),
         ),
