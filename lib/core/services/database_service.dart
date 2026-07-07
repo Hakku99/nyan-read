@@ -214,18 +214,25 @@ class DatabaseService {
       //
       // We also deliberately avoid `openReadOnlyDatabase` because it skips
       // the WAL, which would hide some classes of corruption.
+      //
+      // quick_check (not integrity_check): the full check is O(db size) and
+      // runs on every cold start *before* getIt.allReady(), so a large
+      // library on a slow device could blow the DI bootstrap timeout.
+      // quick_check skips the slow index-content verification but still
+      // catches page-level corruption — the class that actually crashes
+      // sqflite at runtime.
       final db = await openDatabase(mainDbPath, singleInstance: false);
-      final result = await db.rawQuery('PRAGMA integrity_check;');
+      final result = await db.rawQuery('PRAGMA quick_check;');
       await db.close();
 
       final status = result.first.values.first as String;
       if (status.toLowerCase() != 'ok') {
         debugPrint(
-            '--- [DatabaseService] integrity_check failed: PRAGMA integrity_check = $status ---');
+            '--- [DatabaseService] quick_check failed: PRAGMA quick_check = $status ---');
         throw Exception('Database corrupted');
       } else {
         debugPrint(
-            '--- [DatabaseService] Main database integrity check passed (ok) ---');
+            '--- [DatabaseService] Main database quick_check passed (ok) ---');
       }
     } catch (e) {
       debugPrint(
@@ -730,6 +737,38 @@ class DatabaseService {
         batch.delete('bookmarks', where: 'book_id = ?', whereArgs: [id]);
         batch.delete('highlights', where: 'book_id = ?', whereArgs: [id]);
         batch.delete('books', where: 'id = ?', whereArgs: [id]);
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
+  /// Restores a previously deleted batch of books together with their
+  /// bookmarks and highlights in a single transaction.
+  ///
+  /// Used by the bookshelf undo flow so "Undo" brings back the user's notes,
+  /// not just the book rows. Row maps must be the exact maps read from the
+  /// tables before deletion.
+  Future<void> restoreDeletedBooksBatch({
+    required List<Map<String, dynamic>> books,
+    required List<Map<String, dynamic>> bookmarks,
+    required List<Map<String, dynamic>> highlights,
+  }) async {
+    if (books.isEmpty) return;
+
+    final db = await database;
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final book in books) {
+        // abort, not replace — same FK-CASCADE trap as insertBook applies.
+        batch.insert('books', book, conflictAlgorithm: ConflictAlgorithm.abort);
+      }
+      for (final bookmark in bookmarks) {
+        batch.insert('bookmarks', bookmark,
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (final highlight in highlights) {
+        batch.insert('highlights', highlight,
+            conflictAlgorithm: ConflictAlgorithm.replace);
       }
       await batch.commit(noResult: true);
     });

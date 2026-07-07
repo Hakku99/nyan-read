@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -35,9 +36,21 @@ class BookshelfViewModel extends ChangeNotifier {
   final Set<String> _selectedBookIds = {};
 
   // --- Undo State ---
-  // Populated by deleteSelectedBooks so undoLastDelete can restore the rows.
-  // Cleared after a successful undo or the next delete batch.
+  // Populated by deleteSelectedBooks so undoLastDelete can restore the rows
+  // *and* their bookmarks/highlights. Cleared after a successful undo, the
+  // next delete batch, or when the deferred file deletion commits.
   List<Map<String, dynamic>> _lastDeletedBookMaps = [];
+  List<Map<String, dynamic>> _lastDeletedBookmarkMaps = [];
+  List<Map<String, dynamic>> _lastDeletedHighlightMaps = [];
+
+  // Physical file deletion is deferred past the undo toast so "Undo" can
+  // still bring the book back with a working source. Committed when the
+  // timer fires, a new delete batch starts, or the VM is disposed.
+  List<String> _pendingFileDeletions = const [];
+  Timer? _pendingFileDeleteTimer;
+
+  // Undo toast shows for 4s; leave margin so a last-moment tap still wins.
+  static const _fileDeleteGraceWindow = Duration(seconds: 8);
 
   bool get isSelectionMode => _isSelectionMode;
   Set<String> get selectedBookIds => _selectedBookIds;
@@ -113,12 +126,19 @@ class BookshelfViewModel extends ChangeNotifier {
 
   /// Deletes selected books from memory and database (and optionally files).
   ///
-  /// When [deleteFiles] is true, deletes each book's source on disk: plain
-  /// filesystem paths via [File.delete], Android `content://` URIs via
+  /// The user's bookmarks/highlights are snapshotted first so
+  /// [undoLastDelete] can restore them. When [deleteFiles] is true the
+  /// physical deletion is *deferred* by [_fileDeleteGraceWindow] so an undo
+  /// within the toast window brings back a book whose source still exists:
+  /// plain filesystem paths via [File.delete], Android `content://` URIs via
   /// [BookSourcePlatform.deletePersistedUriDocument]. Per-file failures are
-  /// logged and do not abort the batch; DB rows are still removed first.
+  /// logged and do not abort the batch.
   Future<void> deleteSelectedBooks(bool deleteFiles) async {
     if (_selectedBookIds.isEmpty) return;
+
+    // A new batch supersedes the previous undo window: commit any deferred
+    // file deletions and drop the stale snapshot.
+    await _commitPendingFileDeletions();
 
     final idsToDelete = _selectedBookIds.toList(growable: false);
     final booksById = {
@@ -126,48 +146,112 @@ class BookshelfViewModel extends ChangeNotifier {
     };
     final selectedBooks =
         idsToDelete.map((id) => booksById[id]).whereType<Book>().toList();
-    final pathsToDelete = deleteFiles
-        ? _collectDeletableSourcePaths(selectedBooks)
-        : const <String>[];
+    // App-private sandbox copies are our own storage, invisible to the user —
+    // reclaim them unconditionally; the "also delete files" toggle only
+    // governs user-owned files.
+    final booksWithDeletableSources = selectedBooks
+        .where((b) =>
+            deleteFiles || b.storageType == BookStorageType.appPrivateCopy)
+        .toList();
+    final pathsToDelete =
+        _collectDeletableSourcePaths(booksWithDeletableSources);
 
-    // Save book maps before deletion so undoLastDelete can restore them.
+    // Snapshot rows (book + bookmarks + highlights) before deletion so
+    // undoLastDelete can restore the user's notes, not just the book rows.
     _lastDeletedBookMaps =
         selectedBooks.map((b) => Map<String, dynamic>.from(b.toMap())).toList();
+    final bookmarkMaps = <Map<String, dynamic>>[];
+    final highlightMaps = <Map<String, dynamic>>[];
+    for (final id in idsToDelete) {
+      bookmarkMaps
+          .addAll((await _db.getBookmarks(id)).map(Map<String, dynamic>.from));
+      highlightMaps
+          .addAll((await _db.getHighlights(id)).map(Map<String, dynamic>.from));
+    }
+    _lastDeletedBookmarkMaps = bookmarkMaps;
+    _lastDeletedHighlightMaps = highlightMaps;
 
     try {
       await _db.deleteBooksWithAssociatedData(idsToDelete);
-      await _deleteSourceFilesBestEffort(pathsToDelete);
+
+      if (pathsToDelete.isNotEmpty) {
+        _pendingFileDeletions = pathsToDelete;
+        _pendingFileDeleteTimer = Timer(_fileDeleteGraceWindow, () {
+          // Fire-and-forget: the timer callback cannot await, and a failed
+          // deferred deletion only leaves an orphan file behind.
+          unawaited(_commitPendingFileDeletions());
+        });
+      }
 
       _selectedBookIds.clear();
       _isSelectionMode = false;
       await loadBooks(); // Reload state
     } catch (e) {
-      _lastDeletedBookMaps = [];
+      _clearUndoSnapshot();
       _error = e.toString();
       notifyListeners();
       rethrow;
     }
   }
 
-  /// Re-inserts the most recently deleted batch of books (DB rows only —
-  /// associated data such as bookmarks and highlights is not restored since it
-  /// was permanently removed by [deleteSelectedBooks]).
+  /// Restores the most recently deleted batch: book rows together with their
+  /// bookmarks/highlights (single transaction), and cancels the deferred
+  /// physical file deletion so the restored books still open.
   Future<void> undoLastDelete() async {
     if (_lastDeletedBookMaps.isEmpty) return;
 
-    final mapsToRestore = List<Map<String, dynamic>>.from(_lastDeletedBookMaps);
-    _lastDeletedBookMaps = [];
+    // Cancel the deferred file deletion — the sources must survive the undo.
+    _pendingFileDeleteTimer?.cancel();
+    _pendingFileDeleteTimer = null;
+    _pendingFileDeletions = const [];
+
+    final books = List<Map<String, dynamic>>.from(_lastDeletedBookMaps);
+    final bookmarks =
+        List<Map<String, dynamic>>.from(_lastDeletedBookmarkMaps);
+    final highlights =
+        List<Map<String, dynamic>>.from(_lastDeletedHighlightMaps);
+    _clearUndoSnapshot();
 
     try {
-      for (final bookMap in mapsToRestore) {
-        await _db.insertBook(bookMap);
-      }
+      await _db.restoreDeletedBooksBatch(
+        books: books,
+        bookmarks: bookmarks,
+        highlights: highlights,
+      );
       await loadBooks();
     } catch (e) {
       _error = e.toString();
       notifyListeners();
       rethrow;
     }
+  }
+
+  void _clearUndoSnapshot() {
+    _lastDeletedBookMaps = [];
+    _lastDeletedBookmarkMaps = [];
+    _lastDeletedHighlightMaps = [];
+  }
+
+  /// Runs the deferred physical deletion (if any) and invalidates the undo
+  /// snapshot — once the files are gone an undo could no longer restore a
+  /// working book.
+  Future<void> _commitPendingFileDeletions() async {
+    _pendingFileDeleteTimer?.cancel();
+    _pendingFileDeleteTimer = null;
+    final paths = _pendingFileDeletions;
+    _pendingFileDeletions = const [];
+    if (paths.isEmpty) return;
+
+    _clearUndoSnapshot();
+    await _deleteSourceFilesBestEffort(paths);
+  }
+
+  @override
+  void dispose() {
+    // Honour the user's "also delete files" choice even if the shelf page
+    // goes away before the grace window elapses.
+    unawaited(_commitPendingFileDeletions());
+    super.dispose();
   }
 
   /// Locators the user opted to delete alongside DB rows (`content://` or

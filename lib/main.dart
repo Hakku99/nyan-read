@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,7 +27,7 @@ void main() async {
 
   // 1. Initialize dependency injection with fail-fast timeout
   try {
-    await setupServiceLocator().timeout(const Duration(seconds: 5));
+    await _bootstrapServices();
   } catch (e, stack) {
     debugPrint('DI Initialization Failed: $e\n$stack');
     runApp(_BootstrapErrorApp(error: e.toString()));
@@ -38,6 +39,20 @@ void main() async {
       child: const NyanApp(),
     ),
   );
+}
+
+/// Runs DI setup with a two-stage timeout: 5s fast path, then a 25s grace
+/// period on the *same* future — a large library on a slow device is "slow",
+/// not "dead", and restarting setup would double-register singletons.
+Future<void> _bootstrapServices() async {
+  final setup = setupServiceLocator();
+  try {
+    await setup.timeout(const Duration(seconds: 5));
+  } on TimeoutException {
+    debugPrint(
+        'DI setup exceeded 5s (large DB / slow device?); waiting up to 25s more');
+    await setup.timeout(const Duration(seconds: 25));
+  }
 }
 
 class NyanApp extends ConsumerStatefulWidget {
@@ -111,19 +126,61 @@ class _NyanAppState extends ConsumerState<NyanApp> with WidgetsBindingObserver {
   }
 }
 
-class _BootstrapErrorApp extends StatelessWidget {
+class _BootstrapErrorApp extends StatefulWidget {
   const _BootstrapErrorApp({required this.error});
 
   final String error;
 
   @override
+  State<_BootstrapErrorApp> createState() => _BootstrapErrorAppState();
+}
+
+class _BootstrapErrorAppState extends State<_BootstrapErrorApp> {
+  late String _error = widget.error;
+  bool _retrying = false;
+
+  Future<void> _retry() async {
+    setState(() => _retrying = true);
+    try {
+      // A failed setup can leave partial registrations behind; reset before
+      // re-running so registerSingletonAsync does not throw on duplicates.
+      await getIt.reset();
+      await _bootstrapServices();
+      runApp(ProviderScope(child: const NyanApp()));
+    } catch (e, stack) {
+      debugPrint('DI retry failed: $e\n$stack');
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _retrying = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Pre-DI surface: no theme/l10n services exist yet, so plain Material
+    // widgets and hardcoded English are acceptable here.
     return MaterialApp(
       home: Scaffold(
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text('App bootstrap failed.\n$error'),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('App bootstrap failed.\n$_error',
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 24),
+                _retrying
+                    ? const CircularProgressIndicator()
+                    : OutlinedButton(
+                        onPressed: _retry,
+                        child: const Text('Retry'),
+                      ),
+              ],
+            ),
           ),
         ),
       ),

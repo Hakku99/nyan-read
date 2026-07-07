@@ -26,6 +26,7 @@ import '../settings/settings_page.dart';
 import '../ads/ads_ui.dart';
 import '../../core/ui/nyan_icons.dart';
 import '../../core/utils/book_import_fingerprint.dart';
+import '../../core/utils/book_sandbox_copier.dart';
 import '../../core/utils/book_source_platform.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/utils/title_sort_key.dart';
@@ -286,7 +287,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             isPrivate: isPrivate,
             addedAt: addedAt,
             contentSignature: contentSignature,
-            storageType: BookStorageType.externalPath,
+            storageType: importSource.storageType,
           );
 
           await db.insertBook(book.toMap());
@@ -377,6 +378,31 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
     final pickedPath = file.path;
     if (pickedPath != null && pickedPath.isNotEmpty) {
+      // iOS/macOS: file_picker hands back a copy inside a *temporary*
+      // directory that the OS (or our cache scavenger) may clear — the book
+      // would silently die after import. Copy it into the app-owned library
+      // so its lifetime is ours. Windows/Linux pickers return the user's
+      // real path, which we reference in place.
+      if (BookSandboxCopier.platformNeedsPrivateCopy) {
+        try {
+          final sandboxPath = await BookSandboxCopier.copyIntoLibrary(
+            sourcePath: pickedPath,
+            fileName: path.basename(pickedPath),
+          );
+          return _ImportedBookSource(
+            sourceLocator: sandboxPath,
+            sourceType: BookSourceType.filePath,
+            displayName: path.basename(pickedPath),
+            signatureHint: sandboxPath,
+            storageType: BookStorageType.appPrivateCopy,
+          );
+        } catch (e) {
+          // Fall back to the picked path: the import still succeeds, the
+          // book just keeps the legacy at-risk lifetime.
+          debugPrint('Sandbox copy failed for $pickedPath, '
+              'falling back to external path: $e');
+        }
+      }
       return _ImportedBookSource(
         sourceLocator: pickedPath,
         sourceType: BookSourceType.filePath,
@@ -1810,11 +1836,13 @@ class _ImportedBookSource {
   final String sourceType;
   final String displayName;
   final String signatureHint;
+  final String storageType;
 
   const _ImportedBookSource({
     required this.sourceLocator,
     required this.sourceType,
     required this.displayName,
     required this.signatureHint,
+    this.storageType = BookStorageType.externalPath,
   });
 }

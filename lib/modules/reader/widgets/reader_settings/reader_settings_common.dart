@@ -62,25 +62,39 @@ class ReaderSettingsKnob extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: NyanTypography.uiFontFamily,
-                  fontSize: _kLabelSize,
-                  fontWeight: FontWeight.w600,
-                  height: 1.2,
-                  color: nyan.textPrimary,
+              // Flexible + ellipsis: at large accessibility text scales the
+              // label/hint pair can exceed the knob width; hint yields first.
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: NyanTypography.uiFontFamily,
+                    fontSize: _kLabelSize,
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
+                    color: nyan.textPrimary,
+                  ),
                 ),
               ),
               if (hint != null)
-                Text(
-                  hint!,
-                  style: TextStyle(
-                    fontFamily: NyanTypography.uiFontFamily,
-                    fontSize: NyanTypography.meta,
-                    fontWeight: FontWeight.w400,
-                    height: 1.35,
-                    color: nyan.textSecondary,
+                Flexible(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: NyanSpacing.space8),
+                    child: Text(
+                      hint!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontFamily: NyanTypography.uiFontFamily,
+                        fontSize: NyanTypography.meta,
+                        fontWeight: FontWeight.w400,
+                        height: 1.35,
+                        color: nyan.textSecondary,
+                      ),
+                    ),
                   ),
                 ),
             ],
