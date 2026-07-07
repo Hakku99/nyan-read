@@ -89,13 +89,20 @@ class ContentMetaManager {
     List<Highlight> raw,
     TextReaderCapability textCapability,
   ) async {
-    final healedList = <Highlight>[];
+    // Pass 1 (sync, cheap): classify every row. Slow-path candidates are
+    // queued so the string matching runs as ONE batched Isolate.run — the
+    // trigger scenario ("decode change shifted every anchor in the book")
+    // used to spawn one isolate per highlight, serially, on book open.
+    final results = List<Highlight?>.filled(raw.length, null);
+    final slowIndexes = <int>[];
+    final slowParagraphTexts = <String>[];
 
-    for (final h in raw) {
+    for (var i = 0; i < raw.length; i++) {
+      final h = raw[i];
       final paragraphText = textCapability.getParagraphText(h.paragraphIndex);
       if (paragraphText == null) {
         // Paragraph unavailable (out of range / not loaded); keep as-is.
-        healedList.add(h);
+        results[i] = h;
         continue;
       }
 
@@ -108,7 +115,7 @@ class ContentMetaManager {
           paragraphText.substring(start, end) == h.selectedText;
 
       if (isOffsetValid) {
-        healedList.add(h);
+        results[i] = h;
         continue;
       }
 
@@ -117,45 +124,59 @@ class ContentMetaManager {
       if (h.preContext.isEmpty && h.postContext.isEmpty) {
         debugPrint(
             '[ContentMetaManager] Highlight has no pre/post context to heal against; keeping as-is: ${h.selectedText}');
-        healedList.add(h);
+        results[i] = h;
         continue;
       }
 
-      // Slow-Path: AnchorHealer re-locates the anchor.
-      // Offload to isolate to keep string matching off UI thread.
-      final newStart = await Isolate.run(
-        () => AnchorHealer.findHealedOffset(
-          paragraphText,
-          h.preContext,
-          h.selectedText,
-          h.postContext,
-        ),
+      slowIndexes.add(i);
+      slowParagraphTexts.add(paragraphText);
+    }
+
+    // Pass 2: one isolate heals the whole batch.
+    if (slowIndexes.isNotEmpty) {
+      final requests = <({String text, String pre, String exact, String post})>[
+        for (var k = 0; k < slowIndexes.length; k++)
+          (
+            text: slowParagraphTexts[k],
+            pre: raw[slowIndexes[k]].preContext,
+            exact: raw[slowIndexes[k]].selectedText,
+            post: raw[slowIndexes[k]].postContext,
+          ),
+      ];
+      final healedOffsets = await Isolate.run(
+        () => <int?>[
+          for (final r in requests)
+            AnchorHealer.findHealedOffset(r.text, r.pre, r.exact, r.post),
+        ],
       );
 
-      if (newStart != null) {
+      for (var k = 0; k < slowIndexes.length; k++) {
+        final h = raw[slowIndexes[k]];
+        final newStart = healedOffsets[k];
+        if (newStart == null) {
+          // Healing failed: drop from the render list (offsets would paint
+          // in the wrong place) but leave the DB row so the user's note
+          // text survives and healing can retry on the next open.
+          debugPrint(
+              '[ContentMetaManager] Anchor healing failed; keeping stale offsets (may not render): ${h.selectedText}');
+          continue;
+        }
+
         final newEnd = newStart + h.selectedText.length;
         debugPrint(
-            '[ContentMetaManager] Healed highlight anchor: "${h.selectedText}" $start -> $newStart');
-
-        final healed = h.copyWith(
+            '[ContentMetaManager] Healed highlight anchor: "${h.selectedText}" ${h.startOffset} -> $newStart');
+        results[slowIndexes[k]] = h.copyWith(
           startOffset: newStart,
           endOffset: newEnd,
           isHealed: 1,
         );
-        healedList.add(healed);
-
         // Fire-and-forget write-back: a lost write only means healing
         // re-runs on the next open, so blocking the load loop is not worth it.
         unawaited(_db.updateHighlightHealedOffset(h.id, newStart, newEnd));
-      } else {
-        debugPrint(
-            '[ContentMetaManager] Anchor healing failed; keeping stale offsets (may not render): ${h.selectedText}');
-        // Keep the row so the user's note text survives even if the
-        // highlight can no longer be painted at the right spot.
       }
     }
 
-    return healedList;
+    return results.whereType<Highlight>().toList();
   }
 
   Future<void> updateCurrentChapterIndex() async {

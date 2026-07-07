@@ -18,6 +18,7 @@ import '../../core/ui/components/nyan_row_group.dart';
 import '../../core/ui/components/nyan_section_header.dart';
 import '../../core/ui/nyan_icons.dart';
 import '../../core/ui/nyan_theme_context.dart';
+import '../../core/utils/book_cover_cache.dart';
 import '../../core/utils/book_source_access.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../l10n/app_localizations.dart';
@@ -522,10 +523,18 @@ class _BookHeroCoverState extends State<_BookHeroCover> {
     if (!widget.isSourceAvailable) return null;
     if (widget.book.format.toLowerCase() != 'epub') return null;
     try {
-      // Full-file read is the simplest cover-decode path; large EPUBs cost RAM
-      // but the cover fetch happens once per open and the bytes are not retained.
+      // Disk cache first: re-extracting means reading the whole EPUB into
+      // memory on every details-page visit (the pre-cache behavior).
+      final cached = await BookCoverCache.read(widget.book.id);
+      if (cached != null) return cached;
+
       final bytes = await BookSourceAccess.readBytes(widget.book);
-      return extractEpubCoverAsJpeg(bytes);
+      final jpeg = await extractEpubCoverAsJpeg(bytes);
+      if (jpeg != null && jpeg.isNotEmpty) {
+        // Fire-and-forget: a lost cache write only means one more extraction.
+        unawaited(BookCoverCache.write(widget.book.id, jpeg));
+      }
+      return jpeg;
     } catch (e) {
       debugPrint('Book details cover load failed: $e');
       return null;

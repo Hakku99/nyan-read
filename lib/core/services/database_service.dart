@@ -492,6 +492,9 @@ class DatabaseService {
 
   Future<void> _onCreate(Database db, int version) async {
     // 1. Books Table
+    // Note: cover_path is UNUSED — covers are cached on disk keyed by book id
+    // (BookCoverCache), so nothing reads or writes this column. It stays
+    // because §2.4 forbids dropping user columns in migrations.
     await db.execute('''
       CREATE TABLE books (
         id TEXT PRIMARY KEY,
@@ -531,7 +534,10 @@ class DatabaseService {
       )
     ''');
 
-    // 3. Stats Table
+    // 3. Stats Table — UNUSED. The reading-stats feature was never wired up
+    // (no reads or writes anywhere; the in-memory second counter was removed
+    // in 2026-07 dead-code cleanup). The table stays because §2.4 forbids
+    // dropping user tables in migrations; do not build on it without a plan.
     await db.execute('''
       CREATE TABLE reading_stats (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -909,11 +915,15 @@ class DatabaseService {
   ///
   /// Core contract (AGENTS.md §3.5.5):
   ///   - Never INSERT a new book here; only UPDATE metadata for existing local books.
-  ///   - Primary match key is `content_signature` (SHA-256 of the source
-  ///     bytes) so a user who renamed their file / retitled the book still
-  ///     gets their highlights back, AND two different books that happen to
-  ///     share a title (different translations of "Le Petit Prince", for
-  ///     instance) no longer cross-contaminate each other's notes.
+  ///   - Primary match key is `content_signature` — a SAMPLED fingerprint,
+  ///     not a full-file hash: SHA-256 over `nyan-read-v1|ext|size|` + the
+  ///     first and last 64 KB of the file (see
+  ///     BookImportFingerprint._buildSignature). Same-size files that agree
+  ///     on both 64 KB windows but differ in the middle therefore collide;
+  ///     accepted trade-off for import-time speed on large books. It still
+  ///     survives file renames / retitles (extension + size + content
+  ///     windows are unchanged), so a renamed book gets its highlights back
+  ///     and two same-titled books no longer cross-contaminate notes.
   ///   - Fallback to `title` matching **only** when the backup payload or
   ///     the local row has no signature yet (legacy data). Fallback hits
   ///     are logged with `[Restore][legacy]` so we can track migration
