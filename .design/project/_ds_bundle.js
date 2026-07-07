@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":3,"namespace":"NyanReadDesignSystem_019e2f","components":[{"name":"BookListRow","sourcePath":"components/cards/BookListRow.jsx"},{"name":"NyanBookGridCard","sourcePath":"components/cards/NyanBookGridCard.jsx"},{"name":"NyanBookmarkCard","sourcePath":"components/cards/NyanBookmarkCard.jsx"},{"name":"NyanContinueReadingCard","sourcePath":"components/cards/NyanContinueReadingCard.jsx"},{"name":"NyanPageHeader","sourcePath":"components/navigation/NyanPageHeader.jsx"},{"name":"NyanSectionHeader","sourcePath":"components/navigation/NyanSectionHeader.jsx"},{"name":"Checkbox","sourcePath":"components/primitives/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/primitives/Icon.jsx"},{"name":"NyanPrimaryButton","sourcePath":"components/primitives/NyanPrimaryButton.jsx"},{"name":"NyanSlider","sourcePath":"components/primitives/NyanSlider.jsx"},{"name":"NyanSwitch","sourcePath":"components/primitives/NyanSwitch.jsx"},{"name":"PillButton","sourcePath":"components/primitives/PillButton.jsx"},{"name":"ProgressBar","sourcePath":"components/primitives/ProgressBar.jsx"},{"name":"SearchField","sourcePath":"components/primitives/SearchField.jsx"},{"name":"SegmentedTabControl","sourcePath":"components/primitives/SegmentedTabControl.jsx"},{"name":"Skeleton","sourcePath":"components/primitives/Skeleton.jsx"},{"name":"TextField","sourcePath":"components/primitives/TextField.jsx"},{"name":"DisplayPanel","sourcePath":"components/reader/DisplayPanel.jsx"},{"name":"DockFooter","sourcePath":"components/reader/DockFooter.jsx"},{"name":"HighlightSwatchRow","sourcePath":"components/reader/HighlightSwatchRow.jsx"},{"name":"InBookSearch","sourcePath":"components/reader/InBookSearch.jsx"},{"name":"Knob","sourcePath":"components/reader/Knob.jsx"},{"name":"OnePaperDock","sourcePath":"components/reader/OnePaperDock.jsx"},{"name":"PdfControls","sourcePath":"components/reader/PdfControls.jsx"},{"name":"ReaderChapterList","sourcePath":"components/reader/ReaderChapterList.jsx"},{"name":"ReaderParagraph","sourcePath":"components/reader/ReaderParagraph.jsx"},{"name":"ReaderSettingsBody","sourcePath":"components/reader/ReaderSettingsBody.jsx"},{"name":"TTSPlayer","sourcePath":"components/reader/TTSPlayer.jsx"},{"name":"TextPanel","sourcePath":"components/reader/TextPanel.jsx"},{"name":"TextSelectionMenu","sourcePath":"components/reader/TextSelectionMenu.jsx"},{"name":"ThemePanel","sourcePath":"components/reader/ThemePanel.jsx"},{"name":"PinDots","sourcePath":"components/security/PinDots.jsx"},{"name":"PinPad","sourcePath":"components/security/PinPad.jsx"},{"name":"NyanActionSheetRow","sourcePath":"components/surfaces/NyanActionSheetRow.jsx"},{"name":"NyanBottomSheet","sourcePath":"components/surfaces/NyanBottomSheet.jsx"},{"name":"NyanDialog","sourcePath":"components/surfaces/NyanDialog.jsx"},{"name":"NyanEmptyState","sourcePath":"components/surfaces/NyanEmptyState.jsx"},{"name":"NyanFAB","sourcePath":"components/surfaces/NyanFAB.jsx"},{"name":"NyanInfoCard","sourcePath":"components/surfaces/NyanInfoCard.jsx"},{"name":"NyanListRow","sourcePath":"components/surfaces/NyanListRow.jsx"},{"name":"NyanOptionSheet","sourcePath":"components/surfaces/NyanOptionSheet.jsx"},{"name":"NyanResponse","sourcePath":"components/surfaces/NyanResponse.jsx"},{"name":"NyanRowGroup","sourcePath":"components/surfaces/NyanRowGroup.jsx"}],"sourceHashes":{"brand/nyan-mark.jsx":"dc3409626c1d","components/cards/BookListRow.jsx":"1c9a64ad04a7","components/cards/NyanBookGridCard.jsx":"e42b6c6b9c4b","components/cards/NyanBookmarkCard.jsx":"43737516a9e3","components/cards/NyanContinueReadingCard.jsx":"a8e8f2101577","components/navigation/NyanPageHeader.jsx":"15d362ad06f2","components/navigation/NyanSectionHeader.jsx":"a2e31fc2700e","components/primitives/Checkbox.jsx":"a45a8ce73268","components/primitives/Icon.jsx":"3700fcab2dda","components/primitives/NyanPrimaryButton.jsx":"a2d12459f656","components/primitives/NyanSlider.jsx":"a21d05bfa5fa","components/primitives/NyanSwitch.jsx":"bc4c42d8cf48","components/primitives/PillButton.jsx":"5c71a9024fd6","components/primitives/ProgressBar.jsx":"5cb3a5de9b70","components/primitives/SearchField.jsx":"5bf5d520dec0","components/primitives/SegmentedTabControl.jsx":"6b51c1d2a1db","components/primitives/Skeleton.jsx":"4d81823d1a03","components/primitives/TextField.jsx":"d7c7fad507f3","components/reader/DisplayPanel.jsx":"f650d0f3d177","components/reader/DockFooter.jsx":"4ae790e3fcf4","components/reader/HighlightSwatchRow.jsx":"b4e26de2b0da","components/reader/InBookSearch.jsx":"498631f506e9","components/reader/Knob.jsx":"fbcee9bbe400","components/reader/OnePaperDock.jsx":"b80bf5c5eecb","components/reader/PdfControls.jsx":"9a4d717f55a1","components/reader/ReaderChapterList.jsx":"4c74b797cc42","components/reader/ReaderParagraph.jsx":"f28b79a1bee6","components/reader/ReaderSettingsBody.jsx":"4956c82986c5","components/reader/TTSPlayer.jsx":"beaabf507734","components/reader/TextPanel.jsx":"aeb9bf8d037c","components/reader/TextSelectionMenu.jsx":"ea57210bdd3e","components/reader/ThemePanel.jsx":"56c713f3cc96","components/security/PinDots.jsx":"b3b2c1346ede","components/security/PinPad.jsx":"7bd58ce93912","components/surfaces/NyanActionSheetRow.jsx":"b37e872c7f4a","components/surfaces/NyanBottomSheet.jsx":"1887a0a174ee","components/surfaces/NyanDialog.jsx":"ccaf97bfa604","components/surfaces/NyanEmptyState.jsx":"ca8380515877","components/surfaces/NyanFAB.jsx":"2c8fc01dbdfe","components/surfaces/NyanInfoCard.jsx":"934a030de5b6","components/surfaces/NyanListRow.jsx":"5a279c72d2d7","components/surfaces/NyanOptionSheet.jsx":"3f1336ef378b","components/surfaces/NyanResponse.jsx":"20cc95129368","components/surfaces/NyanRowGroup.jsx":"ac9e1dbb9e9a","prototype/app.jsx":"e977c7914f4c","screens/bundle1.jsx":"463954c7c3fc","screens/bundle2-screens.jsx":"1b00c01ddca1","screens/bundle3.jsx":"eac1ccd60218","screens/bundle4.jsx":"9ad5e7b92ccd"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":3,"namespace":"NyanReadDesignSystem_019e2f","components":[{"name":"BookListRow","sourcePath":"components/cards/BookListRow.jsx"},{"name":"NyanBookGridCard","sourcePath":"components/cards/NyanBookGridCard.jsx"},{"name":"NyanBookmarkCard","sourcePath":"components/cards/NyanBookmarkCard.jsx"},{"name":"NyanContinueReadingCard","sourcePath":"components/cards/NyanContinueReadingCard.jsx"},{"name":"NyanPageHeader","sourcePath":"components/navigation/NyanPageHeader.jsx"},{"name":"NyanSectionHeader","sourcePath":"components/navigation/NyanSectionHeader.jsx"},{"name":"Checkbox","sourcePath":"components/primitives/Checkbox.jsx"},{"name":"Icon","sourcePath":"components/primitives/Icon.jsx"},{"name":"NyanPrimaryButton","sourcePath":"components/primitives/NyanPrimaryButton.jsx"},{"name":"NyanSlider","sourcePath":"components/primitives/NyanSlider.jsx"},{"name":"NyanSwitch","sourcePath":"components/primitives/NyanSwitch.jsx"},{"name":"PillButton","sourcePath":"components/primitives/PillButton.jsx"},{"name":"ProgressBar","sourcePath":"components/primitives/ProgressBar.jsx"},{"name":"SearchField","sourcePath":"components/primitives/SearchField.jsx"},{"name":"SegmentedTabControl","sourcePath":"components/primitives/SegmentedTabControl.jsx"},{"name":"Skeleton","sourcePath":"components/primitives/Skeleton.jsx"},{"name":"TextField","sourcePath":"components/primitives/TextField.jsx"},{"name":"DisplayPanel","sourcePath":"components/reader/DisplayPanel.jsx"},{"name":"DockFooter","sourcePath":"components/reader/DockFooter.jsx"},{"name":"HighlightSwatchRow","sourcePath":"components/reader/HighlightSwatchRow.jsx"},{"name":"InBookSearch","sourcePath":"components/reader/InBookSearch.jsx"},{"name":"Knob","sourcePath":"components/reader/Knob.jsx"},{"name":"OnePaperDock","sourcePath":"components/reader/OnePaperDock.jsx"},{"name":"PdfControls","sourcePath":"components/reader/PdfControls.jsx"},{"name":"ReaderChapterList","sourcePath":"components/reader/ReaderChapterList.jsx"},{"name":"ReaderParagraph","sourcePath":"components/reader/ReaderParagraph.jsx"},{"name":"ReaderSettingsBody","sourcePath":"components/reader/ReaderSettingsBody.jsx"},{"name":"TTSPlayer","sourcePath":"components/reader/TTSPlayer.jsx"},{"name":"TextPanel","sourcePath":"components/reader/TextPanel.jsx"},{"name":"TextSelectionMenu","sourcePath":"components/reader/TextSelectionMenu.jsx"},{"name":"ThemePanel","sourcePath":"components/reader/ThemePanel.jsx"},{"name":"PinDots","sourcePath":"components/security/PinDots.jsx"},{"name":"PinPad","sourcePath":"components/security/PinPad.jsx"},{"name":"NyanActionSheetRow","sourcePath":"components/surfaces/NyanActionSheetRow.jsx"},{"name":"NyanBottomSheet","sourcePath":"components/surfaces/NyanBottomSheet.jsx"},{"name":"NyanDialog","sourcePath":"components/surfaces/NyanDialog.jsx"},{"name":"NyanEmptyState","sourcePath":"components/surfaces/NyanEmptyState.jsx"},{"name":"NyanFAB","sourcePath":"components/surfaces/NyanFAB.jsx"},{"name":"NyanInfoCard","sourcePath":"components/surfaces/NyanInfoCard.jsx"},{"name":"NyanListRow","sourcePath":"components/surfaces/NyanListRow.jsx"},{"name":"NyanOptionSheet","sourcePath":"components/surfaces/NyanOptionSheet.jsx"},{"name":"NyanResponse","sourcePath":"components/surfaces/NyanResponse.jsx"},{"name":"NyanRowGroup","sourcePath":"components/surfaces/NyanRowGroup.jsx"}],"sourceHashes":{"brand/nyan-mark.jsx":"dc3409626c1d","components/cards/BookListRow.jsx":"1c9a64ad04a7","components/cards/NyanBookGridCard.jsx":"fc64abdb8f38","components/cards/NyanBookmarkCard.jsx":"43737516a9e3","components/cards/NyanContinueReadingCard.jsx":"a8e8f2101577","components/navigation/NyanPageHeader.jsx":"15d362ad06f2","components/navigation/NyanSectionHeader.jsx":"a2e31fc2700e","components/primitives/Checkbox.jsx":"a45a8ce73268","components/primitives/Icon.jsx":"3700fcab2dda","components/primitives/NyanPrimaryButton.jsx":"ab52bb49da77","components/primitives/NyanSlider.jsx":"a21d05bfa5fa","components/primitives/NyanSwitch.jsx":"bc4c42d8cf48","components/primitives/PillButton.jsx":"5c71a9024fd6","components/primitives/ProgressBar.jsx":"5cb3a5de9b70","components/primitives/SearchField.jsx":"5bf5d520dec0","components/primitives/SegmentedTabControl.jsx":"6b51c1d2a1db","components/primitives/Skeleton.jsx":"4d81823d1a03","components/primitives/TextField.jsx":"d7c7fad507f3","components/reader/DisplayPanel.jsx":"f650d0f3d177","components/reader/DockFooter.jsx":"4ae790e3fcf4","components/reader/HighlightSwatchRow.jsx":"b4e26de2b0da","components/reader/InBookSearch.jsx":"1b8ed8d3211f","components/reader/Knob.jsx":"344bf3ee86c1","components/reader/OnePaperDock.jsx":"0efe33ed9e95","components/reader/PdfControls.jsx":"7b03405c136d","components/reader/ReaderChapterList.jsx":"4c74b797cc42","components/reader/ReaderParagraph.jsx":"f28b79a1bee6","components/reader/ReaderSettingsBody.jsx":"4956c82986c5","components/reader/TTSPlayer.jsx":"beaabf507734","components/reader/TextPanel.jsx":"721b2a368c82","components/reader/TextSelectionMenu.jsx":"7bd9e72ce533","components/reader/ThemePanel.jsx":"56c713f3cc96","components/security/PinDots.jsx":"b3b2c1346ede","components/security/PinPad.jsx":"7bd58ce93912","components/surfaces/NyanActionSheetRow.jsx":"b37e872c7f4a","components/surfaces/NyanBottomSheet.jsx":"1887a0a174ee","components/surfaces/NyanDialog.jsx":"38d35e30d24b","components/surfaces/NyanEmptyState.jsx":"ca8380515877","components/surfaces/NyanFAB.jsx":"2c8fc01dbdfe","components/surfaces/NyanInfoCard.jsx":"934a030de5b6","components/surfaces/NyanListRow.jsx":"5a279c72d2d7","components/surfaces/NyanOptionSheet.jsx":"65aa77d69447","components/surfaces/NyanResponse.jsx":"650b0a061116","components/surfaces/NyanRowGroup.jsx":"ac9e1dbb9e9a","prototype/app.jsx":"e977c7914f4c","screens/bundle1.jsx":"430d4229d4da","screens/bundle2-screens.jsx":"12d10a87af01","screens/bundle3.jsx":"496901c1b4ab","screens/bundle4.jsx":"576d18ca7a59"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -586,7 +586,7 @@ const NyanBookGridCard = ({
     height: 13,
     viewBox: "0 0 24 24",
     fill: "none",
-    stroke: "var(--nyan-surface)",
+    stroke: "var(--nyan-on-primary)",
     strokeWidth: "3.4",
     strokeLinecap: "round",
     strokeLinejoin: "round",
@@ -737,8 +737,10 @@ const NyanPrimaryButton = ({
   const padX = size === "sm" ? 14 : size === "lg" ? 28 : 24;
   const fz = size === "sm" ? 14 : size === "lg" ? 17 : 16;
   const iconSz = size === "sm" ? 16 : 18;
-  const bg = variant === "deep" ? "var(--nyan-primary-deep)" : variant === "ghost" ? "transparent" : "var(--nyan-primary)";
-  const fg = variant === "ghost" ? "var(--nyan-primary-deep)" : "var(--nyan-surface)";
+  const bg = variant === "deep" ? "var(--nyan-primary-deep)" : variant === "ghost" ? "transparent" : "var(--nyan-primary-fill)";
+  // ghost = accent text; deep (FAB/emphasis) keeps the surface-toned label so it
+  // reads dark-on-bright in Sumi; solid fills carry the cream --nyan-on-primary.
+  const fg = variant === "ghost" ? "var(--nyan-primary-deep)" : variant === "deep" ? "var(--nyan-surface)" : "var(--nyan-on-primary)";
   const inert = disabled || loading;
   return /*#__PURE__*/React.createElement("button", {
     onClick: inert ? undefined : onPress,
@@ -1831,7 +1833,7 @@ const InBookSearch = ({
       alignItems: "center",
       gap: 8,
       padding: "10px 12px",
-      background: "var(--nyan-surface)",
+      background: "var(--nyan-surface-raised)",
       borderBottom: "1px solid var(--chrome-edge)",
       boxShadow: "var(--shadow-subtle)",
       ...style
@@ -1918,7 +1920,7 @@ const Knob = ({
   children
 }) => /*#__PURE__*/React.createElement("div", {
   style: {
-    background: "var(--nyan-surface-muted)",
+    background: "var(--nyan-overlay-field)",
     borderRadius: "var(--r-card-nested)",
     padding: 14
   }
@@ -2069,7 +2071,7 @@ const OnePaperDock = ({
     left: "var(--inset)",
     right: "var(--inset)",
     bottom: "var(--inset)",
-    background: "var(--nyan-surface)",
+    background: "var(--nyan-surface-raised)",
     border: "1px solid var(--chrome-edge)",
     borderRadius: sheetOpen ? "var(--r-sheet)" : "var(--r-dock)",
     boxShadow: "var(--shadow-light-card)",
@@ -2161,7 +2163,7 @@ const PdfControls = ({
       display: "inline-flex",
       alignItems: "center",
       gap: 2,
-      background: "var(--nyan-surface)",
+      background: "var(--nyan-surface-raised)",
       borderRadius: 999,
       border: "1px solid var(--chrome-edge)",
       boxShadow: "var(--shadow-light-card)",
@@ -2728,7 +2730,7 @@ const TextPanel = ({
   style: {
     marginTop: 12,
     padding: 14,
-    background: "var(--nyan-surface)",
+    background: "var(--nyan-surface-raised)",
     borderRadius: "var(--r-chip)",
     font: `400 ${t.fontSize}px/${t.lineHeight} ${t.serif ? "var(--font-serif)" : "var(--font-ui)"}`,
     color: "var(--nyan-text)"
@@ -2771,7 +2773,7 @@ const TextSelectionMenu = ({
     style: {
       display: "inline-flex",
       alignItems: "center",
-      background: "var(--nyan-surface)",
+      background: "var(--nyan-surface-raised)",
       borderRadius: "var(--r-card)",
       border: "1px solid var(--chrome-edge)",
       boxShadow: "var(--shadow-light-card)",
@@ -3388,9 +3390,9 @@ const NyanDialog = ({
     style: {
       flex: 1,
       ...(danger ? {
-        background: "var(--error-primary)",
-        color: "var(--nyan-surface)",
-        boxShadow: "0 6px 16px -6px color-mix(in srgb, var(--error-primary) 60%, transparent)"
+        background: "var(--error-fill)",
+        color: "var(--nyan-on-error)",
+        boxShadow: "0 6px 16px -6px color-mix(in srgb, var(--error-fill) 60%, transparent)"
       } : null)
     }
   }))), /*#__PURE__*/React.createElement("style", null, `
@@ -3838,7 +3840,7 @@ const NyanOptionSheet = ({
     left: "var(--inset)",
     right: "var(--inset)",
     bottom: "var(--inset)",
-    background: "var(--nyan-surface)",
+    background: "var(--nyan-surface-raised)",
     border: "1px solid var(--chrome-edge)",
     borderRadius: "var(--r-sheet)",
     boxShadow: "var(--shadow-light-card)",
@@ -4047,7 +4049,7 @@ const NyanResponse = ({
       display: "flex",
       alignItems: "center",
       gap: 12,
-      background: "var(--nyan-surface)",
+      background: "var(--nyan-surface-raised)",
       border: "1px solid var(--chrome-edge)",
       borderRadius: "var(--r-card-nested)",
       boxShadow: "var(--shadow-subtle)",
@@ -5107,8 +5109,8 @@ const BrightnessPopover = ({
     style: {
       width: "100%",
       maxWidth: 320,
-      background: dark ? "color-mix(in srgb, var(--nyan-surface) 88%, transparent)" : "color-mix(in srgb, var(--nyan-surface) 82%, transparent)",
-      border: "1px solid color-mix(in srgb, var(--nyan-surface) 70%, var(--chrome-edge))",
+      background: dark ? "color-mix(in srgb, var(--nyan-surface-raised) 96%, transparent)" : "color-mix(in srgb, var(--nyan-surface) 82%, transparent)",
+      border: "1px solid color-mix(in srgb, var(--nyan-border) 80%, var(--chrome-edge))",
       borderRadius: "var(--r-sheet)",
       boxShadow: "var(--shadow-light-card)",
       backdropFilter: "blur(6px)",
@@ -5258,7 +5260,7 @@ const HighlightNoteDialog = ({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       width: "100%",
-      background: "var(--nyan-surface)",
+      background: "var(--nyan-surface-raised)",
       borderRadius: "var(--r-dock)",
       border: "1px solid var(--chrome-edge)",
       boxShadow: "var(--shadow-light-card)",
@@ -5318,7 +5320,7 @@ const HighlightNoteDialog = ({
     }
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
-      background: `color-mix(in srgb, ${sel.ink} 6%, var(--nyan-surface-muted))`,
+      background: `color-mix(in srgb, ${sel.ink} 6%, var(--nyan-overlay-field))`,
       border: `1px solid color-mix(in srgb, ${sel.ink} 14%, var(--nyan-divider))`,
       borderRadius: 16,
       padding: "9px 14px",
@@ -5352,7 +5354,7 @@ const HighlightNoteDialog = ({
     }
   }, EXCERPT_TEXT)), /*#__PURE__*/React.createElement("div", {
     style: {
-      background: "var(--nyan-surface-muted)",
+      background: "var(--nyan-overlay-field)",
       borderRadius: 16,
       padding: "10px 14px",
       display: "flex",
@@ -5376,13 +5378,13 @@ const HighlightNoteDialog = ({
         display: "grid",
         placeItems: "center",
         background: c.fill,
-        boxShadow: active ? "0 0 0 2px var(--nyan-surface-muted), 0 0 0 3px var(--nyan-primary-deep)" : "inset 0 0 0 1px color-mix(in srgb, " + c.ink + " 20%, transparent)",
+        boxShadow: active ? "0 0 0 2px var(--nyan-overlay-field), 0 0 0 3px var(--nyan-primary-deep)" : "inset 0 0 0 1px color-mix(in srgb, " + c.ink + " 20%, transparent)",
         transition: "box-shadow 160ms var(--ease-paper)"
       }
     });
   })), /*#__PURE__*/React.createElement("div", {
     style: {
-      background: "color-mix(in srgb, var(--nyan-surface-muted) 88%, var(--nyan-surface))",
+      background: "var(--nyan-overlay-field)",
       borderRadius: 16,
       border: inputBorder,
       padding: "12px 15px",
@@ -5841,7 +5843,7 @@ const U5Artboard = ({
   style: {
     maxWidth: 290,
     font: "400 15px/1.6 var(--font-ui)",
-    color: dark ? "#E5DED3" : "#4A453E",
+    color: dark ? "#E2E2E2" : "#4A453E",
     textAlign: "center"
   }
 }, /*#__PURE__*/React.createElement("span", {
@@ -8869,14 +8871,14 @@ const DeleteConfirmSheet = ({
     display: "grid",
     placeItems: "center",
     background: "var(--error-bg)",
-    border: "0.7px solid color-mix(in srgb, var(--error-primary) 26%, transparent)",
+    border: "0.7px solid color-mix(in srgb, var(--error-fill) 40%, transparent)",
     marginBottom: 14
   }
 }, /*#__PURE__*/React.createElement("i", {
-  className: "ph ph-trash",
+  className: "ph-fill ph-trash",
   style: {
     fontSize: 23,
-    color: "var(--error-primary)"
+    color: "var(--error-fill)"
   }
 })), /*#__PURE__*/React.createElement("div", {
   style: {
@@ -9044,8 +9046,8 @@ const DeleteConfirmSheet = ({
     flex: 1,
     height: 50,
     borderRadius: "var(--r-card-nested)",
-    background: "var(--error-primary)",
-    boxShadow: "0 6px 16px -6px color-mix(in srgb, var(--error-primary) 60%, transparent)",
+    background: "var(--error-fill)",
+    boxShadow: "0 6px 16px -6px color-mix(in srgb, var(--error-fill) 60%, transparent)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -9055,12 +9057,12 @@ const DeleteConfirmSheet = ({
   className: "ph ph-trash",
   style: {
     fontSize: 17,
-    color: "var(--nyan-surface)"
+    color: "var(--nyan-on-error)"
   }
 }), /*#__PURE__*/React.createElement("span", {
   style: {
     font: "600 15px/1 var(--font-ui)",
-    color: "var(--nyan-surface)"
+    color: "var(--nyan-on-error)"
   }
 }, "Delete")))));
 const BookshelfManage = ({
@@ -9350,11 +9352,11 @@ const SETTINGS_PICKERS = {
     }, {
       label: "Sumi Dark",
       hint: "Ink night for low light",
-      swatch: "#262422"
+      swatch: "#242424"
     }, {
       label: "Match System",
       hint: "Follow your device setting",
-      swatch: "linear-gradient(135deg, #F7F5EF 50%, #262422 50%)"
+      swatch: "linear-gradient(135deg, #F7F5EF 50%, #242424 50%)"
     }]
   },
   language: {
@@ -9438,6 +9440,120 @@ const SettingsWithPicker = ({
    the 3 actions). This shows the resting dock (collapsed, footer only) over
    a reader page. Tap the ‹ › stepper to move chapters.
    ────────────────────────────────────────────────────────────────────── */
+/* ReaderTopBar — the immersive reader header. Same floating-object language as
+   the OnePaperDock at the bottom: surface-raised panel, chrome-edge hairline,
+   r-dock radius, light-card shadow. Back caret · centered title+author (both
+   ellipsised) · brightness / bookmark / overflow actions. Pairs with the dock
+   so the chrome reads as one matched top+bottom set. */
+const ReaderTopBar = ({
+  title,
+  author,
+  onBack,
+  onBrightness,
+  onBookmark,
+  onMore,
+  bookmarked = false
+}) => {
+  const iconBtn = {
+    all: "unset",
+    cursor: "pointer",
+    width: 40,
+    height: 40,
+    borderRadius: "var(--r-chip)",
+    display: "grid",
+    placeItems: "center",
+    flex: "none",
+    color: "var(--nyan-text-secondary)",
+    transition: "background 150ms var(--ease-paper)"
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "nyan-readerbar",
+    style: {
+      position: "absolute",
+      zIndex: 9,
+      left: "var(--inset)",
+      right: "var(--inset)",
+      top: "var(--inset)",
+      background: "var(--nyan-surface-raised)",
+      border: "1px solid var(--chrome-edge)",
+      borderRadius: "var(--r-dock)",
+      boxShadow: "var(--shadow-light-card)",
+      display: "flex",
+      alignItems: "center",
+      gap: 2,
+      padding: "7px 8px"
+    }
+  }, /*#__PURE__*/React.createElement("style", null, `
+        .nyan-readerbar button { transition: background 150ms var(--ease-paper), transform 150ms var(--ease-paper); }
+        .nyan-readerbar button:hover { background: color-mix(in srgb, var(--nyan-text) 7%, transparent); }
+        .nyan-readerbar button:active { transform: scale(0.9); }
+      `), /*#__PURE__*/React.createElement("button", {
+    onClick: onBack,
+    "aria-label": "Back",
+    style: {
+      ...iconBtn,
+      color: "var(--nyan-text)"
+    }
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "ph ph-arrow-left",
+    style: {
+      fontSize: 22
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0,
+      textAlign: "center",
+      padding: "0 4px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "600 15px/1.25 var(--font-ui)",
+      color: "var(--nyan-text)",
+      letterSpacing: "-0.2px",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      font: "400 12px/1.3 var(--font-ui)",
+      color: "var(--nyan-text-muted)",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      marginTop: 1
+    }
+  }, author)), /*#__PURE__*/React.createElement("button", {
+    onClick: onBrightness,
+    "aria-label": "Brightness",
+    style: iconBtn
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "ph ph-sun",
+    style: {
+      fontSize: 21
+    }
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: onBookmark,
+    "aria-label": "Bookmark",
+    style: iconBtn
+  }, /*#__PURE__*/React.createElement("i", {
+    className: bookmarked ? "ph-fill ph-bookmark-simple" : "ph ph-bookmark-simple",
+    style: {
+      fontSize: 21,
+      color: bookmarked ? "var(--nyan-primary-deep)" : undefined
+    }
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: onMore,
+    "aria-label": "More",
+    style: iconBtn
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "ph ph-dots-three",
+    style: {
+      fontSize: 21
+    }
+  })));
+};
 const ReaderCanvasBg = ({
   dark,
   children
@@ -9446,20 +9562,20 @@ const ReaderCanvasBg = ({
     position: "relative",
     width: "100%",
     height: "100%",
-    background: dark ? "#262422" : "#F7F5EF",
+    background: dark ? "#242424" : "#F7F5EF",
     overflow: "hidden"
   }
 }, /*#__PURE__*/React.createElement("div", {
   style: {
     position: "absolute",
     inset: 0,
-    padding: "44px 28px 24px",
+    padding: "104px 28px 24px",
     pointerEvents: "none"
   }
 }, /*#__PURE__*/React.createElement("div", {
   style: {
     font: "400 13.5px/1.85 var(--font-ui)",
-    color: dark ? "#E5DED3" : "#4A453E",
+    color: dark ? "#E2E2E2" : "#4A453E",
     opacity: 0.55,
     textIndent: "2em"
   }
@@ -9478,7 +9594,10 @@ const U15Artboard = ({
     }
   }, /*#__PURE__*/React.createElement(ReaderCanvasBg, {
     dark: dark
-  }, /*#__PURE__*/React.createElement(OnePaperDock, {
+  }, /*#__PURE__*/React.createElement(ReaderTopBar, {
+    title: "The Left Hand of Darkness",
+    author: "Ursula K. Le Guin"
+  }), /*#__PURE__*/React.createElement(OnePaperDock, {
     visible: true,
     sheetOpen: false,
     chapterIndex: ci,
@@ -9621,8 +9740,9 @@ const NumPad = ({
         width: 74,
         height: 74,
         borderRadius: "50%",
-        background: "var(--nyan-surface)",
-        boxShadow: "var(--shadow-subtle)",
+        background: "var(--nyan-surface-raised)",
+        boxShadow: "var(--shadow-light-card)",
+        border: "1px solid var(--chrome-edge)",
         display: "grid",
         placeItems: "center",
         font: "500 27px/1 var(--font-ui)",
@@ -9670,7 +9790,7 @@ const PinOverlay = ({
   }, /*#__PURE__*/React.createElement("style", null, `
         .nyan-pinkey { transition: transform 150ms var(--ease-paper), box-shadow 200ms ease, background 150ms ease; }
         .nyan-pinkey:hover { transform: translateY(-1px); box-shadow: var(--shadow-light-card); }
-        .nyan-pinkey:active { transform: scale(0.93); box-shadow: var(--shadow-grouped); background: color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface)); }
+        .nyan-pinkey:active { transform: scale(0.93); box-shadow: var(--shadow-grouped); background: color-mix(in srgb, var(--nyan-primary) 16%, var(--nyan-surface-raised)); }
         .nyan-pinkey-ghost { transition: color 150ms ease, transform 150ms var(--ease-paper); }
         .nyan-pinkey-ghost:hover { color: var(--nyan-text-secondary); }
         .nyan-pinkey-ghost:active { transform: scale(0.9); }
@@ -9865,7 +9985,7 @@ const TTSSheet = ({
       position: "relative",
       width: "100%",
       height: "100%",
-      background: dark ? "#262422" : "#F7F5EF",
+      background: dark ? "#242424" : "#F7F5EF",
       overflow: "hidden"
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -9878,7 +9998,7 @@ const TTSSheet = ({
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       font: "400 13.5px/1.85 var(--font-ui)",
-      color: dark ? "#E5DED3" : "#4A453E",
+      color: dark ? "#E2E2E2" : "#4A453E",
       opacity: 0.5,
       textIndent: "2em"
     }
@@ -10112,14 +10232,14 @@ const TTSActiveReading = ({
   dark
 }) => {
   const [playing, setPlaying] = useState(true);
-  const ink = dark ? "#E5DED3" : "#4A453E";
+  const ink = dark ? "#E2E2E2" : "#4A453E";
   return /*#__PURE__*/React.createElement("div", {
     "data-theme": dark ? "sumi" : undefined,
     style: {
       position: "relative",
       width: "100%",
       height: "100%",
-      background: dark ? "#262422" : "#F7F5EF",
+      background: dark ? "#242424" : "#F7F5EF",
       overflow: "hidden"
     }
   }, /*#__PURE__*/React.createElement("div", {
@@ -10155,7 +10275,7 @@ const TTSActiveReading = ({
       left: "var(--inset)",
       right: "var(--inset)",
       bottom: "var(--inset)",
-      background: "var(--nyan-surface)",
+      background: "var(--nyan-surface-raised)",
       border: "1px solid var(--chrome-edge)",
       borderRadius: "var(--r-dock)",
       boxShadow: "var(--shadow-light-card)",
@@ -10661,6 +10781,7 @@ Object.assign(window, {
   SETTINGS_PICKERS,
   SettingsWithPicker,
   ReaderCanvasBg,
+  ReaderTopBar,
   U15Artboard,
   PinDots,
   NumPad,

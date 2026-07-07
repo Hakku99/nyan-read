@@ -18,7 +18,7 @@ const InBookSearch = ({ value = "", onChange, onClose, matchIndex = 0, matchCoun
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 8, padding: "10px 12px",
-      background: "var(--nyan-surface)", borderBottom: "1px solid var(--chrome-edge)",
+      background: "var(--nyan-surface-raised)", borderBottom: "1px solid var(--chrome-edge)",
       boxShadow: "var(--shadow-subtle)", ...style,
     }}>
       <button onClick={onClose} aria-label="Close search" style={{ all: "unset", cursor: "pointer", width: 40, height: 40, borderRadius: "var(--r-control)", display: "grid", placeItems: "center", flexShrink: 0 }}>

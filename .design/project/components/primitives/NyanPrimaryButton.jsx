@@ -17,8 +17,10 @@ const NyanPrimaryButton = ({ label, onPress, icon, expanded = false, variant = "
   const padX   = size === "sm" ? 14 : size === "lg" ? 28 : 24;
   const fz     = size === "sm" ? 14 : size === "lg" ? 17 : 16;
   const iconSz = size === "sm" ? 16 : 18;
-  const bg = variant === "deep" ? "var(--nyan-primary-deep)" : variant === "ghost" ? "transparent" : "var(--nyan-primary)";
-  const fg = variant === "ghost" ? "var(--nyan-primary-deep)" : "var(--nyan-surface)";
+  const bg = variant === "deep" ? "var(--nyan-primary-deep)" : variant === "ghost" ? "transparent" : "var(--nyan-primary-fill)";
+  // ghost = accent text; deep (FAB/emphasis) keeps the surface-toned label so it
+  // reads dark-on-bright in Sumi; solid fills carry the cream --nyan-on-primary.
+  const fg = variant === "ghost" ? "var(--nyan-primary-deep)" : variant === "deep" ? "var(--nyan-surface)" : "var(--nyan-on-primary)";
   const inert = disabled || loading;
   return (
     <button

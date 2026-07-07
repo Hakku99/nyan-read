@@ -43,7 +43,9 @@ class TextSelectionMenu extends StatelessWidget {
           data: IconThemeData(color: nyan.primary, size: 18),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: nyan.surface,
+              // Floats over the reader canvas (Sumi #242424 > flat surface),
+              // so it rises to surfaceRaised to out-step the page behind it.
+              color: nyan.surfaceRaised,
               borderRadius: BorderRadius.circular(NyanRadius.cardNested),
               border: Border.all(color: nyan.borderColor, width: 1),
               boxShadow: NyanShadows.lightCard(nyan),
@@ -190,7 +192,9 @@ class _ColorButton extends StatelessWidget {
               color: dotColor,
               shape: BoxShape.circle,
               border: Border.all(
-                color: nyan.surface.withValues(alpha: 0.8),
+                // Ring matches the menu's own (now raised) background so the
+                // swatch reads as cut into the surface.
+                color: nyan.surfaceRaised.withValues(alpha: 0.8),
                 width: 1.5,
               ),
               boxShadow: [

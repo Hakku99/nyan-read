@@ -18,7 +18,7 @@ const OnePaperDock = ({ visible = true, sheetOpen = false, title, meta, children
     onClick={onStopProp ? (e) => e.stopPropagation() : undefined}
     style={{
       position: "absolute", zIndex: 9, left: "var(--inset)", right: "var(--inset)", bottom: "var(--inset)",
-      background: "var(--nyan-surface)",
+      background: "var(--nyan-surface-raised)",
       border: "1px solid var(--chrome-edge)",
       borderRadius: sheetOpen ? "var(--r-sheet)" : "var(--r-dock)",
       boxShadow: "var(--shadow-light-card)",

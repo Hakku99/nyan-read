@@ -211,8 +211,11 @@ When writing new copy, **read three or four of those out loud** before you commi
 This section answers the questions in the design-system brief. **Every choice below is enforced by `AGENTS.md §4`** in the source repo; deviations should be flagged.
 
 ### Color philosophy
-- **No pure `#FFFFFF`, no pure `#000000`.** All "white" is cream (`#F6F3EA` background, `#FFFDF8` surface). All "black" is warm ink (`#3F3A34`) in light mode, or ink-night green-black (`#181B16`) in dark.
-- **One strong color: matcha green** (`#98A27C` and the deeper `#7E8B61`). It is the only thing allowed to fill a button, the only thing allowed to draw a progress bar, the only thing allowed to be a "selected" border.
+- **No pure `#FFFFFF`, no pure `#000000`.** All "white" is cream (`#F6F3EA` background, `#FFFDF8` surface) in light mode. All "black" is warm ink (`#3F3A34`) in light mode. In dark mode surfaces are a **true-neutral grey** (`#121212` void → `#2A2A2A` raised) — zero brown, zero green tint — and ink is a neutral `#ECECEC` (still no pure black/white).
+- **The strong accent is theme-specific.**
+  - **Cream Light → matcha green** (`#6E7A55`, deep `#5A6644`). Matcha is a **light-mode-only** brand color.
+  - **Sumi Dark → MONO** (off-white `#ECECEC` fill, accent `#E2E2E2`). The dark theme has **no chromatic brand accent** — the primary button is an off-white fill carrying a **dark ink label** (`#1A1A1A`), and "accent" elements (links, selected outline, progress, icons) are simply light-on-dark. Hierarchy comes from fill / outline / weight, not hue. This replaced the v5 amber, which fatigued the eye over long sessions.
+  - In each theme the accent is the only thing allowed to fill a button, draw a progress bar, or be a "selected" border. **Filled buttons carry contrasting text** (`--nyan-on-primary`) on their fill — cream text on the matcha fill in light, dark ink on the off-white fill in dark. The fill background and its text are two theme-stable indirections (`--nyan-primary-fill`, `--nyan-on-primary`) so the same component renders matcha-with-cream in light and off-white-with-ink in dark.
 - **Orange (`#F2BE7E`) is reserved** for warmth-related semantics: night-mode warmth slider track, warning state. It is *never* a brand color.
 - **Highlight pens are a separate fixed palette** of five soft pastels (yellow / green / blue / pink / orange). They don't shift between themes — same hex in Cream Light and Sumi Dark.
 
@@ -229,7 +232,7 @@ This section answers the questions in the design-system brief. **Every choice be
 
 ### Backgrounds
 - **No images, no patterns, no gradients.** The cream paper background (`#F6F3EA`) is uniform and intentional. Layering is done through *color steps* (background → surface-muted → surface), not blur, glass, or texture.
-- Reader canvas can swap to 4 paper variants (Cream, Sepia, Sumi, Charcoal). Those are **flat color fills** too; the only "warmth" comes from an overlay tint applied by the brightness orchestrator.
+- Reader canvas can swap to 4 paper variants (Cream, Sepia, Sumi, Charcoal). Those are **flat color fills** too; the dark variants are **neutral grey** (Sumi `#242424`, Charcoal `#141414`) to match the Mono app theme — no warm tint. The only "warmth" comes from an optional overlay tint applied by the brightness orchestrator.
 
 ### Animation
 - **Slow, paper-soft.** The default curve is `--ease-paper` = `cubic-bezier(0.33, 0.9, 0.36, 1)`. Durations are short and named: `--dur-chrome 280ms` (bars reveal/dismiss), `--dur-grow 320ms` (the dock growing into a sheet, incl. its `max-height` and the `24→28` radius ease), `150–240ms` for small control state changes.
@@ -242,7 +245,7 @@ This section answers the questions in the design-system brief. **Every choice be
 - Selected state on **pill / option chips** is uniquely *outline-only* — the unselected state has a recessed muted fill; the selected state drops the fill to transparent and adds a `primaryDeep` border + `primaryDeep` text, so the chip "lifts off the track." Chips are squared at `--r-chip` (12), the deepest member of the concentric radius family — **no longer stadium pills**. This is the project's signature interaction (`AGENTS.md §4.3`).
 
 ### Borders, dividers, hairlines
-- Divider color is the warm-toned `#E5DED2` (light) / `#3A3F3A` (dark). It is **never grey**.
+- Divider color is the warm-toned `#E5DED2` in light. In dark it is a **true-neutral grey** `#333333` hairline (the Mono theme drops the warm cast entirely).
 - Hairlines on grouped cards are `0.72px` at `16%` divider alpha (light) — barely visible, optical only. Standard cards use `0.5px` at `30%`.
 - **Cards never share a divider between them** — separation is done by background-color step, not by `<hr/>`.
 
@@ -251,9 +254,10 @@ This section answers the questions in the design-system brief. **Every choice be
   - **lightCard** — `0 4px 12px @ 4% + 0 2px 6px @ 2%` — the standard floating-chrome lift (dock, top bar, sheets, dialogs, popovers).
   - **subtle** — `0 2px 8px @ 5%` — secondary overlays (toasts).
   - **settingsGrouped** — `0 2px 10px @ 1.4%` — ultra-quiet lift for grouped settings cards.
-- **Sumi Dark — elevation by tone, not drop shadow (revised v3).** The old rule ("zero shadow in dark") flattened the UI: cards sat one tonal step off the page with no shadow and a near-invisible border, so nothing read as a distinct plane. Dark mode now uses a deliberate **elevation ladder** — surfaces step *lighter* as they rise — finished by a luminous hairline ring + a 1px inset top catch-light, both folded into the shadow tokens so they apply system-wide:
-  - **Ladder:** `bg #181B16` (page void) → `surfaceMuted #1D211B` (recessed track) → `surface #242922` (cards/bars, +1) → `surfaceRaised #2E342B` (dialogs/sheets/popovers, highest). Adjacent layers keep a visible ~5–8 L\* gap.
-  - **lightCard (sumi):** `0 0 0 0.75px divider@88%` ring + `inset 0 1px 0 white@5%` catch-light + `0 10px 24px @44%` + `0 3px 8px @34%` ambient.
+- **Sumi Dark — elevation by tone, not drop shadow (revised v6).** Dark mode uses a deliberate **elevation ladder** on a true-neutral grey base (no brown, no green) — surfaces step *lighter* as they rise — finished by a neutral hairline ring + a 1px inset top catch-light, both folded into the shadow tokens so they apply system-wide:
+  - **Ladder:** `bg #121212` (page void) → `surfaceMuted #181818` (recessed track) → `surface #1E1E1E` (flat cards/bars) → `surfaceRaised #303030` (**floating**: dialogs/sheets/popovers/docks/bars) → `overlayField #3A3A3A` (a filled field/tray/inner card **nested inside** a floating overlay — steps *up*, never a near-black hole).
+  - **Two rules that keep floats legible in the dark:** (1) a floating surface must clearly out-step whatever sits behind it — including the **Sumi reading canvas `#242424`, which is *lighter* than a flat page card**, so docks/bars/menus floating over the page use `surfaceRaised #303030` (above the canvas), never `surface`; (2) a container nested inside an overlay uses `--nyan-overlay-field` (lighter), so inputs/trays/inner cards inside a dialog or sheet read as raised insets instead of dark holes. `OnePaperDock`, `InBookSearch`, `PdfControls`, `NyanOptionSheet`, `NyanResponse`, `NyanDialog`, `NyanBottomSheet`, `TextSelectionMenu` and the TTS mini-player all float on `surfaceRaised`; `Knob` and nested fields lift to `overlayField`.
+  - **lightCard (sumi):** `0 0 0 0.75px border@92%` ring + `inset 0 1px 0 white@7%` catch-light + `0 12px 28px @46%` + `0 3px 8px @36%` ambient.
   - **subtle / settingsGrouped (sumi):** same ring at lower alpha + a single soft ambient shadow.
   - Floating chrome still carries the `--chrome-edge` ring (`--nyan-divider` in Sumi); the scrim deepens to `rgba(0,0,0,0.58)`.
 - **You may never write a custom `box-shadow`**. If you need a new one, define a token first. Do **not** opt a card out of shadow in dark (`dark ? "none"`) — the tokens now carry the correct dark elevation.
@@ -319,7 +323,7 @@ The "Brand — Iconography" preview card shows all three weights (Material Round
 
 ## Token deviations from upstream
 
-This design system **intentionally diverges from the source `lib/core/theme/nyan_colors.dart`** in one well-scoped way: foreground inks and the matcha primary have been darkened (light) / lightened (dark) just enough to clear WCAG&nbsp;AA on their respective surfaces. The change is surgical — surfaces, dividers, highlight pens, radii, spacing, shadows, type are all unchanged.
+This design system **intentionally diverges from the source `lib/core/theme/nyan_colors.dart`** in two scoped ways: **(1)** in **Cream Light**, foreground inks and the matcha primary are darkened just enough to clear WCAG&nbsp;AA on the cream surface (surgical — surfaces, dividers, highlight pens, radii, spacing, shadows, type unchanged); **(2)** **Sumi Dark has been redesigned (v5)** off the green/olive family entirely — neutral charcoal surfaces + a warm amber accent (see below).
 
 ### What changed and why
 
@@ -330,17 +334,41 @@ This design system **intentionally diverges from the source `lib/core/theme/nyan
 | `--nyan-primary` (cream matcha) | `#98A27C` | **`#6E7A55`** | 2.65:1 → 4.51:1 AA. Source matcha-on-white-button fails for any text it carries. |
 | `--nyan-primary-deep` (cream) | `#7E8B61` | **`#5A6644`** | 3.59:1 → 6.04:1 AA. Used for selected outlines + accent text. |
 | `--nyan-success` (cream) | `#6B8E23` | **`#4F6B1E`** | 3.74:1 → 5.98:1 AA. |
-| `--nyan-text-secondary` (sumi) | `#AAA396` | **`#B4AC9F`** | 6.51 → 7.25:1 AAA. Tiny lift; reads better on warm background. |
-| `--nyan-text-muted` (sumi) | `#8F8A84` | **`#9C968D`** | 4.76 → 5.56:1. Clears AA on **both** background and surface (source value fails AA on surface at 3.86). |
-| `--nyan-primary` (sumi) | `#93A07C` | **`#A9B690`** | 5.87 → 7.59:1 AAA. |
-| `--nyan-primary-deep` (sumi) | `#9AAD86` | **`#B3C29A`** | Lifted in parallel. |
+
+*(Sumi Dark is no longer derived from the upstream dark tokens — it is a ground-up redesign; see below.)*
+
+### Sumi Dark — redesigned (v6 — Mono)
+
+The upstream dark theme built the whole dark UI on the matcha/olive family (green-tinted); v5 replaced that with a warm amber/honey accent on a faint-brown charcoal. In practice the amber warmth fatigued the eye over long reading sessions — the opposite of the product's "long-session friendly" goal. **v6 goes fully neutral:** a true-grey surface ladder and a **Mono** accent (off-white fill, dark ink label). Matcha remains a Cream-Light-only accent.
+
+| Token | v5 (amber on charcoal) | New (v6 — Mono) | Role |
+|---|---|---|---|
+| `--nyan-bg` | `#15120F` | **`#121212`** | true-neutral void (was faint-brown) |
+| `--nyan-surface` | `#2E2922` | **`#1E1E1E`** | cards / bars (neutral grey) |
+| `--nyan-surface-muted` | `#211D18` | **`#181818`** | recessed track |
+| `--nyan-surface-raised` | `#3C352E` | **`#303030`** | floating: dialogs / sheets / docks / bars |
+| `--nyan-overlay-field` | — (new) | **`#3A3A3A`** | field / tray / inner card nested inside an overlay |
+| `--nyan-divider` | `#48423B` | **`#333333`** | neutral hairline (was warm) |
+| `--nyan-border` | `#56504A` | **`#474747`** | explicit card edge / raised ring |
+| `--nyan-text` | `#ECE6DB` | **`#ECECEC`** | primary ink (neutral, was cream) |
+| `--nyan-text-secondary` | `#BBB3A6` | **`#ABABAB`** | secondary text |
+| `--nyan-text-muted` | `#A39D93` | **`#8A8A8A`** | muted text |
+| `--nyan-primary` | `#E4AE6C` honey | **`#E2E2E2`** off-white | accent text / icons / progress |
+| `--nyan-primary-deep` | `#ECBC7A` honey | **`#F4F4F4`** off-white | links / selected outline / FAB |
+| `--nyan-primary-fill` | `#AC7020` honey | **`#ECECEC`** off-white | solid button background |
+| `--nyan-on-primary` | `#FBF3E6` cream | **`#1A1A1A`** ink | label / check ON the fill (now DARK) |
+| `--nyan-select-fill` | `#AC7020` honey | **`#ECECEC`** off-white | selection check + cover ring |
+| `--error-fill` | `#BC4836` | **`#C24A38`** | destructive button background |
+| `--nyan-on-error` | — (new) | **`#FBF3E6`** | text/icon on a destructive fill — cream/white in BOTH themes |
+
+The indirection tokens (`--nyan-primary-fill`, `--nyan-on-primary`, `--error-fill`) are declared in `:root` with light-theme defaults (`var(--nyan-primary)`, `var(--nyan-surface)`, `var(--error-primary)`) so **Cream Light renders byte-identically** — only Sumi overrides them. The key inversion vs. light: in dark the button fill is *light* and its label is *dark* (`--nyan-on-primary: #1A1A1A`). `--nyan-success` stays green in both themes (semantic, not a brand accent), and the warm **clay error red is the one chromatic color left in the dark**, reserved for danger. Reader paper variants were also neutralized: Sumi `#262422 → #242424`, Charcoal `#141312 → #141414`.
 
 ### What stayed identical
 
-- All surfaces (`background`, `surface`, `surfaceMuted`) — the paper feel is the brand.
-- Primary ink (`#3F3A34` light, `#E8E1D5` dark) — already AAA.
-- Divider, all 5 highlight pens, error palette, reader paper variants.
-- All radii, spacing, shadows, typography.
+- **Cream Light surfaces** (`background`, `surface`, `surfaceMuted`) — the paper feel is the brand. (Sumi Dark surfaces were redesigned — see v6 above.)
+- Primary ink (`#3F3A34` light) — already AAA. (Dark ink is now neutral `#ECECEC`.)
+- All 5 highlight pens, reader paper variants, the Cream Light error palette.
+- All radii, spacing, shadows (recipes), typography.
 
 ### Source-fidelity escape hatch
 

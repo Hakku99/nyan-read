@@ -60,7 +60,7 @@ const NyanBookGridCard = ({ book, selected = false, selectionMode = false, onPre
             boxShadow: selected ? "0 1px 4px color-mix(in srgb, var(--nyan-select-fill) 40%, transparent)" : "none",
           }}>
             {selected && (
-              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--nyan-surface)" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}>
+              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="var(--nyan-on-primary)" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}>
                 <path d="M5 12.5 L10 17.5 L19 7" />
               </svg>
             )}

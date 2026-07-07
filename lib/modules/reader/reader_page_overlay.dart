@@ -43,9 +43,11 @@ class _ReaderTopOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final ink = theme.colorScheme.onSurface;
-    final paperBg = theme.scaffoldBackgroundColor;
+    final nyan = context.nyanTheme;
+    final isDark = nyan.brightness == Brightness.dark;
+    // --chrome-edge: invisible in light, a divider ring in dark. Same rule
+    // OnePaperDock uses, so the top/bottom chrome reads as a matched set.
+    final chromeEdge = isDark ? nyan.divider : Colors.transparent;
 
     return IgnorePointer(
       ignoring: !visible,
@@ -63,32 +65,30 @@ class _ReaderTopOverlay extends StatelessWidget {
             onTap: () {},
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: paperBg.withValues(alpha: 0.92),
-                border: Border(
-                  // Mirror of the bottom overlay's top hairline, flipped to
-                  // the bottom edge so the strip has a clear lower boundary.
-                  bottom: BorderSide(
-                    color: ink.withValues(alpha: 0.08),
-                    width: 0.5,
-                  ),
-                ),
+                color: nyan.surfaceRaised,
+                border: Border.all(color: chromeEdge, width: 1),
+                borderRadius: BorderRadius.circular(NyanRadius.dock),
+                boxShadow: NyanShadows.lightCard(nyan),
               ),
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: NyanSpacing.space4,
-                    vertical: NyanSpacing.space8,
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      _TopOverlayIconButton(
-                        icon: NyanIcons.back,
-                        ink: ink,
-                        onTap: onBack,
-                      ),
-                      Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: NyanSpacing.space8,
+                  vertical: 7,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _TopOverlayIconButton(
+                      icon: NyanIcons.back,
+                      color: nyan.textPrimary,
+                      iconSize: 22,
+                      onTap: onBack,
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: NyanSpacing.space4,
+                        ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -100,18 +100,15 @@ class _ReaderTopOverlay extends StatelessWidget {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: NyanTypography.uiFontFamily,
-                                // 14pt is the button-label compact size —
-                                // reused here for the title chip so it's
-                                // visually heavier than the 11pt author line
-                                // without overstepping the section (20pt) tier.
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                height: 1.2,
-                                color: ink.withValues(alpha: 0.88),
+                                height: 1.25,
+                                letterSpacing: -0.2,
+                                color: nyan.textPrimary,
                               ),
                             ),
                             if (controller.book.author.isNotEmpty) ...[
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 1),
                               Text(
                                 controller.book.author,
                                 maxLines: 1,
@@ -119,35 +116,38 @@ class _ReaderTopOverlay extends StatelessWidget {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontFamily: NyanTypography.uiFontFamily,
-                                  fontSize: 11,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w400,
-                                  height: 1.2,
-                                  color: ink.withValues(alpha: 0.55),
+                                  height: 1.3,
+                                  color: nyan.textMuted,
                                 ),
                               ),
                             ],
                           ],
                         ),
                       ),
-                      _TopOverlayIconButton(
-                        icon: NyanIcons.sun,
-                        ink: ink,
-                        active: brightnessActive,
-                        activeColor: theme.colorScheme.primary,
-                        onTap: onToggleBrightness,
-                      ),
-                      _TopOverlayIconButton(
-                        icon: NyanIcons.bookmark,
-                        ink: ink,
-                        onTap: onAddBookmark,
-                      ),
-                      _TopOverlayIconButton(
-                        icon: NyanIcons.moreHorizontal,
-                        ink: ink,
-                        onTap: onOpenSettings,
-                      ),
-                    ],
-                  ),
+                    ),
+                    _TopOverlayIconButton(
+                      icon: NyanIcons.sun,
+                      color: nyan.textSecondary,
+                      iconSize: 21,
+                      active: brightnessActive,
+                      activeColor: nyan.primaryDeep,
+                      onTap: onToggleBrightness,
+                    ),
+                    _TopOverlayIconButton(
+                      icon: NyanIcons.bookmark,
+                      color: nyan.textSecondary,
+                      iconSize: 21,
+                      onTap: onAddBookmark,
+                    ),
+                    _TopOverlayIconButton(
+                      icon: NyanIcons.moreHorizontal,
+                      color: nyan.textSecondary,
+                      iconSize: 21,
+                      onTap: onOpenSettings,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -158,21 +158,24 @@ class _ReaderTopOverlay extends StatelessWidget {
   }
 }
 
-/// 44×44 pt icon button used inside [_ReaderTopOverlay]. The fixed SizedBox
-/// guarantees [NyanSpacing.minTapTarget] without relying on InkResponse's
-/// hit-test expansion, which varies by platform.
+/// Icon button used inside [_ReaderTopOverlay]. Visual chip is 40×40 with
+/// `NyanRadius.chip` (matches `ReaderTopBar`'s `iconBtn`); the outer SizedBox
+/// still guarantees [NyanSpacing.minTapTarget] (44×44) without relying on
+/// InkResponse's hit-test expansion, which varies by platform.
 class _TopOverlayIconButton extends StatelessWidget {
   const _TopOverlayIconButton({
     required this.icon,
-    required this.ink,
+    required this.color,
     required this.onTap,
+    this.iconSize = 21,
     this.active = false,
     this.activeColor,
   });
 
   final IconData icon;
-  final Color ink;
+  final Color color;
   final VoidCallback onTap;
+  final double iconSize;
 
   /// When true the button reads as "toggled on" (matcha-tinted chip + glyph) —
   /// used by the brightness sun button while its popover is open.
@@ -181,7 +184,7 @@ class _TopOverlayIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = activeColor ?? ink;
+    final accent = activeColor ?? color;
     return InkResponse(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -201,13 +204,13 @@ class _TopOverlayIconButton extends StatelessWidget {
               color: active
                   ? accent.withValues(alpha: 0.14)
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(NyanRadius.control),
+              borderRadius: BorderRadius.circular(NyanRadius.chip),
             ),
             child: Center(
               child: Icon(
                 icon,
-                size: 20,
-                color: active ? accent : ink.withValues(alpha: 0.85),
+                size: iconSize,
+                color: active ? accent : color,
               ),
             ),
           ),

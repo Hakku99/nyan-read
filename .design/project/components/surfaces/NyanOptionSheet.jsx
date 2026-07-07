@@ -25,7 +25,7 @@ const NyanOptionSheet = ({ title, subtitle, options = [], selected = 0, variant 
     <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "var(--scrim)",
       backdropFilter: "blur(var(--scrim-blur))", WebkitBackdropFilter: "blur(var(--scrim-blur))", animation: animateIn ? "nyanFade 220ms ease-out" : "none" }} />
     <div style={{ position: "absolute", left: "var(--inset)", right: "var(--inset)", bottom: "var(--inset)",
-      background: "var(--nyan-surface)", border: "1px solid var(--chrome-edge)", borderRadius: "var(--r-sheet)",
+      background: "var(--nyan-surface-raised)", border: "1px solid var(--chrome-edge)", borderRadius: "var(--r-sheet)",
       boxShadow: "var(--shadow-light-card)", overflow: "hidden", animation: animateIn ? "nyanSlideUp 280ms cubic-bezier(0.33,0.9,0.36,1)" : "none" }}>
       {/* grabber */}
       <div style={{ paddingTop: 10, display: "flex", justifyContent: "center" }}>

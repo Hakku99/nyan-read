@@ -15,29 +15,41 @@ class NyanColors {
   static const Color creamDivider = Color(0xFFE5DED2);
   static const Color creamSuccess = Color(0xFF4F6B1E);
 
-  // ── Sumi Dark — v3 elevation ladder (design-system handoff 2026-06) ──────
-  // Depth is carried by TONE, not drop-shadow: surfaces step LIGHTER as they
-  // rise toward the user, on a deliberate ladder with a visible ~5–8 L* gap so
-  // each elevated layer reads as a distinct plane:
-  //   bg #181B16 (page void) < surfaceMuted #1D211B (recessed track) <
-  //   surface #242922 (cards/bars, +1) < surfaceRaised #2E342B
-  //   (dialogs/sheets/popovers, highest).
+  // ── Sumi Dark — v6 MONO ladder (design-system handoff 2026-06) ───────────
+  // Ground-up redesign OFF the matcha/olive family: surfaces are a TRUE-NEUTRAL
+  // grey ladder (zero brown, zero green), and the accent is MONO — an off-white.
+  // Matcha is a Cream-Light-only brand color; the dark theme has no chromatic
+  // brand accent at all. Depth is carried by TONE (steps ~1.5:1) + a neutral
+  // hairline ring; no pure black/white.
+  //   bg #121212 (page void) < surfaceMuted #181818 (recessed track) <
+  //   surface #1E1E1E (flat cards/bars) < surfaceRaised #303030 (FLOATING:
+  //   dialogs/sheets/popovers/docks/bars — clears the void AND the #242424
+  //   reading canvas) < overlayField #3A3A3A (field/tray/inner card NESTED
+  //   inside a floating overlay — steps UP, never a dark hole).
   // Source: colors_and_type.css [data-theme="sumi"]; HANDOFF-flutter.md §2.
-  static const Color inkNightBackground = Color(0xFF181B16);
-  static const Color inkNightSurface = Color(0xFF242922);
-  static const Color inkNightSurfaceMuted = Color(0xFF1D211B);
-  static const Color inkNightSurfaceRaised = Color(0xFF2E342B);
-  static const Color inkNightPrimary = Color(0xFFA9B690);
-  static const Color inkNightPrimaryDeep = Color(0xFFB7C69E);
-  static const Color inkNightTextMain = Color(0xFFECE6DB);
-  static const Color inkNightTextSecondary = Color(0xFFBBB3A6);
-  // #9A948B clears WCAG AA on BOTH background and surface under the v3 ladder.
-  static const Color inkNightTextMuted = Color(0xFF9A948B);
-  static const Color inkNightDivider = Color(0xFF3D443A);
-  // Explicit card edge — brighter than divider; used when a hard border helps a
-  // surface read as a plane (e.g. the luminous hairline ring on dark chrome).
-  static const Color inkNightBorder = Color(0xFF474E42);
-  static const Color inkNightSuccess = Color(0xFF94C194);
+  static const Color inkNightBackground = Color(0xFF121212);
+  static const Color inkNightSurface = Color(0xFF1E1E1E);
+  static const Color inkNightSurfaceMuted = Color(0xFF181818);
+  static const Color inkNightSurfaceRaised = Color(0xFF303030);
+  static const Color inkNightOverlayField = Color(0xFF3A3A3A);
+  // Accent — MONO / off-white. "Color" is light-on-dark; hierarchy is
+  // fill / outline / weight, not hue.
+  static const Color inkNightPrimary = Color(0xFFE2E2E2);
+  static const Color inkNightPrimaryDeep = Color(0xFFF4F4F4);
+  // Solid button background carries a DARK ink label (inverse of Cream Light).
+  static const Color inkNightPrimaryFill = Color(0xFFECECEC);
+  static const Color inkNightOnPrimary = Color(0xFF1A1A1A);
+  // Selection check + cover ring — off-white in the dark.
+  static const Color inkNightSelectFill = Color(0xFFECECEC);
+  static const Color inkNightTextMain = Color(0xFFECECEC);
+  static const Color inkNightTextSecondary = Color(0xFFABABAB);
+  // #8A8A8A clears WCAG AA (~4.5:1) on the neutral surface ladder.
+  static const Color inkNightTextMuted = Color(0xFF8A8A8A);
+  static const Color inkNightDivider = Color(0xFF333333);
+  // Explicit card edge / raised hairline ring — crisp against the void.
+  static const Color inkNightBorder = Color(0xFF474747);
+  // Semantic success stays green (not a brand accent).
+  static const Color inkNightSuccess = Color(0xFF8FBF8F);
 
   static const Color highlightYellow = Color(0xFFF2E58A);
   static const Color highlightGreen = Color(0xFFA8D18D);
@@ -55,10 +67,18 @@ class NyanColors {
   static const Color errorSecondaryLight = Color(0xFF8A6A55);
   static const Color errorAccentLight = Color(0xFFECD9CC);
 
-  static const Color errorBackgroundDark = Color(0xFF241D18);
-  static const Color errorPrimaryDark = Color(0xFFCE9A86);
-  static const Color errorSecondaryDark = Color(0xFFB6967F);
-  static const Color errorAccentDark = Color(0xFF3A2D24);
+  // Sumi v6: bg/accent raised in luminance so a danger tile clearly LIFTS off
+  // the #121212 void; clay is the one chromatic color kept in the dark.
+  static const Color errorBackgroundDark = Color(0xFF3A2420);
+  static const Color errorPrimaryDark = Color(0xFFE59B85);
+  static const Color errorSecondaryDark = Color(0xFFD29A83);
+  static const Color errorAccentDark = Color(0xFF573730);
+
+  // Destructive-button fill + its label. errorFill background is theme-specific
+  // (light reuses errorPrimaryLight); onErrorFill is cream-on-fill in BOTH
+  // themes. Source: colors_and_type.css --error-fill / --nyan-on-error.
+  static const Color errorFillDark = Color(0xFFC24A38);
+  static const Color onErrorFill = Color(0xFFFBF3E6);
 
   // ===========================================================================
   // Reader runtime defaults (出厂默认的阅读画布色；用户可在阅读设置中覆盖)
@@ -79,13 +99,14 @@ class NyanColors {
   static const Color readerPreviewSepia = Color(0xFFF5ECD8);
   static const Color readerInkSepia = Color(0xFF5C4F3F);
 
-  static const Color readerBgSumi = Color(0xFF262422);
-  static const Color readerPreviewSumi = Color(0xFF302D2B);
-  static const Color readerInkSumi = Color(0xFFE5DED3);
+  // Sumi v6: neutralized to match the Mono app theme — no warm tint.
+  static const Color readerBgSumi = Color(0xFF242424);
+  static const Color readerPreviewSumi = Color(0xFF2E2E2E);
+  static const Color readerInkSumi = Color(0xFFE2E2E2);
 
-  static const Color readerBgCharcoal = Color(0xFF141312);
-  static const Color readerPreviewCharcoal = Color(0xFF1B1A19);
-  static const Color readerInkCharcoal = Color(0xFFF1EBDD);
+  static const Color readerBgCharcoal = Color(0xFF141414);
+  static const Color readerPreviewCharcoal = Color(0xFF1B1B1B);
+  static const Color readerInkCharcoal = Color(0xFFECECEC);
 
   // ===========================================================================
   // Highlight dialog ink-tinted variants (HighlightNoteDialog 预览区专用)

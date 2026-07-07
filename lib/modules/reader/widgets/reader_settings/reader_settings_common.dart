@@ -17,7 +17,7 @@ const double kReaderLineHeightMin = 1.1;
 const double kReaderLineHeightMax = 2.5;
 
 /// Spec-aligned Knob container wrapping each reader-settings control group.
-/// Background: [NyanTheme.surfaceMuted]; radius: [NyanRadius.cardNested] (16pt);
+/// Background: [NyanTheme.overlayField]; radius: [NyanRadius.cardNested] (16pt);
 /// padding: 14pt (spec-defined exception to §4.2.3 — `reader.jsx` `Knob { padding: 14 }`).
 /// Header: bold 15px label left + optional 13px meta hint right.
 ///
@@ -47,7 +47,9 @@ class ReaderSettingsKnob extends StatelessWidget {
     final nyan = context.nyanTheme;
     return Container(
       decoration: BoxDecoration(
-        color: nyan.surfaceMuted,
+        // Nested inside the floating dock-sheet → lift to overlayField so the
+        // tray reads as a raised inset, not a near-black hole (Sumi v6).
+        color: nyan.overlayField,
         borderRadius: BorderRadius.circular(NyanRadius.cardNested),
       ),
       padding: const EdgeInsets.all(_kPadding),

@@ -42,7 +42,7 @@ const NyanResponse = ({ status = "success", title, description, action, onDismis
       role="status"
       style={{
         display: "flex", alignItems: "center", gap: 12,
-        background: "var(--nyan-surface)",
+        background: "var(--nyan-surface-raised)",
         border: "1px solid var(--chrome-edge)",
         borderRadius: "var(--r-card-nested)",
         boxShadow: "var(--shadow-subtle)",

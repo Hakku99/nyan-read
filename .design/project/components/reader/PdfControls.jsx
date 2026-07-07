@@ -17,7 +17,7 @@ const PdfControls = ({ page = 1, pageCount = 1, zoom = 1, minZoom = 0.5, maxZoom
   return (
     <div style={{
       display: "inline-flex", alignItems: "center", gap: 2,
-      background: "var(--nyan-surface)", borderRadius: 999,
+      background: "var(--nyan-surface-raised)", borderRadius: 999,
       border: "1px solid var(--chrome-edge)", boxShadow: "var(--shadow-light-card)",
       padding: "4px 6px", ...style,
     }}>

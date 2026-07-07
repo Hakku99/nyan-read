@@ -33,9 +33,9 @@ const ThemeWrap = ({ dark, children }) => (
 const ReaderBg = ({ dark, children }) => (
   <div data-theme={dark ? "sumi" : undefined}
     style={{ position: "relative", width: "100%", height: "100%",
-      background: dark ? "#262422" : "#F7F5EF", overflow: "hidden" }}>
+      background: dark ? "#242424" : "#F7F5EF", overflow: "hidden" }}>
     <div style={{ position: "absolute", inset: 0, padding: "44px 28px 24px", pointerEvents: "none", overflow: "hidden" }}>
-      <div style={{ font: "400 13.5px/1.85 var(--font-ui)", color: dark ? "#E5DED3" : "#4A453E", opacity: 0.55, textIndent: "2em" }}>
+      <div style={{ font: "400 13.5px/1.85 var(--font-ui)", color: dark ? "#E2E2E2" : "#4A453E", opacity: 0.55, textIndent: "2em" }}>
         {READER_SAMPLE}
       </div>
     </div>

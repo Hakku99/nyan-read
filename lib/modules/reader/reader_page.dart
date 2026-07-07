@@ -9,8 +9,10 @@ import '../../core/models/highlight.dart';
 import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/riverpod_providers.dart';
 import '../../core/theme/nyan_radius.dart';
+import '../../core/theme/nyan_shadows.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
+import '../../core/ui/nyan_theme_context.dart';
 import '../bookmark/bookmark_list_page.dart';
 import '../notes/notes_list_page.dart';
 import 'reader_engine/reader_engine.dart';
@@ -567,11 +569,15 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
 
                           // 4. Top overlay — floating paper bar: back /
                           // title + author / sun (brightness) / bookmark /
-                          // more. Stays a floating inset bar (One Paper).
+                          // more. Inset on all 3 sides like OnePaperDock,
+                          // so it reads as the same floating-chrome object
+                          // (top+bottom matched set). Source: `reader.jsx`
+                          // `ReaderTopBar`.
                           Positioned(
-                            top: 0,
-                            left: 0,
-                            right: 0,
+                            top: NyanSpacing.space12 +
+                                MediaQuery.of(context).padding.top,
+                            left: NyanSpacing.space12,
+                            right: NyanSpacing.space12,
                             child: _ReaderTopOverlay(
                               visible: _showControls,
                               controller: controller,
