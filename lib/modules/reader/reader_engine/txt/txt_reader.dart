@@ -74,7 +74,7 @@ class _TxtParseResult {
 }
 
 _TxtParseResult _parseTxtInIsolate(Uint8List bytes) {
-  final content = _decodeBytesForParse(bytes);
+  final content = decodeTxtBytesForParse(bytes);
   final lines = content.split('\n');
   final totalLength = content.length;
   final paginationSample = totalLength > _kPaginationSampleSize
@@ -140,16 +140,110 @@ _TxtParseResult _parseTxtInIsolate(Uint8List bytes) {
   );
 }
 
-String _decodeBytesForParse(Uint8List bytes) {
+/// Decodes raw TXT bytes into text (analysis item #2).
+///
+/// Order matters — this feeds line splitting, and line indexes are the
+/// anchor for reading positions and highlights (§3.5 protected surface):
+///  1. BOM (unambiguous): UTF-8 / UTF-16 LE / UTF-16 BE. Windows Notepad's
+///     "Unicode" save is UTF-16 LE with BOM — a common Chinese TXT format
+///     that the old utf8→gbk→latin1 chain always rendered as mojibake.
+///  2. BOM-less UTF-16 heuristic (must run before utf8: ASCII-heavy UTF-16
+///     LE bytes are *valid* UTF-8 with interleaved NULs, so strict utf8
+///     would pseudo-succeed).
+///  3. Legacy chain utf8 → gbk, byte-for-byte identical results for every
+///     valid UTF-8 / GBK book — existing anchors must not move.
+///  4. latin1 as last resort only for plausible Latin text; a high-byte-heavy
+///     payload (CJK in some unsupported encoding) throws instead of silently
+///     rendering mojibake that would pollute highlight/progress anchors.
+@visibleForTesting
+String decodeTxtBytesForParse(Uint8List bytes) {
+  if (bytes.length >= 3 &&
+      bytes[0] == 0xEF &&
+      bytes[1] == 0xBB &&
+      bytes[2] == 0xBF) {
+    // BOM declared UTF-8: tolerate stray malformed sequences rather than
+    // bailing out to a wrong codec.
+    return utf8.decode(bytes.sublist(3), allowMalformed: true);
+  }
+  if (bytes.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) {
+    return _decodeUtf16(bytes, 2, Endian.little);
+  }
+  if (bytes.length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF) {
+    return _decodeUtf16(bytes, 2, Endian.big);
+  }
+
+  final bomlessUtf16 = _sniffBomlessUtf16(bytes);
+  if (bomlessUtf16 != null) {
+    return _decodeUtf16(bytes, 0, bomlessUtf16);
+  }
+
   try {
     return utf8.decode(bytes);
   } catch (_) {
-    try {
-      return gbk.decode(bytes);
-    } catch (_) {
-      return latin1.decode(bytes);
-    }
+    // fall through
   }
+  try {
+    return gbk.decode(bytes);
+  } catch (_) {
+    // fall through
+  }
+
+  // ponytail: Big5 (and other DBCS) bytes usually pseudo-succeed inside
+  // gbk.decode above, so they never reach this guard — detecting them needs
+  // a real charset sniffer; add one if Big5 mojibake reports come in.
+  if (_highByteRatio(bytes) > 0.30) {
+    throw const FormatException(
+        'Unsupported text encoding (not UTF-8/UTF-16/GBK, too much non-ASCII '
+        'content for Latin-1)');
+  }
+  return latin1.decode(bytes);
+}
+
+String _decodeUtf16(Uint8List bytes, int start, Endian endian) {
+  // Odd trailing byte (truncated file): drop it rather than fail the book.
+  final count = (bytes.length - start) ~/ 2;
+  final codeUnits = Uint16List(count);
+  for (var i = 0; i < count; i++) {
+    final b0 = bytes[start + i * 2];
+    final b1 = bytes[start + i * 2 + 1];
+    codeUnits[i] = endian == Endian.little ? (b1 << 8) | b0 : (b0 << 8) | b1;
+  }
+  // Dart strings are UTF-16 code units, so surrogate pairs pass through.
+  return String.fromCharCodes(codeUnits);
+}
+
+/// Detects BOM-less ASCII-heavy UTF-16 by NUL distribution: Latin text in
+/// UTF-16 has a zero byte in nearly every code unit's high position, while
+/// valid UTF-8/GBK text files contain essentially no NUL bytes at all — so
+/// the 40%/5% thresholds cannot misfire on them. CJK-only BOM-less UTF-16
+/// (few NULs) is not detected; in practice UTF-16 writers emit a BOM.
+Endian? _sniffBomlessUtf16(Uint8List bytes) {
+  if (bytes.length < 16 || bytes.length.isOdd) return null;
+  final sampleBytes = bytes.length < 8192 ? bytes.length : 8192;
+  final units = sampleBytes ~/ 2;
+  var evenZeros = 0;
+  var oddZeros = 0;
+  for (var i = 0; i + 1 < sampleBytes; i += 2) {
+    if (bytes[i] == 0) evenZeros++;
+    if (bytes[i + 1] == 0) oddZeros++;
+  }
+  if (oddZeros > units * 0.40 && evenZeros < units * 0.05) {
+    return Endian.little;
+  }
+  if (evenZeros > units * 0.40 && oddZeros < units * 0.05) {
+    return Endian.big;
+  }
+  return null;
+}
+
+double _highByteRatio(Uint8List bytes) {
+  if (bytes.isEmpty) return 0;
+  final sampleBytes = bytes.length < 8192 ? bytes.length : 8192;
+  var high = 0;
+  for (var i = 0; i < sampleBytes; i++) {
+    if (bytes[i] >= 0x80) high++;
+  }
+  return high / sampleBytes;
 }
 
 class TxtInlineImageTag {
@@ -203,6 +297,33 @@ TxtInlineImageTag? tryParseTxtStandaloneImgTag(String line) {
 
 bool _looksLikeWindowsAbsolutePath(String src) {
   return RegExp(r'^[a-zA-Z]:[\\/]').hasMatch(src);
+}
+
+/// Maps an inline-image URI to an [ImageProvider], or null when the source
+/// must not be loaded.
+///
+/// http/https deliberately return null: a downloaded TXT with an embedded
+/// `<img src="https://...">` would otherwise fire a network request on open —
+/// a tracking beacon that breaks the fully-offline promise (leaks IP +
+/// reading time to an arbitrary third party). Only local files and inline
+/// data: URIs render.
+@visibleForTesting
+ImageProvider<Object>? txtImageProviderFor(Uri sourceUri) {
+  if (sourceUri.scheme == 'file' || sourceUri.scheme.isEmpty) {
+    return FileImage(File.fromUri(sourceUri));
+  }
+  if (sourceUri.scheme == 'data') {
+    try {
+      final uriData = UriData.parse(sourceUri.toString());
+      final bytes = uriData.contentAsBytes();
+      if (bytes.isNotEmpty) {
+        return MemoryImage(bytes);
+      }
+    } on FormatException {
+      return null;
+    }
+  }
+  return null;
 }
 
 @visibleForTesting
@@ -830,26 +951,15 @@ class TxtReaderEngine
     required ReaderConfig config,
     required String fallbackAlt,
   }) {
-    ImageProvider<Object>? provider;
-    if (sourceUri.scheme == 'http' || sourceUri.scheme == 'https') {
-      provider = NetworkImage(sourceUri.toString());
-    } else if (sourceUri.scheme == 'file' || sourceUri.scheme.isEmpty) {
-      provider = FileImage(File.fromUri(sourceUri));
-    } else if (sourceUri.scheme == 'data') {
-      try {
-        final uriData = UriData.parse(sourceUri.toString());
-        final bytes = uriData.contentAsBytes();
-        if (bytes.isNotEmpty) {
-          provider = MemoryImage(bytes);
-        }
-      } on FormatException {
-        provider = null;
-      }
-    }
+    final provider = txtImageProviderFor(sourceUri);
 
     if (provider == null) {
+      final isRemote =
+          sourceUri.scheme == 'http' || sourceUri.scheme == 'https';
       return _buildImageFallback(
-        text: '[$fallbackAlt unsupported source]',
+        text: isRemote
+            ? '[$fallbackAlt remote image blocked]'
+            : '[$fallbackAlt unsupported source]',
         config: config,
       );
     }

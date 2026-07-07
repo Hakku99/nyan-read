@@ -9,12 +9,14 @@
 // only on epub_view's *public* surface (`EpubDocument`, `EpubController`,
 // `EpubView`, `EpubCfiReader`).
 //
-// IMPORTANT: the paragraph-counting and chapter-start-index logic MUST stay
-// byte-for-byte equivalent to the upstream implementation, because both the
-// reader's "resume at last paragraph" invariant (AGENTS.md §3.6) and our
-// highlight mapping address paragraphs by absolute flat index.  If you
-// refactor this file, keep the fold structure identical and add a golden
-// test against a known EPUB before landing the change.
+// IMPORTANT: the paragraph-counting logic MUST stay byte-for-byte equivalent
+// to the upstream implementation, because both the reader's "resume at last
+// paragraph" invariant (AGENTS.md §3.6) and our highlight mapping address
+// paragraphs by absolute flat index.  The chapter-*start*-index logic
+// deliberately diverges from upstream (it had a relative-vs-absolute index
+// bug — see computeEpubParseResult); chapter indexes are never persisted so
+// the divergence is migration-free.  Golden tests live in
+// test/epub_parse_helpers_test.dart — keep them green when refactoring.
 
 import 'dart:typed_data';
 
@@ -113,44 +115,50 @@ List<dom.Element> _removeAllDiv(List<dom.Element> elements) {
 /// metrics the reader engine needs.  `content` is ignored upstream (the
 /// upstream function takes it but only reads chapter.ContentFileName),
 /// so we drop it from the signature.
+///
+/// DELIBERATE DIVERGENCE from upstream (analysis item #6): upstream stores
+/// the *file-relative* element index for anchored chapters, so TOC jumps on
+/// "one HTML file, many chapters via anchors" EPUBs landed near the book
+/// start. We store the absolute flat index (`file start + anchor offset`)
+/// and keep the parsed element list alive across same-file chapters so the
+/// 2nd..nth anchored chapter in a file resolves too (upstream saw an empty
+/// list there and fell back to end-of-file).
+///
+/// Safe without any data migration: chapter start indexes are never
+/// persisted — positions/highlights store CFI + absolute paragraph index
+/// from the scroll position, and the chapter list is rebuilt on every open.
+/// `paragraphCount` (which *does* drive persisted progress mapping) is
+/// computed exactly as upstream.
 EpubParseResult computeEpubParseResult(EpubBook epubBook) {
   final parsedChapters = flattenEpubChapters(epubBook);
 
   String? filename = '';
   final List<int> chapterIndexes = [];
   int paragraphCount = 0;
+  int currentFileStart = 0;
+  List<dom.Element> currentFileElements = const <dom.Element>[];
 
   for (final chapter in parsedChapters) {
-    List<dom.Element> elmList = const <dom.Element>[];
     if (filename != chapter.ContentFileName) {
       filename = chapter.ContentFileName;
+      currentFileStart = paragraphCount;
       final document = _chapterDocument(chapter);
-      if (document != null) {
-        final result = _convertDocumentToElements(document);
-        elmList = _removeAllDiv(result);
-      }
+      currentFileElements = document == null
+          ? const <dom.Element>[]
+          : _removeAllDiv(_convertDocumentToElements(document));
+      paragraphCount += currentFileElements.length;
     }
 
     if (chapter.Anchor == null) {
-      chapterIndexes.add(paragraphCount);
-      paragraphCount += elmList.length;
+      chapterIndexes.add(currentFileStart);
       continue;
     }
 
     final anchorNeedle = 'id="${chapter.Anchor}"';
-    final index = elmList.indexWhere(
+    final index = currentFileElements.indexWhere(
       (elm) => elm.outerHtml.contains(anchorNeedle),
     );
-    if (index == -1) {
-      chapterIndexes.add(paragraphCount);
-    } else {
-      // Upstream adds `index` directly here (NOT `paragraphCount + index`).
-      // That looks suspicious but we mirror it faithfully so the semantics
-      // stay identical to what users have persisted in `last_position` and
-      // what highlights reference.
-      chapterIndexes.add(index);
-    }
-    paragraphCount += elmList.length;
+    chapterIndexes.add(index == -1 ? currentFileStart : currentFileStart + index);
   }
 
   final chapterMeta = parsedChapters
