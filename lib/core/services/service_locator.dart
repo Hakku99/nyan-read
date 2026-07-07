@@ -79,9 +79,12 @@ Future<void> setupServiceLocator() async {
 
   debugPrint('--- [DI] 104. 正在装载 BackupRecoveryService (末日地堡系统) ---');
   getIt.registerSingletonAsync<BackupRecoveryService>(() async {
-    final service = BackupRecoveryService()..init();
+    final service = BackupRecoveryService(await getIt.getAsync<DatabaseService>())
+      ..init();
     return service;
-  });
+  },
+      // DatabaseService must be ready before the backup system can arm.
+      dependsOn: [DatabaseService]);
 
   // Wait for async services to be ready.
   debugPrint('--- [DI] 99. 开始等待 getIt.allReady() ---');

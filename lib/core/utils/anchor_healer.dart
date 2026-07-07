@@ -1,30 +1,3 @@
-/// Isolate-compatible DTO for anchor healing work.
-/// Used with compute() to offload heavy string matching to background isolate.
-class _HealingRequest {
-  final String chapterText;
-  final String preContext;
-  final String selectedText;
-  final String postContext;
-
-  _HealingRequest({
-    required this.chapterText,
-    required this.preContext,
-    required this.selectedText,
-    required this.postContext,
-  });
-}
-
-/// Top-level function for compute() to offload anchor healing.
-/// Isolates are dart:isolate-safe and can run heavy string matching off-thread.
-int? _runAnchorHealingInIsolate(_HealingRequest request) {
-  return AnchorHealer.findHealedOffset(
-    request.chapterText,
-    request.preContext,
-    request.selectedText,
-    request.postContext,
-  );
-}
-
 class AnchorHealer {
   /// 搜救引擎：使用三段式特征定位偏移
   /// [chapterText] - 当前所在段落/章节全文

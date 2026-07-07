@@ -377,7 +377,8 @@ class DatabaseService {
   }
 
   /// Archives [file] to [archivePath] using rename, falling back to
-  /// copy+delete, then bare delete as a last resort.  Logs outcomes.
+  /// copy+delete.  If both fail the file is left in place (never bare-deleted:
+  /// a corrupt DB may still be manually salvageable).  Logs outcomes.
   ///
   /// If the file cannot be archived at all, the subsequent `copySync` call
   /// will clobber the destination on most platforms (POSIX semantics), so
@@ -399,18 +400,14 @@ class DatabaseService {
     } catch (_) {
       // If copy also fails (e.g. read error on the corrupt file) fall through.
     }
-    // 3. Bare delete (no archive preserved).
-    try {
-      file.deleteSync();
-      logs.add(
-          '--- [DatabaseService] Corrupted DB archived only by deletion (no .bak written) ---');
-    } catch (e) {
-      logs.add(
-          '--- [DatabaseService] Warning: could not archive or delete corrupted DB: $e ---');
-      // The subsequent copySync may still clobber the file on POSIX; on
-      // Windows the copy will fail instead — that error surfaces in the
-      // retry loop above.
-    }
+    // 3. Leave the corrupt file in place. Deliberately NOT deleting it:
+    // if every backup candidate later fails to restore, this file is the
+    // user's only remaining copy of their metadata and may be manually
+    // salvageable. The subsequent copySync may still clobber it on POSIX;
+    // on Windows the copy will fail instead — that error surfaces in the
+    // retry loop above.
+    logs.add(
+        '--- [DatabaseService] Warning: could not archive corrupted DB; leaving it in place for manual recovery ---');
   }
 
   /// Deletes [file] if it exists, logging a warning (not an error) if

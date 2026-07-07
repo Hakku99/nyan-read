@@ -37,13 +37,6 @@ class MockReaderSettingsManager implements ReaderSettingsManager {
   Color get textColor => Colors.black;
 
   @override
-  void handleLayoutChange(
-    Size newSize,
-    Size? lastSize,
-    VoidCallback onUpdate,
-  ) {}
-
-  @override
   void setBackground(Color color) {}
 
   @override

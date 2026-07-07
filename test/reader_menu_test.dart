@@ -234,9 +234,6 @@ class MockReaderController extends ChangeNotifier
   void didChangeAppLifecycleState(AppLifecycleState state) {}
 
   @override
-  void handleLayoutChange(Size size) {}
-
-  @override
   Future<void> handleBookmarkSelection(
       Map<String, dynamic> bookmarkData) async {}
 

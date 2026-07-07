@@ -94,24 +94,6 @@ class ReaderSettingsManager {
     unawaited(preferences.setUseSerif(value));
   }
 
-  void handleLayoutChange(Size newSize, Size? lastSize, VoidCallback onUpdate) {
-    if (lastSize != null &&
-        (newSize.width - lastSize.width).abs() < 10 &&
-        (newSize.height - lastSize.height).abs() < 10) {
-      return;
-    }
-
-    const baseFontSize = 18.0;
-    final scaleFactor = (newSize.width / 800).clamp(0.7, 1.5);
-    final adjustedFontSize = (baseFontSize * scaleFactor).clamp(12.0, 32.0);
-
-    if ((adjustedFontSize - _fontSize).abs() > 1.0) {
-      _fontSize = adjustedFontSize;
-      _updateEngineConfig();
-      onUpdate();
-    }
-  }
-
   Future<void> dispose() async {
     preferences.removeListener(_handlePreferencesChanged);
   }
