@@ -4,7 +4,10 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  # Floor matches actual API usage: Color.withValues / toARGB32 need
+  # Dart 3.6+ (Flutter 3.27+); older SDKs fail to compile anyway.
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.27.0"
 
 dependencies:
   flutter:
