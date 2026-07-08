@@ -95,16 +95,16 @@
 
 ### 2.3 状态管理规范（当前栈：`flutter_riverpod` + `get_it`）
 
-本项目**当前**采用 `flutter_riverpod` + `get_it` 组合。历史 `provider` 已从运行时主链路移除；测试代码若仍有旧封装，必须作为技术债显式记录并计划迁移。
+本项目**当前**采用 `flutter_riverpod`（UI 状态装配）+ `get_it`（无状态服务）组合。历史 `provider` 依赖已于 P2-2 从运行时与测试代码**完全移除**（`lib/` 与 `test/` 均无 `package:provider` 引用），**MUST NOT** 重新引入。
 
 - **MUST**：全局无状态服务（`DatabaseService`、`ReaderPreferencesService`、`FeatureManager` 等）通过 `get_it` 注册并在 `setupServiceLocator()` 里 `await getIt.allReady()` 后才 `runApp`。
-- **MUST NOT**：在 `service_locator.dart` 以外的地方调用 `GetIt.instance<X>()` ——服务必须通过**构造器注入**传给 Manager / ViewModel。UI 层可以用 `context.read<X>()` / `context.watch<X>()`。
+- **MUST NOT**：在 `service_locator.dart` 以外的地方调用 `GetIt.instance<X>()` ——服务必须通过**构造器注入**传给 Manager / ViewModel。UI 层通过 Riverpod provider（`ref.read` / `ref.watch`，装配见 `core/services/riverpod_providers.dart` 与各模块 `*_provider.dart`）获取。
 - **MUST**：订阅粒度遵循"**最小订阅原则**"：
-  - 只读一次用 `context.read<X>()`；
-  - 只需单字段变化用 `context.select<X, T>((x) => x.field)` 或 `Selector<X, T>`；
-  - **SHOULD NOT** 在 `build()` 顶层用 `context.watch<X>()`，除非整颗子树的确依赖 `X` 的任意变化。
+  - 事件回调 / 只读一次用 `ref.read(provider)`；
+  - 只需单字段变化用 `ref.watch(provider.select((x) => x.field))`；
+  - **SHOULD NOT** 在 `build()` 顶层 `ref.watch` 整个 ChangeNotifier / 状态对象，除非整颗子树的确依赖它的任意变化。
 - **MUST**：高频变化的单值（progress、brightness、warmth、pagination page index）**MUST** 用 `ValueNotifier<T>` + `ValueListenableBuilder` 暴露，**不得**塞进 `ChangeNotifier.notifyListeners()` 的主干事件流。
-- **MUST NOT**：在同一个 `ChangeNotifier` 里混放"结构性状态（章节、错误、能力）"与"高频连续值（progress）"——前者触发整树 Selector 重算，后者需要局部 listenable。
+- **MUST NOT**：在同一个 `ChangeNotifier` 里混放"结构性状态（章节、错误、能力）"与"高频连续值（progress）"——前者触发整树 select 重算，后者需要局部 listenable。
 
 ### 2.4 持久化规范（当前栈：`sqflite` + `shared_preferences` + `flutter_secure_storage`）
 
@@ -122,7 +122,7 @@
 
 ### 2.5 第三方包纪律
 
-- **MUST NOT** 引用任何包的 `package:xxx/src/...` 路径（私有 API）。当前已存在的 `package:epub_view/src/...` 是已知技术债，不得再新增。
+- **MUST NOT** 引用任何包的 `package:xxx/src/...` 路径（私有 API）。历史上的 `package:epub_view/src/...` 私有引用已在 Phase 2（P0-5）通过 `epub_parse_helpers.dart` + 直接依赖 `html` 移除，**MUST NOT** 重新引入。
 - **MUST** 新增依赖时在 PR 里给出：用途、体积影响、可替代方案、最近一次 commit 时间、是否支持 null-safety。
 
 ---
@@ -603,7 +603,7 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 - [x] **P1-4**：`BackupRecoveryService.dispose` 在 `NyanApp.dispose` 中被调用。
 - [x] **P1-5**：`ContentMetaManager` 高亮 CRUD 改增量，移除每次 `loadHighlights()` 全量重载。
 
-### Phase 4 — 技术债清算（选做 1 sprint）🚧 进行中（当前批次完成：2026-04-22）
+### Phase 4 — 技术债清算（选做 1 sprint）✅ 已完成 2026-04-24（P2-1 ~ P2-9 全部落地）
 
 - [x] **P2-1**：`reader_page.dart` 按职责拆分（Controller / PageState / OverlayToolBar / GestureHandler ≥ 4 文件）。
 - [x] **P2-2**：引入 `riverpod` 评估 spike（✅ 已完成，2026-04-24）—— 完成 app shell 去 `MultiProvider`、`bookshelf/reader/settings/admin` 模块迁移、`provider` 依赖移除与关键测试适配，运行时主链路全面切至 Riverpod + get_it。

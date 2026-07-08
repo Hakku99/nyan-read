@@ -894,7 +894,7 @@ class DatabaseService {
         '--- [DatabaseService] Highlight healed offset persisted: id=$id, newStart=$newStart ---');
   }
 
-  // --- 鍏ㄩ噺鏁版嵁瀵煎嚭鎺ュ彛 (For Global Export) ---
+  // --- Full-dataset export queries (For Global Export) ---
 
   Future<List<Map<String, dynamic>>> getAllBooks() async {
     final db = await database;
