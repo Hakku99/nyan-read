@@ -1946,6 +1946,42 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{Could not import the selected file.} other{Could not import any of the {count} selected files.}}'**
   String importNothingSucceeded(int count);
 
+  /// No description provided for @readerNoContentLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'No content loaded'**
+  String get readerNoContentLoaded;
+
+  /// No description provided for @readerImageDefaultAlt.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get readerImageDefaultAlt;
+
+  /// No description provided for @readerImageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'[{alt} unavailable]'**
+  String readerImageUnavailable(String alt);
+
+  /// No description provided for @readerImageRemoteBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'[{alt} remote image blocked]'**
+  String readerImageRemoteBlocked(String alt);
+
+  /// No description provided for @readerImageUnsupportedSource.
+  ///
+  /// In en, this message translates to:
+  /// **'[{alt} unsupported source]'**
+  String readerImageUnsupportedSource(String alt);
+
+  /// No description provided for @readerImageLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'[{alt} load failed]'**
+  String readerImageLoadFailed(String alt);
+
   /// No description provided for @exportSaved.
   ///
   /// In en, this message translates to:

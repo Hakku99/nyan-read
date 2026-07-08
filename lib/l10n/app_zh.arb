@@ -485,6 +485,40 @@
       }
     }
   },
+  "readerNoContentLoaded": "没有可显示的内容",
+  "readerImageDefaultAlt": "图片",
+  "readerImageUnavailable": "[{alt}不可用]",
+  "@readerImageUnavailable": {
+    "placeholders": {
+      "alt": {
+        "type": "String"
+      }
+    }
+  },
+  "readerImageRemoteBlocked": "[已拦截网络图片：{alt}]",
+  "@readerImageRemoteBlocked": {
+    "placeholders": {
+      "alt": {
+        "type": "String"
+      }
+    }
+  },
+  "readerImageUnsupportedSource": "[不支持的图片来源：{alt}]",
+  "@readerImageUnsupportedSource": {
+    "placeholders": {
+      "alt": {
+        "type": "String"
+      }
+    }
+  },
+  "readerImageLoadFailed": "[{alt}加载失败]",
+  "@readerImageLoadFailed": {
+    "placeholders": {
+      "alt": {
+        "type": "String"
+      }
+    }
+  },
   "exportSaved": "导出已保存到设备",
   "exportFailed": "导出失败：{error}",
   "@exportFailed": {

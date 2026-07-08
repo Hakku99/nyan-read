@@ -961,10 +961,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     );
     if (result != null && !mounted) return;
     if (result != null) {
-      await controller.handleBookmarkSelection({
-        'position_type': controller.book.format,
-        'position_payload': '{"paragraphIndex": ${result.paragraphIndex}}',
-      });
+      // Typed jump via the controller — this used to hand-build a JSON
+      // payload and smuggle it through the bookmark-restore channel.
+      await controller.openHighlight(result);
     }
   }
 

@@ -68,9 +68,39 @@ class BookSourceAccess {
       case BookSourceType.filePath:
         return File(sourceLocator).readAsBytes();
       case BookSourceType.androidContentUri:
-        return BookSourcePlatform.readUriBytes(sourceLocator);
+        return _readUriBytesViaTempFile(sourceLocator);
       default:
         throw UnsupportedError('Unsupported source type: $sourceType');
+    }
+  }
+
+  /// Reads a `content://` source through a native temp-file copy instead of
+  /// `invokeMethod<Uint8List>`: marshalling a whole book across the platform
+  /// channel holds two full copies in memory at once (native buffer + Dart
+  /// copy) — a large EPUB was a straight OOM face. The native side streams
+  /// the Uri to disk; Dart reads one copy and deletes the file immediately.
+  static Future<Uint8List> _readUriBytesViaTempFile(
+      String sourceLocator) async {
+    String? tempPath;
+    try {
+      tempPath = await BookSourcePlatform.copyUriToTempFile(
+        sourceLocator,
+        extension: '.tmp',
+      );
+      return await File(tempPath).readAsBytes();
+    } catch (_) {
+      // Fallback to the direct channel read so a copy failure (e.g. a
+      // provider that rejects openInputStream twice) degrades to the old
+      // behavior instead of a dead book.
+      return BookSourcePlatform.readUriBytes(sourceLocator);
+    } finally {
+      if (tempPath != null) {
+        try {
+          await File(tempPath).delete();
+        } catch (_) {
+          // Leftovers age out via the 24h cache scavenger.
+        }
+      }
     }
   }
 

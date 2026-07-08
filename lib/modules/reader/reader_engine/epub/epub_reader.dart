@@ -233,26 +233,45 @@ class EpubReaderEngine implements ReaderEngine {
 
   @override
   Future<void> nextPage() async {
-    final maxIndex = _paragraphCount > 0 ? _paragraphCount - 1 : 0;
-    final value = _epubController.currentValueListenable.value ??
-        _epubController.currentValue;
-    final currentIndex = value != null
-        ? _absoluteParagraphIndexFrom(value.position)
-        : (_lastKnownProgress * maxIndex).round();
-    final targetIndex = (currentIndex + 1).clamp(0, maxIndex);
-    await seekToProgress(maxIndex == 0 ? 0.0 : targetIndex / maxIndex);
+    await _stepByViewport(forward: true);
   }
 
   @override
   Future<void> previousPage() async {
+    await _stepByViewport(forward: false);
+  }
+
+  /// Tap-to-turn used to advance by exactly ONE paragraph — on EPUB that is
+  /// a nudge, not a page turn, and inconsistent with TXT's viewport-sized
+  /// steps. Estimate how many paragraphs fill a viewport from the current
+  /// item's leading/trailing edges and step by that many.
+  // ponytail: single-item extrapolation — a short heading under the anchor
+  // overestimates the step and a long paragraph underestimates it. Good
+  // enough for tap-turn; the exact fix needs epub_view to expose its
+  // ItemPositionsListener so the real visible range can be read.
+  Future<void> _stepByViewport({required bool forward}) async {
     final maxIndex = _paragraphCount > 0 ? _paragraphCount - 1 : 0;
     final value = _epubController.currentValueListenable.value ??
         _epubController.currentValue;
     final currentIndex = value != null
         ? _absoluteParagraphIndexFrom(value.position)
         : (_lastKnownProgress * maxIndex).round();
-    final targetIndex = (currentIndex - 1).clamp(0, maxIndex);
+    final step = _viewportParagraphStep(value?.position);
+    final targetIndex = (forward ? currentIndex + step : currentIndex - step)
+        .clamp(0, maxIndex);
     await seekToProgress(maxIndex == 0 ? 0.0 : targetIndex / maxIndex);
+  }
+
+  int _viewportParagraphStep(dynamic position) {
+    if (position == null) return 1;
+    final leading = position.itemLeadingEdge as double?;
+    final trailing = position.itemTrailingEdge as double?;
+    if (leading == null || trailing == null) return 1;
+    final itemFraction = trailing - leading;
+    if (itemFraction <= 0 || itemFraction.isNaN) return 1;
+    // A paragraph taller than the viewport (fraction > 1) floors to 0 — the
+    // clamp keeps the old one-paragraph step as the lower bound.
+    return (1 / itemFraction).floor().clamp(1, 200);
   }
 
   @override

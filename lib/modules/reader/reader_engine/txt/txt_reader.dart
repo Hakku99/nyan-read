@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../../../core/models/book.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../core/utils/chapter_heading_display.dart';
 import '../../../../core/models/highlight.dart';
 import '../../../../core/services/reader_preferences_service.dart';
@@ -723,13 +725,18 @@ class TxtReaderEngine
     }
 
     if (_lineCount == 0) {
-      return const Center(child: Text('No content loaded'));
+      return Center(
+        child: Text(AppLocalizations.of(context)!.readerNoContentLoaded),
+      );
     }
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        _recalculatePagination(
-            constraints.biggest, MediaQuery.textScalerOf(context));
+        // Not awaited: the estimate lands via _pageInfoNotifier when ready;
+        // the helper defers its TextPainter work past this build frame and
+        // re-validates the layout key on completion.
+        unawaited(_recalculatePagination(
+            constraints.biggest, MediaQuery.textScalerOf(context)));
 
         return Stack(
           children: [
@@ -913,17 +920,18 @@ class TxtReaderEngine
     required EdgeInsets padding,
     required double bottomMargin,
   }) {
+    final loc = AppLocalizations.of(context)!;
     final sourceUri =
         resolveTxtImageSourceUri(book: book, rawSrc: imageTag.src);
     final placeholderText =
         (imageTag.alt != null && imageTag.alt!.trim().isNotEmpty)
             ? imageTag.alt!.trim()
-            : 'Image';
+            : loc.readerImageDefaultAlt;
 
     Widget body;
     if (sourceUri == null) {
       body = _buildImageFallback(
-        text: '[$placeholderText unavailable]',
+        text: loc.readerImageUnavailable(placeholderText),
         config: config,
       );
     } else {
@@ -951,6 +959,7 @@ class TxtReaderEngine
     required ReaderConfig config,
     required String fallbackAlt,
   }) {
+    final loc = AppLocalizations.of(context)!;
     final provider = txtImageProviderFor(sourceUri);
 
     if (provider == null) {
@@ -958,8 +967,8 @@ class TxtReaderEngine
           sourceUri.scheme == 'http' || sourceUri.scheme == 'https';
       return _buildImageFallback(
         text: isRemote
-            ? '[$fallbackAlt remote image blocked]'
-            : '[$fallbackAlt unsupported source]',
+            ? loc.readerImageRemoteBlocked(fallbackAlt)
+            : loc.readerImageUnsupportedSource(fallbackAlt),
         config: config,
       );
     }
@@ -977,7 +986,8 @@ class TxtReaderEngine
           fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) {
             return _buildImageFallback(
-              text: '[$fallbackAlt load failed]',
+              text: AppLocalizations.of(context)!
+                  .readerImageLoadFailed(fallbackAlt),
               config: config,
             );
           },
