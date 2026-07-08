@@ -1940,6 +1940,12 @@ abstract class AppLocalizations {
   /// **'Import failed: {error}'**
   String importFailed(String error);
 
+  /// No description provided for @importNothingSucceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Could not import the selected file.} other{Could not import any of the {count} selected files.}}'**
+  String importNothingSucceeded(int count);
+
   /// No description provided for @exportSaved.
   ///
   /// In en, this message translates to:

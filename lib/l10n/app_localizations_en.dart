@@ -1036,6 +1036,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String importNothingSucceeded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Could not import any of the $count selected files.',
+      one: 'Could not import the selected file.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get exportSaved => 'Export saved to device';
 
   @override

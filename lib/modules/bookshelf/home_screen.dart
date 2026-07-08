@@ -18,9 +18,9 @@ import '../../core/theme/nyan_shelf_ui.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
 import '../../core/ui/components/components.dart';
+import 'widgets/animated_book_card.dart';
 import '../../core/ui/nyan_sheet.dart';
 import '../../core/ui/nyan_theme_context.dart';
-import '../../modules/privacy/privacy_lock_service.dart';
 import 'package:go_router/go_router.dart';
 import '../settings/settings_page.dart';
 import '../ads/ads_ui.dart';
@@ -34,7 +34,7 @@ import 'book_details_page.dart';
 import 'widgets/import_book_sheet.dart';
 import 'widgets/bookshelf_shelf_toolbar.dart';
 import 'widgets/bookshelf_sort_sheet.dart';
-import 'widgets/segmented_tab_control.dart';
+import '../../core/ui/components/segmented_tab_control.dart';
 import 'book_search_page.dart';
 import 'bookshelf_view_model.dart';
 import 'bookshelf_view_model_provider.dart';
@@ -320,6 +320,15 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           loc.duplicatesSkipped(skippedCount),
           tone: NyanSnackTone.skipped,
         );
+      } else {
+        // Every file failed or was unresolvable (per-file errors are logged
+        // above). Without this branch the loading toast just vanishes with
+        // no outcome at all (M3-4).
+        SnackBarUtils.show(
+          context,
+          loc.importNothingSucceeded(result.files.length),
+          tone: NyanSnackTone.error,
+        );
       }
 
       if (successCount > 0) {
@@ -469,7 +478,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   Future<void> _handlePrivacyLock(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
     final fm = ref.read(featureManagerRpProvider);
-    final privacyService = PrivacyLockService();
+    final privacyService = ref.read(privacyLockServiceRpProvider);
 
     if (fm.isPrivateShelfUnlocked) {
       // Lock it
@@ -500,14 +509,16 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   Future<void> _showSetPasswordDialog(BuildContext context) async {
     // Full-screen PIN takeover (U16) — set→confirm. PrivacyLockService stores a
     // 4-digit hashed PIN, so the numeric keypad is the canonical entry surface.
-    final created = await PrivacyLockService().showPinSetup(context);
+    final created =
+        await ref.read(privacyLockServiceRpProvider).showPinSetup(context);
     if (created == true && mounted) {
       _unlockPrivateShelfAfterRouteSettles();
     }
   }
 
   Future<void> _showEnterPasswordDialog(BuildContext context) async {
-    final unlocked = await PrivacyLockService().showPinVerify(context);
+    final unlocked =
+        await ref.read(privacyLockServiceRpProvider).showPinVerify(context);
     if (unlocked == true && mounted) {
       _unlockPrivateShelfAfterRouteSettles();
     }
@@ -1105,7 +1116,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         final vm = _vm;
         final isSelectionMode = vm.isSelectionMode;
         final isSelected = vm.isBookSelected(book.id);
-        return NyanBookCard(
+        return AnimatedBookCardList(
           book: book,
           bookData: book.toMap(),
           isSelected: isSelected,

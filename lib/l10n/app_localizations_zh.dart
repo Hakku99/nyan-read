@@ -992,6 +992,16 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String importNothingSucceeded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '所选的 $count 个文件都未能导入。',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get exportSaved => '导出已保存到设备';
 
   @override

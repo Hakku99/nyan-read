@@ -10,7 +10,7 @@ import '../../core/theme/nyan_shadows.dart';
 import '../../core/theme/theme_presets.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
-import '../../core/ui/components/nyan_book_card.dart';
+import 'widgets/animated_book_card.dart';
 import '../../core/ui/components/nyan_book_grid_card.dart';
 import '../../core/ui/nyan_icons.dart';
 import '../../core/ui/nyan_theme_context.dart';
@@ -321,7 +321,7 @@ class _BookSearchPageState extends ConsumerState<BookSearchPage> {
           mainAxisSize: MainAxisSize.min,
           children: List.generate(results.length, (i) {
             final book = results[i];
-            return NyanBookCard(
+            return AnimatedBookCardList(
               book: book,
               bookData: book.toMap(),
               isSelected: false,

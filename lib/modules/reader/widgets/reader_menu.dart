@@ -10,7 +10,7 @@ import '../../../core/theme/nyan_spacing.dart';
 import '../../../core/theme/nyan_typography.dart';
 import '../../../core/theme/theme_presets.dart';
 import '../../../core/ui/components/nyan_overlay_style.dart';
-import '../../bookshelf/widgets/segmented_tab_control.dart';
+import '../../../core/ui/components/segmented_tab_control.dart';
 import '../controllers/brightness_controller.dart';
 import '../controllers/reader_controller.dart';
 import '../reader_engine/reader_engine.dart';

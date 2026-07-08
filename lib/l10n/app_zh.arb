@@ -477,6 +477,14 @@
       }
     }
   },
+  "importNothingSucceeded": "{count, plural, other{所选的 {count} 个文件都未能导入。}}",
+  "@importNothingSucceeded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "exportSaved": "导出已保存到设备",
   "exportFailed": "导出失败：{error}",
   "@exportFailed": {

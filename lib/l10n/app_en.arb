@@ -497,6 +497,14 @@
       }
     }
   },
+  "importNothingSucceeded": "{count, plural, one{Could not import the selected file.} other{Could not import any of the {count} selected files.}}",
+  "@importNothingSucceeded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "exportSaved": "Export saved to device",
   "exportFailed": "Export failed: {error}",
   "@exportFailed": {

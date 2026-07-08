@@ -12,7 +12,7 @@ import 'package:nyan_read/core/utils/chapter_heading_display.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
-import '../../bookshelf/widgets/segmented_tab_control.dart';
+import '../../../core/ui/components/segmented_tab_control.dart';
 import '../reader_engine/reader_engine.dart';
 
 enum _TocSortOrder { asc, desc }

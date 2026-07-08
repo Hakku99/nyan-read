@@ -7,7 +7,7 @@ import 'package:nyan_read/core/ui/components/nyan_chip_selection_sheet.dart';
 import 'package:nyan_read/core/ui/components/nyan_pill_button.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import 'package:nyan_read/modules/bookshelf/widgets/bookshelf_sort_sheet.dart';
-import 'package:nyan_read/modules/bookshelf/widgets/segmented_tab_control.dart';
+import 'package:nyan_read/core/ui/components/segmented_tab_control.dart';
 
 ThemeData get _theme => themePresets[ThemePreset.creamLight]!.themeData;
 

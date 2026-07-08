@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/nyan_radius.dart';
-import '../../../core/theme/nyan_shadows.dart';
-import '../../../core/theme/nyan_spacing.dart';
-import '../../../core/ui/nyan_theme_context.dart';
+import '../../theme/nyan_radius.dart';
+import '../../theme/nyan_shadows.dart';
+import '../../theme/nyan_spacing.dart';
+import '../nyan_theme_context.dart';
 
 /// Visual weight:
 /// [emphasis] = floating surface chip + grouped shadow, `primaryDeep` selected
