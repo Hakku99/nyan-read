@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/services/feature_manager.dart';
 import '../../core/ui/components/nyan_inline_ad_card.dart';
 import 'nyan_shelf_pro_nudge.dart';
 
@@ -43,7 +44,9 @@ class AdsUI {
   }
 
   /// Whether to show the Pro nudge in the sponsored slot (no ad available).
-  /// [forceProNudge] overrides the debug-mode suppression for testing.
+  /// [forceProNudge] overrides both the debug-mode suppression AND the
+  /// [FeatureManager.proSurfacesEnabled] kill-switch so the admin panel can
+  /// still preview the card design.
   static bool shouldShowProNudge({
     required bool adsEnabled,
     required bool isPrivateShelf,
@@ -55,6 +58,8 @@ class AdsUI {
     if (isProUser || isPrivateShelf || isSelectionMode) return false;
     if (bookCount < minBooksForInlineShelfAd) return false;
     if (forceProNudge) return true;
+    // Pro-sales surfaces are hidden until a real paid feature exists.
+    if (!FeatureManager.proSurfacesEnabled) return false;
     return !adsEnabled && !kDebugMode;
   }
 

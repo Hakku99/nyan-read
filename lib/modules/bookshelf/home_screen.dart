@@ -238,8 +238,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       final existingIndex = await BookImportFingerprint.buildExistingIndex(db);
 
       final featureManager = ref.read(featureManagerRpProvider);
-      final isPrivateShelfUnlocked =
-          featureManager.isPro && featureManager.isPrivateShelfUnlocked;
+      // Private shelf is free-tier (2026-07); the only gate is PIN unlock.
+      final isPrivateShelfUnlocked = featureManager.isPrivateShelfUnlocked;
       final isPrivate = isPrivateShelfUnlocked && _tabController.index == 1;
 
       int successCount = 0;
@@ -439,8 +439,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     final parentContext = context;
     final featureManager = ref.read(featureManagerRpProvider);
     final vm = _vm;
-    final showPrivacyTab =
-        featureManager.isPro && featureManager.isPrivateShelfUnlocked;
+    final showPrivacyTab = featureManager.isPrivateShelfUnlocked;
     final isPrivateShelf = showPrivacyTab && _tabController.index == 1;
     final activeBooks = isPrivateShelf ? vm.privateBooks : vm.publicBooks;
     final loc = AppLocalizations.of(context)!;
@@ -703,7 +702,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               isGridView: _prefs.viewMode == ViewMode.grid,
               isSortActive: _prefs.sortBy != SortBy.recency || _prefs.isAscending,
-              isPro: featureManager.isPro,
               isPrivacyUnlocked: featureManager.isPrivateShelfUnlocked,
               sortTooltip: loc.sortBy,
               listViewTooltip: loc.listView,
@@ -794,9 +792,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       builder: (context, _) {
         final isSelectionMode = vm.isSelectionMode;
 
-        // Logic: Only show Privacy Tab if Pro AND Unlocked
-        final showPrivacyTab =
-            featureManager.isPro && featureManager.isPrivateShelfUnlocked;
+        // Privacy tab shows once unlocked — free-tier feature (2026-07).
+        final showPrivacyTab = featureManager.isPrivateShelfUnlocked;
         final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
 
         final isOnPrivateTab = showPrivacyTab && _tabController.index == 1;
@@ -845,7 +842,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                           : null;
                       return _SelectActionBar(
                         isOnPrivateTab: isOnPrivateTab,
-                        showMakePrivate: featureManager.isPro,
+                        showMakePrivate: true,
                         selectedCount: vm.selectedCount,
                         onMakePrivate: () =>
                             _moveSelectedBooks(context, !isOnPrivateTab),
@@ -1726,14 +1723,14 @@ class _BookPreviewRow extends StatelessWidget {
 /// Pinned toolbar row above the shelf tab strip.
 ///
 /// Spec `ShelfToolbar` (_chrome.jsx): Settings gear on the left; flex spacer;
-/// Search · Sort · View · Lock (Pro only) on the right. Gap between trailing
+/// Search · Sort · View · Lock on the right (Lock was Pro-only until the
+/// private shelf moved to the free tier, 2026-07). Gap between trailing
 /// buttons = 6pt; 16pt horizontal padding (spec `"14px 16px 8px"` toolbar padding).
 class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
   const _ShelfToolbarDelegate({
     required this.backgroundColor,
     required this.isGridView,
     required this.isSortActive,
-    required this.isPro,
     required this.isPrivacyUnlocked,
     required this.sortTooltip,
     required this.listViewTooltip,
@@ -1750,7 +1747,6 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
   final Color backgroundColor;
   final bool isGridView;
   final bool isSortActive;
-  final bool isPro;
   final bool isPrivacyUnlocked;
   final String sortTooltip;
   final String listViewTooltip;
@@ -1812,16 +1808,14 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
                   tooltip: isGridView ? listViewTooltip : gridViewTooltip,
                   onPressed: onToggleView,
                 ),
-                if (isPro) ...[
-                  const SizedBox(width: 6),
-                  NyanSquareActionButton(
-                    icon: isPrivacyUnlocked
-                        ? NyanIcons.lockOpen
-                        : NyanIcons.lock,
-                    tooltip: lockTooltip,
-                    onPressed: onPrivacyLock,
-                  ),
-                ],
+                const SizedBox(width: 6),
+                NyanSquareActionButton(
+                  icon: isPrivacyUnlocked
+                      ? NyanIcons.lockOpen
+                      : NyanIcons.lock,
+                  tooltip: lockTooltip,
+                  onPressed: onPrivacyLock,
+                ),
               ],
             ),
           ],
@@ -1835,7 +1829,6 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
     return backgroundColor != old.backgroundColor ||
         isGridView != old.isGridView ||
         isSortActive != old.isSortActive ||
-        isPro != old.isPro ||
         isPrivacyUnlocked != old.isPrivacyUnlocked;
   }
 }

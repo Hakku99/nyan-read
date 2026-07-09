@@ -11,13 +11,23 @@ class FeatureManager extends ChangeNotifier {
 
   AppMode _currentMode = AppMode.free;
   bool _adsEnabled = true;
-  bool _privacyShelfEnabled = false;
   bool _isPrivateShelfUnlocked = false;
   bool _forceProNudge = false;
 
+  /// Kill-switch for every Pro-sales surface (upgrade nudge card, CTAs).
+  ///
+  /// 2026-07 maintainer decision: the private shelf moved to the free tier
+  /// and no real Pro feature exists yet, so an upgrade pitch would sell an
+  /// empty box. Flip back on when the first paid feature ships (planned
+  /// model: one-time purchase, no subscription).
+  static const bool proSurfacesEnabled = false;
+
   AppMode get currentMode => _currentMode;
   bool get adsEnabled => _adsEnabled;
-  bool get privacyShelfEnabled => _privacyShelfEnabled;
+
+  /// The private shelf is a free-tier feature (2026-07): the only gate is
+  /// the PIN/biometric unlock, never the Pro mode.
+  bool get privacyShelfEnabled => true;
   bool get isPro => _currentMode == AppMode.pro;
   bool get isPrivateShelfUnlocked => _isPrivateShelfUnlocked;
   bool get forceProNudge => _forceProNudge;
@@ -45,18 +55,12 @@ class FeatureManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  // TTS was removed from the Pro feature set (2026-07): only an unreachable
+  // stub UI ever existed, so listing it was an empty promise. Re-add via a
+  // ReaderEngine Capability when actually built (Phase 5).
   void _setMode(AppMode mode) {
     _currentMode = mode;
-    // TTS was removed from the Pro feature set (2026-07): only an
-    // unreachable stub UI ever existed, so listing it was an empty promise.
-    // Re-add via a ReaderEngine Capability when actually built (Phase 5).
-    if (mode == AppMode.pro) {
-      _adsEnabled = false;
-      _privacyShelfEnabled = true;
-    } else {
-      _adsEnabled = true;
-      _privacyShelfEnabled = false;
-    }
+    _adsEnabled = mode != AppMode.pro;
   }
 
   Future<void> _persistMode(bool isPro) async {
@@ -65,11 +69,6 @@ class FeatureManager extends ChangeNotifier {
   }
 
   // Admin Overrides (for testing)
-  void forceEnablePrivacyShelf(bool enable) {
-    _privacyShelfEnabled = enable;
-    notifyListeners();
-  }
-
   void setForceProNudge(bool value) {
     _forceProNudge = value;
     notifyListeners();
