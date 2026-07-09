@@ -178,15 +178,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     }
   }
 
-  void _showExportNotice(BuildContext context) {
-    // Export flow is a stub — show an info toast until the feature is built.
-    SnackBarUtils.show(
-      context,
-      AppLocalizations.of(context)!.exportData,
-      tone: NyanSnackTone.info,
-    );
-  }
-
   Future<void> _moveSelectedBooks(BuildContext context, bool toPrivate) async {
     final vm = _vm;
     if (vm.selectedCount == 0) return;
@@ -846,7 +837,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                         selectedCount: vm.selectedCount,
                         onMakePrivate: () =>
                             _moveSelectedBooks(context, !isOnPrivateTab),
-                        onExport: () => _showExportNotice(context),
                         onDelete: () => _deleteSelectedBooks(context),
                         onDetails: singleBook != null
                             ? () => _openBookDetails(context, singleBook)
@@ -1149,14 +1139,15 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 ///
 /// Layout per bundle3.jsx `SelectActionBar`: surface bg, chrome-edge border,
 /// r-dock (24pt), lightCard shadow, 7pt vertical / 6pt horizontal padding.
-/// Actions: Make Private | Export | Delete, separated by 0.5px hairlines.
+/// Actions: Make Private | Delete, separated by 0.5px hairlines. (Export was
+/// removed 2026-07 by maintainer decision — it was a stub with no backing
+/// flow; per-book notes export lives in the book details page.)
 class _SelectActionBar extends StatelessWidget {
   const _SelectActionBar({
     required this.isOnPrivateTab,
     required this.showMakePrivate,
     required this.selectedCount,
     required this.onMakePrivate,
-    required this.onExport,
     required this.onDelete,
     this.onDetails,
   });
@@ -1165,14 +1156,13 @@ class _SelectActionBar extends StatelessWidget {
   /// to "Move to Public").
   final bool isOnPrivateTab;
 
-  /// Whether the Make Private / Public action is shown (Pro feature gate).
+  /// Whether the Make Private / Public action is shown.
   final bool showMakePrivate;
 
   /// Current selection count — drives the Details button (shown when == 1).
   final int selectedCount;
 
   final VoidCallback onMakePrivate;
-  final VoidCallback onExport;
   final VoidCallback onDelete;
 
   /// Navigates to the details of the single selected book. Only called when
@@ -1266,12 +1256,6 @@ class _SelectActionBar extends StatelessWidget {
               ),
               hairline(),
             ],
-            action(
-              icon: NyanIcons.exportData,
-              label: loc.export,
-              onTap: onExport,
-            ),
-            hairline(),
             action(
               icon: NyanIcons.delete,
               label: loc.delete,
