@@ -12,14 +12,12 @@ class FeatureManager extends ChangeNotifier {
   AppMode _currentMode = AppMode.free;
   bool _adsEnabled = true;
   bool _privacyShelfEnabled = false;
-  bool _ttsEnabled = false;
   bool _isPrivateShelfUnlocked = false;
   bool _forceProNudge = false;
 
   AppMode get currentMode => _currentMode;
   bool get adsEnabled => _adsEnabled;
   bool get privacyShelfEnabled => _privacyShelfEnabled;
-  bool get ttsEnabled => _ttsEnabled;
   bool get isPro => _currentMode == AppMode.pro;
   bool get isPrivateShelfUnlocked => _isPrivateShelfUnlocked;
   bool get forceProNudge => _forceProNudge;
@@ -49,14 +47,15 @@ class FeatureManager extends ChangeNotifier {
 
   void _setMode(AppMode mode) {
     _currentMode = mode;
+    // TTS was removed from the Pro feature set (2026-07): only an
+    // unreachable stub UI ever existed, so listing it was an empty promise.
+    // Re-add via a ReaderEngine Capability when actually built (Phase 5).
     if (mode == AppMode.pro) {
       _adsEnabled = false;
       _privacyShelfEnabled = true;
-      _ttsEnabled = true; // Enabled in Pro, though might be stubbed
     } else {
       _adsEnabled = true;
       _privacyShelfEnabled = false;
-      _ttsEnabled = false;
     }
   }
 

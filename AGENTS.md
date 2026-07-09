@@ -120,8 +120,9 @@
 - **shared_preferences**：用于 UI 配置（字号、主题、亮度、排序偏好）。
   - **MUST** 对"滑块类连续输入"的 setter 使用 `Debouncer(300ms)` 批量落盘，不得每次滑动都 `setDouble`。
   - **MUST NOT** 用它存放**任何**用户创作数据（书签、高亮、笔记）。
-- **flutter_secure_storage**：仅用于 PIN 哈希与隐私书架密钥。
+- **flutter_secure_storage**：仅用于 PIN 哈希（salt + hash）与 PIN 试错锁定状态。
   - **MUST NOT** 存明文密码；**MUST** salt + hash。
+  - **产品定位（2026-07 维护者确认）**：私密书架是**可见性门禁**（PIN/生物识别 + UI 遮挡 + 试错锁定），**不做内容加密**——书源文件与 DB 行保持明文。防"随手翻看"够用，不承诺防取证；任何文档或文案 **MUST NOT** 宣称私密书架加密内容。
 - **缓存大小**：封面图缓存 **SHOULD** 控制在 100MB 以内，**MUST** 有 LRU 淘汰策略。
 
 ### 2.5 第三方包纪律

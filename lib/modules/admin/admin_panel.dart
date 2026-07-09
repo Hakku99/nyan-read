@@ -108,13 +108,6 @@ class AdminPanel extends ConsumerWidget {
                       nyan: nyan,
                       loc: loc,
                     ),
-                    const _AdminDivider(),
-                    _AdminFlagRow(
-                      title: loc.tts,
-                      value: fm.ttsEnabled,
-                      nyan: nyan,
-                      loc: loc,
-                    ),
                   ],
                 ),
                 const SizedBox(height: NyanSpacing.space12),
