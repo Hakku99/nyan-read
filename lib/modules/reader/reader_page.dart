@@ -369,35 +369,55 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                             // repaint does not dirty
                                             // the Scaffold.
                                             child: RepaintBoundary(
-                                              child: readerPrefs.pageTurnMode ==
-                                                      PageTurnMode.tap
-                                                  ? SmoothPageReader(
-                                                      key: _smoothPageReaderKey,
-                                                      onPreviousTap: () {
-                                                        _triggerPageTurn(
-                                                          controller,
-                                                          forward: false,
-                                                          at: DateTime.now(),
-                                                        );
-                                                      },
-                                                      onNextTap: () {
-                                                        _triggerPageTurn(
-                                                          controller,
-                                                          forward: true,
-                                                          at: DateTime.now(),
-                                                        );
-                                                      },
-                                                      onCenterTap: () {
-                                                        _showReaderControls(
-                                                          context,
-                                                          controller,
-                                                        );
-                                                      },
-                                                      child: controller.engine
-                                                          .buildReader(context),
-                                                    )
-                                                  : controller.engine
-                                                      .buildReader(context),
+                                              // renderEpoch bumps when the
+                                              // engine finishes initialize()
+                                              // / chapter load — without this
+                                              // gate, buildReader() only
+                                              // reruns on an unrelated
+                                              // setState (e.g. a user tap),
+                                              // so the loading spinner would
+                                              // hang until the next tap.
+                                              child: _ControllerSelect<int>(
+                                                listenable: controller,
+                                                selector: () =>
+                                                    controller.renderEpoch,
+                                                builder: (context, _, __) =>
+                                                    readerPrefs.pageTurnMode ==
+                                                            PageTurnMode.tap
+                                                        ? SmoothPageReader(
+                                                            key:
+                                                                _smoothPageReaderKey,
+                                                            onPreviousTap: () {
+                                                              _triggerPageTurn(
+                                                                controller,
+                                                                forward: false,
+                                                                at: DateTime
+                                                                    .now(),
+                                                              );
+                                                            },
+                                                            onNextTap: () {
+                                                              _triggerPageTurn(
+                                                                controller,
+                                                                forward: true,
+                                                                at: DateTime
+                                                                    .now(),
+                                                              );
+                                                            },
+                                                            onCenterTap: () {
+                                                              _showReaderControls(
+                                                                context,
+                                                                controller,
+                                                              );
+                                                            },
+                                                            child: controller
+                                                                .engine
+                                                                .buildReader(
+                                                                    context),
+                                                          )
+                                                        : controller.engine
+                                                            .buildReader(
+                                                                context),
+                                              ),
                                             ),
                                           ),
                                         ),
