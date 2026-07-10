@@ -334,12 +334,10 @@ class EpubReaderEngine
 
   /// Topmost visible paragraph — same anchor rule as the TXT engine so the
   /// chapter label, progress and persisted position all agree (§3.6).
-  int _viewportAnchorIndex() {
-    if (_paragraphCount == 0) return 0;
+  ItemPosition? _currentViewportAnchor() {
+    if (_paragraphCount == 0) return null;
     final positions = _itemPositionsListener.itemPositions.value;
-    if (positions.isEmpty) {
-      return _initialIndex.clamp(0, _paragraphCount - 1);
-    }
+    if (positions.isEmpty) return null;
 
     ItemPosition? topmost;
     for (final p in positions) {
@@ -348,8 +346,29 @@ class EpubReaderEngine
         topmost = p;
       }
     }
-    topmost ??= positions.reduce((a, b) => a.index < b.index ? a : b);
-    return topmost.index.clamp(0, _paragraphCount - 1);
+    return topmost ?? positions.reduce((a, b) => a.index < b.index ? a : b);
+  }
+
+  int _viewportAnchorIndex() {
+    if (_paragraphCount == 0) return 0;
+    final anchor = _currentViewportAnchor();
+    return (anchor?.index ?? _initialIndex).clamp(0, _paragraphCount - 1);
+  }
+
+  /// Mirrors TxtReaderEngine._alignmentFromEdges: converts a captured
+  /// leading/trailing edge pair back into a ScrollablePositionedList
+  /// alignment so restore lands mid-paragraph exactly where the reader
+  /// left off, not snapped to the paragraph top.
+  double? _alignmentFromEdges({
+    required double leadingEdge,
+    required double trailingEdge,
+  }) {
+    final ratio = trailingEdge - leadingEdge;
+    final denominator = 1.0 - ratio;
+    if (denominator.abs() < 0.0001) {
+      return null;
+    }
+    return (leadingEdge / denominator).clamp(0.0, 1.0);
   }
 
   int _visibleParagraphCount() {
@@ -364,11 +383,17 @@ class EpubReaderEngine
   @override
   ReadingPosition? getCurrentPosition() {
     if (!_isInit || _paragraphCount == 0) return null;
-    final index = _viewportAnchorIndex();
-    // Paragraph-index-only: the self-hosted renderer does not produce CFIs.
-    // Legacy rows always persisted paragraphIndex alongside the CFI, so
-    // both directions restore through the same field.
-    return ReadingPosition(paragraphIndex: index);
+    final anchor = _currentViewportAnchor();
+    // Paragraph-index anchoring (no CFIs): legacy rows always persisted
+    // paragraphIndex alongside their CFI, so both directions restore through
+    // the same field. Viewport edges refine restore to sub-paragraph
+    // precision (same scheme as TXT).
+    return ReadingPosition(
+      paragraphIndex:
+          (anchor?.index ?? _initialIndex).clamp(0, _paragraphCount - 1),
+      paragraphLeadingEdge: anchor?.itemLeadingEdge,
+      paragraphTrailingEdge: anchor?.itemTrailingEdge,
+    );
   }
 
   @override
@@ -390,7 +415,12 @@ class EpubReaderEngine
       // fallback takes over.
       return;
     }
-    await _jumpToIndex(index);
+    final leading = position.paragraphLeadingEdge;
+    final trailing = position.paragraphTrailingEdge;
+    final alignment = (leading != null && trailing != null)
+        ? _alignmentFromEdges(leadingEdge: leading, trailingEdge: trailing)
+        : null;
+    await _jumpToIndex(index, alignment: alignment ?? 0.0);
   }
 
   @override
@@ -440,13 +470,13 @@ class EpubReaderEngine
     await seekToProgress(maxIndex == 0 ? 0.0 : target / maxIndex);
   }
 
-  Future<void> _jumpToIndex(int index) async {
+  Future<void> _jumpToIndex(int index, {double alignment = 0.0}) async {
     if (_paragraphCount == 0) return;
     final clamped = index.clamp(0, _paragraphCount - 1);
     _initialIndex = clamped;
     await _waitForViewAttached();
     if (_itemScrollController.isAttached) {
-      _itemScrollController.jumpTo(index: clamped, alignment: 0);
+      _itemScrollController.jumpTo(index: clamped, alignment: alignment);
       // One frame for the positions listener to observe the jump before
       // callers read getCurrentPosition (mirrors the legacy 60ms settle).
       await Future<void>.delayed(const Duration(milliseconds: 60));

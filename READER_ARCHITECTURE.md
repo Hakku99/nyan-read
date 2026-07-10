@@ -178,15 +178,17 @@ Why:
 Unified position model used for save/restore and current-location tracking.
 
 Fields:
-- `paragraphIndex`
+- `paragraphIndex` (+ optional `paragraphLeadingEdge` / `paragraphTrailingEdge` viewport refinement)
 - `pageNumber`
-- `cfi`
+- `cfi` (legacy EPUB field — read for backward compatibility, no longer written)
 - `chapterIndex`
 
 Usage:
-- TXT uses `paragraphIndex`
+- TXT uses `paragraphIndex` + viewport edges
 - PDF uses `pageNumber`
-- EPUB uses `cfi`
+- EPUB uses `paragraphIndex` + viewport edges (2026-07 self-hosted renderer;
+  pre-rework rows also carried a `cfi`, which restore ignores in favor of the
+  dual-written `paragraphIndex`)
 
 `ReadingProgressManager` serializes and restores this model through `DatabaseService`.
 
@@ -264,15 +266,20 @@ Implements optional capabilities:
 
 File: [`lib/modules/reader/reader_engine/epub/epub_reader.dart`](./lib/modules/reader/reader_engine/epub/epub_reader.dart)
 
-Role:
-- open EPUB bytes through `epub_view`
-- map parsed sections into typed `ReaderChapter`
-- restore and persist location using EPUB CFI
+Role (2026-07 self-hosted stack — no epub_view/epubx dependency):
+- parse the package via `epub_package_parser.dart` (container/OPF/NCX/nav)
+  and linearize chapter HTML into paragraphs in a helper isolate
+  (`epub_parse_helpers.dart`); images/fonts are never eagerly decompressed
+- render paragraphs through the same `ScrollablePositionedList` +
+  `HighlightableText` machinery as TXT
+- map the TOC tree into typed `ReaderChapter` with an id → paragraph anchor map
+- restore and persist location by absolute paragraph index
 
 Core characteristics:
-- progress is paragraph/content based rather than page based
+- progress is paragraph based rather than page based
 - chapter navigation uses `contentIndex`
-- typography/theme config is currently not engine-driven
+- typography/theme/highlights are engine-driven (`ReaderConfig` +
+  `TextReaderCapability`), like TXT
 - page metrics are intentionally not exposed
 
 Implements optional capabilities:
@@ -328,7 +335,7 @@ Implements optional capabilities:
 2. Stored payload is decoded into `ReadingPosition.fromJson(type, payload)`.
 3. The manager calls `engine.goToPosition(position)`.
 4. After restore, the manager refreshes current engine position/progress.
-5. For EPUB, there is still a safety fallback to saved normalized progress if CFI restore does not visibly move the engine.
+5. For EPUB, there is still a safety fallback to saved normalized progress if the paragraph-index restore does not visibly move the engine.
 
 ### Progress save flow
 

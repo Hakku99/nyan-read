@@ -413,5 +413,17 @@ void main() {
       expect(restored.paragraphIndex, 7);
       expect(restored.hasLocation, isTrue);
     });
+
+    test('viewport edges round-trip for sub-paragraph restore precision', () {
+      final json = const ReadingPosition(
+        paragraphIndex: 7,
+        paragraphLeadingEdge: -0.25,
+        paragraphTrailingEdge: 0.4,
+      ).toJson();
+
+      final restored = ReadingPosition.fromJson('epub', json);
+      expect(restored.paragraphLeadingEdge, -0.25);
+      expect(restored.paragraphTrailingEdge, 0.4);
+    });
   });
 }
