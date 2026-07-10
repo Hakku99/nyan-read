@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../core/services/biometric_service.dart';
 import '../../core/services/pin_service.dart';
-import '../../core/services/service_locator.dart';
 import 'pin_overlay_page.dart';
 
+/// Facade over PIN + biometric unlock flows.
+///
+/// Registered in get_it with constructor-injected services (§2.3); UI
+/// obtains it via `privacyLockServiceRpProvider`.
 class PrivacyLockService {
-  final _pinService = PinService.instance;
+  PrivacyLockService(this._pinService, this._biometricService);
+
+  final PinService _pinService;
+  final BiometricService _biometricService;
 
   /// Check if a PIN has been set up
   Future<bool> hasPassword() async {
@@ -32,7 +38,10 @@ class PrivacyLockService {
     final result = await Navigator.of(context).push<bool>(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            const PinOverlayPage(mode: PinOverlayMode.setup),
+            PinOverlayPage(
+          mode: PinOverlayMode.setup,
+          pinService: _pinService,
+        ),
         opaque: false,
         barrierDismissible: false,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -49,9 +58,10 @@ class PrivacyLockService {
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
             PinOverlayPage(
-              mode: PinOverlayMode.verify,
-              biometricService: getIt<BiometricService>(),
-            ),
+          mode: PinOverlayMode.verify,
+          pinService: _pinService,
+          biometricService: _biometricService,
+        ),
         opaque: false,
         barrierDismissible: false,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

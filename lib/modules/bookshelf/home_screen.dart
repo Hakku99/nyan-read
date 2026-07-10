@@ -18,14 +18,15 @@ import '../../core/theme/nyan_shelf_ui.dart';
 import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
 import '../../core/ui/components/components.dart';
+import 'widgets/animated_book_card.dart';
 import '../../core/ui/nyan_sheet.dart';
 import '../../core/ui/nyan_theme_context.dart';
-import '../../modules/privacy/privacy_lock_service.dart';
 import 'package:go_router/go_router.dart';
 import '../settings/settings_page.dart';
 import '../ads/ads_ui.dart';
 import '../../core/ui/nyan_icons.dart';
 import '../../core/utils/book_import_fingerprint.dart';
+import '../../core/utils/book_sandbox_copier.dart';
 import '../../core/utils/book_source_platform.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/utils/title_sort_key.dart';
@@ -33,7 +34,7 @@ import 'book_details_page.dart';
 import 'widgets/import_book_sheet.dart';
 import 'widgets/bookshelf_shelf_toolbar.dart';
 import 'widgets/bookshelf_sort_sheet.dart';
-import 'widgets/segmented_tab_control.dart';
+import '../../core/ui/components/segmented_tab_control.dart';
 import 'book_search_page.dart';
 import 'bookshelf_view_model.dart';
 import 'bookshelf_view_model_provider.dart';
@@ -177,15 +178,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     }
   }
 
-  void _showExportNotice(BuildContext context) {
-    // Export flow is a stub — show an info toast until the feature is built.
-    SnackBarUtils.show(
-      context,
-      AppLocalizations.of(context)!.exportData,
-      tone: NyanSnackTone.info,
-    );
-  }
-
   Future<void> _moveSelectedBooks(BuildContext context, bool toPrivate) async {
     final vm = _vm;
     if (vm.selectedCount == 0) return;
@@ -237,8 +229,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       final existingIndex = await BookImportFingerprint.buildExistingIndex(db);
 
       final featureManager = ref.read(featureManagerRpProvider);
-      final isPrivateShelfUnlocked =
-          featureManager.isPro && featureManager.isPrivateShelfUnlocked;
+      // Private shelf is free-tier (2026-07); the only gate is PIN unlock.
+      final isPrivateShelfUnlocked = featureManager.isPrivateShelfUnlocked;
       final isPrivate = isPrivateShelfUnlocked && _tabController.index == 1;
 
       int successCount = 0;
@@ -286,7 +278,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             isPrivate: isPrivate,
             addedAt: addedAt,
             contentSignature: contentSignature,
-            storageType: BookStorageType.externalPath,
+            storageType: importSource.storageType,
           );
 
           await db.insertBook(book.toMap());
@@ -318,6 +310,15 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           context,
           loc.duplicatesSkipped(skippedCount),
           tone: NyanSnackTone.skipped,
+        );
+      } else {
+        // Every file failed or was unresolvable (per-file errors are logged
+        // above). Without this branch the loading toast just vanishes with
+        // no outcome at all (M3-4).
+        SnackBarUtils.show(
+          context,
+          loc.importNothingSucceeded(result.files.length),
+          tone: NyanSnackTone.error,
         );
       }
 
@@ -377,6 +378,31 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
     final pickedPath = file.path;
     if (pickedPath != null && pickedPath.isNotEmpty) {
+      // iOS/macOS: file_picker hands back a copy inside a *temporary*
+      // directory that the OS (or our cache scavenger) may clear — the book
+      // would silently die after import. Copy it into the app-owned library
+      // so its lifetime is ours. Windows/Linux pickers return the user's
+      // real path, which we reference in place.
+      if (BookSandboxCopier.platformNeedsPrivateCopy) {
+        try {
+          final sandboxPath = await BookSandboxCopier.copyIntoLibrary(
+            sourcePath: pickedPath,
+            fileName: path.basename(pickedPath),
+          );
+          return _ImportedBookSource(
+            sourceLocator: sandboxPath,
+            sourceType: BookSourceType.filePath,
+            displayName: path.basename(pickedPath),
+            signatureHint: sandboxPath,
+            storageType: BookStorageType.appPrivateCopy,
+          );
+        } catch (e) {
+          // Fall back to the picked path: the import still succeeds, the
+          // book just keeps the legacy at-risk lifetime.
+          debugPrint('Sandbox copy failed for $pickedPath, '
+              'falling back to external path: $e');
+        }
+      }
       return _ImportedBookSource(
         sourceLocator: pickedPath,
         sourceType: BookSourceType.filePath,
@@ -404,8 +430,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     final parentContext = context;
     final featureManager = ref.read(featureManagerRpProvider);
     final vm = _vm;
-    final showPrivacyTab =
-        featureManager.isPro && featureManager.isPrivateShelfUnlocked;
+    final showPrivacyTab = featureManager.isPrivateShelfUnlocked;
     final isPrivateShelf = showPrivacyTab && _tabController.index == 1;
     final activeBooks = isPrivateShelf ? vm.privateBooks : vm.publicBooks;
     final loc = AppLocalizations.of(context)!;
@@ -443,7 +468,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   Future<void> _handlePrivacyLock(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
     final fm = ref.read(featureManagerRpProvider);
-    final privacyService = PrivacyLockService();
+    final privacyService = ref.read(privacyLockServiceRpProvider);
 
     if (fm.isPrivateShelfUnlocked) {
       // Lock it
@@ -474,14 +499,16 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   Future<void> _showSetPasswordDialog(BuildContext context) async {
     // Full-screen PIN takeover (U16) — set→confirm. PrivacyLockService stores a
     // 4-digit hashed PIN, so the numeric keypad is the canonical entry surface.
-    final created = await PrivacyLockService().showPinSetup(context);
+    final created =
+        await ref.read(privacyLockServiceRpProvider).showPinSetup(context);
     if (created == true && mounted) {
       _unlockPrivateShelfAfterRouteSettles();
     }
   }
 
   Future<void> _showEnterPasswordDialog(BuildContext context) async {
-    final unlocked = await PrivacyLockService().showPinVerify(context);
+    final unlocked =
+        await ref.read(privacyLockServiceRpProvider).showPinVerify(context);
     if (unlocked == true && mounted) {
       _unlockPrivateShelfAfterRouteSettles();
     }
@@ -666,7 +693,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               isGridView: _prefs.viewMode == ViewMode.grid,
               isSortActive: _prefs.sortBy != SortBy.recency || _prefs.isAscending,
-              isPro: featureManager.isPro,
               isPrivacyUnlocked: featureManager.isPrivateShelfUnlocked,
               sortTooltip: loc.sortBy,
               listViewTooltip: loc.listView,
@@ -757,9 +783,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       builder: (context, _) {
         final isSelectionMode = vm.isSelectionMode;
 
-        // Logic: Only show Privacy Tab if Pro AND Unlocked
-        final showPrivacyTab =
-            featureManager.isPro && featureManager.isPrivateShelfUnlocked;
+        // Privacy tab shows once unlocked — free-tier feature (2026-07).
+        final showPrivacyTab = featureManager.isPrivateShelfUnlocked;
         final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
 
         final isOnPrivateTab = showPrivacyTab && _tabController.index == 1;
@@ -808,11 +833,10 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                           : null;
                       return _SelectActionBar(
                         isOnPrivateTab: isOnPrivateTab,
-                        showMakePrivate: featureManager.isPro,
+                        showMakePrivate: true,
                         selectedCount: vm.selectedCount,
                         onMakePrivate: () =>
                             _moveSelectedBooks(context, !isOnPrivateTab),
-                        onExport: () => _showExportNotice(context),
                         onDelete: () => _deleteSelectedBooks(context),
                         onDetails: singleBook != null
                             ? () => _openBookDetails(context, singleBook)
@@ -1079,7 +1103,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         final vm = _vm;
         final isSelectionMode = vm.isSelectionMode;
         final isSelected = vm.isBookSelected(book.id);
-        return NyanBookCard(
+        return AnimatedBookCardList(
           book: book,
           bookData: book.toMap(),
           isSelected: isSelected,
@@ -1115,14 +1139,15 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 ///
 /// Layout per bundle3.jsx `SelectActionBar`: surface bg, chrome-edge border,
 /// r-dock (24pt), lightCard shadow, 7pt vertical / 6pt horizontal padding.
-/// Actions: Make Private | Export | Delete, separated by 0.5px hairlines.
+/// Actions: Make Private | Delete, separated by 0.5px hairlines. (Export was
+/// removed 2026-07 by maintainer decision — it was a stub with no backing
+/// flow; per-book notes export lives in the book details page.)
 class _SelectActionBar extends StatelessWidget {
   const _SelectActionBar({
     required this.isOnPrivateTab,
     required this.showMakePrivate,
     required this.selectedCount,
     required this.onMakePrivate,
-    required this.onExport,
     required this.onDelete,
     this.onDetails,
   });
@@ -1131,14 +1156,13 @@ class _SelectActionBar extends StatelessWidget {
   /// to "Move to Public").
   final bool isOnPrivateTab;
 
-  /// Whether the Make Private / Public action is shown (Pro feature gate).
+  /// Whether the Make Private / Public action is shown.
   final bool showMakePrivate;
 
   /// Current selection count — drives the Details button (shown when == 1).
   final int selectedCount;
 
   final VoidCallback onMakePrivate;
-  final VoidCallback onExport;
   final VoidCallback onDelete;
 
   /// Navigates to the details of the single selected book. Only called when
@@ -1232,12 +1256,6 @@ class _SelectActionBar extends StatelessWidget {
               ),
               hairline(),
             ],
-            action(
-              icon: NyanIcons.exportData,
-              label: loc.export,
-              onTap: onExport,
-            ),
-            hairline(),
             action(
               icon: NyanIcons.delete,
               label: loc.delete,
@@ -1689,14 +1707,14 @@ class _BookPreviewRow extends StatelessWidget {
 /// Pinned toolbar row above the shelf tab strip.
 ///
 /// Spec `ShelfToolbar` (_chrome.jsx): Settings gear on the left; flex spacer;
-/// Search · Sort · View · Lock (Pro only) on the right. Gap between trailing
+/// Search · Sort · View · Lock on the right (Lock was Pro-only until the
+/// private shelf moved to the free tier, 2026-07). Gap between trailing
 /// buttons = 6pt; 16pt horizontal padding (spec `"14px 16px 8px"` toolbar padding).
 class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
   const _ShelfToolbarDelegate({
     required this.backgroundColor,
     required this.isGridView,
     required this.isSortActive,
-    required this.isPro,
     required this.isPrivacyUnlocked,
     required this.sortTooltip,
     required this.listViewTooltip,
@@ -1713,7 +1731,6 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
   final Color backgroundColor;
   final bool isGridView;
   final bool isSortActive;
-  final bool isPro;
   final bool isPrivacyUnlocked;
   final String sortTooltip;
   final String listViewTooltip;
@@ -1775,16 +1792,14 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
                   tooltip: isGridView ? listViewTooltip : gridViewTooltip,
                   onPressed: onToggleView,
                 ),
-                if (isPro) ...[
-                  const SizedBox(width: 6),
-                  NyanSquareActionButton(
-                    icon: isPrivacyUnlocked
-                        ? NyanIcons.lockOpen
-                        : NyanIcons.lock,
-                    tooltip: lockTooltip,
-                    onPressed: onPrivacyLock,
-                  ),
-                ],
+                const SizedBox(width: 6),
+                NyanSquareActionButton(
+                  icon: isPrivacyUnlocked
+                      ? NyanIcons.lockOpen
+                      : NyanIcons.lock,
+                  tooltip: lockTooltip,
+                  onPressed: onPrivacyLock,
+                ),
               ],
             ),
           ],
@@ -1798,7 +1813,6 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
     return backgroundColor != old.backgroundColor ||
         isGridView != old.isGridView ||
         isSortActive != old.isSortActive ||
-        isPro != old.isPro ||
         isPrivacyUnlocked != old.isPrivacyUnlocked;
   }
 }
@@ -1810,11 +1824,13 @@ class _ImportedBookSource {
   final String sourceType;
   final String displayName;
   final String signatureHint;
+  final String storageType;
 
   const _ImportedBookSource({
     required this.sourceLocator,
     required this.sourceType,
     required this.displayName,
     required this.signatureHint,
+    this.storageType = BookStorageType.externalPath,
   });
 }

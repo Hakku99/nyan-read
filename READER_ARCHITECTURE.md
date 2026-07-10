@@ -7,7 +7,7 @@ This document describes the current reader architecture after the refactor phase
 The reader is organized as a small layered system:
 
 1. UI layer
-   - `ReaderPage` creates the reader session and binds gestures, drawers, overlays, and menu UI.
+   - `ReaderPage` creates the reader session and binds gestures, the One Paper chrome (floating dock that grows in-place into Chapters/Settings sheets), overlays, and menu UI.
    - `ReaderMenu` gates visible controls using `ReaderCapabilities`.
    - `ChapterListWidget` renders the table of contents from typed `ReaderChapter` data.
 
@@ -178,15 +178,17 @@ Why:
 Unified position model used for save/restore and current-location tracking.
 
 Fields:
-- `paragraphIndex`
+- `paragraphIndex` (+ optional `paragraphLeadingEdge` / `paragraphTrailingEdge` viewport refinement)
 - `pageNumber`
-- `cfi`
+- `cfi` (legacy EPUB field — read for backward compatibility, no longer written)
 - `chapterIndex`
 
 Usage:
-- TXT uses `paragraphIndex`
+- TXT uses `paragraphIndex` + viewport edges
 - PDF uses `pageNumber`
-- EPUB uses `cfi`
+- EPUB uses `paragraphIndex` + viewport edges (2026-07 self-hosted renderer;
+  pre-rework rows also carried a `cfi`, which restore ignores in favor of the
+  dual-written `paragraphIndex`)
 
 `ReadingProgressManager` serializes and restores this model through `DatabaseService`.
 
@@ -221,15 +223,15 @@ Usage:
 
 ### `ReaderCapabilities`
 
-UI-facing capability matrix.
+UI-facing capability matrix. Since P2-4 each capability is a `CapabilityLevel` (`none / limited / full`) rather than a boolean; `supportsXxx` boolean getters remain as convenience wrappers (`level != none`).
 
 Fields:
-- `supportsTypography`
-- `supportsTheme`
-- `supportsHighlights`
-- `supportsAnnotations`
-- `supportsPageAnimation`
-- `chapterNavigation`
+- `typography: CapabilityLevel`
+- `theme: CapabilityLevel`
+- `highlights: CapabilityLevel`
+- `annotations: CapabilityLevel`
+- `pageAnimation: CapabilityLevel`
+- `chapterNavigation: ReaderChapterNavigation` (`none / semantic / synthetic`)
 
 Usage:
 - `ReaderMenu` hides unsupported controls
@@ -264,15 +266,20 @@ Implements optional capabilities:
 
 File: [`lib/modules/reader/reader_engine/epub/epub_reader.dart`](./lib/modules/reader/reader_engine/epub/epub_reader.dart)
 
-Role:
-- open EPUB bytes through `epub_view`
-- map parsed sections into typed `ReaderChapter`
-- restore and persist location using EPUB CFI
+Role (2026-07 self-hosted stack — no epub_view/epubx dependency):
+- parse the package via `epub_package_parser.dart` (container/OPF/NCX/nav)
+  and linearize chapter HTML into paragraphs in a helper isolate
+  (`epub_parse_helpers.dart`); images/fonts are never eagerly decompressed
+- render paragraphs through the same `ScrollablePositionedList` +
+  `HighlightableText` machinery as TXT
+- map the TOC tree into typed `ReaderChapter` with an id → paragraph anchor map
+- restore and persist location by absolute paragraph index
 
 Core characteristics:
-- progress is paragraph/content based rather than page based
+- progress is paragraph based rather than page based
 - chapter navigation uses `contentIndex`
-- typography/theme config is currently not engine-driven
+- typography/theme/highlights are engine-driven (`ReaderConfig` +
+  `TextReaderCapability`), like TXT
 - page metrics are intentionally not exposed
 
 Implements optional capabilities:
@@ -299,9 +306,9 @@ Implements optional capabilities:
 
 | Engine | Typography | Theme | Highlights | Annotations | Page Animation | Chapter Navigation | TextReaderCapability | TextExtractionCapability | PageMetricsCapability |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| TXT | Yes | Yes | Yes | Yes | No | Semantic | Yes | Yes | Yes |
-| EPUB | No | No | No | No | No | Semantic | No | No | No |
-| PDF | No | No | No | No | No | Synthetic | No | No | Yes |
+| TXT | full | full | full | full | none | semantic | Yes | Yes | Yes |
+| EPUB | none | none | none | none | none | semantic | No | No | No |
+| PDF | none | none | none | none | none | synthetic | No | No | Yes |
 
 ## 7. Navigation and Restore Flows
 
@@ -328,7 +335,7 @@ Implements optional capabilities:
 2. Stored payload is decoded into `ReadingPosition.fromJson(type, payload)`.
 3. The manager calls `engine.goToPosition(position)`.
 4. After restore, the manager refreshes current engine position/progress.
-5. For EPUB, there is still a safety fallback to saved normalized progress if CFI restore does not visibly move the engine.
+5. For EPUB, there is still a safety fallback to saved normalized progress if the paragraph-index restore does not visibly move the engine.
 
 ### Progress save flow
 
@@ -382,8 +389,7 @@ The reader architecture is much cleaner than before, but a few cleanup items rem
 3. `ReaderEngine.setConfig(...)` remains a no-op in EPUB and PDF.
    - UI capability gating hides unsupported controls, but the core contract still carries this method.
 
-4. `ReaderCapabilities` is still mostly boolean-only.
-   - Chapter navigation is now typed, but the rest of the matrix still cannot express limited support levels such as partial theme support.
+4. ~~`ReaderCapabilities` is still mostly boolean-only.~~ Resolved by P2-4: every capability is now a `CapabilityLevel` (`none / limited / full`). No engine currently declares `limited`, so the intermediate level is exercised only by the type system.
 
 5. PDF chapter data is synthetic.
    - `ReaderChapter` supports `isSynthetic`, but there is no richer typed distinction yet.
@@ -403,8 +409,8 @@ The current architecture is well positioned for incremental extension:
 2. Add EPUB text annotations later
    - implement `TextReaderCapability` and/or `TextExtractionCapability` only when EPUB text lookup is reliable
 
-3. Add richer capability modeling
-   - chapter navigation is now typed, but the rest of the capability matrix still uses booleans; future work can add support levels such as `none / limited / full`
+3. Use the `limited` capability level
+   - the `none / limited / full` levels exist (P2-4); when an engine gains partial support (e.g. EPUB theme-only config), declare `limited` instead of adding new booleans
 
 4. Add typed synthetic navigation models
    - if PDF TOC evolves, split semantic chapters from synthetic navigation more explicitly

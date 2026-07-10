@@ -1,3 +1,4 @@
+import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/models/book.dart';
 import 'package:nyan_read/modules/reader/reader_engine/txt/txt_reader.dart';
@@ -66,6 +67,34 @@ void main() {
       );
 
       expect(resolved, isNull);
+    });
+  });
+
+  group('TXT inline image provider selection (offline promise)', () {
+    test('blocks http and https sources', () {
+      // A tracking pixel embedded in a downloaded TXT must never fire a
+      // network request (analysis item #3).
+      expect(txtImageProviderFor(Uri.parse('http://evil.example/p.png')),
+          isNull);
+      expect(txtImageProviderFor(Uri.parse('https://evil.example/p.png')),
+          isNull);
+    });
+
+    test('allows local file sources', () {
+      expect(txtImageProviderFor(Uri.parse('file:///books/a.png')),
+          isA<FileImage>());
+    });
+
+    test('allows inline data URIs', () {
+      expect(
+        txtImageProviderFor(
+            Uri.parse('data:image/png;base64,aGVsbG8=')),
+        isA<MemoryImage>(),
+      );
+    });
+
+    test('rejects unknown schemes', () {
+      expect(txtImageProviderFor(Uri.parse('ftp://host/a.png')), isNull);
     });
   });
 }

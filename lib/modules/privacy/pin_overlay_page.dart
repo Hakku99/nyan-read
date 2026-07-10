@@ -24,6 +24,10 @@ class PinOverlayPage extends StatefulWidget {
   final VoidCallback? onSuccess;
   final VoidCallback? onCancel;
 
+  /// Injected by [PrivacyLockService] (§2.3: no service-locator lookups in
+  /// widgets).
+  final PinService pinService;
+
   /// Injected by [PrivacyLockService]. Null in setup/change modes — the
   /// fingerprint button is never shown outside of verify mode.
   final BiometricService? biometricService;
@@ -31,6 +35,7 @@ class PinOverlayPage extends StatefulWidget {
   const PinOverlayPage({
     super.key,
     required this.mode,
+    required this.pinService,
     this.onSuccess,
     this.onCancel,
     this.biometricService,
@@ -41,7 +46,7 @@ class PinOverlayPage extends StatefulWidget {
 }
 
 class _PinOverlayPageState extends State<PinOverlayPage> {
-  final _pinService = PinService.instance;
+  late final PinService _pinService = widget.pinService;
   bool _isError = false;
   String? _firstPin;
   bool _biometricAvailable = false;

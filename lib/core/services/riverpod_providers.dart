@@ -8,6 +8,7 @@ import 'reader_preferences_service.dart';
 import 'reading_reminder_service.dart';
 import 'service_locator.dart';
 import '../theme/theme_manager.dart';
+import '../../modules/privacy/privacy_lock_service.dart';
 
 /// Riverpod bridge layer for the current Provider/get_it stack.
 ///
@@ -40,4 +41,8 @@ final databaseServiceRpProvider = Provider<DatabaseService>((ref) {
 
 final bookshelfPreferencesRpProvider = Provider<BookshelfPreferencesService>((ref) {
   return getIt<BookshelfPreferencesService>();
+});
+
+final privacyLockServiceRpProvider = Provider<PrivacyLockService>((ref) {
+  return getIt<PrivacyLockService>();
 });

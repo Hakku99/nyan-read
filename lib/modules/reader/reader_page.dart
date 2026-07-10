@@ -16,6 +16,7 @@ import '../../core/ui/nyan_theme_context.dart';
 import '../bookmark/bookmark_list_page.dart';
 import '../notes/notes_list_page.dart';
 import 'reader_engine/reader_engine.dart';
+import 'reader_error.dart';
 import 'widgets/reader_error_view.dart';
 import 'widgets/highlight_note_dialog.dart';
 import 'widgets/reader_menu.dart';
@@ -121,7 +122,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     unawaited(_brightnessController.initialize());
     // Left-edge drag reuses the same popover as the sun button — one UI for
     // brightness regardless of entry point.
-    _brightnessController.isAdjusting.addListener(_onBrightnessAdjustingChanged);
+    _brightnessController.isAdjusting
+        .addListener(_onBrightnessAdjustingChanged);
     _reminderService = ref.read(readingReminderRpProvider);
     _reminderService.addListener(_onReminderSettingsChanged);
     WidgetsBinding.instance.addObserver(this);
@@ -139,7 +141,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     _chapterSyncDebounce?.cancel();
     _sheetCloseTimer?.cancel();
     _boundController = null;
-    _brightnessController.isAdjusting.removeListener(_onBrightnessAdjustingChanged);
+    _brightnessController.isAdjusting
+        .removeListener(_onBrightnessAdjustingChanged);
     unawaited(_brightnessController.shutdown());
     _brightnessController.dispose();
     super.dispose();
@@ -258,453 +261,479 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
         return Builder(
           builder: (context) {
             final readerPrefs = ref.watch(readerPreferencesRpProvider);
-            return ListenableBuilder(
-              listenable: controller,
-              builder: (context, _) {
-                final bgColor = controller.backgroundColor;
-                final loc = AppLocalizations.of(context)!;
-                return PopScope(
-                  canPop: false,
-                  onPopInvokedWithResult: (didPop, result) async {
-                    if (didPop) return;
-                    // Save progress before navigating away
-                    await controller.saveBeforeExit();
-                    await _brightnessController.shutdown();
-                    if (context.mounted) {
-                      Navigator.of(context).pop();
-                    }
-                  },
-                  child: Scaffold(
-                    key: readerPageScaffoldKey,
-                    backgroundColor: bgColor,
-                    resizeToAvoidBottomInset: false,
-                    // The outer `Consumer<ReaderController>` that used to
-                    // wrap BrightnessOverlayWidget here was pure
-                    // rebuild-on-every-notify overhead: nothing at this
-                    // depth actually reads the controller.  Inner Selectors
-                    // below subscribe to exactly the slices they need.
-                    body: BrightnessOverlayWidget(
-                      stateListenable: _brightnessController.stateListenable,
-                      warmthListenable: _brightnessController.warmthListenable,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          // 1. Reader body + inline progress % label.
-                          //    Selector on a record so it only rebuilds when
-                          //    (backgroundColor, progress, hasBottomBar)
-                          //    actually change - not on every paragraph
-                          //    sync or manager notify.
-                          Positioned.fill(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTapDown: (details) =>
-                                  _handleTapDown(context, details),
-                              onTapUp: (details) =>
-                                  _handleTapUp(context, details),
-                              onPanStart: (details) =>
-                                  _handlePanStart(context, details),
-                              onPanUpdate: (details) =>
-                                  _handlePanUpdate(context, details),
-                              onPanEnd: (details) =>
-                                  _handlePanEnd(context, details),
-                              child: ListenableBuilder(
-                                listenable: controller,
-                                builder: (context, _) {
-                                  final backgroundColor =
-                                      controller.backgroundColor;
-                                  final hasBottomBar =
-                                      controller.engine.hasBottomBar;
-                                  // Controller engine reference itself is
-                                  // stable; we only need it for
-                                  // buildReader() + the scroll callback.
-                                  // Read (not watch) to avoid adding
-                                  // another subscription.
-                                  final isDark =
-                                      backgroundColor.computeLuminance() < 0.5;
-                                  final transparentSystem = Theme.of(context)
-                                      .colorScheme
-                                      .surface
-                                      .withValues(alpha: 0);
-                                  final systemOverlayStyle = isDark
-                                      ? SystemUiOverlayStyle.light.copyWith(
-                                          statusBarColor: transparentSystem,
-                                          systemNavigationBarColor:
-                                              transparentSystem,
-                                        )
-                                      : SystemUiOverlayStyle.dark.copyWith(
-                                          statusBarColor: transparentSystem,
-                                          systemNavigationBarColor:
-                                              transparentSystem,
-                                        );
+            final loc = AppLocalizations.of(context)!;
+            return PopScope(
+              canPop: false,
+              onPopInvokedWithResult: (didPop, result) async {
+                if (didPop) return;
+                // Save progress before navigating away
+                await controller.saveBeforeExit();
+                await _brightnessController.shutdown();
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
+              // Minimal subscription (P0-2, restored after the Riverpod
+              // migration regressed it to a whole-page rebuild): this outer
+              // subscription only re-evaluates Scaffold.backgroundColor.
+              // The heavy Stack is passed via [child] — its widget instance
+              // is identical across controller notifies, so the framework
+              // skips rebuilding it. Layers that do track the controller
+              // (reader body, chapter caption, error view, dock) each use a
+              // scoped _ControllerSelect below.
+              child: _ControllerSelect<Color>(
+                listenable: controller,
+                selector: () => controller.backgroundColor,
+                child: BrightnessOverlayWidget(
+                  stateListenable: _brightnessController.stateListenable,
+                  warmthListenable: _brightnessController.warmthListenable,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // 1. Reader body + inline progress % label.
+                      //    _ControllerSelect on a record so it only
+                      //    rebuilds when (backgroundColor, hasBottomBar)
+                      //    actually change — not on every chapter sync
+                      //    or manager notify; the progress % label
+                      //    subscribes to progressListenable on its own.
+                      Positioned.fill(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapDown: (details) =>
+                              _handleTapDown(context, details),
+                          onTapUp: (details) => _handleTapUp(context, details),
+                          onPanStart: (details) =>
+                              _handlePanStart(context, details),
+                          onPanUpdate: (details) =>
+                              _handlePanUpdate(context, details),
+                          onPanEnd: (details) =>
+                              _handlePanEnd(context, details),
+                          child: _ControllerSelect<(Color, bool)>(
+                            listenable: controller,
+                            selector: () => (
+                              controller.backgroundColor,
+                              controller.engine.hasBottomBar,
+                            ),
+                            builder: (context, slice, _) {
+                              final (backgroundColor, hasBottomBar) = slice;
+                              // Controller engine reference itself is
+                              // stable; we only need it for
+                              // buildReader() + the scroll callback.
+                              // Read (not watch) to avoid adding
+                              // another subscription.
+                              final isDark =
+                                  backgroundColor.computeLuminance() < 0.5;
+                              final transparentSystem = Theme.of(context)
+                                  .colorScheme
+                                  .surface
+                                  .withValues(alpha: 0);
+                              final systemOverlayStyle = isDark
+                                  ? SystemUiOverlayStyle.light.copyWith(
+                                      statusBarColor: transparentSystem,
+                                      systemNavigationBarColor:
+                                          transparentSystem,
+                                    )
+                                  : SystemUiOverlayStyle.dark.copyWith(
+                                      statusBarColor: transparentSystem,
+                                      systemNavigationBarColor:
+                                          transparentSystem,
+                                    );
 
-                                  return AnnotatedRegion<SystemUiOverlayStyle>(
-                                    value: systemOverlayStyle,
-                                    child: LayoutBuilder(
-                                      builder: (context, constraints) {
-                                        final padding =
-                                            MediaQuery.of(context).padding;
-                                        return Stack(
-                                          children: [
-                                            Padding(
-                                              key: _readerBodyKey,
-                                              padding: EdgeInsets.only(
-                                                top: padding.top,
-                                                bottom: padding.bottom,
+                              return AnnotatedRegion<SystemUiOverlayStyle>(
+                                value: systemOverlayStyle,
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final padding =
+                                        MediaQuery.of(context).padding;
+                                    return Stack(
+                                      children: [
+                                        Padding(
+                                          key: _readerBodyKey,
+                                          padding: EdgeInsets.only(
+                                            top: padding.top,
+                                            bottom: padding.bottom,
+                                          ),
+                                          child: NotificationListener<
+                                              ScrollNotification>(
+                                            onNotification:
+                                                (ScrollNotification _) {
+                                              _scheduleDebouncedChapterSync(
+                                                controller,
+                                              );
+                                              return false;
+                                            },
+                                            // RepaintBoundary isolates
+                                            // the scrolling engine body
+                                            // from the overlay layers
+                                            // above it so a scroll
+                                            // repaint does not dirty
+                                            // the Scaffold.
+                                            child: RepaintBoundary(
+                                              // renderEpoch bumps when the
+                                              // engine finishes initialize()
+                                              // / chapter load — without this
+                                              // gate, buildReader() only
+                                              // reruns on an unrelated
+                                              // setState (e.g. a user tap),
+                                              // so the loading spinner would
+                                              // hang until the next tap.
+                                              child: _ControllerSelect<int>(
+                                                listenable: controller,
+                                                selector: () =>
+                                                    controller.renderEpoch,
+                                                builder: (context, _, __) =>
+                                                    readerPrefs.pageTurnMode ==
+                                                            PageTurnMode.tap
+                                                        ? SmoothPageReader(
+                                                            key:
+                                                                _smoothPageReaderKey,
+                                                            onPreviousTap: () {
+                                                              _triggerPageTurn(
+                                                                controller,
+                                                                forward: false,
+                                                                at: DateTime
+                                                                    .now(),
+                                                              );
+                                                            },
+                                                            onNextTap: () {
+                                                              _triggerPageTurn(
+                                                                controller,
+                                                                forward: true,
+                                                                at: DateTime
+                                                                    .now(),
+                                                              );
+                                                            },
+                                                            onCenterTap: () {
+                                                              _showReaderControls(
+                                                                context,
+                                                                controller,
+                                                              );
+                                                            },
+                                                            child: controller
+                                                                .engine
+                                                                .buildReader(
+                                                                    context),
+                                                          )
+                                                        : controller.engine
+                                                            .buildReader(
+                                                                context),
                                               ),
-                                              child: NotificationListener<
-                                                  ScrollNotification>(
-                                                onNotification:
-                                                    (ScrollNotification _) {
-                                                  _scheduleDebouncedChapterSync(
-                                                    controller,
+                                            ),
+                                          ),
+                                        ),
+                                        // T6: Chapter caption —
+                                        // bottom-right counterpart to
+                                        // the progress % label on the
+                                        // left. Both fade when controls
+                                        // are visible so the bottom
+                                        // overlay's row takes over.
+                                        Positioned(
+                                          right: 16,
+                                          bottom: padding.bottom > 0
+                                              ? padding.bottom + 4
+                                              : 16,
+                                          child: Opacity(
+                                            opacity:
+                                                (_showControls || hasBottomBar)
+                                                    ? 0
+                                                    : 1,
+                                            child: ConstrainedBox(
+                                              // Cap width at 45% of the
+                                              // viewport so a long chapter
+                                              // title cannot trample the
+                                              // progress % on the left.
+                                              constraints: BoxConstraints(
+                                                maxWidth:
+                                                    constraints.maxWidth * 0.45,
+                                              ),
+                                              child: _ControllerSelect<
+                                                  (List<ReaderChapter>, int?)>(
+                                                listenable: controller,
+                                                selector: () => (
+                                                  controller.chapters,
+                                                  controller
+                                                      .currentChapterIndex,
+                                                ),
+                                                builder: (context, slice, _) {
+                                                  final loc =
+                                                      AppLocalizations.of(
+                                                          context)!;
+                                                  final label =
+                                                      readerChapterSummaryLabel(
+                                                    chapters: slice.$1,
+                                                    currentChapterIndex:
+                                                        slice.$2,
+                                                    loc: loc,
                                                   );
-                                                  return false;
-                                                },
-                                                // RepaintBoundary isolates
-                                                // the scrolling engine body
-                                                // from the overlay layers
-                                                // above it so a scroll
-                                                // repaint does not dirty
-                                                // the Scaffold.
-                                                child: RepaintBoundary(
-                                                  child: readerPrefs.pageTurnMode ==
-                                                          PageTurnMode.tap
-                                                      ? SmoothPageReader(
-                                                          key: _smoothPageReaderKey,
-                                                          onPreviousTap: () {
-                                                            _triggerPageTurn(
-                                                              controller,
-                                                              forward: false,
-                                                              at: DateTime.now(),
-                                                            );
-                                                          },
-                                                          onNextTap: () {
-                                                            _triggerPageTurn(
-                                                              controller,
-                                                              forward: true,
-                                                              at: DateTime.now(),
-                                                            );
-                                                          },
-                                                          onCenterTap: () {
-                                                            _showReaderControls(
-                                                              context,
-                                                              controller,
-                                                            );
-                                                          },
-                                                          child: controller.engine
-                                                              .buildReader(context),
-                                                        )
-                                                      : controller.engine
-                                                          .buildReader(context),
-                                                ),
-                                              ),
-                                            ),
-                                            // T6: Chapter caption —
-                                            // bottom-right counterpart to
-                                            // the progress % label on the
-                                            // left. Both fade when controls
-                                            // are visible so the bottom
-                                            // overlay's row takes over.
-                                            Positioned(
-                                              right: 16,
-                                              bottom: padding.bottom > 0
-                                                  ? padding.bottom + 4
-                                                  : 16,
-                                              child: Opacity(
-                                                opacity: (_showControls ||
-                                                        hasBottomBar)
-                                                    ? 0
-                                                    : 1,
-                                                child: ConstrainedBox(
-                                                  // Cap width at 45% of the
-                                                  // viewport so a long chapter
-                                                  // title cannot trample the
-                                                  // progress % on the left.
-                                                  constraints: BoxConstraints(
-                                                    maxWidth:
-                                                        constraints.maxWidth *
-                                                            0.45,
-                                                  ),
-                                                  child: ListenableBuilder(
-                                                    listenable: controller,
-                                                    builder: (context, _) {
-                                                      final loc =
-                                                          AppLocalizations.of(
-                                                              context)!;
-                                                      final label =
-                                                          readerChapterSummaryLabel(
-                                                        chapters:
-                                                            controller.chapters,
-                                                        currentChapterIndex:
-                                                            controller
-                                                                .currentChapterIndex,
-                                                        loc: loc,
-                                                      );
-                                                      return Text(
-                                                        label,
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        textAlign:
-                                                            TextAlign.right,
-                                                        style: TextStyle(
-                                                          fontFamily:
-                                                              NyanTypography
-                                                                  .uiFontFamily,
-                                                          fontSize: 10,
-                                                          fontWeight:
-                                                              FontWeight.w400,
-                                                          color: Theme.of(
-                                                                  context)
-                                                              .colorScheme
-                                                              .onSurface
-                                                              .withValues(
-                                                                alpha: isDark
-                                                                    ? 0.42
-                                                                    : 0.5,
-                                                              ),
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-
-                                            Positioned(
-                                              left: 16,
-                                              bottom: padding.bottom > 0
-                                                  ? padding.bottom + 4
-                                                  : 16,
-                                              child: Opacity(
-                                                opacity: (_showControls ||
-                                                        hasBottomBar)
-                                                    ? 0
-                                                    : 1,
-                                                child: ValueListenableBuilder<
-                                                    double>(
-                                                  valueListenable: controller
-                                                      .progressListenable,
-                                                  builder:
-                                                      (context, progress, _) =>
-                                                          Text(
-                                                    "${(progress * 100).toInt()}%",
+                                                  return Text(
+                                                    label,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    textAlign: TextAlign.right,
                                                     style: TextStyle(
+                                                      fontFamily: NyanTypography
+                                                          .uiFontFamily,
                                                       fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w400,
                                                       color: Theme.of(context)
                                                           .colorScheme
                                                           .onSurface
                                                           .withValues(
-                                                              alpha: isDark
-                                                                  ? 0.42
-                                                                  : 0.5),
-                                                      fontWeight:
-                                                          FontWeight.w600,
+                                                            alpha: isDark
+                                                                ? 0.42
+                                                                : 0.5,
+                                                          ),
                                                     ),
-                                                  ),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        Positioned(
+                                          left: 16,
+                                          bottom: padding.bottom > 0
+                                              ? padding.bottom + 4
+                                              : 16,
+                                          child: Opacity(
+                                            opacity:
+                                                (_showControls || hasBottomBar)
+                                                    ? 0
+                                                    : 1,
+                                            child:
+                                                ValueListenableBuilder<double>(
+                                              valueListenable:
+                                                  controller.progressListenable,
+                                              builder: (context, progress, _) =>
+                                                  Text(
+                                                "${(progress * 100).toInt()}%",
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface
+                                                      .withValues(
+                                                          alpha: isDark
+                                                              ? 0.42
+                                                              : 0.5),
+                                                  fontWeight: FontWeight.w600,
                                                 ),
                                               ),
                                             ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-
-                          // 2. Error View
-                          ListenableBuilder(
-                            listenable: controller,
-                            builder: (context, _) {
-                              final errorState = controller.errorState;
-                              if (errorState == null) {
-                                return const SizedBox.shrink();
-                              }
-                              // Wrap in Positioned.fill to ensure it has size in the Stack
-                              return Positioned.fill(
-                                child: Container(
-                                  color:
-                                      Theme.of(context).scaffoldBackgroundColor,
-                                  child: ReaderErrorView(
-                                    errorState: errorState,
-                                    onBack: () => Navigator.pop(context),
-                                    onRetry: controller.retry,
-                                  ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 ),
                               );
                             },
                           ),
-
-                          // 3. Edge Gesture Binding for Brightness
-                          // Keep gesture preview on the shared controller to avoid
-                          // duplicate writes through multiple state owners.
-                          if (readerPrefs.edgeBrightnessGestureEnabled)
-                            Positioned(
-                              left: 0,
-                              bottom: 0,
-                              width: 50.0,
-                              height: math.max(
-                                72.0,
-                                MediaQuery.of(context).size.height * 0.10,
-                              ),
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.translucent,
-                                onVerticalDragStart: (_) =>
-                                    _brightnessController.handleDragStart(),
-                                onVerticalDragUpdate: (details) {
-                                  _brightnessController.handleDragUpdate(
-                                    details.primaryDelta ?? 0.0,
-                                    MediaQuery.of(context).size.height,
-                                  );
-                                },
-                                onVerticalDragEnd: (details) {
-                                  _brightnessController.handleInteractionEnd();
-                                },
-                                child: const SizedBox.expand(),
-                              ),
-                            ),
-
-                          // 4. Top overlay — floating paper bar: back /
-                          // title + author / sun (brightness) / bookmark /
-                          // more. Inset on all 3 sides like OnePaperDock,
-                          // so it reads as the same floating-chrome object
-                          // (top+bottom matched set). Source: `reader.jsx`
-                          // `ReaderTopBar`.
-                          Positioned(
-                            top: NyanSpacing.space12 +
-                                MediaQuery.of(context).padding.top,
-                            left: NyanSpacing.space12,
-                            right: NyanSpacing.space12,
-                            child: _ReaderTopOverlay(
-                              visible: _showControls,
-                              controller: controller,
-                              onBack: () => _handleBackFromTopOverlay(
-                                context,
-                                controller,
-                              ),
-                              onAddBookmark: () =>
-                                  _handleAddBookmarkFromTopOverlay(
-                                context,
-                                controller,
-                              ),
-                              onToggleBrightness: _toggleBrightnessPopover,
-                              brightnessActive: _brightnessPopoverOpen,
-                              onOpenSettings: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const SettingsPage(),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // 5. Scrim — warm-ink dim that rises with a grown
-                          // sheet; tapping it collapses the dock back to a
-                          // resting bar. Above the top bar (dims it), below the
-                          // dock. (Canvas recede/blur added in C5.)
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              ignoring: _openSheet == null,
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: _collapseSheet,
-                                child: AnimatedOpacity(
-                                  opacity: _openSheet != null ? 1.0 : 0.0,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: const Cubic(0.33, 0.9, 0.36, 1.0),
-                                  // The 2px Gaussian recede is the one place
-                                  // blur is used; mount the BackdropFilter only
-                                  // while a sheet is open so it carries no idle
-                                  // saveLayer cost during reading.
-                                  child: _openSheet != null
-                                      ? BackdropFilter(
-                                          filter: ImageFilter.blur(
-                                            sigmaX: 2,
-                                            sigmaY: 2,
-                                          ),
-                                          child: ColoredBox(
-                                            color: Theme.of(context)
-                                                        .brightness ==
-                                                    Brightness.dark
-                                                ? const Color(0x94000000)
-                                                : const Color(0x57282420),
-                                          ),
-                                        )
-                                      : const SizedBox.expand(),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // 6. One Paper dock — floating panel that grows into
-                          // a sheet (Settings / Chapters). Replaces the P4
-                          // sticky strip. Brightness lives elsewhere (top-bar
-                          // sun popover + left-edge drag), not in the dock.
-                          OnePaperDock(
-                            visible: _showControls,
-                            sheetOpen: _openSheet != null,
-                            // Title/meta/body track [_displayedSheet] so content
-                            // stays mounted through the collapse animation.
-                            title: _sheetTitle(loc, _displayedSheet),
-                            meta: _sheetMeta(controller, loc, _displayedSheet),
-                            onGrabberTap: _collapseSheet,
-                            footer: DockFooter(
-                              sheetOpen: _openSheet != null,
-                              chapterIndex:
-                                  controller.currentChapterIndex ?? -1,
-                              chapterCount: controller.chapters.length,
-                              progressListenable: controller.progressListenable,
-                              activeAction: _openSheet,
-                              onAction: (a) =>
-                                  _handleDockAction(a, context, controller),
-                              onPrevChapter: () => _stepChapter(controller, -1),
-                              onNextChapter: () => _stepChapter(controller, 1),
-                            ),
-                            child: _buildSheetChild(controller, _displayedSheet),
-                          ),
-
-                          // 7. Brightness sun popover — centered glass dialog
-                          // over the canvas; above the dock (only mounts while
-                          // open).
-                          ReaderBrightnessPopover(
-                            visible: _brightnessPopoverOpen,
-                            controller: _brightnessController,
-                            onDismiss: _closeBrightnessPopover,
-                          ),
-
-                          // 8. Rest Reminder overlay — full-screen eye-rest
-                          // nudge after the configured reading interval.
-                          // Listener(opaque) ensures the reader body's
-                          // HitTestBehavior.opaque GestureDetector (item 1)
-                          // is never reached by the hit-test walk while the
-                          // overlay is visible, so the "Continue reading"
-                          // button wins the gesture arena uncontested.
-                          if (_showRestReminder)
-                            Positioned.fill(
-                              child: Listener(
-                                behavior: HitTestBehavior.opaque,
-                                child: ValueListenableBuilder<int>(
-                                  valueListenable: _restSecondsRemaining,
-                                  builder: (_, remaining, __) =>
-                                      RestReminderOverlay(
-                                    remaining: remaining,
-                                    total: _kRestCountdownSeconds,
-                                    onSkip: _finishRestReminder,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                        ],
+                        ),
                       ),
-                    ),
-                  ), // end Scaffold
-                ); // end PopScope
-              },
-            );
+
+                      // 2. Error View
+                      _ControllerSelect<ReaderErrorState?>(
+                        listenable: controller,
+                        selector: () => controller.errorState,
+                        builder: (context, errorState, _) {
+                          if (errorState == null) {
+                            return const SizedBox.shrink();
+                          }
+                          // Wrap in Positioned.fill to ensure it has size in the Stack
+                          return Positioned.fill(
+                            child: Container(
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                              child: ReaderErrorView(
+                                errorState: errorState,
+                                onBack: () => Navigator.pop(context),
+                                onRetry: controller.retry,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // 3. Edge Gesture Binding for Brightness
+                      // Keep gesture preview on the shared controller to avoid
+                      // duplicate writes through multiple state owners.
+                      if (readerPrefs.edgeBrightnessGestureEnabled)
+                        Positioned(
+                          left: 0,
+                          bottom: 0,
+                          width: 50.0,
+                          height: math.max(
+                            72.0,
+                            MediaQuery.of(context).size.height * 0.10,
+                          ),
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onVerticalDragStart: (_) =>
+                                _brightnessController.handleDragStart(),
+                            onVerticalDragUpdate: (details) {
+                              _brightnessController.handleDragUpdate(
+                                details.primaryDelta ?? 0.0,
+                                MediaQuery.of(context).size.height,
+                              );
+                            },
+                            onVerticalDragEnd: (details) {
+                              _brightnessController.handleInteractionEnd();
+                            },
+                            child: const SizedBox.expand(),
+                          ),
+                        ),
+
+                      // 4. Top overlay — floating paper bar: back /
+                      // title + author / sun (brightness) / bookmark /
+                      // more. Inset on all 3 sides like OnePaperDock,
+                      // so it reads as the same floating-chrome object
+                      // (top+bottom matched set). Source: `reader.jsx`
+                      // `ReaderTopBar`.
+                      Positioned(
+                        top: NyanSpacing.space12 +
+                            MediaQuery.of(context).padding.top,
+                        left: NyanSpacing.space12,
+                        right: NyanSpacing.space12,
+                        child: _ReaderTopOverlay(
+                          visible: _showControls,
+                          controller: controller,
+                          onBack: () => _handleBackFromTopOverlay(
+                            context,
+                            controller,
+                          ),
+                          onAddBookmark: () => _handleAddBookmarkFromTopOverlay(
+                            context,
+                            controller,
+                          ),
+                          onToggleBrightness: _toggleBrightnessPopover,
+                          brightnessActive: _brightnessPopoverOpen,
+                          onOpenSettings: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SettingsPage(),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // 5. Scrim — warm-ink dim that rises with a grown
+                      // sheet; tapping it collapses the dock back to a
+                      // resting bar. Above the top bar (dims it), below the
+                      // dock. (Canvas recede/blur added in C5.)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          ignoring: _openSheet == null,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: _collapseSheet,
+                            child: AnimatedOpacity(
+                              opacity: _openSheet != null ? 1.0 : 0.0,
+                              duration: const Duration(milliseconds: 300),
+                              curve: const Cubic(0.33, 0.9, 0.36, 1.0),
+                              // The 2px Gaussian recede is the one place
+                              // blur is used; mount the BackdropFilter only
+                              // while a sheet is open so it carries no idle
+                              // saveLayer cost during reading.
+                              child: _openSheet != null
+                                  ? BackdropFilter(
+                                      filter: ImageFilter.blur(
+                                        sigmaX: 2,
+                                        sigmaY: 2,
+                                      ),
+                                      child: ColoredBox(
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? const Color(0x94000000)
+                                            : const Color(0x57282420),
+                                      ),
+                                    )
+                                  : const SizedBox.expand(),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // 6. One Paper dock — floating panel that grows into
+                      // a sheet (Settings / Chapters). Replaces the P4
+                      // sticky strip. Brightness lives elsewhere (top-bar
+                      // sun popover + left-edge drag), not in the dock.
+                      // Slice: chapter stepper index/count are the only
+                      // controller values the dock chrome reads.
+                      _ControllerSelect<(int?, int)>(
+                        listenable: controller,
+                        selector: () => (
+                          controller.currentChapterIndex,
+                          controller.chapters.length,
+                        ),
+                        builder: (context, slice, _) => OnePaperDock(
+                          visible: _showControls,
+                          sheetOpen: _openSheet != null,
+                          // Title/meta/body track [_displayedSheet] so
+                          // content stays mounted through the collapse
+                          // animation.
+                          title: _sheetTitle(loc, _displayedSheet),
+                          meta: _sheetMeta(controller, loc, _displayedSheet),
+                          onGrabberTap: _collapseSheet,
+                          footer: DockFooter(
+                            sheetOpen: _openSheet != null,
+                            chapterIndex: slice.$1 ?? -1,
+                            chapterCount: slice.$2,
+                            progressListenable: controller.progressListenable,
+                            activeAction: _openSheet,
+                            onAction: (a) =>
+                                _handleDockAction(a, context, controller),
+                            onPrevChapter: () => _stepChapter(controller, -1),
+                            onNextChapter: () => _stepChapter(controller, 1),
+                          ),
+                          child: _buildSheetChild(controller, _displayedSheet),
+                        ),
+                      ),
+
+                      // 7. Brightness sun popover — centered glass dialog
+                      // over the canvas; above the dock (only mounts while
+                      // open).
+                      ReaderBrightnessPopover(
+                        visible: _brightnessPopoverOpen,
+                        controller: _brightnessController,
+                        onDismiss: _closeBrightnessPopover,
+                      ),
+
+                      // 8. Rest Reminder overlay — full-screen eye-rest
+                      // nudge after the configured reading interval.
+                      // Listener(opaque) ensures the reader body's
+                      // HitTestBehavior.opaque GestureDetector (item 1)
+                      // is never reached by the hit-test walk while the
+                      // overlay is visible, so the "Continue reading"
+                      // button wins the gesture arena uncontested.
+                      if (_showRestReminder)
+                        Positioned.fill(
+                          child: Listener(
+                            behavior: HitTestBehavior.opaque,
+                            child: ValueListenableBuilder<int>(
+                              valueListenable: _restSecondsRemaining,
+                              builder: (_, remaining, __) =>
+                                  RestReminderOverlay(
+                                remaining: remaining,
+                                total: _kRestCountdownSeconds,
+                                onSkip: _finishRestReminder,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                builder: (context, bgColor, child) => Scaffold(
+                  key: readerPageScaffoldKey,
+                  backgroundColor: bgColor,
+                  resizeToAvoidBottomInset: false,
+                  body: child!,
+                ),
+              ),
+            ); // end PopScope
           },
         );
       },
@@ -952,10 +981,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     );
     if (result != null && !mounted) return;
     if (result != null) {
-      await controller.handleBookmarkSelection({
-        'position_type': controller.book.format,
-        'position_payload': '{"paragraphIndex": ${result.paragraphIndex}}',
-      });
+      // Typed jump via the controller — this used to hand-build a JSON
+      // payload and smuggle it through the bookmark-restore channel.
+      await controller.openHighlight(result);
     }
   }
 
@@ -1020,5 +1048,68 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
       await controller.previousPage();
     }
   }
+}
 
+/// Select-style subscription for a [ChangeNotifier]: listens to
+/// [listenable] but only rebuilds when the [selector] result changes
+/// (record `==` compares fields). This is the P0-2 minimal-subscription
+/// mechanism — a plain ListenableBuilder rebuilds on *every* notify, which
+/// on this page means the 250ms chapter sync during scrolling.
+///
+/// [child] is passed through to [builder] untouched; keep heavy subtrees
+/// there so the framework can skip rebuilding them entirely.
+class _ControllerSelect<T> extends StatefulWidget {
+  const _ControllerSelect({
+    required this.listenable,
+    required this.selector,
+    required this.builder,
+    this.child,
+  });
+
+  final Listenable listenable;
+  final T Function() selector;
+  final Widget Function(BuildContext context, T value, Widget? child) builder;
+  final Widget? child;
+
+  @override
+  State<_ControllerSelect<T>> createState() => _ControllerSelectState<T>();
+}
+
+class _ControllerSelectState<T> extends State<_ControllerSelect<T>> {
+  late T _value = widget.selector();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.listenable.addListener(_handleNotify);
+  }
+
+  @override
+  void didUpdateWidget(_ControllerSelect<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.listenable, widget.listenable)) {
+      oldWidget.listenable.removeListener(_handleNotify);
+      widget.listenable.addListener(_handleNotify);
+    }
+    // Parent rebuilds carry fresh closures; re-evaluate so a stale slice
+    // never survives a widget update.
+    _value = widget.selector();
+  }
+
+  @override
+  void dispose() {
+    widget.listenable.removeListener(_handleNotify);
+    super.dispose();
+  }
+
+  void _handleNotify() {
+    if (!mounted) return;
+    final next = widget.selector();
+    if (next == _value) return;
+    setState(() => _value = next);
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      widget.builder(context, _value, widget.child);
 }

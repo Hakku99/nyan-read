@@ -214,18 +214,25 @@ class DatabaseService {
       //
       // We also deliberately avoid `openReadOnlyDatabase` because it skips
       // the WAL, which would hide some classes of corruption.
+      //
+      // quick_check (not integrity_check): the full check is O(db size) and
+      // runs on every cold start *before* getIt.allReady(), so a large
+      // library on a slow device could blow the DI bootstrap timeout.
+      // quick_check skips the slow index-content verification but still
+      // catches page-level corruption — the class that actually crashes
+      // sqflite at runtime.
       final db = await openDatabase(mainDbPath, singleInstance: false);
-      final result = await db.rawQuery('PRAGMA integrity_check;');
+      final result = await db.rawQuery('PRAGMA quick_check;');
       await db.close();
 
       final status = result.first.values.first as String;
       if (status.toLowerCase() != 'ok') {
         debugPrint(
-            '--- [DatabaseService] integrity_check failed: PRAGMA integrity_check = $status ---');
+            '--- [DatabaseService] quick_check failed: PRAGMA quick_check = $status ---');
         throw Exception('Database corrupted');
       } else {
         debugPrint(
-            '--- [DatabaseService] Main database integrity check passed (ok) ---');
+            '--- [DatabaseService] Main database quick_check passed (ok) ---');
       }
     } catch (e) {
       debugPrint(
@@ -377,7 +384,8 @@ class DatabaseService {
   }
 
   /// Archives [file] to [archivePath] using rename, falling back to
-  /// copy+delete, then bare delete as a last resort.  Logs outcomes.
+  /// copy+delete.  If both fail the file is left in place (never bare-deleted:
+  /// a corrupt DB may still be manually salvageable).  Logs outcomes.
   ///
   /// If the file cannot be archived at all, the subsequent `copySync` call
   /// will clobber the destination on most platforms (POSIX semantics), so
@@ -399,18 +407,14 @@ class DatabaseService {
     } catch (_) {
       // If copy also fails (e.g. read error on the corrupt file) fall through.
     }
-    // 3. Bare delete (no archive preserved).
-    try {
-      file.deleteSync();
-      logs.add(
-          '--- [DatabaseService] Corrupted DB archived only by deletion (no .bak written) ---');
-    } catch (e) {
-      logs.add(
-          '--- [DatabaseService] Warning: could not archive or delete corrupted DB: $e ---');
-      // The subsequent copySync may still clobber the file on POSIX; on
-      // Windows the copy will fail instead — that error surfaces in the
-      // retry loop above.
-    }
+    // 3. Leave the corrupt file in place. Deliberately NOT deleting it:
+    // if every backup candidate later fails to restore, this file is the
+    // user's only remaining copy of their metadata and may be manually
+    // salvageable. The subsequent copySync may still clobber it on POSIX;
+    // on Windows the copy will fail instead — that error surfaces in the
+    // retry loop above.
+    logs.add(
+        '--- [DatabaseService] Warning: could not archive corrupted DB; leaving it in place for manual recovery ---');
   }
 
   /// Deletes [file] if it exists, logging a warning (not an error) if
@@ -488,6 +492,9 @@ class DatabaseService {
 
   Future<void> _onCreate(Database db, int version) async {
     // 1. Books Table
+    // Note: cover_path is UNUSED — covers are cached on disk keyed by book id
+    // (BookCoverCache), so nothing reads or writes this column. It stays
+    // because §2.4 forbids dropping user columns in migrations.
     await db.execute('''
       CREATE TABLE books (
         id TEXT PRIMARY KEY,
@@ -527,7 +534,10 @@ class DatabaseService {
       )
     ''');
 
-    // 3. Stats Table
+    // 3. Stats Table — UNUSED. The reading-stats feature was never wired up
+    // (no reads or writes anywhere; the in-memory second counter was removed
+    // in 2026-07 dead-code cleanup). The table stays because §2.4 forbids
+    // dropping user tables in migrations; do not build on it without a plan.
     await db.execute('''
       CREATE TABLE reading_stats (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -738,6 +748,38 @@ class DatabaseService {
     });
   }
 
+  /// Restores a previously deleted batch of books together with their
+  /// bookmarks and highlights in a single transaction.
+  ///
+  /// Used by the bookshelf undo flow so "Undo" brings back the user's notes,
+  /// not just the book rows. Row maps must be the exact maps read from the
+  /// tables before deletion.
+  Future<void> restoreDeletedBooksBatch({
+    required List<Map<String, dynamic>> books,
+    required List<Map<String, dynamic>> bookmarks,
+    required List<Map<String, dynamic>> highlights,
+  }) async {
+    if (books.isEmpty) return;
+
+    final db = await database;
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+      for (final book in books) {
+        // abort, not replace — same FK-CASCADE trap as insertBook applies.
+        batch.insert('books', book, conflictAlgorithm: ConflictAlgorithm.abort);
+      }
+      for (final bookmark in bookmarks) {
+        batch.insert('bookmarks', bookmark,
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (final highlight in highlights) {
+        batch.insert('highlights', highlight,
+            conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
   // --- Reading Position Management ---
 
   /// Update the last reading position for a book.
@@ -852,7 +894,7 @@ class DatabaseService {
         '--- [DatabaseService] Highlight healed offset persisted: id=$id, newStart=$newStart ---');
   }
 
-  // --- 鍏ㄩ噺鏁版嵁瀵煎嚭鎺ュ彛 (For Global Export) ---
+  // --- Full-dataset export queries (For Global Export) ---
 
   Future<List<Map<String, dynamic>>> getAllBooks() async {
     final db = await database;
@@ -873,11 +915,15 @@ class DatabaseService {
   ///
   /// Core contract (AGENTS.md §3.5.5):
   ///   - Never INSERT a new book here; only UPDATE metadata for existing local books.
-  ///   - Primary match key is `content_signature` (SHA-256 of the source
-  ///     bytes) so a user who renamed their file / retitled the book still
-  ///     gets their highlights back, AND two different books that happen to
-  ///     share a title (different translations of "Le Petit Prince", for
-  ///     instance) no longer cross-contaminate each other's notes.
+  ///   - Primary match key is `content_signature` — a SAMPLED fingerprint,
+  ///     not a full-file hash: SHA-256 over `nyan-read-v1|ext|size|` + the
+  ///     first and last 64 KB of the file (see
+  ///     BookImportFingerprint._buildSignature). Same-size files that agree
+  ///     on both 64 KB windows but differ in the middle therefore collide;
+  ///     accepted trade-off for import-time speed on large books. It still
+  ///     survives file renames / retitles (extension + size + content
+  ///     windows are unchanged), so a renamed book gets its highlights back
+  ///     and two same-titled books no longer cross-contaminate notes.
   ///   - Fallback to `title` matching **only** when the backup payload or
   ///     the local row has no signature yet (legacy data). Fallback hits
   ///     are logged with `[Restore][legacy]` so we can track migration

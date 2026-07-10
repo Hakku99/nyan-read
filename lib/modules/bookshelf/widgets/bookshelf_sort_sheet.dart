@@ -10,7 +10,7 @@ import '../../../core/ui/components/nyan_one_paper_sheet.dart';
 import '../../../core/ui/nyan_icons.dart';
 import '../../../core/ui/nyan_sheet.dart';
 import '../../../core/ui/nyan_theme_context.dart';
-import 'segmented_tab_control.dart';
+import '../../../core/ui/components/segmented_tab_control.dart';
 
 /// Bookshelf sort sheet — direction tab above field rows per `bundle3.jsx`
 /// `ShelfSortSheet`. Changes apply live via [onChanged] while the sheet stays

@@ -146,19 +146,24 @@ class _HighlightableTextState extends State<HighlightableText> {
   /// Structural fingerprint of the highlights that will contribute spans for
   /// this paragraph.  Used for cache invalidation — paragraph-local, cheap
   /// to recompute (O(highlights)), independent of object identity.
+  ///
+  /// XOR-combined so the result is list-order independent WITHOUT the
+  /// filter + toList + sort this used to do on every build (§3.4 forbids
+  /// build-time sorts; during fast scrolling this ran per visible paragraph
+  /// per frame). Highlight ids are unique, so two distinct rows cannot
+  /// XOR-cancel each other.
   int _fingerprintHighlights(List<Highlight> highlights) {
-    // Filter + sort deterministically so the fingerprint matches
-    // [_buildTextSpan]'s traversal order.
-    final relevant = highlights
-        .where((h) => h.paragraphIndex == widget.paragraphIndex)
-        .toList()
-      ..sort((a, b) => a.startOffset.compareTo(b.startOffset));
-
-    if (relevant.isEmpty) return 0;
-    return Object.hashAll([
-      for (final h in relevant)
-        Object.hash(h.id, h.startOffset, h.endOffset, h.colorCode),
-    ]);
+    var combined = 0;
+    var count = 0;
+    for (final h in highlights) {
+      if (h.paragraphIndex != widget.paragraphIndex) continue;
+      count++;
+      combined ^= Object.hash(h.id, h.startOffset, h.endOffset, h.colorCode);
+    }
+    if (count == 0) return 0;
+    // Mix in the count so a paragraph whose hashes happen to XOR to 0 still
+    // differs from "no highlights".
+    return Object.hash(count, combined);
   }
 
   TextSpan _buildTextSpan() {

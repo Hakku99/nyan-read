@@ -28,6 +28,7 @@ class BrightnessOrchestrator extends ChangeNotifier
   bool _initialized = false;
   bool _isDisposed = false;
   bool _isShuttingDown = false;
+  bool _notifierDisposed = false;
   bool _isApplyingBrightness = false;
   double? _queuedManualTarget;
   double? _ignoredSystemBrightness;
@@ -190,6 +191,12 @@ class BrightnessOrchestrator extends ChangeNotifier
 
   @override
   void dispose() {
+    // A shutdown() may already be in flight from the owning page's dispose
+    // path; its continuation (restoreOriginalBrightness → _setState) must
+    // not hit notifyListeners() on a disposed ChangeNotifier — that's a
+    // debug-mode assert crash. The flag gates the notify while the hardware
+    // restore inside the in-flight shutdown still completes.
+    _notifierDisposed = true;
     unawaited(shutdown());
     super.dispose();
   }
@@ -353,6 +360,7 @@ class BrightnessOrchestrator extends ChangeNotifier
     }
 
     _state = normalizedState;
+    if (_notifierDisposed) return;
     notifyListeners();
   }
 

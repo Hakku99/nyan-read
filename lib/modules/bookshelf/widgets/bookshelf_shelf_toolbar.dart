@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nyan_read/core/theme/nyan_shadows.dart';
 import 'package:nyan_read/core/theme/nyan_spacing.dart';
 import 'package:nyan_read/core/ui/nyan_theme_context.dart';
-import 'package:nyan_read/modules/bookshelf/widgets/segmented_tab_control.dart';
+import 'package:nyan_read/core/ui/components/segmented_tab_control.dart';
 
 /// Vertical inset above + below the track (drives the pinned sliver extent).
 /// Top = 0: gap above tabs comes entirely from the toolbar's bottom padding (8pt).

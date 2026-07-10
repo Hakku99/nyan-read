@@ -497,6 +497,48 @@
       }
     }
   },
+  "importNothingSucceeded": "{count, plural, one{Could not import the selected file.} other{Could not import any of the {count} selected files.}}",
+  "@importNothingSucceeded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "readerNoContentLoaded": "No content loaded",
+  "readerImageDefaultAlt": "Image",
+  "readerImageUnavailable": "[{alt} unavailable]",
+  "@readerImageUnavailable": {
+    "placeholders": {
+      "alt": {
+        "type": "String"
+      }
+    }
+  },
+  "readerImageRemoteBlocked": "[{alt} remote image blocked]",
+  "@readerImageRemoteBlocked": {
+    "placeholders": {
+      "alt": {
+        "type": "String"
+      }
+    }
+  },
+  "readerImageUnsupportedSource": "[{alt} unsupported source]",
+  "@readerImageUnsupportedSource": {
+    "placeholders": {
+      "alt": {
+        "type": "String"
+      }
+    }
+  },
+  "readerImageLoadFailed": "[{alt} load failed]",
+  "@readerImageLoadFailed": {
+    "placeholders": {
+      "alt": {
+        "type": "String"
+      }
+    }
+  },
   "exportSaved": "Export saved to device",
   "exportFailed": "Export failed: {error}",
   "@exportFailed": {

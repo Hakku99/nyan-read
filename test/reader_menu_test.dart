@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/modules/reader/widgets/reader_menu.dart';
-import 'package:nyan_read/core/ui/components/nyan_confirm_dialog.dart';
 import 'package:nyan_read/core/ui/components/nyan_overlay_style.dart';
+import 'package:nyan_read/core/ui/components/nyan_switch.dart';
 import 'package:nyan_read/core/theme/theme_manager.dart';
 import 'package:nyan_read/modules/reader/reader_page.dart';
 import 'package:nyan_read/core/theme/theme_presets.dart';
@@ -234,9 +234,6 @@ class MockReaderController extends ChangeNotifier
   void didChangeAppLifecycleState(AppLifecycleState state) {}
 
   @override
-  void handleLayoutChange(Size size) {}
-
-  @override
   Future<void> handleBookmarkSelection(
       Map<String, dynamic> bookmarkData) async {}
 
@@ -274,11 +271,15 @@ class MockReaderController extends ChangeNotifier
   @override
   List<Highlight> get highlights => [];
 
+  bool resetDisplayCalled = false;
+
   @override
   Future<void> resetReaderAppearanceDefaults() async {}
 
   @override
-  Future<void> resetReaderDisplayDefaults() async {}
+  Future<void> resetReaderDisplayDefaults() async {
+    resetDisplayCalled = true;
+  }
 
   @override
   void resetReaderTextDefaults() {}
@@ -390,13 +391,12 @@ void main() {
 
     expect(find.text(loc.readingSettings), findsWidgets);
     expect(find.text('Reset Display'), findsOneWidget);
-    expect(find.text(loc.readerResetAll), findsOneWidget);
-    expect(find.byIcon(NyanIcons.restart), findsOneWidget);
-    expect(find.text(loc.readerResetCurrentTabHint), findsNothing);
-    expect(find.byIcon(NyanIcons.sun), findsOneWidget);
-    expect(find.byIcon(NyanIcons.brightnessAuto), findsOneWidget);
-    expect(find.byKey(const Key('reader-menu-display-panel')), findsOneWidget);
-    expect(find.byKey(const Key('reader-menu-tool-dock')), findsNothing);
+    expect(find.byIcon(NyanIcons.refresh), findsOneWidget);
+    // One Paper display panel: brightness knob with slider + follow-system
+    // switch (the old sun icon / Auto chip moved to the top-bar popover).
+    expect(find.text(loc.readerBrightness), findsOneWidget);
+    expect(find.text(loc.readerFollowSystemBrightness), findsOneWidget);
+    expect(find.byType(NyanSwitch), findsOneWidget);
     expect(find.text(loc.fontSize), findsNothing);
     expect(find.text(loc.themeCream), findsNothing);
     expect(find.byType(Slider), findsWidgets);
@@ -446,7 +446,7 @@ void main() {
 
     final loc = AppLocalizations.of(tester.element(find.byType(ReaderMenu)))!;
 
-    expect(find.byKey(const Key('reader-menu-display-panel')), findsOneWidget);
+    expect(find.text(loc.readerBrightness), findsOneWidget);
     expect(find.text(loc.fontSize), findsNothing);
     expect(find.text(loc.themeCream), findsNothing);
 
@@ -457,7 +457,6 @@ void main() {
 
     expect(find.text(loc.fontSize), findsOneWidget);
     expect(find.text(loc.lineHeight), findsOneWidget);
-    expect(find.byKey(const Key('reader-menu-typography-wide')), findsOneWidget);
     expect(find.text('Reset Text'), findsOneWidget);
 
     await tester.tap(find.text('Theme'));
@@ -621,12 +620,11 @@ void main() {
 
     final loc = AppLocalizations.of(tester.element(find.byType(ReaderMenu)))!;
 
-    expect(find.byKey(const Key('reader-menu-display-panel')), findsOneWidget);
+    expect(find.text(loc.readerBrightness), findsOneWidget);
     expect(find.text(loc.fontSize), findsNothing);
     expect(find.text(loc.lineHeight), findsNothing);
     expect(find.text(loc.themeCream), findsNothing);
     expect(find.byKey(const Key('reader-menu-theme-grid')), findsNothing);
-    expect(find.byKey(const Key('reader-menu-tool-dock')), findsNothing);
     expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
     expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
 
@@ -643,7 +641,7 @@ void main() {
     expect(find.byKey(const Key('reader-menu-theme-grid')), findsOneWidget);
   });
 
-  testWidgets('ReaderMenu stacks typography cards on narrow phones',
+  testWidgets('ReaderMenu renders text panel without overflow on narrow phones',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(320, 740);
     tester.view.devicePixelRatio = 1.0;
@@ -688,12 +686,13 @@ void main() {
     await tester.tap(find.text('Text'));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('reader-menu-typography-compact')), findsOneWidget);
-    expect(find.byKey(const Key('reader-menu-typography-wide')), findsNothing);
+    final loc = AppLocalizations.of(tester.element(find.byType(ReaderMenu)))!;
+    expect(find.text(loc.fontSize), findsOneWidget);
+    expect(find.text(loc.lineHeight), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('ReaderMenu follow-system chip toggles visual state',
+  testWidgets('ReaderMenu follow-system switch toggles brightness mode',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = ReaderPreferencesService();
@@ -728,10 +727,14 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(NyanIcons.brightnessAuto), findsOneWidget);
-    await tester.tap(find.text('Auto'));
+    // Follow-system is the default mode (BrightnessState initial state).
+    final initial = brightnessController.followSystem;
+    expect(tester.widget<NyanSwitch>(find.byType(NyanSwitch)).value, initial);
+    await tester.tap(find.byType(NyanSwitch));
     await tester.pumpAndSettle();
-    expect(find.byIcon(NyanIcons.brightnessAuto), findsOneWidget);
+    expect(brightnessController.followSystem, !initial);
+    expect(
+        tester.widget<NyanSwitch>(find.byType(NyanSwitch)).value, !initial);
   });
 
   testWidgets('ReaderMenu keeps reset visible on common phone heights',
@@ -843,7 +846,7 @@ void main() {
     expect(find.byType(ReaderMenu), findsNothing);
   });
 
-  testWidgets('ReaderMenu uses custom reset all dialog',
+  testWidgets('ReaderMenu reset button resets the current section',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = ReaderPreferencesService();
@@ -877,10 +880,12 @@ void main() {
     );
 
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Reset all'));
+    // One Paper design: per-section reset, applied directly without a
+    // confirmation dialog (the old global "Reset all" dialog was removed).
+    await tester.tap(find.text('Reset Display'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(NyanConfirmDialog), findsOneWidget);
+    expect(mockController.resetDisplayCalled, isTrue);
     expect(find.byType(AlertDialog), findsNothing);
   });
 }

@@ -3,16 +3,23 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:crypto/crypto.dart';
 
 /// Service for managing privacy PIN
-/// Handles PIN setup, verification, and secure storage
+/// Handles PIN setup, verification, secure storage, and brute-force lockout.
+///
+/// Registered as a get_it singleton; injected via [PrivacyLockService].
 class PinService {
-  static final PinService _instance = PinService._internal();
-  static PinService get instance => _instance;
-
-  PinService._internal();
+  PinService();
 
   final _storage = const FlutterSecureStorage();
   static const String _pinKey = 'privacy_pin_hash';
   static const String _pinSaltKey = 'privacy_pin_salt';
+  static const String _failedAttemptsKey = 'privacy_pin_failed_attempts';
+  static const String _lockoutUntilKey = 'privacy_pin_lockout_until';
+
+  // 5 wrong PINs → 30s lockout. Persisted in secure storage so restarting
+  // the app does not reset the window. A 4-digit PIN is inherently weak
+  // (10^4 space); this only stops casual rapid guessing, not forensics.
+  static const int _maxFailedAttempts = 5;
+  static const Duration _lockoutDuration = Duration(seconds: 30);
 
   /// Check if a PIN has been set
   Future<bool> hasPinSet() async {
@@ -36,9 +43,17 @@ class PinService {
     await _storage.write(key: _pinSaltKey, value: salt);
   }
 
-  /// Verify if the provided PIN matches the stored PIN
+  /// Verify if the provided PIN matches the stored PIN.
+  ///
+  /// Rate-limited: after [_maxFailedAttempts] consecutive failures every
+  /// attempt is rejected until [_lockoutDuration] elapses.
+  // ponytail: lockout surfaces as the generic wrong-PIN shake in the
+  // overlay; add a dedicated "try again in Ns" hint if users get confused.
   Future<bool> verifyPin(String pin) async {
     if (!_isValidPin(pin)) {
+      return false;
+    }
+    if (await _isLockedOut()) {
       return false;
     }
 
@@ -50,7 +65,42 @@ class PinService {
     }
 
     final hash = _hashPin(pin, salt);
-    return hash == storedHash;
+    if (hash == storedHash) {
+      await _clearFailureState();
+      return true;
+    }
+
+    await _recordFailedAttempt();
+    return false;
+  }
+
+  Future<bool> _isLockedOut() async {
+    final raw = await _storage.read(key: _lockoutUntilKey);
+    final until = raw == null ? null : int.tryParse(raw);
+    if (until == null) return false;
+    if (DateTime.now().millisecondsSinceEpoch >= until) {
+      await _storage.delete(key: _lockoutUntilKey);
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _recordFailedAttempt() async {
+    final raw = await _storage.read(key: _failedAttemptsKey);
+    final failures = (raw == null ? 0 : int.tryParse(raw) ?? 0) + 1;
+    if (failures >= _maxFailedAttempts) {
+      final until = DateTime.now().add(_lockoutDuration);
+      await _storage.write(
+          key: _lockoutUntilKey, value: '${until.millisecondsSinceEpoch}');
+      await _storage.delete(key: _failedAttemptsKey);
+    } else {
+      await _storage.write(key: _failedAttemptsKey, value: '$failures');
+    }
+  }
+
+  Future<void> _clearFailureState() async {
+    await _storage.delete(key: _failedAttemptsKey);
+    await _storage.delete(key: _lockoutUntilKey);
   }
 
   /// Change the PIN (requires old PIN verification)

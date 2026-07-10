@@ -41,6 +41,14 @@ class PaginationHelper {
     final TextScaler scaler = textScaler ?? TextScaler.noScaling;
     final double bottomMargin = paragraphBottomMargin ?? 0.0;
 
+    // §3.4: callers invoke this from LayoutBuilder during build, and a Dart
+    // async function runs synchronously up to its first await — without this
+    // yield the TextPainter.layout below would execute inside the build
+    // frame. Deferring to the event queue moves the ~ms layout after the
+    // frame; the caller re-validates its layout key when we return, so the
+    // result cannot be applied stale.
+    await Future<void>.delayed(Duration.zero);
+
     // Sample size: 3000 chars or full text if smaller.
     int sampleSize = 3000;
     if (sampleSize > text.length) sampleSize = text.length;
@@ -56,37 +64,43 @@ class PaginationHelper {
       textDirection: TextDirection.ltr,
       textScaler: scaler,
     );
-    textPainter.layout(maxWidth: availableWidth);
+    try {
+      textPainter.layout(maxWidth: availableWidth);
 
-    // Model inter-paragraph margins:
-    // The list renderer inserts [bottomMargin] after every paragraph.  We
-    // reduce the "effective" available height by the fraction that margins
-    // consume, so the position lookup accounts for that overhead.
-    // When bottomMargin == 0 this is a no-op and matches the original
-    // algorithm exactly.
-    double effectiveHeight = availableHeight;
-    if (bottomMargin > 0 && textPainter.height > 0) {
-      final int paragraphsInSample =
-          '\n'.allMatches(sampleText).length + 1;
-      final double totalMarginInSample = paragraphsInSample * bottomMargin;
-      // Fraction of sample height consumed by text (vs. margins).
-      final double textFraction =
-          textPainter.height / (textPainter.height + totalMarginInSample);
-      effectiveHeight = (availableHeight * textFraction).clamp(
-        1.0,
-        availableHeight,
-      );
+      // Model inter-paragraph margins:
+      // The list renderer inserts [bottomMargin] after every paragraph.  We
+      // reduce the "effective" available height by the fraction that margins
+      // consume, so the position lookup accounts for that overhead.
+      // When bottomMargin == 0 this is a no-op and matches the original
+      // algorithm exactly.
+      double effectiveHeight = availableHeight;
+      if (bottomMargin > 0 && textPainter.height > 0) {
+        final int paragraphsInSample =
+            '\n'.allMatches(sampleText).length + 1;
+        final double totalMarginInSample = paragraphsInSample * bottomMargin;
+        // Fraction of sample height consumed by text (vs. margins).
+        final double textFraction =
+            textPainter.height / (textPainter.height + totalMarginInSample);
+        effectiveHeight = (availableHeight * textFraction).clamp(
+          1.0,
+          availableHeight,
+        );
+      }
+
+      final position =
+          textPainter.getPositionForOffset(Offset(0, effectiveHeight));
+      int charsPerPage = position.offset;
+
+      if (charsPerPage <= 0) charsPerPage = 1;
+
+      int totalPages = (textLength / charsPerPage).ceil();
+      if (totalPages < 1) totalPages = 1;
+
+      return [totalPages, charsPerPage];
+    } finally {
+      // TextPainter owns native Paragraph resources; leaking one per
+      // pagination pass adds up over a long reading session.
+      textPainter.dispose();
     }
-
-    final position =
-        textPainter.getPositionForOffset(Offset(0, effectiveHeight));
-    int charsPerPage = position.offset;
-
-    if (charsPerPage <= 0) charsPerPage = 1;
-
-    int totalPages = (textLength / charsPerPage).ceil();
-    if (totalPages < 1) totalPages = 1;
-
-    return [totalPages, charsPerPage];
   }
 }

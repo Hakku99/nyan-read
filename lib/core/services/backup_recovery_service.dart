@@ -10,11 +10,14 @@ import 'package:sqflite/sqflite.dart';
 
 import 'package:intl/intl.dart';
 import 'database_service.dart';
-import 'service_locator.dart';
 
 class BackupRecoveryService extends WidgetsBindingObserver {
   // Mechanism A: keep at most 3 healthy cold-backup snapshots on disk.
   static const int _maxBackups = 3;
+
+  final DatabaseService _dbService;
+
+  BackupRecoveryService(this._dbService);
 
   void init() {
     WidgetsBinding.instance.addObserver(this);
@@ -45,7 +48,7 @@ class BackupRecoveryService extends WidgetsBindingObserver {
   /// be valid and is safe to produce while the database is open and writing.
   Future<void> _performColdBackup() async {
     try {
-      final dbService = getIt<DatabaseService>();
+      final dbService = _dbService;
 
       // Skip backup when the DB file has never been created (first launch
       // before any book is opened).  Calling `database` here would create
@@ -153,7 +156,7 @@ class BackupRecoveryService extends WidgetsBindingObserver {
   /// Mechanism C: asset downgrade export (Markdown).
   Future<String> exportBookNotesToMarkdown(String bookId) async {
     try {
-      final dbService = getIt<DatabaseService>();
+      final dbService = _dbService;
       final book = await dbService.getBookById(bookId);
       if (book == null) {
         return '# Error\nBook not found.';
@@ -271,7 +274,7 @@ class BackupRecoveryService extends WidgetsBindingObserver {
   /// 正确架构：sqflite Platform Channel 只能在主线程调用。
   /// 主线程负责全量数据抓取，纯 Dart 的 jsonEncode + 文件写入才放入 Isolate。
   Future<String> exportGlobalUserData() async {
-    final dbService = getIt<DatabaseService>();
+    final dbService = _dbService;
     final tempDir = await getTemporaryDirectory();
 
     // [主线程] 执行 3 次全量查询，消灭 N+1 风暴
@@ -363,7 +366,7 @@ class BackupRecoveryService extends WidgetsBindingObserver {
     final parsedJson = await Isolate.run(() => _heavyJsonParseTask(filePath));
 
     // 3. 将解析后的纯 Dart Map 交给主线程 DatabaseService 批量写入
-    final dbService = getIt<DatabaseService>();
+    final dbService = _dbService;
     final restoredCount = await dbService.restoreDataBatch(parsedJson);
     return restoredCount;
   }

@@ -31,7 +31,6 @@ class ReadingProgressManager {
   /// [progressListenable] instead.
   final VoidCallback onProgressUpdated;
 
-  int _readSeconds = 0;
   ReadingPosition? _currentPosition;
   final ValueNotifier<double> _progressNotifier = ValueNotifier<double>(0.0);
   bool _trackingStarted = false;
@@ -49,7 +48,6 @@ class ReadingProgressManager {
     required this.onProgressUpdated,
   });
 
-  int get readSeconds => _readSeconds;
   ReadingPosition? get currentPosition => _currentPosition;
   double get currentProgress => _progressNotifier.value;
 
@@ -58,20 +56,16 @@ class ReadingProgressManager {
   /// the reader-wide ChangeNotifier to avoid full-subtree rebuilds.
   ValueListenable<double> get progressListenable => _progressNotifier;
 
-  bool get shouldShowReminder => _readSeconds > 0 && _readSeconds % 3600 == 0;
-
   void startTracking() {
     if (_trackingStarted) return;
     _trackingStarted = true;
 
     // 1s reading heartbeat: keeps [progressListenable] in sync with engine
-    // scroll and accrues [_readSeconds].  Position-scoped listeners are
-    // only poked via [refreshFromEngine] when the engine reports a new
-    // paragraph/CFI, so hidden UI (overlay, TOC) stays inert during
-    // pure scrolling.
+    // scroll.  Position-scoped listeners are only poked via
+    // [refreshFromEngine] when the engine reports a new paragraph/CFI, so
+    // hidden UI (overlay, TOC) stays inert during pure scrolling.
     lifecycle.registerTimer(
       Timer.periodic(const Duration(seconds: 1), (_) {
-        _readSeconds++;
         refreshFromEngine();
       }),
     );

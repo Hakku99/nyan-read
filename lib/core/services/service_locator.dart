@@ -3,6 +3,8 @@ import 'package:get_it/get_it.dart';
 
 import 'biometric_service.dart';
 import 'database_service.dart';
+import 'pin_service.dart';
+import '../../modules/privacy/privacy_lock_service.dart';
 import 'feature_manager.dart';
 import 'reader_preferences_service.dart';
 import 'bookshelf_preferences_service.dart';
@@ -79,9 +81,12 @@ Future<void> setupServiceLocator() async {
 
   debugPrint('--- [DI] 104. 正在装载 BackupRecoveryService (末日地堡系统) ---');
   getIt.registerSingletonAsync<BackupRecoveryService>(() async {
-    final service = BackupRecoveryService()..init();
+    final service = BackupRecoveryService(await getIt.getAsync<DatabaseService>())
+      ..init();
     return service;
-  });
+  },
+      // DatabaseService must be ready before the backup system can arm.
+      dependsOn: [DatabaseService]);
 
   // Wait for async services to be ready.
   debugPrint('--- [DI] 99. 开始等待 getIt.allReady() ---');
@@ -105,6 +110,10 @@ Future<void> setupServiceLocator() async {
   getIt<SignatureBackfillService>().scheduleBackfill();
 
   getIt.registerSingleton<BiometricService>(BiometricService());
+  getIt.registerSingleton<PinService>(PinService());
+  getIt.registerSingleton<PrivacyLockService>(
+    PrivacyLockService(getIt<PinService>(), getIt<BiometricService>()),
+  );
 
   debugPrint('--- [DI] 105. 同步服务装载完毕！ ---');
 }

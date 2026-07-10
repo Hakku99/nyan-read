@@ -34,9 +34,6 @@ class MockReadingProgressManager implements ReadingProgressManager {
   final ValueNotifier<double> _progressNotifier = ValueNotifier<double>(0.5);
 
   @override
-  int get readSeconds => 0;
-
-  @override
   ReadingPosition? get currentPosition => null;
 
   @override
@@ -44,9 +41,6 @@ class MockReadingProgressManager implements ReadingProgressManager {
 
   @override
   ValueListenable<double> get progressListenable => _progressNotifier;
-
-  @override
-  bool get shouldShowReminder => false;
 
   @override
   void startTracking() {}

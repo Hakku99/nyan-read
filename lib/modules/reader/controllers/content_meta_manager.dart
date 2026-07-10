@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
@@ -46,10 +47,9 @@ class ContentMetaManager {
     onMetaChanged();
   }
 
-  /// 閸旂姾娴囨妯瑰瘨 + 閸撳秶鐤嗛悩鑸碘偓浣藉殰閹?(State Pre-processing)
-  ///
-  /// 闁潧鎯婇崡鏇炴倻閺佺増宓佸ù浣稿斧閸掓瑱绱板銈嗘煙濞夋洘妲搁崬顖欑閻?閼奉亝鍓ゅù浣规寜缁?閵?
-  /// UI 鐏?(TxtReaderEngine) 閸欘亙绱伴弨璺哄煂閸ф劖鐖ｇ紒婵嗩嚠閸嬨儱鎮嶉惃?`List<Highlight>`閵?
+  /// Loads persisted highlights and heals stale anchors *before* handing the
+  /// list to the render layer (TxtReaderEngine), so the UI only ever sees
+  /// highlights whose offsets are valid for the current text.
   Future<void> loadHighlights() async {
     try {
       final rawData = await _db.getHighlights(book.id);
@@ -78,26 +78,35 @@ class ContentMetaManager {
     _textCapability?.setHighlights(_highlights);
   }
 
-  /// 閸楁洘顐肩粩鐘哄Ν妤傛ü瀵掗懛顏呭墹缁狅紕鍤?(閸愬懘鍎?
+  /// Heals highlight anchors whose stored offsets no longer select the
+  /// original text (e.g. after a decode or parse change shifted paragraph
+  /// offsets).
   ///
-  /// Fast-Path: offset 濮ｆ柨顕崡鍐插讲閿? I/O閵?
-  /// Slow-Path: AnchorHealer 閸欏苯鎮滈弶鍐櫢娴犺尪顥?+ 閸楀啿褰傞崡鍐茬磾(fire-and-forget)閸ョ偛鍟?DB閵?
+  /// Fast-Path: stored offsets still match [Highlight.selectedText] — no I/O.
+  /// Slow-Path: AnchorHealer re-locates the anchor off the UI thread, then
+  /// writes the healed offsets back to DB fire-and-forget.
   Future<List<Highlight>> _healHighlights(
     List<Highlight> raw,
     TextReaderCapability textCapability,
   ) async {
-    final healedList = <Highlight>[];
+    // Pass 1 (sync, cheap): classify every row. Slow-path candidates are
+    // queued so the string matching runs as ONE batched Isolate.run — the
+    // trigger scenario ("decode change shifted every anchor in the book")
+    // used to spawn one isolate per highlight, serially, on book open.
+    final results = List<Highlight?>.filled(raw.length, null);
+    final slowIndexes = <int>[];
+    final slowParagraphTexts = <String>[];
 
-    for (final h in raw) {
-      // 1. 閸欐牕鍤▓浣冩儰閸樼喐鏋?
+    for (var i = 0; i < raw.length; i++) {
+      final h = raw[i];
       final paragraphText = textCapability.getParagraphText(h.paragraphIndex);
       if (paragraphText == null) {
-        // 濞堜絻鎯ゆ稉宥呯摠閸︻煉绱濇穱婵堟殌閸樼喐鐗遍敍鍫ユЩ濮濄垹绌垮┃鍐跨礆
-        healedList.add(h);
+        // Paragraph unavailable (out of range / not loaded); keep as-is.
+        results[i] = h;
         continue;
       }
 
-      // 2. Fast-Path閿涙氨鏁ら崢鐔奉潗 offset 閹搭亜褰囬獮鏈电瑢 selectedText 濮ｆ柨顕?
+      // Fast-Path: stored offsets still select the original text.
       final start = h.startOffset;
       final end = h.endOffset;
       final isOffsetValid = start >= 0 &&
@@ -106,51 +115,68 @@ class ContentMetaManager {
           paragraphText.substring(start, end) == h.selectedText;
 
       if (isOffsetValid) {
-        // 閸ф劖鐖ｉ崑銉ユ倣閿涘瞼娲块幒銉ュ弳闂?
-        healedList.add(h);
+        results[i] = h;
         continue;
       }
 
-      // 婵″倹鐏?preContext 娑撹櫣鈹栭敍鍧? 閺冄勬殶閹诡噯绱氶敍宀冪儲鏉╁洩鍤滈幇鍫礉闁繋绱堕崢鐔奉潗閸?
+      // Legacy rows persisted before context capture have nothing to heal
+      // against; keep them unchanged rather than guessing.
       if (h.preContext.isEmpty && h.postContext.isEmpty) {
-        debugPrint('[ContentMetaManager] 閺冄勬殶閹诡喗妫ら柨姘卞仯娣団剝浼呴敍宀冪儲鏉╁洩鍤滈幇? ${h.selectedText}');
-        healedList.add(h);
+        debugPrint(
+            '[ContentMetaManager] Highlight has no pre/post context to heal against; keeping as-is: ${h.selectedText}');
+        results[i] = h;
         continue;
       }
 
-      // 3. Slow-Path閿涙nchorHealer 閹兼粍鏅?
-      // Offload to isolate to keep string matching off UI thread.
-      final newStart = await Isolate.run(
-        () => AnchorHealer.findHealedOffset(
-          paragraphText,
-          h.preContext,
-          h.selectedText,
-          h.postContext,
-        ),
+      slowIndexes.add(i);
+      slowParagraphTexts.add(paragraphText);
+    }
+
+    // Pass 2: one isolate heals the whole batch.
+    if (slowIndexes.isNotEmpty) {
+      final requests = <({String text, String pre, String exact, String post})>[
+        for (var k = 0; k < slowIndexes.length; k++)
+          (
+            text: slowParagraphTexts[k],
+            pre: raw[slowIndexes[k]].preContext,
+            exact: raw[slowIndexes[k]].selectedText,
+            post: raw[slowIndexes[k]].postContext,
+          ),
+      ];
+      final healedOffsets = await Isolate.run(
+        () => <int?>[
+          for (final r in requests)
+            AnchorHealer.findHealedOffset(r.text, r.pre, r.exact, r.post),
+        ],
       );
 
-      if (newStart != null) {
+      for (var k = 0; k < slowIndexes.length; k++) {
+        final h = raw[slowIndexes[k]];
+        final newStart = healedOffsets[k];
+        if (newStart == null) {
+          // Healing failed: drop from the render list (offsets would paint
+          // in the wrong place) but leave the DB row so the user's note
+          // text survives and healing can retry on the next open.
+          debugPrint(
+              '[ContentMetaManager] Anchor healing failed; keeping stale offsets (may not render): ${h.selectedText}');
+          continue;
+        }
+
         final newEnd = newStart + h.selectedText.length;
         debugPrint(
-            '[ContentMetaManager] 妤傛ü瀵掗崸鎰垼閼奉亝鍓ら幋鎰: "${h.selectedText}" $start閳?newStart');
-
-        final healed = h.copyWith(
+            '[ContentMetaManager] Healed highlight anchor: "${h.selectedText}" ${h.startOffset} -> $newStart');
+        results[slowIndexes[k]] = h.copyWith(
           startOffset: newStart,
           endOffset: newEnd,
           isHealed: 1,
         );
-        healedList.add(healed);
-
-        // 閸楀啿褰傞崡鍐茬磾閿涙艾绱撳銉ユ礀閸?DB閿涘瞼绮风€甸€涚瑝闂冭顢?UI 濞撳弶鐓嬬敮?
-        _db.updateHighlightHealedOffset(h.id, newStart, newEnd);
-      } else {
-        debugPrint(
-            '[ContentMetaManager] 妤傛ü瀵掗崸鎰垼閹兼粍鏅虫径杈Е閿涘奔娑鍐╄閺屾搫绱欐稉宥呯┛濠у喛绱? ${h.selectedText}');
-        // 閹兼粍鏅虫径杈Е閿涙矮娑鍐跨礉娑撳秴濮為崗銉ヤ淮鎼村嘲鍨悰顭掔礉闂冨弶顒涢柨娆掝嚖濞撳弶鐓?
+        // Fire-and-forget write-back: a lost write only means healing
+        // re-runs on the next open, so blocking the load loop is not worth it.
+        unawaited(_db.updateHighlightHealedOffset(h.id, newStart, newEnd));
       }
     }
 
-    return healedList;
+    return results.whereType<Highlight>().toList();
   }
 
   Future<void> updateCurrentChapterIndex() async {
@@ -340,10 +366,11 @@ class ContentMetaManager {
     }
   }
 
-  /// 閺傛澘顤冩妯瑰瘨閺冭绱濋崥灞绢劄闁插洦鐗?pre/post context 闁挎氨鍋ｉ敍灞界摠閸?DB
+  /// Adds a highlight, capturing up to 15 chars of surrounding text on each
+  /// side as [Highlight.preContext]/[Highlight.postContext] — the anchors
+  /// [_healHighlights] needs if offsets ever go stale.
   Future<void> addHighlight(int paragraphIndex, int start, int end, String text,
       String colorCode, String paragraphText) async {
-    // 闁插洦鐗遍梼鑸殿唽閿涙碍褰侀崣鏍у閸?5鐎涙顑侀悧鐟扮窙
     final preContext = start > 0
         ? paragraphText.substring((start - 15).clamp(0, start), start)
         : '';
@@ -397,5 +424,3 @@ class ContentMetaManager {
     onMetaChanged();
   }
 }
-
-

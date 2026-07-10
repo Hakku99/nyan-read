@@ -80,14 +80,20 @@ class ReaderSettingsDisplayPanel extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        loc.readerFollowSystemBrightness,
-                        style: TextStyle(
-                          fontFamily: NyanTypography.uiFontFamily,
-                          fontSize: NyanTypography.meta,
-                          fontWeight: FontWeight.w400,
-                          height: 1.35,
-                          color: nyan.textSecondary,
+                      // Flexible + ellipsis: long locale strings / large
+                      // accessibility text scales must not overflow the knob.
+                      Flexible(
+                        child: Text(
+                          loc.readerFollowSystemBrightness,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: NyanTypography.uiFontFamily,
+                            fontSize: NyanTypography.meta,
+                            fontWeight: FontWeight.w400,
+                            height: 1.35,
+                            color: nyan.textSecondary,
+                          ),
                         ),
                       ),
                       NyanSwitch(

@@ -10,7 +10,6 @@ import '../../../core/services/database_service.dart';
 import '../../../core/services/reader_preferences_service.dart';
 import '../../../core/theme/nyan_colors.dart';
 import '../../../core/utils/book_source_access.dart';
-import '../../../core/utils/layout_debouncer.dart';
 import '../../../core/utils/lifecycle_registry.dart';
 import 'brightness_controller.dart';
 import '../reader_engine/reader_engine.dart';
@@ -33,9 +32,6 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   late final ReaderSettingsManager settingsManager;
   late final ContentMetaManager metaManager;
 
-  final Debouncer _layoutDebouncer =
-      Debouncer(delay: const Duration(milliseconds: 300));
-  Size? _lastLayoutSize;
   BrightnessController? _brightnessControllerRef;
   bool _isDisposed = false;
   int _renderEpoch = 0;
@@ -322,11 +318,6 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> openHighlight(Highlight highlight) =>
       metaManager.openHighlight(highlight);
 
-  void handleLayoutChange(Size newSize) {
-    settingsManager.handleLayoutChange(
-        newSize, _lastLayoutSize, notifyListeners);
-    _lastLayoutSize = newSize;
-  }
 
   Future<void> saveBeforeExit() async {
     await progressManager.prepareForExit();
@@ -340,7 +331,6 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     _brightnessControllerRef = null;
     settingsManager.dispose();
     _lifecycle.disposeAll();
-    _layoutDebouncer.dispose();
     WidgetsBinding.instance.removeObserver(this);
     engine.dispose();
     progressManager.dispose();

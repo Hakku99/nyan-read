@@ -276,7 +276,13 @@ class _NotesListPageState extends State<NotesListPage> {
       );
     }
 
-    return ListView(
+    // §3.4: list surfaces stay lazy — items are cheap widget descriptors,
+    // but layout/paint of offscreen rows is what builder skips.
+    final items = <Widget>[
+      _buildContextPanel(),
+      ..._buildGroupedHighlightItems(),
+    ];
+    return ListView.builder(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         NyanSpacing.space16,
@@ -284,10 +290,8 @@ class _NotesListPageState extends State<NotesListPage> {
         NyanSpacing.space16,
         NyanSpacing.space24,
       ),
-      children: [
-        _buildContextPanel(),
-        ..._buildGroupedHighlightItems(),
-      ],
+      itemCount: items.length,
+      itemBuilder: (context, index) => items[index],
     );
   }
 

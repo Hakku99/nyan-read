@@ -992,6 +992,42 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String importNothingSucceeded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '所选的 $count 个文件都未能导入。',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get readerNoContentLoaded => '没有可显示的内容';
+
+  @override
+  String get readerImageDefaultAlt => '图片';
+
+  @override
+  String readerImageUnavailable(String alt) {
+    return '[$alt不可用]';
+  }
+
+  @override
+  String readerImageRemoteBlocked(String alt) {
+    return '[已拦截网络图片：$alt]';
+  }
+
+  @override
+  String readerImageUnsupportedSource(String alt) {
+    return '[不支持的图片来源：$alt]';
+  }
+
+  @override
+  String readerImageLoadFailed(String alt) {
+    return '[$alt加载失败]';
+  }
+
+  @override
   String get exportSaved => '导出已保存到设备';
 
   @override

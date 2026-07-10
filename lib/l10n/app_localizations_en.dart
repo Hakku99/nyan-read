@@ -1036,6 +1036,43 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String importNothingSucceeded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Could not import any of the $count selected files.',
+      one: 'Could not import the selected file.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get readerNoContentLoaded => 'No content loaded';
+
+  @override
+  String get readerImageDefaultAlt => 'Image';
+
+  @override
+  String readerImageUnavailable(String alt) {
+    return '[$alt unavailable]';
+  }
+
+  @override
+  String readerImageRemoteBlocked(String alt) {
+    return '[$alt remote image blocked]';
+  }
+
+  @override
+  String readerImageUnsupportedSource(String alt) {
+    return '[$alt unsupported source]';
+  }
+
+  @override
+  String readerImageLoadFailed(String alt) {
+    return '[$alt load failed]';
+  }
+
+  @override
   String get exportSaved => 'Export saved to device';
 
   @override

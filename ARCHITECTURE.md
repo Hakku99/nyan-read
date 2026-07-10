@@ -1,176 +1,81 @@
-# Nyan Read - Architecture & Engineering Design
+# Nyan Read — Application Architecture Map
 
-## 1. Project Overall Architecture (Layered & Modular)
+> This document is the **top-level map of the app as it is actually built** (last verified 2026-07-07).
+> It intentionally stays short: rules and constraints live in [`AGENTS.md`](AGENTS.md),
+> the reader subsystem is documented in [`READER_ARCHITECTURE.md`](READER_ARCHITECTURE.md),
+> and performance gates live in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+> When this file and the code disagree, the code wins — fix this file in the same PR.
 
-We follow a **Clean Architecture** approach adapted for Flutter, emphasizing strict separation of concerns to satisfy the "Plug-and-Play" modularity requirement.
+## 1. Layering
 
-### **Layer 1: Application Layer (The "Glue")**
-- **Main Entry (`main.dart`)**: Initializes the app, dependency injection, and loads the Feature Flag configuration.
-- **App Coordinator**: Routing and global state (Theme, Locale).
+Five layers with a strict downward-only call direction (full matrix in `AGENTS.md` §3.2):
 
-### **Layer 2: Feature Modules (The "Business Logic")**
-Each module is a self-contained package/directory containing its own Views, Controllers (Providers), and Models.
-- **CoreReader**: The engine. Handles file parsing (epub/pdf) and rendering logic.
-- **Bookshelf**: Public file management and grid UI.
-- **PrivacyShelf (Pro)**: Encrypted file management and authentication walls.
-- **Bookmark**: CRUD operations for bookmarks, linked to Book IDs.
-- **Reminder**: Timer logic and UI overlays.
-- **Account/Admin**: Admin panel, Pro status toggling, Feature Flag controls.
-
-### **Layer 3: Service Layer (Infrastructure)**
-- **Storage Service**: Raw file I/O.
-- **Database Service**: SQLite abstraction.
-- **Encryption Service**: AES-256 logic (used by PrivacyShelf).
-- **Preference Service**: Key-value pairs for simple settings (brightness, font size).
-
----
-
-## 2. Module Dependency Graph
-
-```mermaid
-graph TD
-    %% Infrastructure
-    DB[Database Service]
-    FS[File System]
-    ENC[Encryption (AES-256)]
-    PREF[Preferences]
-
-    %% Core
-    CR[CoreReader]
-    ACC[Account/Admin]
-
-    %% Features
-    BS[Bookshelf]
-    PS[PrivacyShelf]
-    BM[Bookmark]
-    RM[Reminder]
-    UI[UITheme]
-
-    %% Dependencies
-    BS --> DB
-    BS --> FS
-    
-    PS --> DB
-    PS --> FS
-    PS --> ENC
-    PS --> ACC (Check Pro Status)
-
-    BM --> DB
-    BM --> CR (Get Page Index)
-
-    CR --> UI (Apply Theme)
-    CR --> PREF (Save Progress)
-    
-    RM --> PREF
-    
-    %% The Application
-    APP[Nyan App] --> CR
-    APP --> BS
-    APP --> PS
-    APP --> BM
-    APP --> ACC
+```
+Presentation  →  Controller  →  Engine  →  Service  →  Platform / Infra
 ```
 
----
+- **Presentation** — `lib/modules/**` pages & widgets. Never touches `DatabaseService`, `File`, or `SharedPreferences` directly.
+- **Controller** — `ReaderController` + managers, `BookshelfViewModel`. Owns orchestration and state.
+- **Engine** — `ReaderEngine` contract + TXT / EPUB / PDF implementations (see `READER_ARCHITECTURE.md`).
+- **Service** — `lib/core/services/`. All persistence and platform-facing logic.
+- **Infra** — `sqflite`, `path_provider`, `pdfx`, `epub_view`, etc.
 
-## 3. Database Table Structure (SQLite)
+## 2. Module Map (`lib/modules/`)
 
-### Table: `books`
-Stores metadata for both public and private books.
+| Module | Responsibility |
+|---|---|
+| `bookshelf` / `home` | Library grid/list, import flow, multi-select delete with undo grace window, search, sort |
+| `reader` | Reading session: engines, controllers, One Paper chrome, brightness subsystem |
+| `bookmark` / `notes` | Browse & jump-to for bookmarks, highlights and notes |
+| `privacy` | PIN / biometric gate for the private shelf |
+| `settings` | App & reading preferences UI |
+| `admin` | Debug panel, feature-flag toggles |
+| `ads` / `tts` | Placeholder / stub modules (feature-flagged, not shipped) |
 
-```sql
-CREATE TABLE books (
-    id TEXT PRIMARY KEY,              -- UUID
-    title TEXT NOT NULL,
-    author TEXT,
-    file_path TEXT NOT NULL,          -- Local path (relative)
-    cover_path TEXT,
-    format TEXT NOT NULL,             -- 'epub', 'txt', 'pdf'
-    is_private INTEGER DEFAULT 0,     -- 0: Public, 1: Private (Pro)
-    total_pages INTEGER,
-    current_progress REAL DEFAULT 0,  -- Percentage or Page Index
-    last_read_at INTEGER,             -- Timestamp
-    added_at INTEGER                  -- Timestamp
-);
-```
+## 3. Service Layer (`lib/core/services/`)
 
-### Table: `bookmarks`
-One-to-many relation with books.
+| Service | Role |
+|---|---|
+| `DatabaseService` | Single SQLite entry point (`nyan_read.db`, schema v9); self-heal + cold-backup restore path |
+| `BackupRecoveryService` | `VACUUM INTO` cold backups on app pause (max 3), cleanup in isolate |
+| `SignatureBackfillService` | Backfills `content_signature` for legacy rows after startup |
+| `ReaderPreferencesService` | Reader UI prefs via SharedPreferences, 300ms debounced writes |
+| `BookshelfPreferencesService` | Shelf sort/view prefs |
+| `PinService` / `BiometricService` | Privacy shelf auth — salted PIN hash in `flutter_secure_storage`; **there is no file encryption** — private books are gated by `books.is_private` + auth wall, files stay plain on disk |
+| `FeatureManager` | Feature flags (`ChangeNotifier`, get_it-registered — not a static singleton) |
+| `LanguageManager` / `MascotManager` / `ReadingReminderService` | Locale, mascot, rest-reminder timers |
 
-```sql
-CREATE TABLE bookmarks (
-    id TEXT PRIMARY KEY,
-    book_id TEXT NOT NULL,
-    page_index INTEGER NOT NULL,
-    cfi TEXT,                         -- EPUB CFI or specific locator
-    content_snippet TEXT,             -- Small text preview
-    note TEXT,                        -- User remark
-    created_at INTEGER,
-    color_code TEXT,                  -- For UI customization
-    FOREIGN KEY(book_id) REFERENCES books(id) ON DELETE CASCADE
-);
-```
+**Startup / DI**: `setupServiceLocator()` registers services with `get_it`
+(`registerSingletonAsync`), `main.dart` does `await getIt.allReady()` before `runApp`.
+UI state assembly is `flutter_riverpod`; services are constructor-injected into
+managers/view-models (never located via `GetIt.instance<X>()` outside `service_locator.dart`).
 
-### Table: `reading_stats`
-For the "Reminder" and "Pro Stats" modules.
+## 4. Database Schema (SQLite, version 9)
 
-```sql
-CREATE TABLE reading_stats (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date_str TEXT NOT NULL,           -- YYYY-MM-DD
-    duration_seconds INTEGER DEFAULT 0,
-    books_opened INTEGER DEFAULT 0
-);
-```
+Source of truth: `_onCreate` / `_onUpgrade` in
+[`lib/core/services/database_service.dart`](lib/core/services/database_service.dart).
+Migrations are append-only (`ALTER TABLE`), never drop user tables (`AGENTS.md` §2.4).
 
----
+| Table | Purpose | Notes |
+|---|---|---|
+| `books` | Book metadata + last reading position | `last_position_type/payload` (serialized `ReadingPosition`), `content_signature` (SHA-256 import fingerprint), `storage_type`, `title_sort_key`, `is_private`. `cover_path` is **unused** (covers cached on disk by `BookCoverCache`, keyed by book id) |
+| `bookmarks` | Per-book bookmarks | `position_type/payload` supersede legacy `page_index`/`cfi`; `ON DELETE CASCADE` |
+| `highlights` | Text highlights + notes | Anchor healing columns `pre_context` / `post_context` / `is_healed`; `ON DELETE CASCADE` |
+| `reading_stats` | **Unused** | Feature never wired up; table kept per no-drop rule — do not build on it without a plan |
 
-## 4. Module Interface Definitions (Dart Draft)
+⚠️ Never use `ConflictAlgorithm.replace` on `books` — it cascade-deletes bookmarks/highlights (historical data-loss incident; see comments in `database_service.dart`).
 
-### **IReaderModule**
-```dart
-abstract class IReaderModule {
-  Future<void> openBook(String bookId, String path);
-  Future<void> jumpToPage(int pageIndex);
-  Future<void> changeFontSize(double size);
-  Stream<double> get progressStream; 
-}
-```
+## 5. Storage Split
 
-### **IPrivacyModule**
-```dart
-abstract class IPrivacyModule {
-  Future<bool> authenticate(); // Bio/Pin
-  Future<File> encryptFile(File source);
-  Future<List<int>> decryptFileToMemory(String encryptedPath);
-  bool get isProEnabled;
-}
-```
+| Store | Holds |
+|---|---|
+| SQLite | Books, positions, bookmarks, highlights (all user-created data) |
+| SharedPreferences | UI config only (font size, theme, brightness, sort prefs) — debounced for slider input |
+| `flutter_secure_storage` | Salted PIN hash + privacy shelf key material only |
+| Disk cache | Book covers (LRU, ≤100MB target) |
 
-### **IFeatureFlag**
-```dart
-abstract class IFeatureFlag {
-  bool get isPrivacyShelfEnabled;
-  bool get isAdsEnabled;
-  bool get isTTSEnabled;
-  void toggleFeature(String key, bool value);
-}
-```
+## 6. Feature Flags (Free vs Pro)
 
----
-
-## 5. Feature Flag Design (Free vs Pro)
-
-We will use a singleton `FeatureManager`.
-
-**Flags:**
-- `enable_privacy_shelf`: Defaults to `false` (Free). `true` (Pro).
-- `enable_ads`: Defaults to `true` (Free). `false` (Pro).
-- `enable_cloud_sync`: Defaults to `false` (Free). `true` (Pro).
-- `enable_tts`: Defaults to `false` (Placeholder).
-
-**Control Flow:**
-1. App Start -> Load `UserSubscriptionStatus`.
-2. `FeatureManager.init(status)`.
-3. In UI: 
-   `if (FeatureManager.canUse(Features.privacyShelf)) { showShelf(); } else { showUpsell(); }`
+`FeatureManager` gates: privacy shelf, ads, TTS (stub). Toggled from the admin panel;
+persisted locally. The app is fully offline — there is no subscription backend; "Pro"
+status is a local flag.
