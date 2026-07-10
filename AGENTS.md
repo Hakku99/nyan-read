@@ -55,7 +55,7 @@
 |---|---|
 | Dart SDK | `>=3.6.0 <4.0.0`（代码已使用 `Color.withValues` / `.toARGB32` 等 3.6+ API） |
 | Flutter | `>=3.27` |
-| 目标平台 | Android / iOS（主），Windows / macOS / Linux（次） |
+| 目标平台 | Android / iOS（主，**iOS 尚未在真机验证过**，目前仅在 Android 测试），Windows / macOS / Linux（次） |
 | 语言 | 代码注释与标识符 **MUST** 英文；用户可见文案走 `l10n/` |
 
 ### 2.2 Dart / Flutter 硬规范

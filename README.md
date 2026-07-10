@@ -21,8 +21,8 @@
 
 | Platform | Status |
 |---|---|
-| Android | ✅ Primary |
-| iOS | ✅ Primary |
+| Android | ✅ Primary (tested on device) |
+| iOS | ⚠️ Primary target, untested — no real-device verification yet |
 | Windows / macOS / Linux | 🔲 TBC |
 
 ---
