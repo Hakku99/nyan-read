@@ -105,13 +105,28 @@ class BookSourceAccess {
   }
 
   static Future<PdfCompatibleSource> preparePdfCompatibleSource(Book book) async {
+    return prepareReadableFile(book, extension: '.pdf');
+  }
+
+  /// Resolves [book] to a plain filesystem path a helper isolate can read
+  /// directly (dart:io works off the main isolate; platform channels do
+  /// not). `content://` sources are materialized to a temp file — callers
+  /// MUST delete it when [PdfCompatibleSource.isTemporary] is true.
+  ///
+  /// This is the memory-lean way to feed a parser isolate: the book bytes
+  /// never exist on the main isolate at all, instead of being read here and
+  /// then copied again across the isolate boundary.
+  static Future<PdfCompatibleSource> prepareReadableFile(
+    Book book, {
+    required String extension,
+  }) async {
     switch (BookSourceType.normalize(book.sourceType)) {
       case BookSourceType.filePath:
         return PdfCompatibleSource(path: book.sourceLocator, isTemporary: false);
       case BookSourceType.androidContentUri:
         final tempPath = await BookSourcePlatform.copyUriToTempFile(
           book.sourceLocator,
-          extension: '.pdf',
+          extension: extension,
         );
         return PdfCompatibleSource(path: tempPath, isTemporary: true);
       default:

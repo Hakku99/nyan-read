@@ -35,18 +35,17 @@ dependencies:
   flutter_animate: ^4.2.0
 
   # Reader Engines
-  epub_view: ^3.2.0
-  # Align with epub_view / epubx; bookshelf EPUB cover extraction (isolate).
-  epubx: ^4.0.0
-  image: ^3.3.0
+  # P3c (2026-07): epub_view + epubx dropped — the EPUB stack is fully
+  # self-hosted (epub_package_parser.dart + own renderer), which unpinned
+  # archive/image from their 3.x prisons.
+  image: ^4.5.0
   pdfx: ^2.6.0
   scrollable_positioned_list: ^0.3.8
   fast_gbk: ^1.0.0
-  # Phase 2 · P0-5: direct dep required so we can inline the EPUB chapter
-  # HTML parser instead of reaching into `epub_view/src/data/...` private
-  # paths.  Pinned to the range epub_view already transitively uses.
   html: ^0.15.0
-  archive: ^3.6.1
+  archive: ^4.0.0
+  # Own EPUB package parsing (container.xml / OPF / NCX / nav).
+  xml: ^6.5.0
   
   # File Handling (Stubs for now since we can't fully run)
   file_picker: ^10.3.10
@@ -63,7 +62,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  flutter_launcher_icons: 0.11.0
+  # Bumped with image 4.x (P3c); 0.11 pinned image ^3.
+  flutter_launcher_icons: ^0.14.4
   sqflite_common_ffi: ^2.4.0+2
 
 flutter_native_splash:

@@ -31,20 +31,24 @@ void main() {
     );
   });
 
-  test('EPUB engine declares only supported capabilities', () {
+  test('EPUB engine declares full text capabilities (self-hosted P3)', () {
     final engine = EpubReaderEngine(_buildBook('epub'));
 
     expect(
       engine.capabilities,
       const ReaderCapabilities(
-        typography: CapabilityLevel.none,
-        theme: CapabilityLevel.none,
-        highlights: CapabilityLevel.none,
-        annotations: CapabilityLevel.none,
+        typography: CapabilityLevel.full,
+        theme: CapabilityLevel.full,
+        highlights: CapabilityLevel.full,
+        annotations: CapabilityLevel.full,
         pageAnimation: CapabilityLevel.none,
         chapterNavigation: ReaderChapterNavigation.semantic,
       ),
     );
+    // The capability accessors must surface the concrete interfaces —
+    // ContentMetaManager's highlight sync + AnchorHealer depend on them.
+    expect(engine.textCapability, isNotNull);
+    expect(engine.textExtractionCapability, isNotNull);
   });
 
   test('PDF engine declares only supported capabilities', () {
