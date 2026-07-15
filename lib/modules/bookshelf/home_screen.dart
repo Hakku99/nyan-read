@@ -146,7 +146,11 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
     try {
       await vm.deleteSelectedBooks(result.alsoDeleteFiles);
-      if (!context.mounted) return;
+      // ponytail: intentionally not gated on context.mounted — the loading
+      // toast above is already active, so SnackBarUtils.show() takes the
+      // replace() path and never touches `context`. Gating this on mounted
+      // let the loading toast (5min sentinel duration) get stranded on
+      // screen whenever the widget unmounted mid-delete.
       SnackBarUtils.show(
         context,
         loc.deletedBooks(deletedCount),
@@ -155,10 +159,9 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         onActionTap: () => _undoDelete(context),
       );
     } catch (e) {
-      if (!context.mounted) return;
       SnackBarUtils.show(
         context,
-        AppLocalizations.of(context)!.errorDeletingBooks(e.toString()),
+        loc.errorDeletingBooks(e.toString()),
         tone: NyanSnackTone.error,
       );
     }
