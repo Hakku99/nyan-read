@@ -426,4 +426,80 @@ void main() {
       expect(restored.paragraphTrailingEdge, 0.4);
     });
   });
+
+  group('zip bomb guards', () {
+    // Limits are injected small so the tests never allocate bomb-sized data;
+    // the production defaults (kMaxEpubEntryBytes / kMaxEpubPackageBytes)
+    // only change the threshold, not the mechanism under test.
+    Archive archiveWith(String name, List<int> bytes) {
+      final archive = Archive();
+      archive.addFile(ArchiveFile(name, bytes.length, bytes));
+      return archive;
+    }
+
+    test('readZipBytes throws on entries over the ceiling', () {
+      final archive = archiveWith('big.bin', List<int>.filled(32, 7));
+      expect(
+        () => readZipBytes(archive, 'big.bin', maxEntryBytes: 16),
+        throwsFormatException,
+      );
+    });
+
+    test('readZipBytes returns entries within the ceiling', () {
+      final archive = archiveWith('ok.bin', [1, 2, 3]);
+      expect(readZipBytes(archive, 'ok.bin', maxEntryBytes: 16), [1, 2, 3]);
+    });
+
+    test('parseEpubFileInIsolate rejects oversized packages before reading',
+        () async {
+      final dir = await Directory.systemTemp.createTemp('nyan_epub_guard');
+      addTearDown(() async {
+        try {
+          await dir.delete(recursive: true);
+        } catch (_) {}
+      });
+      final file = File('${dir.path}/huge.epub');
+      await file.writeAsBytes(List<int>.filled(64, 0));
+
+      expect(
+        () => parseEpubFileInIsolate(file.path, maxPackageBytes: 32),
+        throwsFormatException,
+      );
+    });
+
+    test('a normal book still parses through the guarded file path',
+        () async {
+      const container = '<?xml version="1.0"?>'
+          '<container><rootfiles>'
+          '<rootfile full-path="OEBPS/content.opf"/>'
+          '</rootfiles></container>';
+      const opf = '<?xml version="1.0"?>'
+          '<package><manifest>'
+          '<item id="ch1" href="ch1.xhtml" media-type="application/xhtml+xml"/>'
+          '</manifest><spine><itemref idref="ch1"/></spine></package>';
+      final ch1 = _html(['<p>hello</p>', '<p>world</p>']);
+
+      final archive = Archive();
+      void add(String name, String content) {
+        final bytes = utf8.encode(content);
+        archive.addFile(ArchiveFile(name, bytes.length, bytes));
+      }
+
+      add('META-INF/container.xml', container);
+      add('OEBPS/content.opf', opf);
+      add('OEBPS/ch1.xhtml', ch1);
+
+      final dir = await Directory.systemTemp.createTemp('nyan_epub_guard_ok');
+      addTearDown(() async {
+        try {
+          await dir.delete(recursive: true);
+        } catch (_) {}
+      });
+      final file = File('${dir.path}/book.epub');
+      await file.writeAsBytes(Uint8List.fromList(ZipEncoder().encode(archive)));
+
+      final result = await parseEpubFileInIsolate(file.path);
+      expect(result.paragraphCount, 2);
+    });
+  });
 }

@@ -313,17 +313,48 @@ ArchiveFile? findZipEntry(Archive archive, String path) {
   return suffixHit;
 }
 
-Uint8List? readZipBytes(Archive archive, String path) {
+/// Decompressed-size ceiling for a single zip entry (64 MB). A crafted EPUB
+/// can deflate a tiny archive into multi-GB entries (zip bomb); inflating
+/// one during parse OOMs the whole process — the Dart heap is process-wide,
+/// so "it happens in an isolate" is no protection. Real chapter/image
+/// entries sit far below this.
+const int kMaxEpubEntryBytes = 64 * 1024 * 1024;
+
+/// Throws [FormatException] when the entry's declared or actual decompressed
+/// size exceeds [maxEntryBytes] — parse callers surface it as parseFailed,
+/// image/cover callers catch and fall back to a placeholder.
+Uint8List? readZipBytes(Archive archive, String path,
+    {int maxEntryBytes = kMaxEpubEntryBytes}) {
+  final ArchiveFile? entry;
   try {
-    final entry = findZipEntry(archive, path);
-    if (entry == null) return null;
-    // archive 4.x: content is a typed Uint8List (lazy-decompressed on
-    // first access).
-    final content = entry.content;
-    return content.isEmpty ? null : Uint8List.fromList(content);
+    entry = findZipEntry(archive, path);
   } catch (_) {
     return null;
   }
+  if (entry == null) return null;
+  // The central directory declares the uncompressed size — reject before
+  // inflating anything.
+  if (entry.size > maxEntryBytes) {
+    throw FormatException(
+        'EPUB entry too large: $path (${entry.size} > $maxEntryBytes bytes)');
+  }
+  final Uint8List content;
+  try {
+    // archive 4.x: content is a typed Uint8List (lazy-decompressed on
+    // first access).
+    content = entry.content;
+  } catch (_) {
+    return null;
+  }
+  // ponytail: a header that lies about its size already inflated by the time
+  // we can measure it; this check only turns the result into a loud failure.
+  // A streaming decompress with a hard cap is the upgrade path if real bombs
+  // show up in the wild.
+  if (content.length > maxEntryBytes) {
+    throw FormatException(
+        'EPUB entry too large after inflate: $path (${content.length} bytes)');
+  }
+  return content.isEmpty ? null : Uint8List.fromList(content);
 }
 
 String? readZipText(Archive archive, String path) {

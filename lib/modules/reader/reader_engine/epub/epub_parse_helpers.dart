@@ -352,10 +352,25 @@ Future<EpubParseResult> parseEpubBytesInIsolate(Uint8List bytes) {
 /// array instead means the file is held on the main isolate AND copied
 /// across the isolate boundary: 2× the book size of avoidable peak memory,
 /// which is exactly what OOM'd large EPUBs on tight devices.
-Future<EpubParseResult> parseEpubFileInIsolate(String path) async {
-  final bytes = await File(path).readAsBytes();
+Future<EpubParseResult> parseEpubFileInIsolate(String path,
+    {int maxPackageBytes = kMaxEpubPackageBytes}) async {
+  final file = File(path);
+  final length = await file.length();
+  // Refuse before readAsBytes allocates: past this ceiling the "book" is
+  // pathological and the whole-package read alone would OOM tight devices.
+  if (length > maxPackageBytes) {
+    throw FormatException(
+        'EPUB package too large: $length > $maxPackageBytes bytes');
+  }
+  final bytes = await file.readAsBytes();
   return parseEpubBytesInIsolate(bytes);
 }
+
+/// Whole-package ceiling (512 MB) for the parse path, which reads the entire
+/// EPUB into the isolate heap. Largest real book seen in the field so far:
+/// a 184 MB illustrated EPUB — this leaves generous headroom while stopping
+/// multi-GB pathological files at the door.
+const int kMaxEpubPackageBytes = 512 * 1024 * 1024;
 
 /// File-path variant of [extractEpubImageBytes]: streams the zip central
 /// directory from disk ([InputFileStream]) and inflates ONLY the requested
