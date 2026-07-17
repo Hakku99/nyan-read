@@ -16,6 +16,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 // 'path' exports an 'equals' function that conflicts with flutter_test/matcher.
+import 'package:nyan_read/core/services/database_service.dart';
 import 'package:path/path.dart' hide equals;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -714,6 +715,148 @@ void main() {
           reason:
               'main DB must not exist when no valid backup was found — '
               'the caller will create a fresh DB schema');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 7 (review #2) — Restored candidates must pass quick_check; truncated
+  //     snapshots are quarantined instead of restored forever. These tests
+  //     drive the REAL DatabaseService.restoreFromBackupDir seam, not a
+  //     local mirror.
+  // -------------------------------------------------------------------------
+
+  group('Restore verification via quick_check (review #2)', () {
+    setUpAll(() {
+      sqfliteFfiInit();
+      // DatabaseService._passesQuickCheck goes through the global sqflite
+      // openDatabase — point it at the ffi factory for tests.
+      databaseFactory = databaseFactoryFfi;
+    });
+
+    /// Writes a healthy snapshot with one recognisable row at [path].
+    Future<void> writeGoodSnapshot(String path, String markerTitle) async {
+      final seedPath = join(tempDir.path, 'seed_${markerTitle.hashCode}.db');
+      final db = await _openFileDb(seedPath);
+      await db.insert('books', {
+        'id': 'b1',
+        'title': markerTitle,
+        'file_path': '/tmp/x',
+        'format': 'txt',
+      });
+      await _vacuumInto(db, path);
+      await db.close();
+    }
+
+    /// Simulates a VACUUM INTO killed mid-write: a snapshot that is
+    /// non-empty (passes the old size>0 check) but truncated (fails
+    /// quick_check).
+    Future<void> writeTruncatedSnapshot(String path) async {
+      final seedPath = join(tempDir.path, 'trunc_seed.db');
+      if (!File(seedPath).existsSync()) {
+        final db = await _openFileDb(seedPath);
+        for (var i = 0; i < 200; i++) {
+          await db.insert('books', {
+            'id': 'pad$i',
+            'title': 'padding row $i',
+            'file_path': '/tmp/pad',
+            'format': 'txt',
+          });
+        }
+        await db.close();
+      }
+      final bytes = File(seedPath).readAsBytesSync();
+      File(path).writeAsBytesSync(bytes.sublist(0, bytes.length ~/ 2));
+    }
+
+    test('truncated newest snapshot is quarantined; older good one restores',
+        () async {
+      final backupDir = Directory(join(tempDir.path, 'backups_q1'))
+        ..createSync();
+      final goodPath = join(backupDir.path, 'nyan_read_1000.db');
+      final badPath = join(backupDir.path, 'nyan_read_2000.db');
+      await writeGoodSnapshot(goodPath, 'good snapshot survives');
+      await writeTruncatedSnapshot(badPath);
+      // The truncated snapshot is the newest — the old size>0 check
+      // restored it on every boot, forever.
+      File(goodPath).setLastModifiedSync(DateTime(2026, 1, 1));
+      File(badPath).setLastModifiedSync(DateTime(2026, 6, 1));
+
+      final mainDbPath = join(tempDir.path, 'main_q1.db');
+      await DatabaseService().restoreFromBackupDir(
+          mainDbPath: mainDbPath, backupDirPath: backupDir.path);
+
+      // The restored main DB is the good snapshot and readable.
+      final restored = await _openFileDb(mainDbPath);
+      final rows = await restored.query('books',
+          where: 'title = ?', whereArgs: ['good snapshot survives']);
+      await restored.close();
+      expect(rows, hasLength(1),
+          reason: 'main DB must come from the good older snapshot');
+
+      // The truncated snapshot is renamed out of candidate discovery.
+      expect(File(badPath).existsSync(), isFalse,
+          reason: 'bad snapshot must lose its .db name');
+      final quarantined = backupDir
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.contains('.quarantined_'))
+          .toList();
+      expect(quarantined, hasLength(1),
+          reason: 'bad snapshot must be quarantined, not deleted');
+    });
+
+    test('healthy newest snapshot restores with nothing quarantined',
+        () async {
+      final backupDir = Directory(join(tempDir.path, 'backups_q2'))
+        ..createSync();
+      final goodPath = join(backupDir.path, 'nyan_read_3000.db');
+      await writeGoodSnapshot(goodPath, 'plain healthy restore');
+
+      final mainDbPath = join(tempDir.path, 'main_q2.db');
+      await DatabaseService().restoreFromBackupDir(
+          mainDbPath: mainDbPath, backupDirPath: backupDir.path);
+
+      final restored = await _openFileDb(mainDbPath);
+      final rows = await restored.query('books');
+      await restored.close();
+      expect(rows, hasLength(1));
+      expect(File(goodPath).existsSync(), isTrue);
+      expect(
+          backupDir
+              .listSync()
+              .whereType<File>()
+              .any((f) => f.path.contains('.quarantined_')),
+          isFalse);
+    });
+
+    test('all snapshots truncated: every one quarantined, loop terminates',
+        () async {
+      final backupDir = Directory(join(tempDir.path, 'backups_q3'))
+        ..createSync();
+      for (var i = 1; i <= 3; i++) {
+        await writeTruncatedSnapshot(
+            join(backupDir.path, 'nyan_read_${i}000.db'));
+      }
+
+      final mainDbPath = join(tempDir.path, 'main_q3.db');
+      // Completing at all proves the retry loop is bounded.
+      await DatabaseService().restoreFromBackupDir(
+          mainDbPath: mainDbPath, backupDirPath: backupDir.path);
+
+      final quarantined = backupDir
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.contains('.quarantined_'))
+          .length;
+      expect(quarantined, 3,
+          reason: 'every truncated snapshot must end up quarantined');
+      expect(
+          backupDir
+              .listSync()
+              .whereType<File>()
+              .any((f) => f.path.endsWith('.db')),
+          isFalse,
+          reason: 'no unquarantined .db candidates may remain');
     });
   });
 }

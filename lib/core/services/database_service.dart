@@ -221,19 +221,11 @@ class DatabaseService {
       // quick_check skips the slow index-content verification but still
       // catches page-level corruption — the class that actually crashes
       // sqflite at runtime.
-      final db = await openDatabase(mainDbPath, singleInstance: false);
-      final result = await db.rawQuery('PRAGMA quick_check;');
-      await db.close();
-
-      final status = result.first.values.first as String;
-      if (status.toLowerCase() != 'ok') {
-        debugPrint(
-            '--- [DatabaseService] quick_check failed: PRAGMA quick_check = $status ---');
+      if (!await _passesQuickCheck(mainDbPath)) {
         throw Exception('Database corrupted');
-      } else {
-        debugPrint(
-            '--- [DatabaseService] Main database quick_check passed (ok) ---');
       }
+      debugPrint(
+          '--- [DatabaseService] Main database quick_check passed (ok) ---');
     } catch (e) {
       debugPrint(
           '--- [DatabaseService] Database self-heal triggered. Recovery reason: $e ---');
@@ -241,12 +233,66 @@ class DatabaseService {
     }
   }
 
+  /// Opens [path] and runs `PRAGMA quick_check`. Returns false on any
+  /// failure — an unopenable file and a failing check both mean "unusable".
+  /// sqflite's Platform Channel MUST run on the main isolate, which is why
+  /// restored candidates are verified here and not inside the restore worker.
+  Future<bool> _passesQuickCheck(String path) async {
+    try {
+      final db = await openDatabase(path, singleInstance: false);
+      try {
+        final result = await db.rawQuery('PRAGMA quick_check;');
+        final status = result.first.values.first as String;
+        if (status.toLowerCase() != 'ok') {
+          debugPrint(
+              '--- [DatabaseService] quick_check failed: PRAGMA quick_check = $status ---');
+          return false;
+        }
+        return true;
+      } finally {
+        await db.close();
+      }
+    } catch (e) {
+      debugPrint('--- [DatabaseService] quick_check could not run: $e ---');
+      return false;
+    }
+  }
+
   Future<void> _restoreFromLatestBackup(String mainDbPath) async {
     try {
       final dbPath = await getDatabasesPath();
       final backupDirPath = join(dbPath, 'backups');
+      await restoreFromBackupDir(
+          mainDbPath: mainDbPath, backupDirPath: backupDirPath);
+    } catch (e, stack) {
+      debugPrint(
+          '--- [DatabaseService] Catastrophic recovery failed - $e\n$stack ---');
+    }
+  }
 
-      // Phase 2 / P0-7: the whole restore is pure file-system work (no
+  /// Upper bound on restore rounds. Each failed round quarantines (renames)
+  /// its candidate so the set strictly shrinks; the cap only matters if a
+  /// rename silently misbehaves. Backups keep at most 3 snapshots plus any
+  /// legacy triad dirs, so this is generous.
+  static const int _maxRestoreAttempts = 8;
+
+  /// Restore-with-verification loop, split from [_restoreFromLatestBackup]
+  /// only so tests can drive it against a temp directory.
+  ///
+  /// A `VACUUM INTO` snapshot runs in the AppLifecycleState.paused window,
+  /// where Android routinely kills the process — that leaves a *non-empty
+  /// but truncated* .db file which the old "size > 0" check happily
+  /// restored, and, being newest by mtime, kept restoring on every boot
+  /// (worst case: a startup-failure loop). Now every restored candidate
+  /// must pass `PRAGMA quick_check` on the main isolate; failures are
+  /// quarantined by rename so the next round picks the next-newest snapshot.
+  @visibleForTesting
+  Future<void> restoreFromBackupDir({
+    required String mainDbPath,
+    required String backupDirPath,
+  }) async {
+    for (var attempt = 0; attempt < _maxRestoreAttempts; attempt++) {
+      // Phase 2 / P0-7: the restore itself is pure file-system work (no
       // sqflite channel calls), so we hand it to a helper isolate to keep
       // the boot path off the UI thread. Only primitive strings cross the
       // isolate boundary. Logs are collected and replayed on the main
@@ -261,10 +307,45 @@ class DatabaseService {
       for (final line in outcome.logs) {
         debugPrint(line);
       }
-    } catch (e, stack) {
+
+      final restoredFrom = outcome.restoredFromPath;
+      if (restoredFrom == null) {
+        // No candidate could be restored (none found, or all exhausted).
+        return;
+      }
+
+      if (await _passesQuickCheck(mainDbPath)) {
+        debugPrint(
+            '--- [DatabaseService] Restored DB passed quick_check ---');
+        return;
+      }
+
+      // Quarantine by rename, not delete: the snapshot may still be
+      // manually salvageable, and losing the `.db` suffix (flat format) or
+      // the `nyan_read.db` name (legacy dirs) removes it from candidate
+      // discovery, so the next round cannot pick it again.
+      final quarantinePath =
+          '$restoredFrom.quarantined_${DateTime.now().millisecondsSinceEpoch}';
       debugPrint(
-          '--- [DatabaseService] Catastrophic recovery failed - $e\n$stack ---');
+          '--- [DatabaseService] Restored DB failed quick_check; quarantining $restoredFrom ---');
+      try {
+        File(restoredFrom).renameSync(quarantinePath);
+      } catch (e) {
+        debugPrint(
+            '--- [DatabaseService] Quarantine rename failed ($e); aborting retries to avoid a restore loop ---');
+        return;
+      }
+      // Drop the bad restored main file so the next round starts clean and
+      // the worker does not archive it as a "corrupted original".
+      try {
+        File(mainDbPath).deleteSync();
+      } catch (e) {
+        debugPrint(
+            '--- [DatabaseService] Warning: could not delete failed restore: $e ---');
+      }
     }
+    debugPrint(
+        '--- [DatabaseService] Restore attempt cap reached; giving up ---');
   }
 
   /// Isolate worker for [_restoreFromLatestBackup]. Discovers the best
@@ -349,7 +430,9 @@ class DatabaseService {
       // Try backup candidates in newest-first order.  If a candidate's file
       // is empty or unreadable (indicates a bad backup), move on to the next
       // so a single corrupt snapshot doesn't block recovery entirely.
-      var restored = false;
+      // Deeper corruption (truncated but non-empty snapshots) cannot be
+      // detected here — sqflite is main-isolate-only — so the caller
+      // quick_checks the result via [restoredFromPath] and quarantines it.
       for (final candidate in candidates) {
         logs.add(
             '--- [DatabaseService] Attempting restore from: ${candidate.file.path} ---');
@@ -362,8 +445,8 @@ class DatabaseService {
           }
           logs.add(
               '--- [DatabaseService] Restore succeeded ($restoredSize bytes) ---');
-          restored = true;
-          break;
+          return _DbRestoreOutcome(logs,
+              restoredFromPath: candidate.file.path);
         } catch (e) {
           logs.add(
               '--- [DatabaseService] Copy failed from ${candidate.file.path}: $e; trying next candidate ---');
@@ -372,10 +455,8 @@ class DatabaseService {
         }
       }
 
-      if (!restored) {
-        logs.add(
-            '--- [DatabaseService] All backup candidates exhausted; restore failed ---');
-      }
+      logs.add(
+          '--- [DatabaseService] All backup candidates exhausted; restore failed ---');
     } catch (e, stack) {
       logs.add(
           '--- [DatabaseService] Backup restore failed in isolate: $e\n$stack ---');
@@ -1073,8 +1154,13 @@ class DatabaseService {
 /// `debugPrint` inside an isolate does not flush to IDE consoles on every
 /// platform.
 class _DbRestoreOutcome {
-  _DbRestoreOutcome(this.logs);
+  _DbRestoreOutcome(this.logs, {this.restoredFromPath});
   final List<String> logs;
+
+  /// Path of the snapshot the main DB was restored from, or null when no
+  /// candidate could be restored. The caller quick_checks the restored file
+  /// and quarantines this snapshot when the check fails.
+  final String? restoredFromPath;
 }
 
 /// Lightweight record used inside [_runRestoreFromBackupInIsolate] to
