@@ -8,11 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../core/services/backup_recovery_service.dart';
-import '../../core/services/bookshelf_preferences_service.dart';
 import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/riverpod_providers.dart';
-import '../../core/services/service_locator.dart';
 import '../../core/theme/nyan_colors.dart';
 import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_shadows.dart';
@@ -55,8 +52,35 @@ void _closeDialog(BuildContext context) {
 
 // ── Export flow ───────────────────────────────────────────────────────────────
 
-Future<void> _handleExportData(BuildContext context) async {
+Future<void> _handleExportData(BuildContext context, WidgetRef ref) async {
   final loc = AppLocalizations.of(context)!;
+  final backupService = ref.read(backupRecoveryServiceRpProvider);
+
+  // Privacy gate: the export bundles every shelf including private books
+  // (excluding them would make restores silently lossy), so exporting while
+  // the private shelf is locked must re-prove the PIN first — otherwise
+  // Settings → Export → Share walks the private catalogue out in three taps.
+  final bool gateRequired;
+  try {
+    gateRequired = !ref.read(featureManagerRpProvider).isPrivateShelfUnlocked &&
+        await ref.read(privacyLockServiceRpProvider).hasPassword() &&
+        await backupService.hasPrivateBooks();
+  } catch (e) {
+    debugPrint('Export privacy gate check failed: $e');
+    if (context.mounted) {
+      SnackBarUtils.show(context, loc.exportFailed(e.toString()),
+          tone: NyanSnackTone.error);
+    }
+    return;
+  }
+  if (gateRequired) {
+    if (!context.mounted) return;
+    final verified =
+        await ref.read(privacyLockServiceRpProvider).showPinVerify(context);
+    if (!verified) return;
+  }
+
+  if (!context.mounted) return;
   _showLoadingDialog(
     context,
     title: loc.exportData,
@@ -64,7 +88,6 @@ Future<void> _handleExportData(BuildContext context) async {
   );
 
   try {
-    final backupService = getIt<BackupRecoveryService>();
     final exportFilePath = await backupService.exportGlobalUserData();
     if (context.mounted) _closeDialog(context);
     if (!context.mounted) return;
@@ -130,7 +153,7 @@ Future<void> _shareFile(String exportFilePath) async {
 
 // ── Import flow ───────────────────────────────────────────────────────────────
 
-Future<void> _handleImportData(BuildContext context) async {
+Future<void> _handleImportData(BuildContext context, WidgetRef ref) async {
   final loc = AppLocalizations.of(context)!;
   _showLoadingDialog(
     context,
@@ -139,7 +162,7 @@ Future<void> _handleImportData(BuildContext context) async {
   );
 
   try {
-    final backupService = getIt<BackupRecoveryService>();
+    final backupService = ref.read(backupRecoveryServiceRpProvider);
     final restoredCount = await backupService.importGlobalUserData();
     if (context.mounted) _closeDialog(context);
     if (!context.mounted) return;
@@ -305,7 +328,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                             StatefulBuilder(
                               builder: (context, setLocalState) {
                                 final bookshelfPrefs =
-                                    getIt<BookshelfPreferencesService>();
+                                    ref.read(bookshelfPreferencesRpProvider);
                                 return NyanListRow(
                                   leadingIcon: NyanIcons.delete,
                                   title: loc.deleteFilesOnRemove,
@@ -337,14 +360,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           title: loc.exportData,
                           subtitle: loc.exportDataSubtitle,
                           showChevron: true,
-                          onTap: () => _handleExportData(context),
+                          onTap: () => _handleExportData(context, ref),
                         ),
                         NyanListRow(
                           leadingIcon: NyanIcons.cloudDownload,
                           title: loc.importData,
                           subtitle: loc.importDataSubtitle,
                           showChevron: true,
-                          onTap: () => _handleImportData(context),
+                          onTap: () => _handleImportData(context, ref),
                         ),
                       ],
                     ),
