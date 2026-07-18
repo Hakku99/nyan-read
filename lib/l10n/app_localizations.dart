@@ -1112,6 +1112,24 @@ abstract class AppLocalizations {
   /// **'Browse and open .txt, .epub or .pdf'**
   String get importFilesSubtitle;
 
+  /// No description provided for @addLibraryFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add library folder'**
+  String get addLibraryFolder;
+
+  /// No description provided for @addLibraryFolderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference every book inside a folder — nothing is copied'**
+  String get addLibraryFolderSubtitle;
+
+  /// No description provided for @libraryFolderEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No TXT/EPUB/PDF files found in that folder'**
+  String get libraryFolderEmpty;
+
   /// No description provided for @supportedFormats.
   ///
   /// In en, this message translates to:

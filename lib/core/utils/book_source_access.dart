@@ -45,7 +45,10 @@ class BookSourceAccess {
           if (!await file.exists()) return false;
           final stat = await file.stat();
           return stat.type == FileSystemEntityType.file;
+        // Tree-child uris read through the same provider machinery as
+        // per-file grants — only the grant they inherit differs.
         case BookSourceType.androidContentUri:
+        case BookSourceType.androidTreeUri:
           return await BookSourcePlatform.isUriReadable(sourceLocator);
         default:
           return false;
@@ -68,6 +71,7 @@ class BookSourceAccess {
       case BookSourceType.filePath:
         return File(sourceLocator).readAsBytes();
       case BookSourceType.androidContentUri:
+      case BookSourceType.androidTreeUri:
         return _readUriBytesViaTempFile(sourceLocator);
       default:
         throw UnsupportedError('Unsupported source type: $sourceType');
@@ -124,6 +128,7 @@ class BookSourceAccess {
       case BookSourceType.filePath:
         return PdfCompatibleSource(path: book.sourceLocator, isTemporary: false);
       case BookSourceType.androidContentUri:
+      case BookSourceType.androidTreeUri:
         final tempPath = await BookSourcePlatform.copyUriToTempFile(
           book.sourceLocator,
           extension: extension,

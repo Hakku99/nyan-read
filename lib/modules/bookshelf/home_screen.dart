@@ -8,6 +8,7 @@ import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
+import '../../core/services/database_service.dart';
 import '../../core/services/feature_manager.dart';
 import '../../core/services/riverpod_providers.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
@@ -246,54 +247,16 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         final importSource = await _resolveImportedSource(file);
         if (importSource == null) continue;
 
-        try {
-          final fileName = importSource.displayName;
-          final addedAt = DateTime.now().millisecondsSinceEpoch;
-          final normalizedSourceLocator =
-              BookImportFingerprint.normalizeLocator(
-            importSource.sourceType,
-            importSource.sourceLocator,
-          );
-          final contentSignature = await BookImportFingerprint.computeForSource(
-            sourceType: importSource.sourceType,
-            sourceLocator: importSource.sourceLocator,
-            locatorHint: importSource.signatureHint,
-            transientFilePath: file.path,
-          );
-
-          final isDuplicate = knownLocators.contains(normalizedSourceLocator) ||
-              (contentSignature != null &&
-                  knownSignatures.contains(contentSignature));
-          if (isDuplicate) {
-            skippedCount++;
-            debugPrint('Skipping duplicate import: $fileName');
-            continue;
-          }
-
-          final book = Book(
-            id: const Uuid().v4(),
-            title: path.basenameWithoutExtension(fileName),
-            author: 'Unknown',
-            sourceLocator: importSource.sourceLocator,
-            sourceType: importSource.sourceType,
-            format: path.extension(fileName).replaceAll('.', ''),
-            titleSortKey:
-                buildTitleSortKey(path.basenameWithoutExtension(fileName)),
-            isPrivate: isPrivate,
-            addedAt: addedAt,
-            contentSignature: contentSignature,
-            storageType: importSource.storageType,
-          );
-
-          await db.insertBook(book.toMap());
-          knownLocators.add(normalizedSourceLocator);
-          if (contentSignature != null) {
-            knownSignatures.add(contentSignature);
-          }
-          successCount++;
-        } catch (e) {
-          debugPrint('Error importing file ${file.name}: $e');
-        }
+        final outcome = await _importResolvedSource(
+          db: db,
+          importSource: importSource,
+          knownLocators: knownLocators,
+          knownSignatures: knownSignatures,
+          isPrivate: isPrivate,
+          transientFilePath: file.path,
+        );
+        if (outcome == _ImportOutcome.imported) successCount++;
+        if (outcome == _ImportOutcome.skipped) skippedCount++;
       }
 
       await _cleanupPickerTempFiles();
@@ -355,6 +318,194 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     const floor = Duration(milliseconds: 600);
     final remaining = floor - DateTime.now().difference(shownAt);
     if (remaining > Duration.zero) await Future.delayed(remaining);
+  }
+
+  /// Shared per-source import core for both the file-picker and
+  /// library-folder flows: fingerprint dedupe → Book row insert. Mutates the
+  /// known-sets so a batch also dedupes against itself; failures are logged
+  /// and reported as [_ImportOutcome.failed] (callers count neither way,
+  /// matching the historical loop).
+  Future<_ImportOutcome> _importResolvedSource({
+    required DatabaseService db,
+    required _ImportedBookSource importSource,
+    required Set<String> knownLocators,
+    required Set<String> knownSignatures,
+    required bool isPrivate,
+    String? transientFilePath,
+  }) async {
+    try {
+      final fileName = importSource.displayName;
+      final addedAt = DateTime.now().millisecondsSinceEpoch;
+      final normalizedSourceLocator = BookImportFingerprint.normalizeLocator(
+        importSource.sourceType,
+        importSource.sourceLocator,
+      );
+      final contentSignature = await BookImportFingerprint.computeForSource(
+        sourceType: importSource.sourceType,
+        sourceLocator: importSource.sourceLocator,
+        locatorHint: importSource.signatureHint,
+        transientFilePath: transientFilePath,
+      );
+
+      final isDuplicate = knownLocators.contains(normalizedSourceLocator) ||
+          (contentSignature != null &&
+              knownSignatures.contains(contentSignature));
+      if (isDuplicate) {
+        debugPrint('Skipping duplicate import: $fileName');
+        return _ImportOutcome.skipped;
+      }
+
+      final book = Book(
+        id: const Uuid().v4(),
+        title: path.basenameWithoutExtension(fileName),
+        author: 'Unknown',
+        sourceLocator: importSource.sourceLocator,
+        sourceType: importSource.sourceType,
+        format: path.extension(fileName).replaceAll('.', ''),
+        titleSortKey:
+            buildTitleSortKey(path.basenameWithoutExtension(fileName)),
+        isPrivate: isPrivate,
+        addedAt: addedAt,
+        contentSignature: contentSignature,
+        storageType: importSource.storageType,
+      );
+
+      await db.insertBook(book.toMap());
+      knownLocators.add(normalizedSourceLocator);
+      if (contentSignature != null) {
+        knownSignatures.add(contentSignature);
+      }
+      return _ImportOutcome.imported;
+    } catch (e) {
+      debugPrint('Error importing ${importSource.displayName}: $e');
+      return _ImportOutcome.failed;
+    }
+  }
+
+  /// Library-folder import (docs/DESIGN_LIBRARY_FOLDERS.md Phase B):
+  /// one tree grant covers the whole folder, every book inside is imported
+  /// by reference (sourceType androidTreeUri, NO per-file persisted grant).
+  Future<void> _importLibraryFolder(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
+
+    final Map<String, dynamic>? picked;
+    try {
+      picked = await BookSourcePlatform.pickLibraryFolder();
+    } catch (e) {
+      debugPrint('Library folder pick failed: $e');
+      if (context.mounted) {
+        SnackBarUtils.show(context, loc.importFailed(e.toString()),
+            tone: NyanSnackTone.error);
+      }
+      return;
+    }
+    if (picked == null) return; // user cancelled
+    final treeUri = picked['uri'] as String?;
+    if (treeUri == null || treeUri.isEmpty) return;
+    if (!context.mounted) return;
+
+    DateTime? loadingShownAt;
+    try {
+      SnackBarUtils.show(
+        context,
+        loc.importingBooksTitle,
+        description: loc.importingBooksSubtitle,
+        tone: NyanSnackTone.loading,
+      );
+      loadingShownAt = DateTime.now();
+      await WidgetsBinding.instance.endOfFrame;
+      if (!context.mounted) return;
+
+      final scan = await BookSourcePlatform.listTreeDocuments(treeUri);
+      final docs = ((scan['documents'] as List?) ?? const [])
+          .whereType<Map<Object?, Object?>>()
+          .toList(growable: false);
+
+      if (docs.isEmpty) {
+        await _awaitMinLoadingDisplay(loadingShownAt);
+        if (!context.mounted) return;
+        SnackBarUtils.show(context, loc.libraryFolderEmpty,
+            tone: NyanSnackTone.skipped);
+        return;
+      }
+
+      final db = ref.read(databaseServiceRpProvider);
+      final existingIndex = await BookImportFingerprint.buildExistingIndex(db);
+      final featureManager = ref.read(featureManagerRpProvider);
+      final isPrivate =
+          featureManager.isPrivateShelfUnlocked && _tabController.index == 1;
+
+      int successCount = 0;
+      int skippedCount = 0;
+      final knownSignatures = <String>{...existingIndex.signatures};
+      final knownLocators = <String>{...existingIndex.normalizedLocators};
+
+      // ponytail: fingerprinting reads each tree book fully through a native
+      // temp copy (no local picker cache to sample from). Fine for the
+      // one-shot import gesture; add a native sampled-read method if folder
+      // import ever feels slow on 100MB-book libraries.
+      for (final doc in docs) {
+        final uri = doc['uri'] as String?;
+        final name = doc['name'] as String?;
+        if (uri == null || uri.isEmpty || name == null || name.isEmpty) {
+          continue;
+        }
+        final outcome = await _importResolvedSource(
+          db: db,
+          importSource: _ImportedBookSource(
+            sourceLocator: uri,
+            sourceType: BookSourceType.androidTreeUri,
+            displayName: name,
+            signatureHint: name,
+          ),
+          knownLocators: knownLocators,
+          knownSignatures: knownSignatures,
+          isPrivate: isPrivate,
+        );
+        if (outcome == _ImportOutcome.imported) successCount++;
+        if (outcome == _ImportOutcome.skipped) skippedCount++;
+      }
+
+      if (!context.mounted) return;
+      await _awaitMinLoadingDisplay(loadingShownAt);
+      if (!context.mounted) return;
+
+      final shelfLabel = isPrivate ? loc.privateShelf : loc.publicShelf;
+      if (successCount > 0) {
+        SnackBarUtils.show(
+          context,
+          loc.importedBooks(successCount, shelfLabel),
+          tone: NyanSnackTone.success,
+        );
+      } else if (skippedCount > 0) {
+        SnackBarUtils.show(
+          context,
+          loc.duplicatesSkipped(skippedCount),
+          tone: NyanSnackTone.skipped,
+        );
+      } else {
+        SnackBarUtils.show(
+          context,
+          loc.importNothingSucceeded(docs.length),
+          tone: NyanSnackTone.error,
+        );
+      }
+
+      if (successCount > 0) {
+        _vm.loadBooks();
+      }
+    } catch (e) {
+      if (context.mounted && loadingShownAt != null) {
+        await _awaitMinLoadingDisplay(loadingShownAt);
+      }
+      if (context.mounted) {
+        SnackBarUtils.show(
+          context,
+          loc.importFailed(e.toString()),
+          tone: NyanSnackTone.error,
+        );
+      }
+    }
   }
 
   Future<_ImportedBookSource?> _resolveImportedSource(PlatformFile file) async {
@@ -450,6 +601,12 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             Navigator.pop(context);
             _importBook(parentContext);
           },
+          onImportFolder: (!kIsWeb && Platform.isAndroid)
+              ? () {
+                  Navigator.pop(context);
+                  _importLibraryFolder(parentContext);
+                }
+              : null,
         );
       },
     );
@@ -1822,6 +1979,8 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
 }
 
 // ── Imported book source ───────────────────────────────────────────────────────
+
+enum _ImportOutcome { imported, skipped, failed }
 
 class _ImportedBookSource {
   final String sourceLocator;

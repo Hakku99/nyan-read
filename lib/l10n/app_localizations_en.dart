@@ -558,6 +558,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importFilesSubtitle => 'Browse and open .txt, .epub or .pdf';
 
   @override
+  String get addLibraryFolder => 'Add library folder';
+
+  @override
+  String get addLibraryFolderSubtitle =>
+      'Reference every book inside a folder — nothing is copied';
+
+  @override
+  String get libraryFolderEmpty => 'No TXT/EPUB/PDF files found in that folder';
+
+  @override
   String get supportedFormats => 'Supported Formats';
 
   @override

@@ -538,6 +538,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importFilesSubtitle => '浏览并打开 .txt、.epub 或 .pdf 文件';
 
   @override
+  String get addLibraryFolder => '添加书库文件夹';
+
+  @override
+  String get addLibraryFolderSubtitle => '引用文件夹内的全部书籍，不复制文件';
+
+  @override
+  String get libraryFolderEmpty => '该文件夹里没有找到 TXT/EPUB/PDF 文件';
+
+  @override
   String get supportedFormats => '支持的格式';
 
   @override
