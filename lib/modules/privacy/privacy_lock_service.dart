@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/biometric_service.dart';
 import '../../core/services/pin_service.dart';
+import '../../core/services/riverpod_providers.dart';
 import 'pin_overlay_page.dart';
 
-/// Facade over PIN + biometric unlock flows.
-///
-/// Registered in get_it with constructor-injected services (§2.3); UI
-/// obtains it via `privacyLockServiceRpProvider`.
+/// Assembled here rather than in core's riverpod_providers: this facade
+/// pushes Presentation overlays (PinOverlayPage), so core must not import
+/// it — the provider lives with the module (§3.2 layer matrix, review #12).
+/// Stateless, so a plain Provider is its singleton.
+final privacyLockServiceRpProvider = Provider<PrivacyLockService>((ref) {
+  return PrivacyLockService(
+    ref.read(pinServiceRpProvider),
+    ref.read(biometricServiceRpProvider),
+  );
+});
+
+/// Facade over PIN + biometric unlock flows, with constructor-injected
+/// services (§2.3); UI obtains it via [privacyLockServiceRpProvider].
 class PrivacyLockService {
   PrivacyLockService(this._pinService, this._biometricService);
 

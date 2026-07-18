@@ -24,6 +24,7 @@ import '../../core/ui/nyan_theme_context.dart';
 import 'package:go_router/go_router.dart';
 import '../settings/settings_page.dart';
 import '../ads/ads_ui.dart';
+import '../privacy/privacy_lock_service.dart';
 import '../../core/ui/nyan_icons.dart';
 import '../../core/utils/book_import_fingerprint.dart';
 import '../../core/utils/book_sandbox_copier.dart';

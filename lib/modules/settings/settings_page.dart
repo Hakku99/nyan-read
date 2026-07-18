@@ -20,6 +20,7 @@ import '../../core/ui/components/components.dart';
 import '../../core/ui/nyan_icons.dart';
 import '../../core/ui/nyan_theme_context.dart';
 import '../../core/utils/snackbar_utils.dart';
+import '../privacy/privacy_lock_service.dart';
 
 const double _kHPad = NyanSpacing.space16;
 
