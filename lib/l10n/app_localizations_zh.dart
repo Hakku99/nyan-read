@@ -498,14 +498,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get alsoDeleteLocalFiles => '同时删除本地文件';
 
   @override
-  String get alsoDeleteFilesFromDevice => 'Also delete files from device';
+  String get alsoDeleteFilesFromDevice => '同时删除设备上的文件';
 
   @override
-  String get alsoDeleteFilesFromDeviceDesc =>
-      'The original EPUB/PDF files will be permanently removed, not just the shelf entries.';
+  String get alsoDeleteFilesFromDeviceDesc => '原始 EPUB/PDF 文件将被永久删除，而不只是移出书架。';
 
   @override
-  String get deleteButton => 'Delete';
+  String get deleteButton => '删除';
 
   @override
   String deletedBooks(int count) {

@@ -42,10 +42,17 @@ class EpubPackage {
     required this.archive,
     required this.toc,
     required this.coverPath,
+    this.spinePaths = const [],
   });
 
   final Archive archive;
   final List<EpubTocEntry> toc;
+
+  /// Resolved zip paths of spine itemrefs in spine order — the authoritative
+  /// linear reading order. Content enumeration follows this (the TOC only
+  /// maps titles/anchors into it); empty only for hand-built packages,
+  /// which then degrade to TOC-driven enumeration.
+  final List<String> spinePaths;
 
   /// Resolved zip path of the cover image, or null when undeclared.
   final String? coverPath;
@@ -112,7 +119,17 @@ EpubPackage parseEpubPackageFromArchive(Archive archive) {
     );
   }
 
-  // 3. TOC: EPUB3 nav → EPUB2 NCX → spine order.
+  // 3. Spine: the authoritative linear reading order, as resolved zip paths.
+  final spinePaths = <String>[
+    for (final idref in opf
+        .findAllElements('itemref')
+        .map((e) => e.getAttribute('idref'))
+        .whereType<String>())
+      if (manifest[idref] != null)
+        resolveHref(opfDir, manifest[idref]!.href).path,
+  ];
+
+  // 4. TOC: EPUB3 nav → EPUB2 NCX → spine order.
   List<EpubTocEntry> toc = const [];
   final navItem = manifest.values
       .where((m) => m.props.split(' ').contains('nav'))
@@ -139,22 +156,13 @@ EpubPackage parseEpubPackageFromArchive(Archive archive) {
   if (toc.isEmpty) {
     // Synthetic TOC from spine order — a book with no navigation is still
     // readable front to back.
-    final spineRefs = opf
-        .findAllElements('itemref')
-        .map((e) => e.getAttribute('idref'))
-        .whereType<String>();
     toc = [
-      for (final idref in spineRefs)
-        if (manifest[idref] != null)
-          EpubTocEntry(
-            title: null,
-            fileName: resolveHref(opfDir, manifest[idref]!.href).path,
-            anchor: null,
-          ),
+      for (final path in spinePaths)
+        EpubTocEntry(title: null, fileName: path, anchor: null),
     ];
   }
 
-  // 4. Cover: EPUB3 properties="cover-image", else EPUB2
+  // 5. Cover: EPUB3 properties="cover-image", else EPUB2
   //    <meta name="cover" content="<manifest-id>">.
   String? coverPath;
   final coverItem = manifest.values
@@ -175,7 +183,12 @@ EpubPackage parseEpubPackageFromArchive(Archive archive) {
     }
   }
 
-  return EpubPackage(archive: archive, toc: toc, coverPath: coverPath);
+  return EpubPackage(
+    archive: archive,
+    toc: toc,
+    coverPath: coverPath,
+    spinePaths: spinePaths,
+  );
 }
 
 List<EpubTocEntry> _parseEpub3Nav(String navXml, String navDir) {
@@ -313,17 +326,48 @@ ArchiveFile? findZipEntry(Archive archive, String path) {
   return suffixHit;
 }
 
-Uint8List? readZipBytes(Archive archive, String path) {
+/// Decompressed-size ceiling for a single zip entry (64 MB). A crafted EPUB
+/// can deflate a tiny archive into multi-GB entries (zip bomb); inflating
+/// one during parse OOMs the whole process — the Dart heap is process-wide,
+/// so "it happens in an isolate" is no protection. Real chapter/image
+/// entries sit far below this.
+const int kMaxEpubEntryBytes = 64 * 1024 * 1024;
+
+/// Throws [FormatException] when the entry's declared or actual decompressed
+/// size exceeds [maxEntryBytes] — parse callers surface it as parseFailed,
+/// image/cover callers catch and fall back to a placeholder.
+Uint8List? readZipBytes(Archive archive, String path,
+    {int maxEntryBytes = kMaxEpubEntryBytes}) {
+  final ArchiveFile? entry;
   try {
-    final entry = findZipEntry(archive, path);
-    if (entry == null) return null;
-    // archive 4.x: content is a typed Uint8List (lazy-decompressed on
-    // first access).
-    final content = entry.content;
-    return content.isEmpty ? null : Uint8List.fromList(content);
+    entry = findZipEntry(archive, path);
   } catch (_) {
     return null;
   }
+  if (entry == null) return null;
+  // The central directory declares the uncompressed size — reject before
+  // inflating anything.
+  if (entry.size > maxEntryBytes) {
+    throw FormatException(
+        'EPUB entry too large: $path (${entry.size} > $maxEntryBytes bytes)');
+  }
+  final Uint8List content;
+  try {
+    // archive 4.x: content is a typed Uint8List (lazy-decompressed on
+    // first access).
+    content = entry.content;
+  } catch (_) {
+    return null;
+  }
+  // ponytail: a header that lies about its size already inflated by the time
+  // we can measure it; this check only turns the result into a loud failure.
+  // A streaming decompress with a hard cap is the upgrade path if real bombs
+  // show up in the wild.
+  if (content.length > maxEntryBytes) {
+    throw FormatException(
+        'EPUB entry too large after inflate: $path (${content.length} bytes)');
+  }
+  return content.isEmpty ? null : Uint8List.fromList(content);
 }
 
 String? readZipText(Archive archive, String path) {

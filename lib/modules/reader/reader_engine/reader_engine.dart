@@ -13,6 +13,12 @@ class ReadingPosition {
   final String? cfi;
   final int? chapterIndex;
 
+  /// EPUB content-enumeration version the anchor was measured against
+  /// (kEpubEnumerationVersion). Null for TXT/PDF and for EPUB payloads
+  /// written before the 2026-07 spine-primary switch — a forensic marker,
+  /// never consulted on restore today.
+  final int? enumVersion;
+
   const ReadingPosition({
     this.paragraphIndex,
     this.paragraphLeadingEdge,
@@ -20,6 +26,7 @@ class ReadingPosition {
     this.pageNumber,
     this.cfi,
     this.chapterIndex,
+    this.enumVersion,
   });
 
   factory ReadingPosition.fromJson(String type, String json) {
@@ -35,6 +42,7 @@ class ReadingPosition {
           : map['pageNumber'] as int?,
       cfi: map['cfi'] as String?,
       chapterIndex: map['chapterIndex'] as int?,
+      enumVersion: map['enumVersion'] as int?,
     );
   }
 
@@ -62,6 +70,9 @@ class ReadingPosition {
     }
     if (chapterIndex != null) {
       map['chapterIndex'] = chapterIndex;
+    }
+    if (enumVersion != null) {
+      map['enumVersion'] = enumVersion;
     }
     return jsonEncode(map);
   }

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'backup_recovery_service.dart';
 import 'feature_manager.dart';
 import 'language_manager.dart';
 import 'database_service.dart';
@@ -45,4 +46,8 @@ final bookshelfPreferencesRpProvider = Provider<BookshelfPreferencesService>((re
 
 final privacyLockServiceRpProvider = Provider<PrivacyLockService>((ref) {
   return getIt<PrivacyLockService>();
+});
+
+final backupRecoveryServiceRpProvider = Provider<BackupRecoveryService>((ref) {
+  return getIt<BackupRecoveryService>();
 });

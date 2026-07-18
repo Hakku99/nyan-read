@@ -8,7 +8,6 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
-import 'package:intl/intl.dart';
 import 'database_service.dart';
 
 class BackupRecoveryService extends WidgetsBindingObserver {
@@ -153,62 +152,13 @@ class BackupRecoveryService extends WidgetsBindingObserver {
     return logs;
   }
 
-  /// Mechanism C: asset downgrade export (Markdown).
-  Future<String> exportBookNotesToMarkdown(String bookId) async {
-    try {
-      final dbService = _dbService;
-      final book = await dbService.getBookById(bookId);
-      if (book == null) {
-        return '# Error\nBook not found.';
-      }
-
-      final highlights = await dbService.getHighlights(bookId);
-      final bookmarks = await dbService.getBookmarks(bookId);
-
-      final buffer = StringBuffer();
-      buffer.writeln('# ${book['title'] ?? 'Unknown Book'} - 笔记导出');
-      buffer.writeln(
-          '导出时间: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}\n');
-
-      if (highlights.isEmpty && bookmarks.isEmpty) {
-        buffer.writeln('本书暂无高亮或笔记。');
-        return buffer.toString();
-      }
-
-      if (highlights.isNotEmpty) {
-        buffer.writeln('## 高亮与笔记\n');
-        for (final h in highlights) {
-          final text = h['selected_text'] ?? '';
-          final note = h['note'];
-
-          buffer.writeln('> $text');
-          if (note != null && note.toString().isNotEmpty) {
-            buffer.writeln('📝 $note');
-          }
-          buffer.writeln('');
-        }
-      }
-
-      if (bookmarks.isNotEmpty) {
-        buffer.writeln('## 书签记录\n');
-        for (final b in bookmarks) {
-          final snippet = b['content_snippet'] ?? '位置标记';
-          final note = b['note'];
-
-          buffer.writeln('> $snippet');
-          if (note != null && note.toString().isNotEmpty) {
-            buffer.writeln('📝 $note');
-          }
-          buffer.writeln('');
-        }
-      }
-
-      debugPrint('--- [BackupRecoveryService] 资产降维导出成功，Book ID: $bookId ---');
-      return buffer.toString();
-    } catch (e, stack) {
-      debugPrint('--- [BackupRecoveryService] 导出Markdown失败: $e\n$stack ---');
-      return '# Error\nFailed to export notes: $e';
-    }
+  /// True when at least one book sits on the private shelf. The settings
+  /// export flow gates on this: exports bundle every shelf (excluding
+  /// private books would make restores silently lossy), so a locked private
+  /// shelf must re-prove the PIN before export starts.
+  Future<bool> hasPrivateBooks() async {
+    final privateBooks = await _dbService.getBooks(isPrivate: true);
+    return privateBooks.isNotEmpty;
   }
 
   /// 机制 B: 全局沙盒清道夫 (Global Cache Scavenger)

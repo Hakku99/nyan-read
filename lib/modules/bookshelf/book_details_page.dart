@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -528,13 +529,30 @@ class _BookHeroCoverState extends State<_BookHeroCover> {
       final cached = await BookCoverCache.read(widget.book.id);
       if (cached != null) return cached;
 
-      final bytes = await BookSourceAccess.readBytes(widget.book);
-      final jpeg = await extractEpubCoverAsJpeg(bytes);
-      if (jpeg != null && jpeg.isNotEmpty) {
-        // Fire-and-forget: a lost cache write only means one more extraction.
-        unawaited(BookCoverCache.write(widget.book.id, jpeg));
+      // Streamed extraction: resolve to a plain file path and let the
+      // worker isolate inflate only the cover entry — the whole-book
+      // readBytes here used to spike memory by the full EPUB size.
+      final source = await BookSourceAccess.prepareReadableFile(
+        widget.book,
+        extension: '.epub',
+      );
+      try {
+        final jpeg = await extractEpubCoverAsJpegFromFile(source.path);
+        if (jpeg != null && jpeg.isNotEmpty) {
+          // Fire-and-forget: a lost cache write only means one more
+          // extraction.
+          unawaited(BookCoverCache.write(widget.book.id, jpeg));
+        }
+        return jpeg;
+      } finally {
+        if (source.isTemporary) {
+          try {
+            await File(source.path).delete();
+          } catch (_) {
+            // Leftovers age out via the 24h cache scavenger.
+          }
+        }
       }
-      return jpeg;
     } catch (e) {
       debugPrint('Book details cover load failed: $e');
       return null;
