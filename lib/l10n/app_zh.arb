@@ -185,6 +185,9 @@
     }
   },
   "alsoDeleteLocalFiles": "同时删除本地文件",
+  "alsoDeleteFilesFromDevice": "同时删除设备上的文件",
+  "alsoDeleteFilesFromDeviceDesc": "原始 EPUB/PDF 文件将被永久删除，而不只是移出书架。",
+  "deleteButton": "删除",
   "deletedBooks": "已移出 {count} 本书",
   "@deletedBooks": {
     "placeholders": {
