@@ -270,10 +270,18 @@ Role (2026-07 self-hosted stack — no epub_view/epubx dependency):
 - parse the package via `epub_package_parser.dart` (container/OPF/NCX/nav)
   and linearize chapter HTML into paragraphs in a helper isolate
   (`epub_parse_helpers.dart`); images/fonts are never eagerly decompressed
+- content enumeration is **spine-primary** (2026-07, enumeration v2): every
+  spine file is linearized exactly once in spine order; TOC-referenced files
+  missing from the spine are appended afterwards; the flattened TOC only
+  maps titles/anchors into that stream (`kEpubEnumerationVersion`). Chapter
+  start indexes may be non-monotonic for TOCs listed out of spine order —
+  `ContentMetaManager` scans for `max start <= current`, it does not bisect
 - render paragraphs through the same `ScrollablePositionedList` +
   `HighlightableText` machinery as TXT
 - map the TOC tree into typed `ReaderChapter` with an id → paragraph anchor map
-- restore and persist location by absolute paragraph index
+- restore and persist location by absolute paragraph index; EPUB payloads
+  written since the spine-primary switch carry `enumVersion` in their JSON
+  (forensic marker, never consulted on restore)
 
 Core characteristics:
 - progress is paragraph based rather than page based
@@ -283,7 +291,8 @@ Core characteristics:
 - page metrics are intentionally not exposed
 
 Implements optional capabilities:
-- none currently
+- `TextReaderCapability`
+- `TextExtractionCapability`
 
 ### PDF engine
 
@@ -307,7 +316,7 @@ Implements optional capabilities:
 | Engine | Typography | Theme | Highlights | Annotations | Page Animation | Chapter Navigation | TextReaderCapability | TextExtractionCapability | PageMetricsCapability |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | TXT | full | full | full | full | none | semantic | Yes | Yes | Yes |
-| EPUB | none | none | none | none | none | semantic | No | No | No |
+| EPUB | full | full | full | full | none | semantic | Yes | Yes | No |
 | PDF | none | none | none | none | none | synthetic | No | No | Yes |
 
 ## 7. Navigation and Restore Flows

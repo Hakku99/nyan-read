@@ -307,6 +307,8 @@ void main() {
       expect(package.toc[0].fileName, 'OEBPS/Text/ch1.xhtml');
       expect(package.toc[0].children.single.anchor, 'sec1');
       expect(package.coverPath, 'OEBPS/Images/cover.jpg');
+      expect(package.spinePaths,
+          ['OEBPS/Text/ch1.xhtml', 'OEBPS/Text/ch2.xhtml']);
 
       final result = await computeEpubParseResultForPackage(package);
       // Flattened chapters: 第一章, 小节(anchor sec1), 第二章.
@@ -424,6 +426,177 @@ void main() {
       final restored = ReadingPosition.fromJson('epub', json);
       expect(restored.paragraphLeadingEdge, -0.25);
       expect(restored.paragraphTrailingEdge, 0.4);
+    });
+
+    test('enumVersion marker round-trips; absent in legacy payloads', () {
+      final json = const ReadingPosition(
+        paragraphIndex: 7,
+        enumVersion: kEpubEnumerationVersion,
+      ).toJson();
+      expect(ReadingPosition.fromJson('epub', json).enumVersion,
+          kEpubEnumerationVersion);
+
+      // Legacy payloads (pre spine-primary) have no marker.
+      final legacy =
+          ReadingPosition.fromJson('epub', '{"paragraphIndex":42}');
+      expect(legacy.enumVersion, isNull);
+      expect(legacy.paragraphIndex, 42);
+    });
+  });
+
+  // Golden lock for the spine-primary enumeration (review #6/#7, §3.5
+  // approved 2026-07-18). The TOC-complete equivalence case lives in the
+  // package-parser group above ([0, 1, 3] / count 4 must never move).
+  group('spine-primary enumeration (review #6/#7)', () {
+    Archive archiveWithFiles(Map<String, String> files) {
+      final archive = Archive();
+      files.forEach((name, content) {
+        final bytes = utf8.encode(content);
+        archive.addFile(ArchiveFile(name, bytes.length, bytes));
+      });
+      return archive;
+    }
+
+    String contentAt(EpubParseResult r, int i) {
+      final start = r.paragraphRanges[i * 2];
+      final end = r.paragraphRanges[i * 2 + 1];
+      return utf8.decode(r.paragraphBytes.sublist(start, end));
+    }
+
+    EpubTocEntry entry(
+      String? title,
+      String? file, {
+      String? anchor,
+      List<EpubTocEntry> children = const [],
+    }) {
+      return EpubTocEntry(
+          title: title, fileName: file, anchor: anchor, children: children);
+    }
+
+    test('spine files missing from the TOC are rendered in spine order',
+        () async {
+      // "hidden.xhtml" is in the spine but absent from the TOC — the old
+      // TOC-driven walk silently dropped its prose.
+      final package = EpubPackage(
+        archive: archiveWithFiles({
+          'ch1.xhtml': _html(['<p>one</p>']),
+          'hidden.xhtml': _html(['<p>hidden prose</p>']),
+          'ch2.xhtml': _html(['<p>two</p>']),
+        }),
+        toc: [entry('One', 'ch1.xhtml'), entry('Two', 'ch2.xhtml')],
+        spinePaths: const ['ch1.xhtml', 'hidden.xhtml', 'ch2.xhtml'],
+        coverPath: null,
+      );
+
+      final result = await computeEpubParseResultForPackage(package);
+
+      expect(result.paragraphCount, 3);
+      expect(contentAt(result, 0), 'one');
+      expect(contentAt(result, 1), 'hidden prose');
+      expect(contentAt(result, 2), 'two');
+      expect(result.chapterStartIndexes, [0, 2]);
+    });
+
+    test('interleaved TOC (A→B→A#anchor) linearizes A exactly once',
+        () async {
+      final package = EpubPackage(
+        archive: archiveWithFiles({
+          'a.xhtml': _html(['<p>a1</p>', '<h2 id="x">a2</h2>']),
+          'b.xhtml': _html(['<p>b1</p>']),
+        }),
+        toc: [
+          entry('A', 'a.xhtml'),
+          entry('B', 'b.xhtml'),
+          entry('A late', 'a.xhtml', anchor: 'x'),
+        ],
+        spinePaths: const ['a.xhtml', 'b.xhtml'],
+        coverPath: null,
+      );
+
+      final result = await computeEpubParseResultForPackage(package);
+
+      // Old walk re-linearized A for the third entry: 4 paragraphs and a
+      // shifted b1. Now: a1, a2, b1 — once each.
+      expect(result.paragraphCount, 3);
+      expect(contentAt(result, 2), 'b1');
+      expect(result.chapterStartIndexes, [0, 2, 1]);
+    });
+
+    test('spine order wins when the TOC lists chapters out of order',
+        () async {
+      final package = EpubPackage(
+        archive: archiveWithFiles({
+          'ch1.xhtml': _html(['<p>alpha</p>']),
+          'ch2.xhtml': _html(['<p>gamma</p>']),
+        }),
+        toc: [entry('One', 'ch1.xhtml'), entry('Two', 'ch2.xhtml')],
+        spinePaths: const ['ch2.xhtml', 'ch1.xhtml'],
+        coverPath: null,
+      );
+
+      final result = await computeEpubParseResultForPackage(package);
+
+      expect(contentAt(result, 0), 'gamma');
+      expect(contentAt(result, 1), 'alpha');
+      // Non-monotonic starts are legal; ContentMetaManager scans, not
+      // bisects.
+      expect(result.chapterStartIndexes, [1, 0]);
+    });
+
+    test('TOC-only files (not in spine) are appended, not dropped',
+        () async {
+      final package = EpubPackage(
+        archive: archiveWithFiles({
+          'ch1.xhtml': _html(['<p>main</p>']),
+          'extra.xhtml': _html(['<p>appendix</p>']),
+        }),
+        toc: [entry('Main', 'ch1.xhtml'), entry('Extra', 'extra.xhtml')],
+        spinePaths: const ['ch1.xhtml'],
+        coverPath: null,
+      );
+
+      final result = await computeEpubParseResultForPackage(package);
+
+      expect(result.paragraphCount, 2);
+      expect(contentAt(result, 1), 'appendix');
+      expect(result.chapterStartIndexes, [0, 1]);
+    });
+
+    test('label-only section headers anchor at the first content beneath',
+        () async {
+      final package = EpubPackage(
+        archive: archiveWithFiles({
+          'ch1.xhtml': _html(['<p>one</p>']),
+          'ch2.xhtml': _html(['<p>two</p>']),
+        }),
+        toc: [
+          entry('One', 'ch1.xhtml'),
+          entry('Part II', null, children: [entry('Two', 'ch2.xhtml')]),
+        ],
+        spinePaths: const ['ch1.xhtml', 'ch2.xhtml'],
+        coverPath: null,
+      );
+
+      final result = await computeEpubParseResultForPackage(package);
+
+      // Flattened: One, Part II (label-only), Two.
+      expect(result.chapterStartIndexes, [0, 1, 1]);
+    });
+
+    test('hand-built package without spine degrades to TOC-driven order',
+        () async {
+      final package = EpubPackage(
+        archive: archiveWithFiles({
+          'ch1.xhtml': _html(['<p>one</p>']),
+        }),
+        toc: [entry('One', 'ch1.xhtml')],
+        coverPath: null,
+      );
+
+      final result = await computeEpubParseResultForPackage(package);
+
+      expect(result.paragraphCount, 1);
+      expect(result.chapterStartIndexes, [0]);
     });
   });
 

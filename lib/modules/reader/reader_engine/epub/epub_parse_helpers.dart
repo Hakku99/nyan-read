@@ -126,12 +126,33 @@ class EpubChapterSource {
   final Future<String?> Function() readHtml;
 }
 
-/// Walks an [EpubPackage] (own parser, P3c): flattens the TOC tree DFS
-/// pre-order into chapter sources whose HTML reads lazily from the zip —
-/// images/fonts are NEVER materialized during parse. Missing chapter files
-/// resolve to null HTML (zero paragraphs) instead of throwing, so broken
-/// books degrade instead of failing to open.
-Future<EpubParseResult> computeEpubParseResultForPackage(EpubPackage package) {
+/// Persisted-anchor enumeration version. Bumped to 2 when enumeration went
+/// spine-primary (2026-07): EPUB positions written since then carry this in
+/// their payload, so a future migration (or a rollback post-mortem) can tell
+/// which enumeration a stored anchor was measured against. Version-1
+/// (TOC-driven) payloads have no marker.
+const int kEpubEnumerationVersion = 2;
+
+/// Walks an [EpubPackage] (own parser, P3c): content enumeration follows the
+/// SPINE — the authoritative linear reading order (standard EPUB reader
+/// semantics) — with TOC-referenced files missing from the spine appended
+/// afterwards, so no book renders less than it did under the old TOC-driven
+/// enumeration. Each file is linearized exactly once (a TOC interleaving the
+/// same file twice used to duplicate its paragraphs and shift every later
+/// anchor). The flattened TOC (DFS pre-order) maps titles/anchors into the
+/// stream; missing chapter files resolve to zero-paragraph chapters instead
+/// of throwing, so broken books degrade instead of failing to open.
+/// Images/fonts are NEVER materialized during parse.
+///
+/// ANCHOR SHIFT (§3.5, approved 2026-07-18): books whose TOC already
+/// mirrored the spine — the vast majority — enumerate identically to the old
+/// walk (locked by the package-parser golden tests). TOC-sparse, reordered
+/// or interleaved books gain/lose/move paragraphs, shifting their persisted
+/// anchors once: highlights re-locate via AnchorHealer; progress and
+/// bookmarks take a one-time drift. New position payloads carry
+/// [kEpubEnumerationVersion] as the forensic marker.
+Future<EpubParseResult> computeEpubParseResultForPackage(
+    EpubPackage package) async {
   final flat = <EpubTocEntry>[];
   void flatten(List<EpubTocEntry> entries) {
     for (final entry in entries) {
@@ -142,17 +163,93 @@ Future<EpubParseResult> computeEpubParseResultForPackage(EpubPackage package) {
 
   flatten(package.toc);
 
-  final sources = flat
-      .map((entry) => EpubChapterSource(
-            title: entry.title,
-            contentFileName: entry.fileName,
-            anchor: entry.anchor,
-            readHtml: () async => entry.fileName == null
-                ? null
-                : readZipText(package.archive, entry.fileName!),
-          ))
+  // Content order: spine first, then TOC-only files in first-appearance
+  // order. The set doubles as the exactly-once guarantee.
+  final seen = <String>{};
+  final contentOrder = <String>[
+    for (final path in package.spinePaths)
+      if (seen.add(path)) path,
+    for (final entry in flat)
+      if (entry.fileName != null && seen.add(entry.fileName!))
+        entry.fileName!,
+  ];
+
+  // Linearize each file exactly once, accumulating the flat stream. Same
+  // structural guarantee as computeEpubParseResultFromSources: the walk
+  // that counts paragraphs is the walk that emits content (§3.6).
+  final contentBytes = BytesBuilder(copy: false);
+  final contentRanges = <int>[];
+  final kinds = BytesBuilder(copy: false);
+  var contentCursor = 0;
+  var paragraphCount = 0;
+  final fileStart = <String, int>{};
+  final fileEnd = <String, int>{};
+  final fileAnchors = <String, Map<String, int>>{};
+
+  for (final path in contentOrder) {
+    fileStart[path] = paragraphCount;
+    final document = _chapterDocument(readZipText(package.archive, path));
+    if (document == null) {
+      fileAnchors[path] = const {};
+    } else {
+      final linearized = _linearizeChapterDocument(document);
+      fileAnchors[path] = linearized.anchorToParagraph;
+      paragraphCount += linearized.texts.length;
+      for (var i = 0; i < linearized.texts.length; i++) {
+        final encoded = utf8.encode(linearized.texts[i]);
+        contentBytes.add(encoded);
+        contentRanges
+          ..add(contentCursor)
+          ..add(contentCursor + encoded.length);
+        contentCursor += encoded.length;
+        kinds.addByte(linearized.kinds[i]);
+      }
+    }
+    fileEnd[path] = paragraphCount;
+  }
+
+  // Chapters: one per flattened TOC entry, anchored into the stream.
+  final starts = List<int?>.filled(flat.length, null);
+  for (var i = 0; i < flat.length; i++) {
+    final file = flat[i].fileName;
+    if (file == null) continue;
+    final start = fileStart[file] ?? 0;
+    final anchorOffset =
+        flat[i].anchor == null ? null : fileAnchors[file]?[flat[i].anchor];
+    starts[i] = anchorOffset == null
+        ? start
+        : (start + anchorOffset).clamp(start, fileEnd[file] ?? start);
+  }
+  // Label-only entries (section headers without hrefs) point at the next
+  // resolvable entry's start — the first content beneath them; trailing
+  // ones inherit the previous start.
+  int? following;
+  for (var i = flat.length - 1; i >= 0; i--) {
+    if (starts[i] != null) {
+      following = starts[i];
+    } else {
+      starts[i] = following;
+    }
+  }
+  final chapterIndexes = <int>[];
+  var previous = 0;
+  for (final start in starts) {
+    previous = start ?? previous;
+    chapterIndexes.add(previous);
+  }
+
+  final chapterMeta = flat
+      .map((entry) => EpubChapterMeta(title: entry.title))
       .toList(growable: false);
-  return computeEpubParseResultFromSources(sources);
+
+  return EpubParseResult(
+    paragraphCount: paragraphCount,
+    chapterStartIndexes: chapterIndexes,
+    chapters: chapterMeta,
+    paragraphBytes: contentBytes.takeBytes(),
+    paragraphRanges: contentRanges,
+    paragraphKinds: kinds.takeBytes(),
+  );
 }
 
 /// Block-level tags that force a paragraph boundary when the linearizer

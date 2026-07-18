@@ -42,10 +42,17 @@ class EpubPackage {
     required this.archive,
     required this.toc,
     required this.coverPath,
+    this.spinePaths = const [],
   });
 
   final Archive archive;
   final List<EpubTocEntry> toc;
+
+  /// Resolved zip paths of spine itemrefs in spine order — the authoritative
+  /// linear reading order. Content enumeration follows this (the TOC only
+  /// maps titles/anchors into it); empty only for hand-built packages,
+  /// which then degrade to TOC-driven enumeration.
+  final List<String> spinePaths;
 
   /// Resolved zip path of the cover image, or null when undeclared.
   final String? coverPath;
@@ -112,7 +119,17 @@ EpubPackage parseEpubPackageFromArchive(Archive archive) {
     );
   }
 
-  // 3. TOC: EPUB3 nav → EPUB2 NCX → spine order.
+  // 3. Spine: the authoritative linear reading order, as resolved zip paths.
+  final spinePaths = <String>[
+    for (final idref in opf
+        .findAllElements('itemref')
+        .map((e) => e.getAttribute('idref'))
+        .whereType<String>())
+      if (manifest[idref] != null)
+        resolveHref(opfDir, manifest[idref]!.href).path,
+  ];
+
+  // 4. TOC: EPUB3 nav → EPUB2 NCX → spine order.
   List<EpubTocEntry> toc = const [];
   final navItem = manifest.values
       .where((m) => m.props.split(' ').contains('nav'))
@@ -139,22 +156,13 @@ EpubPackage parseEpubPackageFromArchive(Archive archive) {
   if (toc.isEmpty) {
     // Synthetic TOC from spine order — a book with no navigation is still
     // readable front to back.
-    final spineRefs = opf
-        .findAllElements('itemref')
-        .map((e) => e.getAttribute('idref'))
-        .whereType<String>();
     toc = [
-      for (final idref in spineRefs)
-        if (manifest[idref] != null)
-          EpubTocEntry(
-            title: null,
-            fileName: resolveHref(opfDir, manifest[idref]!.href).path,
-            anchor: null,
-          ),
+      for (final path in spinePaths)
+        EpubTocEntry(title: null, fileName: path, anchor: null),
     ];
   }
 
-  // 4. Cover: EPUB3 properties="cover-image", else EPUB2
+  // 5. Cover: EPUB3 properties="cover-image", else EPUB2
   //    <meta name="cover" content="<manifest-id>">.
   String? coverPath;
   final coverItem = manifest.values
@@ -175,7 +183,12 @@ EpubPackage parseEpubPackageFromArchive(Archive archive) {
     }
   }
 
-  return EpubPackage(archive: archive, toc: toc, coverPath: coverPath);
+  return EpubPackage(
+    archive: archive,
+    toc: toc,
+    coverPath: coverPath,
+    spinePaths: spinePaths,
+  );
 }
 
 List<EpubTocEntry> _parseEpub3Nav(String navXml, String navDir) {

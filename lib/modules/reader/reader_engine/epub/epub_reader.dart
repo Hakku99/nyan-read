@@ -393,6 +393,9 @@ class EpubReaderEngine
           (anchor?.index ?? _initialIndex).clamp(0, _paragraphCount - 1),
       paragraphLeadingEdge: anchor?.itemLeadingEdge,
       paragraphTrailingEdge: anchor?.itemTrailingEdge,
+      // Marks the payload as measured against the spine-primary enumeration
+      // (2026-07); pre-switch payloads have no marker. Forensic only.
+      enumVersion: kEpubEnumerationVersion,
     );
   }
 
