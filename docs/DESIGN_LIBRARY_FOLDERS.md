@@ -1,14 +1,14 @@
 # 设计蓝图：书库文件夹（目录树授权）+ 书籍管理
 
-> 状态：已定稿待动工 · 维护者与 AI 协商定型于 2026-07-18
+> 状态：**Phase A gate 已通过（2026-07-18 模拟器会话，见 §10）**，原生四方法已实现并实测
 > 对应审查问题：`CODEBASE_ANALYSIS.md` §6 #3（persistable URI 配额）
-> 动工前提：Phase A 含实机验证 gate（原生行为本机无法验证）；schema 变更触发 §3.5-3 三段式
+> 动工前提：schema 变更（Phase C）触发 §3.5-3 三段式；上架前补一次真机 sanity pass（OEM 皮肤 + 真 SD 卡 + 性能面）
 
 ---
 
 ## 1. 背景与研究结论
 
-Android 持久化 URI 授权有平台配额：`MAX_PERSISTED_URI_GRANTS`（AOSP `UriGrantsManagerService` 内部常量，**官方文档不写**）——Android 11 前 128，11 起 512。当前"逐文件持授权"方案下，大书库会撞上限（超限行为存疑：AOSP 源码显示 LRU 剪枝静默回收最旧，CommonsWare 称新请求失败——**实机验证清单第一项**）。
+Android 持久化 URI 授权有平台配额：`MAX_PERSISTED_URI_GRANTS`（AOSP `UriGrantsManagerService` 内部常量，**官方文档不写**）——Android 11 前 128，11 起 512。当前"逐文件持授权"方案下，大书库会撞上限。超限行为**已实测定论（§10）**：`takePersistableUriPermission` 永不报错，系统静默 LRU 剪枝回收最旧授权（AOSP 源码读得对，CommonsWare"新请求失败"的说法错）。
 
 **选定方向：`ACTION_OPEN_DOCUMENT_TREE` 目录树授权。**
 
@@ -18,7 +18,7 @@ Android 持久化 URI 授权有平台配额：`MAX_PERSISTED_URI_GRANTS`（AOSP 
 
 否决的替代项：`MANAGE_EXTERNAL_STORAGE`（Play 政策高危，官方劝退非文件管理器类）；`READ_MEDIA_*`/MediaStore（scoped storage 下不覆盖非媒体文档）。
 
-已知平台限制（写进 UI 引导文案）：API 30+ 不能选存储根目录、SD 卡根、`Download`、`Android/data|obb`——引导用户使用 `Documents/Books` 类子目录。
+已知平台限制（写进 UI 引导文案）：API 30+ 不能选存储根目录、SD 卡根、`Download` **根目录**、`Android/data|obb`——但 **Download 的子目录可以正常授权**（§10 实测）。引导用户使用 `Documents/Books` 类子目录即可。
 
 参考：
 - https://developer.android.com/training/data-storage/shared/documents-files
@@ -115,3 +115,21 @@ ALTER TABLE books ADD COLUMN archived INTEGER DEFAULT 0; -- 1 = 归档，主书�
 4. `releasePersistableUriPermission` 归还后配额计数变化；
 5. 树内移动/改名文件后 child URI 失效表现（自愈重绑的前提验证）；
 6. SD 卡上的书库文件夹（reliable volume 行为）。
+
+## 10. Gate 验证结果（2026-07-18 · 模拟器 API 36 / Android 16 · SAF Probe）
+
+驱动工具：admin panel → Dev tools → SAF Probe（`saf_probe_page.dart`，dev-only）。
+
+| # | 结论 | 证据 |
+|---|---|---|
+| 1 | **通过 · 定论**：600 次超限 persist 全部"成功"零报错，系统静默 LRU 剪到 512；**同会话内运行时授权掩盖损失（读取照常成功），冷启动后被挤掉的 URI 才抛 `SecurityException`（Permission Denial）**——损失延迟显形，比预想更隐蔽 | `attempted=600 persisted=600 failed=0, grantCountAfter=512`；重启后 fixtures 读取 → Permission Denial |
+| 2 | **通过**：树子文档 URI 走生产读取链路（`copyUriToTempFile`→`openInputStream`）畅通，读取层零改动的假设成立 | 树扫描出的 p1.txt/wx1.txt 内容原样读出 |
+| 3 | **通过**：600 文件 307ms、9 文件（含二级嵌套）24-29ms，无截断；书库量级无性能顾虑 | scan 计时日志 |
+| 4 | **通过**：单个/批量归还即时生效（512 个 <1s），二次清理幂等返回 0；授权不存在时 release 返回 false | `released 512 grants` → `total=0` |
+| 5 | **通过**：树内 `mv` 后旧 child URI 抛 `FileNotFoundException`（包装为 PlatformException，可捕获不崩溃，落进现有"源不可用"降级）；重扫在新位置找回文件——签名自愈重绑（Phase D）前提成立 | move 前后 read/scan 日志 |
+| 6 | **顺延真机**：模拟器无 reliable-volume SD；连同 OEM 皮肤（MIUI/ColorOS provider 私货）与真机性能面，留给上架前 sanity pass | — |
+
+**对设计的三条修正**：
+- Download **子目录**可授权（限制只针对根目录）——UI 引导文案放宽；
+- 运行时授权会掩盖持久授权丢失 → **授权健康检查不能用读探测**（会话内会假阳性），必须比对 `getPersistedUriPermissions()` 列表与书籍 locator 的树前缀；
+- "新授权永远成功、最旧的悄悄死"——水位防护（§6）从"建议"升级为**必须**，且逐文件删除时的配额归还（release-on-delete）同样必须。

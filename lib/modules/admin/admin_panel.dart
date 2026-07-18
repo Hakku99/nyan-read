@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nyan_read/core/ui/nyan_icons.dart';
@@ -10,6 +11,7 @@ import '../../core/theme/nyan_spacing.dart';
 import '../../core/theme/nyan_typography.dart';
 import '../../core/theme/theme_presets.dart';
 import '../../core/ui/components/nyan_switch.dart';
+import 'saf_probe_page.dart';
 
 // Vertical padding inside each row — matches spec `padding: "12px 16px"`.
 const double _kAdminHorizontalPadding = NyanSpacing.space16;
@@ -110,6 +112,51 @@ class AdminPanel extends ConsumerWidget {
                     ),
                   ],
                 ),
+                // Dev-only SAF probe (library-folders Phase A gate). Not
+                // localized — removed before release, see SafProbePage doc.
+                if (kDebugMode) ...[
+                  const _AdminSectionHeader(title: 'Dev tools'),
+                  _AdminSettingsCard(
+                    children: [
+                      InkWell(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const SafProbePage(),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            _kAdminHorizontalPadding,
+                            _kAdminRowVerticalPadding,
+                            _kAdminHorizontalPadding,
+                            _kAdminRowVerticalPadding,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'SAF Probe',
+                                  style: TextStyle(
+                                    fontFamily: NyanTypography.uiFontFamily,
+                                    fontSize: NyanTypography.adminRowLabel,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.2,
+                                    color: nyan.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                NyanIcons.chevronRight,
+                                size: 18,
+                                color: nyan.textMuted,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: NyanSpacing.space12),
                 _AdminSettingsCard(
                   backgroundColor: Color.alphaBlend(
