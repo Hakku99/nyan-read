@@ -1130,6 +1130,30 @@ abstract class AppLocalizations {
   /// **'No TXT/EPUB/PDF files found in that folder'**
   String get libraryFolderEmpty;
 
+  /// No description provided for @shelfFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get shelfFilterAll;
+
+  /// No description provided for @shelfFilterReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get shelfFilterReading;
+
+  /// No description provided for @shelfFilterUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get shelfFilterUnread;
+
+  /// No description provided for @shelfFilterNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No books match this filter'**
+  String get shelfFilterNoMatches;
+
   /// No description provided for @supportedFormats.
   ///
   /// In en, this message translates to:

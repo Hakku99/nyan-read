@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -70,6 +71,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   void initState() {
     super.initState();
     _prefs = ref.read(bookshelfPreferencesRpProvider);
+    _isHeroCollapsed = _prefs.heroCollapsed;
     _tabController = TabController(length: 2, vsync: this);
   }
 
@@ -817,6 +819,9 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         setState(() {
           _isHeroCollapsed = !_isHeroCollapsed;
         });
+        // Fire-and-forget: persistence is best-effort; the setState above
+        // already reflects the toggle.
+        unawaited(_prefs.setHeroCollapsed(_isHeroCollapsed));
       },
       progressLabel: '${loc.readingProgress}  $progressPercent%',
       buttonLabel: progress <= 0 ? loc.startReading : loc.continueReading,
@@ -830,16 +835,63 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     );
   }
 
+  /// Status filter chip row (docs/DESIGN_LIBRARY_FOLDERS.md §5.1): the
+  /// bulk-import UX guard — hundreds of freshly imported books live under
+  /// "Unread" instead of burying the few actively read ones.
+  Widget _buildStatusFilterRow(BuildContext context, bool isPrivate) {
+    final loc = AppLocalizations.of(context)!;
+    final current = _vm.statusFilterFor(isPrivate: isPrivate);
+
+    final options = <(ShelfStatusFilter, String)>[
+      (ShelfStatusFilter.all, loc.shelfFilterAll),
+      (ShelfStatusFilter.reading, loc.shelfFilterReading),
+      (ShelfStatusFilter.unread, loc.shelfFilterUnread),
+    ];
+
+    return Padding(
+      // Bottom 8pt: the switcher's 10pt bottom inset used to feed the gap
+      // above the hero; with the chips row in between it supplies its own.
+      padding: const EdgeInsets.fromLTRB(
+        NyanSpacing.space16,
+        NyanSpacing.space12,
+        NyanSpacing.space16,
+        NyanSpacing.space8,
+      ),
+      child: Row(
+        children: [
+          for (final (filter, label) in options) ...[
+            Expanded(
+              child: NyanPillButton(
+                label: label,
+                selected: current == filter,
+                // Fire-and-forget: persistence is best-effort UI state; the VM
+                // notifies synchronously so the shelf updates immediately.
+                onPressed: () => unawaited(
+                  _vm.setStatusFilter(isPrivate: isPrivate, filter: filter),
+                ),
+              ),
+            ),
+            if (filter != options.last.$1)
+              const SizedBox(width: NyanSpacing.space8),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildLibrarySurface(
     BuildContext context, {
     required FeatureManager featureManager,
     required bool showPrivacyTab,
     required List<Book> activeBooks,
+    required List<Book> fullBooks,
     required bool showHeaderSections,
     required bool isSelectionMode,
   }) {
     final loc = AppLocalizations.of(context)!;
-    final continueReadingBook = _resolveContinueReadingBook(activeBooks);
+    // Hero picks from the UNFILTERED list: "continue reading" must surface
+    // the actual current book even while the Unread filter is active.
+    final continueReadingBook = _resolveContinueReadingBook(fullBooks);
     final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
     const useCompactContinueReading = false;
 
@@ -855,6 +907,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               isGridView: _prefs.viewMode == ViewMode.grid,
               isSortActive: _prefs.sortBy != SortBy.recency || _prefs.isAscending,
               isPrivacyUnlocked: featureManager.isPrivateShelfUnlocked,
+              showsScrollUnderEdge: !showPrivacyTab,
               sortTooltip: loc.sortBy,
               listViewTooltip: loc.listView,
               gridViewTooltip: loc.gridView,
@@ -888,24 +941,35 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           ),
         // Pinned shelf switcher sits directly under the title, above the
         // continue-reading hero (BookshelfScreen.jsx: tabs are pinned chrome,
-        // the hero scrolls beneath them).
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: BookshelfShelfPinnedHeaderDelegate(
-            extent: kBookshelfShelfToolbarPinnedExtent,
-            child: BookshelfShelfToolbar(
-              tabs: [
-                SegmentedTab(label: loc.publicShelf),
-                if (showPrivacyTab) SegmentedTab(label: loc.privateShelf),
-              ],
-              selectedIndex: selectedTabIndex,
-              onTabChanged: (index) {
-                _tabController.animateTo(index);
-                setState(() {});
-              },
+        // the hero scrolls beneath them). With the private shelf locked
+        // (the default) there is only one shelf — a one-tab switcher is a
+        // label pretending to be a control, so the whole strip is dropped
+        // and the toolbar takes over the scroll-under edge.
+        if (showPrivacyTab)
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: BookshelfShelfPinnedHeaderDelegate(
+              extent: kBookshelfShelfToolbarPinnedExtent,
+              child: BookshelfShelfToolbar(
+                tabs: [
+                  SegmentedTab(label: loc.publicShelf),
+                  SegmentedTab(label: loc.privateShelf),
+                ],
+                selectedIndex: selectedTabIndex,
+                onTabChanged: (index) {
+                  _tabController.animateTo(index);
+                  setState(() {});
+                },
+              ),
             ),
           ),
-        ),
+        if (showHeaderSections)
+          SliverToBoxAdapter(
+            child: _buildStatusFilterRow(
+              context,
+              showPrivacyTab && _tabController.index == 1,
+            ),
+          ),
         if (showHeaderSections && continueReadingBook != null)
           SliverToBoxAdapter(
             child: Padding(
@@ -969,6 +1033,9 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                           featureManager: featureManager,
                           showPrivacyTab: showPrivacyTab,
                           activeBooks: showPrivacyTab && selectedTabIndex == 1
+                              ? vm.visiblePrivateBooks
+                              : vm.visiblePublicBooks,
+                          fullBooks: showPrivacyTab && selectedTabIndex == 1
                               ? vm.privateBooks
                               : vm.publicBooks,
                           showHeaderSections: !isSelectionMode,
@@ -1051,15 +1118,23 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               bottom: NyanShelfUi.scrollBottomFabClearance,
             ),
             child: Center(
-              child: NyanEmptyState(
-                iconData: NyanIcons.books,
-                title: isPrivate
-                    ? loc.emptyShelfMessage
-                    : loc.emptyShelfTitle,
-                description: isPrivate
-                    ? loc.emptyPrivateShelf
-                    : loc.emptyShelfSubtitle,
-              ),
+              // A non-all status filter with zero matches is not an empty
+              // shelf — say so instead of prompting a first import.
+              child: _vm.statusFilterFor(isPrivate: isPrivate) !=
+                      ShelfStatusFilter.all
+                  ? NyanEmptyState(
+                      iconData: NyanIcons.books,
+                      title: loc.shelfFilterNoMatches,
+                    )
+                  : NyanEmptyState(
+                      iconData: NyanIcons.books,
+                      title: isPrivate
+                          ? loc.emptyShelfMessage
+                          : loc.emptyShelfTitle,
+                      description: isPrivate
+                          ? loc.emptyPrivateShelf
+                          : loc.emptyShelfSubtitle,
+                    ),
             ),
           ),
         ),
@@ -1877,6 +1952,7 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
     required this.isGridView,
     required this.isSortActive,
     required this.isPrivacyUnlocked,
+    required this.showsScrollUnderEdge,
     required this.sortTooltip,
     required this.listViewTooltip,
     required this.gridViewTooltip,
@@ -1893,6 +1969,13 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
   final bool isGridView;
   final bool isSortActive;
   final bool isPrivacyUnlocked;
+
+  /// True when this toolbar is the LAST pinned element (single-shelf mode
+  /// hides the switcher strip): the scroll-under shadow + hairline that
+  /// normally live on the switcher delegate move up here. False when the
+  /// switcher is present, so the edge never doubles.
+  final bool showsScrollUnderEdge;
+
   final String sortTooltip;
   final String listViewTooltip;
   final String gridViewTooltip;
@@ -1915,8 +1998,24 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Material(
-      color: backgroundColor,
+    final nyan = context.nyanTheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        // Same recipe as BookshelfShelfPinnedHeaderDelegate — content must
+        // never slide under pinned chrome without a separating edge.
+        boxShadow: showsScrollUnderEdge && overlapsContent
+            ? NyanShadows.shelfPinnedHeader(nyan)
+            : const [],
+        border: showsScrollUnderEdge && overlapsContent
+            ? Border(
+                bottom: BorderSide(
+                  color: nyan.divider.withValues(alpha: 0.22),
+                  width: 1,
+                ),
+              )
+            : null,
+      ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           NyanSpacing.space16,
@@ -1974,7 +2073,8 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
     return backgroundColor != old.backgroundColor ||
         isGridView != old.isGridView ||
         isSortActive != old.isSortActive ||
-        isPrivacyUnlocked != old.isPrivacyUnlocked;
+        isPrivacyUnlocked != old.isPrivacyUnlocked ||
+        showsScrollUnderEdge != old.showsScrollUnderEdge;
   }
 }
 

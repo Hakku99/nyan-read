@@ -547,6 +547,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get libraryFolderEmpty => '该文件夹里没有找到 TXT/EPUB/PDF 文件';
 
   @override
+  String get shelfFilterAll => '全部';
+
+  @override
+  String get shelfFilterReading => '在读';
+
+  @override
+  String get shelfFilterUnread => '未读';
+
+  @override
+  String get shelfFilterNoMatches => '该筛选下暂无书籍';
+
+  @override
   String get supportedFormats => '支持的格式';
 
   @override

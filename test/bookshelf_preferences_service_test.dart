@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/services/bookshelf_preferences_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('BookshelfPreferencesService.getOrderByClause', () {
@@ -63,6 +64,33 @@ void main() {
         prefs.getOrderByClause(),
         'title_sort_key IS NULL ASC, title_sort_key DESC, title COLLATE NOCASE DESC, added_at IS NULL ASC, added_at DESC, id DESC',
       );
+    });
+  });
+
+  group('status filter (library-folders Phase B)', () {
+    TestWidgetsFlutterBinding.ensureInitialized();
+
+    test('defaults to all and persists per shelf tab', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = BookshelfPreferencesService();
+      await prefs.initialize();
+
+      expect(prefs.statusFilterFor(isPrivate: false), ShelfStatusFilter.all);
+      expect(prefs.statusFilterFor(isPrivate: true), ShelfStatusFilter.all);
+
+      await prefs.setStatusFilter(
+          isPrivate: false, filter: ShelfStatusFilter.unread);
+      await prefs.setStatusFilter(
+          isPrivate: true, filter: ShelfStatusFilter.reading);
+
+      // Public and private filters must not leak into each other, and both
+      // must survive a service reload (restart simulation).
+      final reloaded = BookshelfPreferencesService();
+      await reloaded.initialize();
+      expect(
+          reloaded.statusFilterFor(isPrivate: false), ShelfStatusFilter.unread);
+      expect(reloaded.statusFilterFor(isPrivate: true),
+          ShelfStatusFilter.reading);
     });
   });
 }

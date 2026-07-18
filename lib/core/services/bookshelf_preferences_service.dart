@@ -4,6 +4,11 @@ enum ViewMode { grid, list }
 
 enum SortBy { recency, importDate, title }
 
+/// Shelf reading-status filter (docs/DESIGN_LIBRARY_FOLDERS.md §5.1).
+/// `finished` arrives with the Phase C schema (finished_at); until then the
+/// derivable states are: reading = last_read_at set, unread = never opened.
+enum ShelfStatusFilter { all, reading, unread }
+
 class BookshelfPreferencesService {
   BookshelfPreferencesService();
 
@@ -15,6 +20,11 @@ class BookshelfPreferencesService {
   static const String _keyIsAscending = 'bookshelf_sort_ascending';
   static const String _keyDeleteFiles = 'bookshelf_delete_files_on_remove';
   static const String _keyRecentSearches = 'bookshelf_recent_searches';
+  // Per-shelf so the private tab's filter doesn't leak onto the public one.
+  static const String _keyPublicStatusFilter = 'bookshelf_status_filter_public';
+  static const String _keyPrivateStatusFilter =
+      'bookshelf_status_filter_private';
+  static const String _keyHeroCollapsed = 'bookshelf_hero_collapsed';
   static const int _maxRecentSearches = 5;
 
   // Default values
@@ -23,6 +33,18 @@ class BookshelfPreferencesService {
   bool _isAscending = false; // Default to descending for Recency
   bool _deleteFilesOnRemove = false;
   List<String> _recentSearches = [];
+  ShelfStatusFilter _publicStatusFilter = ShelfStatusFilter.all;
+  ShelfStatusFilter _privateStatusFilter = ShelfStatusFilter.all;
+  bool _heroCollapsed = false;
+
+  /// Continue-reading hero collapse state — persisted so a user who prefers
+  /// the compact card keeps it across restarts.
+  bool get heroCollapsed => _heroCollapsed;
+
+  Future<void> setHeroCollapsed(bool value) async {
+    _heroCollapsed = value;
+    await _prefs?.setBool(_keyHeroCollapsed, value);
+  }
 
   // Getters
   ViewMode get viewMode => _viewMode;
@@ -60,6 +82,36 @@ class BookshelfPreferencesService {
 
     // Load recent searches
     _recentSearches = _prefs!.getStringList(_keyRecentSearches) ?? [];
+
+    // Load per-shelf status filters
+    _publicStatusFilter = _readStatusFilter(_keyPublicStatusFilter);
+    _privateStatusFilter = _readStatusFilter(_keyPrivateStatusFilter);
+
+    _heroCollapsed = _prefs!.getBool(_keyHeroCollapsed) ?? false;
+  }
+
+  ShelfStatusFilter _readStatusFilter(String key) {
+    final index = _prefs?.getInt(key);
+    if (index != null && index >= 0 && index < ShelfStatusFilter.values.length) {
+      return ShelfStatusFilter.values[index];
+    }
+    return ShelfStatusFilter.all;
+  }
+
+  ShelfStatusFilter statusFilterFor({required bool isPrivate}) =>
+      isPrivate ? _privateStatusFilter : _publicStatusFilter;
+
+  Future<void> setStatusFilter({
+    required bool isPrivate,
+    required ShelfStatusFilter filter,
+  }) async {
+    if (isPrivate) {
+      _privateStatusFilter = filter;
+      await _prefs?.setInt(_keyPrivateStatusFilter, filter.index);
+    } else {
+      _publicStatusFilter = filter;
+      await _prefs?.setInt(_keyPublicStatusFilter, filter.index);
+    }
   }
 
   /// Set view mode and persist
