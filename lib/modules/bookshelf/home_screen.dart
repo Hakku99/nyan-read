@@ -838,7 +838,11 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   /// Status filter chip row (docs/DESIGN_LIBRARY_FOLDERS.md §5.1): the
   /// bulk-import UX guard — hundreds of freshly imported books live under
   /// "Unread" instead of burying the few actively read ones.
-  Widget _buildStatusFilterRow(BuildContext context, bool isPrivate) {
+  Widget _buildStatusFilterRow(
+    BuildContext context,
+    bool isPrivate, {
+    required bool hasTabStripAbove,
+  }) {
     final loc = AppLocalizations.of(context)!;
     final current = _vm.statusFilterFor(isPrivate: isPrivate);
 
@@ -849,11 +853,18 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     ];
 
     return Padding(
-      // Bottom 8pt: the switcher's 10pt bottom inset used to feed the gap
-      // above the hero; with the chips row in between it supplies its own.
-      padding: const EdgeInsets.fromLTRB(
+      // Top: 0 when the shelf tab strip is pinned above — its own 10pt bottom
+      // inset (spec bundle4.jsx marginBottom:10) already supplies the full
+      // 10pt gap, so stacking our own top pad on top of it would double it.
+      // When there's no tab strip, the toolbar's 8pt bottom padding is all
+      // that precedes us, so we add 2pt here to reach the same 10pt total —
+      // keeping every pinned-chrome gap (icon row→tabs, tabs→chips, →hero)
+      // at a consistent 10pt regardless of which chrome pieces are present.
+      // Bottom 8pt: combined with the hero section's own 2pt top pad, also
+      // totals 10pt.
+      padding: EdgeInsets.fromLTRB(
         NyanSpacing.space16,
-        NyanSpacing.space12,
+        hasTabStripAbove ? 0 : 2,
         NyanSpacing.space16,
         NyanSpacing.space8,
       ),
@@ -968,16 +979,20 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             child: _buildStatusFilterRow(
               context,
               showPrivacyTab && _tabController.index == 1,
+              hasTabStripAbove: showPrivacyTab,
             ),
           ),
         if (showHeaderSections && continueReadingBook != null)
           SliverToBoxAdapter(
             child: Padding(
-              // 16pt side inset matches the grid / hero rhythm. No vertical pad:
-              // the pinned tabs supply the gap above and the grid's own top pad
-              // supplies the gap below (avoids a doubled 32pt gulf).
-              padding: const EdgeInsets.symmetric(
-                horizontal: NyanSpacing.space16,
+              // 16pt side inset matches the grid / hero rhythm. Top 2pt: combined
+              // with the filter row's own 8pt bottom padding, totals 10pt —
+              // matching the other pinned-chrome gaps (icon row→tabs, tabs→chips).
+              padding: const EdgeInsets.fromLTRB(
+                NyanSpacing.space16,
+                2,
+                NyanSpacing.space16,
+                0,
               ),
               child: _buildContinueReadingSection(
                 context,
