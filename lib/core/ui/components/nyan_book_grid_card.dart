@@ -16,7 +16,6 @@ import '../../theme/theme_presets.dart';
 ///     └── Format badge overlay (top-right)
 ///   Progress bar (3px, always shown)
 ///   Title (12.5px / w600 / 2-line reserve)
-///   Author (11px / w400)
 class NyanBookGridCard extends StatelessWidget {
   final Book book;
   final bool isSelected;
@@ -42,9 +41,6 @@ class NyanBookGridCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final nyan = context.nyanTheme;
     final progress = book.currentProgress.clamp(0.0, 1.0);
-    final hasAuthor = book.author.trim().isNotEmpty &&
-        book.author.trim().toLowerCase() != 'unknown';
-
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -193,22 +189,6 @@ class NyanBookGridCard extends StatelessWidget {
                 ),
               ),
 
-              // ── Author ───────────────────────────────────────────────────
-              if (hasAuthor) ...[
-                const SizedBox(height: 2),
-                Text(
-                  book.author,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: NyanTypography.uiFontFamily,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                    height: 1.3,
-                    color: nyan.textMuted,
-                  ),
-                ),
-              ],
             ],
           ),
         ],

@@ -20,9 +20,10 @@ abstract final class NyanShelfUi {
   /// Cover portrait ratio for grid cards (120 × 156 per bundle3.jsx BookCard).
   static const double gridCoverAspectRatio = 120.0 / 156.0;
 
-  /// Fixed height of the text section below the cover (progress bar + title + author
-  /// with their gaps). Used by the home screen to compute childAspectRatio dynamically.
-  static const double gridCardTextSectionHeight = 64.0;
+  /// Fixed height of the text section below the cover (progress bar + title
+  /// with their gaps). Used by the home screen to compute childAspectRatio
+  /// dynamically. Grid cards intentionally omit author metadata.
+  static const double gridCardTextSectionHeight = 48.0;
 
   /// Vertical gap between list-mode book cards (bottom margin per tile).
   /// Spec uses 12px gap for list vs 14px for grid — intentional asymmetry.
