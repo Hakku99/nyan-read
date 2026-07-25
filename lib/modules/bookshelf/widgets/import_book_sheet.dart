@@ -13,11 +13,16 @@ class ImportBookSheet extends StatelessWidget {
   final String shelfLabel;
   final VoidCallback onImportFiles;
 
+  /// Library-folder import (Android tree grants); row hidden when null
+  /// (non-Android platforms).
+  final VoidCallback? onImportFolder;
+
   const ImportBookSheet({
     super.key,
     required this.isEmptyShelf,
     required this.shelfLabel,
     required this.onImportFiles,
+    this.onImportFolder,
   });
 
   @override
@@ -93,6 +98,22 @@ class ImportBookSheet extends StatelessWidget {
                     ),
                     color: nyan.divider.withValues(alpha: 0.34),
                   ),
+                  if (onImportFolder != null) ...[
+                    NyanListRow(
+                      leadingIcon: NyanIcons.books,
+                      title: loc.addLibraryFolder,
+                      subtitle: loc.addLibraryFolderSubtitle,
+                      showChevron: true,
+                      onTap: onImportFolder,
+                    ),
+                    Container(
+                      height: 0.5,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: NyanSpacing.space16,
+                      ),
+                      color: nyan.divider.withValues(alpha: 0.34),
+                    ),
+                  ],
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       NyanSpacing.space16,

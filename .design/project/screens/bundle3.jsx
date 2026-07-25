@@ -37,10 +37,9 @@ const BookCard = ({ book, dark }) => (
         <div style={{ width: `${book.pct}%`, height: "100%", borderRadius: 999, background: "var(--nyan-primary)" }} />
       </div>
     )}
-    {/* Title + author */}
+    {/* Title */}
     <div>
       <div style={{ font: "600 12.5px/1.25 var(--font-ui)", color: "var(--nyan-text)", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{book.title}</div>
-      <div style={{ font: "400 11px/1.3 var(--font-ui)", color: "var(--nyan-text-muted)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{book.author}</div>
     </div>
   </div>
 );
@@ -127,6 +126,47 @@ const SHELF_SORT_FIELDS = [
   { label: "Added", asc: "Oldest first", desc: "Newest first" },
 ];
 
+/* Reading-status filter — shelf-level quick filter, separate from the
+   Public/Private shelf switcher above. Selection is outline-only, matching
+   the shared PillButton rule used by the Flutter bookshelf. */
+const ShelfStatusFilter = ({ value = "all", onChange }) => {
+  const options = [
+    ["all", "All"],
+    ["reading", "Reading"],
+    ["unread", "Unread"],
+  ];
+  return (
+    <div style={{ padding: "0 16px 8px", display: "flex", gap: 8, flexShrink: 0 }}>
+      {options.map(([key, label]) => {
+        const selected = value === key;
+        return (
+          <button
+            key={key}
+            onClick={() => onChange && onChange(key)}
+            style={{
+              all: "unset",
+              boxSizing: "border-box",
+              cursor: "pointer",
+              flex: 1,
+              height: 36,
+              borderRadius: 12,
+              background: selected ? "transparent" : "var(--nyan-surface-muted)",
+              border: `1.5px solid ${selected ? "var(--nyan-primary-deep)" : "transparent"}`,
+              color: selected ? "var(--nyan-primary-deep)" : "var(--nyan-text-secondary)",
+              display: "grid",
+              placeItems: "center",
+              font: "500 14px/1 var(--font-ui)",
+              transition: "background 160ms ease, border-color 160ms ease, color 160ms ease",
+            }}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
 /* Sort-by sheet — three sort fields + the canonical Ascending/Descending
    segmented control (the one sort-direction track used across the kit). */
 const ShelfSortSheet = ({ field = 0, asc = true, onField, onDir, onClose, animateIn = true }) => (
@@ -182,9 +222,15 @@ const ShelfSortSheet = ({ field = 0, asc = true, onField, onDir, onClose, animat
 const BookshelfHome = ({ dark, empty, view: initView, continueCollapsed, isPro = false, sort: initSort, sortOpen: initSortOpen = false, sortField: initSortField = 0, sortAsc: initSortAsc = true, sortAnimate = true }) => {
   const [tab, setTab] = useState(0);
   const [view, setView] = useState(initView || "grid");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [sortOpen, setSortOpen] = useState(!!initSortOpen || !!initSort);
   const [sortField, setSortField] = useState(initSortField);
   const [sortAsc, setSortAsc] = useState(initSortAsc);
+  const visibleBooks = BOOKS.filter(book => {
+    if (statusFilter === "reading") return book.pct > 0 && book.pct < 100;
+    if (statusFilter === "unread") return book.pct === 0;
+    return true;
+  });
   return (
     <Shell dark={dark}>
       {/* Shelf Toolbar — shared header action cluster (search · sort · view · privacy) */}
@@ -204,6 +250,7 @@ const BookshelfHome = ({ dark, empty, view: initView, continueCollapsed, isPro =
           ))}
         </div>
       </div>
+      <ShelfStatusFilter value={statusFilter} onChange={setStatusFilter} />
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 88px" }}>
         {empty || tab === 1 ? (
@@ -222,11 +269,11 @@ const BookshelfHome = ({ dark, empty, view: initView, continueCollapsed, isPro =
             <div style={{ height: 16 }} />
             {view === "grid" ? (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px 12px" }}>
-                {BOOKS.concat(BOOKS).slice(0, 9).map((b, i) => <BookCard key={i} book={b} dark={dark} />)}
+                {visibleBooks.concat(visibleBooks).slice(0, 9).map((b, i) => <BookCard key={i} book={b} dark={dark} />)}
               </div>
             ) : (
               <div style={{ background: "var(--nyan-surface)", borderRadius: 16, border: "1px solid var(--chrome-edge)", boxShadow: "var(--shadow-grouped)", overflow: "hidden" }}>
-                {BOOKS.concat(BOOKS).slice(0, 6).map((b, i) => (
+                {visibleBooks.concat(visibleBooks).slice(0, 6).map((b, i) => (
                   <React.Fragment key={i}>
                     {i > 0 && <div style={{ height: "0.5px", background: "color-mix(in srgb, var(--nyan-divider) 34%, transparent)", margin: "0 12px" }} />}
                     <BookListRow book={b} />

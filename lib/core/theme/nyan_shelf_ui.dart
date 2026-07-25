@@ -11,15 +11,19 @@ abstract final class NyanShelfUi {
   static const double gridCrossAxisSpacing = 12;
   static const double gridMainAxisSpacing = 16;
 
-  /// Same rhythm as a grid row gap: pinned shelf → first row, list top, ad margins.
-  static const double sectionGapAfterShelfChrome = gridMainAxisSpacing;
+  /// Gap after the shelf chrome before the hero/content section begins.
+  ///
+  /// This is intentionally 10pt to keep the vertical rhythm consistent with
+  /// the pinned toolbar, shelf tabs, status filters, and continue-reading card.
+  static const double sectionGapAfterShelfChrome = 10;
 
   /// Cover portrait ratio for grid cards (120 × 156 per bundle3.jsx BookCard).
   static const double gridCoverAspectRatio = 120.0 / 156.0;
 
-  /// Fixed height of the text section below the cover (progress bar + title + author
-  /// with their gaps). Used by the home screen to compute childAspectRatio dynamically.
-  static const double gridCardTextSectionHeight = 64.0;
+  /// Fixed height of the text section below the cover (progress bar + title
+  /// with their gaps). Used by the home screen to compute childAspectRatio
+  /// dynamically. Grid cards intentionally omit author metadata.
+  static const double gridCardTextSectionHeight = 48.0;
 
   /// Vertical gap between list-mode book cards (bottom margin per tile).
   /// Spec uses 12px gap for list vs 14px for grid — intentional asymmetry.

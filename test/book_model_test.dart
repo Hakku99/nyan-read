@@ -25,4 +25,18 @@ void main() {
     expect(roundTrip.addedAt, 5678);
     expect(roundTrip.titleSortKey, 'abcd');
   });
+
+  test('BookSourceType normalizes known values and falls back to filePath',
+      () {
+    expect(BookSourceType.normalize('file_path'), BookSourceType.filePath);
+    expect(BookSourceType.normalize('android_content_uri'),
+        BookSourceType.androidContentUri);
+    // Library-folder tree children (review #3 / library-folders Phase A) —
+    // must survive normalize or every tree book silently degrades to a
+    // nonexistent file path.
+    expect(BookSourceType.normalize('android_tree_uri'),
+        BookSourceType.androidTreeUri);
+    expect(BookSourceType.normalize('garbage'), BookSourceType.filePath);
+    expect(BookSourceType.normalize(null), BookSourceType.filePath);
+  });
 }

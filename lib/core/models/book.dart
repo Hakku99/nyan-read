@@ -19,9 +19,17 @@ class BookSourceType {
   static const String filePath = 'file_path';
   static const String androidContentUri = 'android_content_uri';
 
+  /// Child document uri under a persisted ACTION_OPEN_DOCUMENT_TREE grant
+  /// (docs/DESIGN_LIBRARY_FOLDERS.md). Reads identically to
+  /// [androidContentUri]; the distinct type exists because these books must
+  /// NOT take a per-file persisted grant (access flows from the tree grant)
+  /// and their locator embeds the owning tree for folder bookkeeping.
+  static const String androidTreeUri = 'android_tree_uri';
+
   static const Set<String> _knownValues = {
     filePath,
     androidContentUri,
+    androidTreeUri,
   };
 
   static String normalize(String? value) {

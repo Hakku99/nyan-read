@@ -31,6 +31,53 @@ class BookshelfViewModel extends ChangeNotifier {
   int get publicCount => _publicBooks.length;
   int get privateCount => _privateBooks.length;
 
+  // --- Status filter views (docs/DESIGN_LIBRARY_FOLDERS.md §5.1) ---
+  // Cached here — NOT filtered in build() — so grid rebuilds never re-run
+  // .where().toList() on the shelf list (§3.4 build purity).
+  List<Book> _visiblePublicBooks = [];
+  List<Book> _visiblePrivateBooks = [];
+
+  List<Book> get visiblePublicBooks => _visiblePublicBooks;
+  List<Book> get visiblePrivateBooks => _visiblePrivateBooks;
+
+  ShelfStatusFilter statusFilterFor({required bool isPrivate}) =>
+      _prefs.statusFilterFor(isPrivate: isPrivate);
+
+  Future<void> setStatusFilter({
+    required bool isPrivate,
+    required ShelfStatusFilter filter,
+  }) async {
+    await _prefs.setStatusFilter(isPrivate: isPrivate, filter: filter);
+    _rebuildVisibleBooks();
+    notifyListeners();
+  }
+
+  void _rebuildVisibleBooks() {
+    _visiblePublicBooks = filterBooksByStatus(
+        _publicBooks, _prefs.statusFilterFor(isPrivate: false));
+    _visiblePrivateBooks = filterBooksByStatus(
+        _privateBooks, _prefs.statusFilterFor(isPrivate: true));
+  }
+
+  /// `reading` vs `unread` keys off last_read_at — the same signal the sort
+  /// clause already uses for "keep unread books at the end".
+  @visibleForTesting
+  static List<Book> filterBooksByStatus(
+      List<Book> books, ShelfStatusFilter filter) {
+    switch (filter) {
+      case ShelfStatusFilter.all:
+        return books;
+      case ShelfStatusFilter.reading:
+        return books
+            .where((b) => b.lastReadAt != null)
+            .toList(growable: false);
+      case ShelfStatusFilter.unread:
+        return books
+            .where((b) => b.lastReadAt == null)
+            .toList(growable: false);
+    }
+  }
+
   // --- Interaction State ---
   bool _isSelectionMode = false;
   final Set<String> _selectedBookIds = {};
@@ -83,6 +130,7 @@ class BookshelfViewModel extends ChangeNotifier {
 
       _publicBooks = results[0].map((e) => Book.fromMap(e)).toList();
       _privateBooks = results[1].map((e) => Book.fromMap(e)).toList();
+      _rebuildVisibleBooks();
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -111,7 +159,10 @@ class BookshelfViewModel extends ChangeNotifier {
   }
 
   void selectAll(bool isPrivateShelf) {
-    final targetBooks = isPrivateShelf ? _privateBooks : _publicBooks;
+    // Acts on the VISIBLE (status-filtered) list — selecting books the user
+    // cannot see would make bulk delete a trap.
+    final targetBooks =
+        isPrivateShelf ? _visiblePrivateBooks : _visiblePublicBooks;
     final allIds = targetBooks.map((b) => b.id).toSet();
 
     final allSelected = allIds.every((id) => _selectedBookIds.contains(id));

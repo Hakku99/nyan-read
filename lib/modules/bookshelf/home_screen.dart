@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,7 @@ import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
+import '../../core/services/database_service.dart';
 import '../../core/services/feature_manager.dart';
 import '../../core/services/riverpod_providers.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
@@ -69,6 +71,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   void initState() {
     super.initState();
     _prefs = ref.read(bookshelfPreferencesRpProvider);
+    _isHeroCollapsed = _prefs.heroCollapsed;
     _tabController = TabController(length: 2, vsync: this);
   }
 
@@ -246,54 +249,16 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         final importSource = await _resolveImportedSource(file);
         if (importSource == null) continue;
 
-        try {
-          final fileName = importSource.displayName;
-          final addedAt = DateTime.now().millisecondsSinceEpoch;
-          final normalizedSourceLocator =
-              BookImportFingerprint.normalizeLocator(
-            importSource.sourceType,
-            importSource.sourceLocator,
-          );
-          final contentSignature = await BookImportFingerprint.computeForSource(
-            sourceType: importSource.sourceType,
-            sourceLocator: importSource.sourceLocator,
-            locatorHint: importSource.signatureHint,
-            transientFilePath: file.path,
-          );
-
-          final isDuplicate = knownLocators.contains(normalizedSourceLocator) ||
-              (contentSignature != null &&
-                  knownSignatures.contains(contentSignature));
-          if (isDuplicate) {
-            skippedCount++;
-            debugPrint('Skipping duplicate import: $fileName');
-            continue;
-          }
-
-          final book = Book(
-            id: const Uuid().v4(),
-            title: path.basenameWithoutExtension(fileName),
-            author: 'Unknown',
-            sourceLocator: importSource.sourceLocator,
-            sourceType: importSource.sourceType,
-            format: path.extension(fileName).replaceAll('.', ''),
-            titleSortKey:
-                buildTitleSortKey(path.basenameWithoutExtension(fileName)),
-            isPrivate: isPrivate,
-            addedAt: addedAt,
-            contentSignature: contentSignature,
-            storageType: importSource.storageType,
-          );
-
-          await db.insertBook(book.toMap());
-          knownLocators.add(normalizedSourceLocator);
-          if (contentSignature != null) {
-            knownSignatures.add(contentSignature);
-          }
-          successCount++;
-        } catch (e) {
-          debugPrint('Error importing file ${file.name}: $e');
-        }
+        final outcome = await _importResolvedSource(
+          db: db,
+          importSource: importSource,
+          knownLocators: knownLocators,
+          knownSignatures: knownSignatures,
+          isPrivate: isPrivate,
+          transientFilePath: file.path,
+        );
+        if (outcome == _ImportOutcome.imported) successCount++;
+        if (outcome == _ImportOutcome.skipped) skippedCount++;
       }
 
       await _cleanupPickerTempFiles();
@@ -355,6 +320,194 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     const floor = Duration(milliseconds: 600);
     final remaining = floor - DateTime.now().difference(shownAt);
     if (remaining > Duration.zero) await Future.delayed(remaining);
+  }
+
+  /// Shared per-source import core for both the file-picker and
+  /// library-folder flows: fingerprint dedupe → Book row insert. Mutates the
+  /// known-sets so a batch also dedupes against itself; failures are logged
+  /// and reported as [_ImportOutcome.failed] (callers count neither way,
+  /// matching the historical loop).
+  Future<_ImportOutcome> _importResolvedSource({
+    required DatabaseService db,
+    required _ImportedBookSource importSource,
+    required Set<String> knownLocators,
+    required Set<String> knownSignatures,
+    required bool isPrivate,
+    String? transientFilePath,
+  }) async {
+    try {
+      final fileName = importSource.displayName;
+      final addedAt = DateTime.now().millisecondsSinceEpoch;
+      final normalizedSourceLocator = BookImportFingerprint.normalizeLocator(
+        importSource.sourceType,
+        importSource.sourceLocator,
+      );
+      final contentSignature = await BookImportFingerprint.computeForSource(
+        sourceType: importSource.sourceType,
+        sourceLocator: importSource.sourceLocator,
+        locatorHint: importSource.signatureHint,
+        transientFilePath: transientFilePath,
+      );
+
+      final isDuplicate = knownLocators.contains(normalizedSourceLocator) ||
+          (contentSignature != null &&
+              knownSignatures.contains(contentSignature));
+      if (isDuplicate) {
+        debugPrint('Skipping duplicate import: $fileName');
+        return _ImportOutcome.skipped;
+      }
+
+      final book = Book(
+        id: const Uuid().v4(),
+        title: path.basenameWithoutExtension(fileName),
+        author: 'Unknown',
+        sourceLocator: importSource.sourceLocator,
+        sourceType: importSource.sourceType,
+        format: path.extension(fileName).replaceAll('.', ''),
+        titleSortKey:
+            buildTitleSortKey(path.basenameWithoutExtension(fileName)),
+        isPrivate: isPrivate,
+        addedAt: addedAt,
+        contentSignature: contentSignature,
+        storageType: importSource.storageType,
+      );
+
+      await db.insertBook(book.toMap());
+      knownLocators.add(normalizedSourceLocator);
+      if (contentSignature != null) {
+        knownSignatures.add(contentSignature);
+      }
+      return _ImportOutcome.imported;
+    } catch (e) {
+      debugPrint('Error importing ${importSource.displayName}: $e');
+      return _ImportOutcome.failed;
+    }
+  }
+
+  /// Library-folder import (docs/DESIGN_LIBRARY_FOLDERS.md Phase B):
+  /// one tree grant covers the whole folder, every book inside is imported
+  /// by reference (sourceType androidTreeUri, NO per-file persisted grant).
+  Future<void> _importLibraryFolder(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
+
+    final Map<String, dynamic>? picked;
+    try {
+      picked = await BookSourcePlatform.pickLibraryFolder();
+    } catch (e) {
+      debugPrint('Library folder pick failed: $e');
+      if (context.mounted) {
+        SnackBarUtils.show(context, loc.importFailed(e.toString()),
+            tone: NyanSnackTone.error);
+      }
+      return;
+    }
+    if (picked == null) return; // user cancelled
+    final treeUri = picked['uri'] as String?;
+    if (treeUri == null || treeUri.isEmpty) return;
+    if (!context.mounted) return;
+
+    DateTime? loadingShownAt;
+    try {
+      SnackBarUtils.show(
+        context,
+        loc.importingBooksTitle,
+        description: loc.importingBooksSubtitle,
+        tone: NyanSnackTone.loading,
+      );
+      loadingShownAt = DateTime.now();
+      await WidgetsBinding.instance.endOfFrame;
+      if (!context.mounted) return;
+
+      final scan = await BookSourcePlatform.listTreeDocuments(treeUri);
+      final docs = ((scan['documents'] as List?) ?? const [])
+          .whereType<Map<Object?, Object?>>()
+          .toList(growable: false);
+
+      if (docs.isEmpty) {
+        await _awaitMinLoadingDisplay(loadingShownAt);
+        if (!context.mounted) return;
+        SnackBarUtils.show(context, loc.libraryFolderEmpty,
+            tone: NyanSnackTone.skipped);
+        return;
+      }
+
+      final db = ref.read(databaseServiceRpProvider);
+      final existingIndex = await BookImportFingerprint.buildExistingIndex(db);
+      final featureManager = ref.read(featureManagerRpProvider);
+      final isPrivate =
+          featureManager.isPrivateShelfUnlocked && _tabController.index == 1;
+
+      int successCount = 0;
+      int skippedCount = 0;
+      final knownSignatures = <String>{...existingIndex.signatures};
+      final knownLocators = <String>{...existingIndex.normalizedLocators};
+
+      // ponytail: fingerprinting reads each tree book fully through a native
+      // temp copy (no local picker cache to sample from). Fine for the
+      // one-shot import gesture; add a native sampled-read method if folder
+      // import ever feels slow on 100MB-book libraries.
+      for (final doc in docs) {
+        final uri = doc['uri'] as String?;
+        final name = doc['name'] as String?;
+        if (uri == null || uri.isEmpty || name == null || name.isEmpty) {
+          continue;
+        }
+        final outcome = await _importResolvedSource(
+          db: db,
+          importSource: _ImportedBookSource(
+            sourceLocator: uri,
+            sourceType: BookSourceType.androidTreeUri,
+            displayName: name,
+            signatureHint: name,
+          ),
+          knownLocators: knownLocators,
+          knownSignatures: knownSignatures,
+          isPrivate: isPrivate,
+        );
+        if (outcome == _ImportOutcome.imported) successCount++;
+        if (outcome == _ImportOutcome.skipped) skippedCount++;
+      }
+
+      if (!context.mounted) return;
+      await _awaitMinLoadingDisplay(loadingShownAt);
+      if (!context.mounted) return;
+
+      final shelfLabel = isPrivate ? loc.privateShelf : loc.publicShelf;
+      if (successCount > 0) {
+        SnackBarUtils.show(
+          context,
+          loc.importedBooks(successCount, shelfLabel),
+          tone: NyanSnackTone.success,
+        );
+      } else if (skippedCount > 0) {
+        SnackBarUtils.show(
+          context,
+          loc.duplicatesSkipped(skippedCount),
+          tone: NyanSnackTone.skipped,
+        );
+      } else {
+        SnackBarUtils.show(
+          context,
+          loc.importNothingSucceeded(docs.length),
+          tone: NyanSnackTone.error,
+        );
+      }
+
+      if (successCount > 0) {
+        _vm.loadBooks();
+      }
+    } catch (e) {
+      if (context.mounted && loadingShownAt != null) {
+        await _awaitMinLoadingDisplay(loadingShownAt);
+      }
+      if (context.mounted) {
+        SnackBarUtils.show(
+          context,
+          loc.importFailed(e.toString()),
+          tone: NyanSnackTone.error,
+        );
+      }
+    }
   }
 
   Future<_ImportedBookSource?> _resolveImportedSource(PlatformFile file) async {
@@ -450,6 +603,12 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             Navigator.pop(context);
             _importBook(parentContext);
           },
+          onImportFolder: (!kIsWeb && Platform.isAndroid)
+              ? () {
+                  Navigator.pop(context);
+                  _importLibraryFolder(parentContext);
+                }
+              : null,
         );
       },
     );
@@ -660,6 +819,9 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         setState(() {
           _isHeroCollapsed = !_isHeroCollapsed;
         });
+        // Fire-and-forget: persistence is best-effort; the setState above
+        // already reflects the toggle.
+        unawaited(_prefs.setHeroCollapsed(_isHeroCollapsed));
       },
       progressLabel: '${loc.readingProgress}  $progressPercent%',
       buttonLabel: progress <= 0 ? loc.startReading : loc.continueReading,
@@ -673,16 +835,74 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     );
   }
 
+  /// Status filter chip row (docs/DESIGN_LIBRARY_FOLDERS.md §5.1): the
+  /// bulk-import UX guard — hundreds of freshly imported books live under
+  /// "Unread" instead of burying the few actively read ones.
+  Widget _buildStatusFilterRow(
+    BuildContext context,
+    bool isPrivate, {
+    required bool hasTabStripAbove,
+  }) {
+    final loc = AppLocalizations.of(context)!;
+    final current = _vm.statusFilterFor(isPrivate: isPrivate);
+
+    final options = <(ShelfStatusFilter, String)>[
+      (ShelfStatusFilter.all, loc.shelfFilterAll),
+      (ShelfStatusFilter.reading, loc.shelfFilterReading),
+      (ShelfStatusFilter.unread, loc.shelfFilterUnread),
+    ];
+
+    return Padding(
+      // Top: 0 when the shelf tab strip is pinned above — its own 10pt bottom
+      // inset (spec bundle4.jsx marginBottom:10) already supplies the full
+      // 10pt gap, so stacking our own top pad on top of it would double it.
+      // When there's no tab strip, the toolbar's 8pt bottom padding is all
+      // that precedes us, so we add 2pt here to reach the same 10pt total —
+      // keeping every pinned-chrome gap (icon row→tabs, tabs→chips, →hero)
+      // at a consistent 10pt regardless of which chrome pieces are present.
+      // Bottom 8pt: combined with the hero section's own 2pt top pad, also
+      // totals 10pt.
+      padding: EdgeInsets.fromLTRB(
+        NyanSpacing.space16,
+        hasTabStripAbove ? 0 : 2,
+        NyanSpacing.space16,
+        NyanSpacing.space8,
+      ),
+      child: Row(
+        children: [
+          for (final (filter, label) in options) ...[
+            Expanded(
+              child: NyanPillButton(
+                label: label,
+                selected: current == filter,
+                // Fire-and-forget: persistence is best-effort UI state; the VM
+                // notifies synchronously so the shelf updates immediately.
+                onPressed: () => unawaited(
+                  _vm.setStatusFilter(isPrivate: isPrivate, filter: filter),
+                ),
+              ),
+            ),
+            if (filter != options.last.$1)
+              const SizedBox(width: NyanSpacing.space8),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildLibrarySurface(
     BuildContext context, {
     required FeatureManager featureManager,
     required bool showPrivacyTab,
     required List<Book> activeBooks,
+    required List<Book> fullBooks,
     required bool showHeaderSections,
     required bool isSelectionMode,
   }) {
     final loc = AppLocalizations.of(context)!;
-    final continueReadingBook = _resolveContinueReadingBook(activeBooks);
+    // Hero picks from the UNFILTERED list: "continue reading" must surface
+    // the actual current book even while the Unread filter is active.
+    final continueReadingBook = _resolveContinueReadingBook(fullBooks);
     final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
     const useCompactContinueReading = false;
 
@@ -698,6 +918,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               isGridView: _prefs.viewMode == ViewMode.grid,
               isSortActive: _prefs.sortBy != SortBy.recency || _prefs.isAscending,
               isPrivacyUnlocked: featureManager.isPrivateShelfUnlocked,
+              showsScrollUnderEdge: !showPrivacyTab,
               sortTooltip: loc.sortBy,
               listViewTooltip: loc.listView,
               gridViewTooltip: loc.gridView,
@@ -731,32 +952,47 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           ),
         // Pinned shelf switcher sits directly under the title, above the
         // continue-reading hero (BookshelfScreen.jsx: tabs are pinned chrome,
-        // the hero scrolls beneath them).
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: BookshelfShelfPinnedHeaderDelegate(
-            extent: kBookshelfShelfToolbarPinnedExtent,
-            child: BookshelfShelfToolbar(
-              tabs: [
-                SegmentedTab(label: loc.publicShelf),
-                if (showPrivacyTab) SegmentedTab(label: loc.privateShelf),
-              ],
-              selectedIndex: selectedTabIndex,
-              onTabChanged: (index) {
-                _tabController.animateTo(index);
-                setState(() {});
-              },
+        // the hero scrolls beneath them). With the private shelf locked
+        // (the default) there is only one shelf — a one-tab switcher is a
+        // label pretending to be a control, so the whole strip is dropped
+        // and the toolbar takes over the scroll-under edge.
+        if (showPrivacyTab)
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: BookshelfShelfPinnedHeaderDelegate(
+              extent: kBookshelfShelfToolbarPinnedExtent,
+              child: BookshelfShelfToolbar(
+                tabs: [
+                  SegmentedTab(label: loc.publicShelf),
+                  SegmentedTab(label: loc.privateShelf),
+                ],
+                selectedIndex: selectedTabIndex,
+                onTabChanged: (index) {
+                  _tabController.animateTo(index);
+                  setState(() {});
+                },
+              ),
             ),
           ),
-        ),
+        if (showHeaderSections)
+          SliverToBoxAdapter(
+            child: _buildStatusFilterRow(
+              context,
+              showPrivacyTab && _tabController.index == 1,
+              hasTabStripAbove: showPrivacyTab,
+            ),
+          ),
         if (showHeaderSections && continueReadingBook != null)
           SliverToBoxAdapter(
             child: Padding(
-              // 16pt side inset matches the grid / hero rhythm. No vertical pad:
-              // the pinned tabs supply the gap above and the grid's own top pad
-              // supplies the gap below (avoids a doubled 32pt gulf).
-              padding: const EdgeInsets.symmetric(
-                horizontal: NyanSpacing.space16,
+              // 16pt side inset matches the grid / hero rhythm. Top 2pt: combined
+              // with the filter row's own 8pt bottom padding, totals 10pt —
+              // matching the other pinned-chrome gaps (icon row→tabs, tabs→chips).
+              padding: const EdgeInsets.fromLTRB(
+                NyanSpacing.space16,
+                2,
+                NyanSpacing.space16,
+                0,
               ),
               child: _buildContinueReadingSection(
                 context,
@@ -812,6 +1048,9 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                           featureManager: featureManager,
                           showPrivacyTab: showPrivacyTab,
                           activeBooks: showPrivacyTab && selectedTabIndex == 1
+                              ? vm.visiblePrivateBooks
+                              : vm.visiblePublicBooks,
+                          fullBooks: showPrivacyTab && selectedTabIndex == 1
                               ? vm.privateBooks
                               : vm.publicBooks,
                           showHeaderSections: !isSelectionMode,
@@ -894,15 +1133,23 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               bottom: NyanShelfUi.scrollBottomFabClearance,
             ),
             child: Center(
-              child: NyanEmptyState(
-                iconData: NyanIcons.books,
-                title: isPrivate
-                    ? loc.emptyShelfMessage
-                    : loc.emptyShelfTitle,
-                description: isPrivate
-                    ? loc.emptyPrivateShelf
-                    : loc.emptyShelfSubtitle,
-              ),
+              // A non-all status filter with zero matches is not an empty
+              // shelf — say so instead of prompting a first import.
+              child: _vm.statusFilterFor(isPrivate: isPrivate) !=
+                      ShelfStatusFilter.all
+                  ? NyanEmptyState(
+                      iconData: NyanIcons.books,
+                      title: loc.shelfFilterNoMatches,
+                    )
+                  : NyanEmptyState(
+                      iconData: NyanIcons.books,
+                      title: isPrivate
+                          ? loc.emptyShelfMessage
+                          : loc.emptyShelfTitle,
+                      description: isPrivate
+                          ? loc.emptyPrivateShelf
+                          : loc.emptyShelfSubtitle,
+                    ),
             ),
           ),
         ),
@@ -1720,6 +1967,7 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
     required this.isGridView,
     required this.isSortActive,
     required this.isPrivacyUnlocked,
+    required this.showsScrollUnderEdge,
     required this.sortTooltip,
     required this.listViewTooltip,
     required this.gridViewTooltip,
@@ -1736,6 +1984,13 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
   final bool isGridView;
   final bool isSortActive;
   final bool isPrivacyUnlocked;
+
+  /// True when this toolbar is the LAST pinned element (single-shelf mode
+  /// hides the switcher strip): the scroll-under shadow + hairline that
+  /// normally live on the switcher delegate move up here. False when the
+  /// switcher is present, so the edge never doubles.
+  final bool showsScrollUnderEdge;
+
   final String sortTooltip;
   final String listViewTooltip;
   final String gridViewTooltip;
@@ -1758,8 +2013,24 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Material(
-      color: backgroundColor,
+    final nyan = context.nyanTheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        // Same recipe as BookshelfShelfPinnedHeaderDelegate — content must
+        // never slide under pinned chrome without a separating edge.
+        boxShadow: showsScrollUnderEdge && overlapsContent
+            ? NyanShadows.shelfPinnedHeader(nyan)
+            : const [],
+        border: showsScrollUnderEdge && overlapsContent
+            ? Border(
+                bottom: BorderSide(
+                  color: nyan.divider.withValues(alpha: 0.22),
+                  width: 1,
+                ),
+              )
+            : null,
+      ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           NyanSpacing.space16,
@@ -1817,11 +2088,14 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
     return backgroundColor != old.backgroundColor ||
         isGridView != old.isGridView ||
         isSortActive != old.isSortActive ||
-        isPrivacyUnlocked != old.isPrivacyUnlocked;
+        isPrivacyUnlocked != old.isPrivacyUnlocked ||
+        showsScrollUnderEdge != old.showsScrollUnderEdge;
   }
 }
 
 // ── Imported book source ───────────────────────────────────────────────────────
+
+enum _ImportOutcome { imported, skipped, failed }
 
 class _ImportedBookSource {
   final String sourceLocator;

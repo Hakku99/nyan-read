@@ -5,10 +5,12 @@ import 'package:nyan_read/core/ui/nyan_theme_context.dart';
 import 'package:nyan_read/core/ui/components/segmented_tab_control.dart';
 
 /// Vertical inset above + below the track (drives the pinned sliver extent).
-/// Top = 0: gap above tabs comes entirely from the toolbar's bottom padding (8pt).
+/// Top = 2: combined with the toolbar's own 8pt bottom padding, totals 10pt —
+/// matching the 10pt gaps below (tabs→chips, chips→hero) so all three pinned-
+/// chrome gaps read as one consistent rhythm.
 /// Bottom = 10: spec `bundle4.jsx` tab wrapper `marginBottom: 10` (§4.6 takes priority).
 // ponytail: 10pt is off the 8pt grid by 2pt — pixel-perfect spec value.
-const double _kShelfTrackVerticalPaddingTop = 0;
+const double _kShelfTrackVerticalPaddingTop = 2;
 const double _kShelfTrackVerticalPaddingBottom = 10;
 
 /// Horizontal inset — 16pt, matching the toolbar and content slivers.
