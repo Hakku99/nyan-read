@@ -40,10 +40,15 @@ class BrightnessState {
           ? clampedUiBrightness
           : normalizedHardwareFloor;
 
-  double get overlayOpacity => const OverlayBrightnessPolicy().calculate(
-        uiBrightness: clampedUiBrightness,
-        hardwareFloor: normalizedHardwareFloor,
-      );
+  /// System brightness already controls the display in follow-system mode.
+  /// Adding the reader's black software veil on top of a very low system
+  /// value made text effectively unreadable in dark environments.
+  double get overlayOpacity => followSystem
+      ? 0.0
+      : const OverlayBrightnessPolicy().calculate(
+          uiBrightness: clampedUiBrightness,
+          hardwareFloor: normalizedHardwareFloor,
+        );
 
   bool get isSystemOverrideActive => lastAppliedSystemBrightness != null;
 

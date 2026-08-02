@@ -96,6 +96,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   Timer? _pageTurnLockTimer;
   static const Duration _pageTurnLockTimeout = Duration(seconds: 3);
   Timer? _chapterSyncDebounce;
+  bool _isChapterJumping = false;
   final GlobalKey<SmoothPageReaderState> _smoothPageReaderKey =
       GlobalKey<SmoothPageReaderState>();
 
@@ -818,9 +819,19 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
           maxSheetHeight: 520,
           showSheetChrome: false,
           showHeader: false,
-          onChapterTap: (index, locator) {
-            controller.jumpToChapter(index, locator);
-            _collapseSheet();
+          onChapterTap: (index, locator) async {
+            if (_isChapterJumping) return;
+            _isChapterJumping = true;
+            try {
+              await controller.jumpToChapter(index, locator);
+              // The positioned list commits a programmatic jump in its next
+              // frame. Keep the sheet mounted until then so its collapse
+              // cannot race that first content paint into a blank viewport.
+              await WidgetsBinding.instance.endOfFrame;
+              if (mounted) _collapseSheet();
+            } finally {
+              _isChapterJumping = false;
+            }
           },
         );
       case DockAction.bookmarks:

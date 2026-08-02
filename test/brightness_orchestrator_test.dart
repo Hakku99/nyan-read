@@ -131,6 +131,24 @@ void main() {
     );
   });
 
+  test('follow-system brightness never adds a software dim overlay', () async {
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    final adapter = FakeSystemBrightnessAdapter(currentValue: 0.0);
+    final orchestrator = BrightnessOrchestrator(
+      repository: BrightnessRepository(prefs),
+      systemAdapter: adapter,
+    );
+
+    await orchestrator.initialize();
+
+    expect(orchestrator.state.followSystem, isTrue);
+    expect(orchestrator.state.overlayOpacity, 0.0);
+
+    await orchestrator.shutdown();
+    await adapter.close();
+  });
+
   test('follow-system brightness transitions smoothly instead of jumping',
       () async {
     final prefs = ReaderPreferencesService();
