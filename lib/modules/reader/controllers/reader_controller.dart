@@ -185,6 +185,14 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       () async => await progressManager.saveCurrentPosition(),
     );
     progressManager.refreshFromEngine();
+
+    // The reader body is intentionally gated by [renderEpoch] so unrelated
+    // controller notifications do not rebuild the engine widget. A chapter
+    // jump changes the engine's scroll position without changing that epoch;
+    // explicitly publish one render pass so the positioned list commits the
+    // new viewport after navigation (especially when a sheet is collapsing).
+    _renderEpoch++;
+    _safeNotifyListeners();
   }
 
   Future<void> previousPage() async {
@@ -285,6 +293,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       () async => await progressManager.saveCurrentPosition(),
     );
     progressManager.refreshFromEngine();
+    _renderEpoch++;
+    _safeNotifyListeners();
   }
 
   Future<void> jumpToNextChapter() async {
@@ -292,6 +302,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       () async => await progressManager.saveCurrentPosition(),
     );
     progressManager.refreshFromEngine();
+    _renderEpoch++;
+    _safeNotifyListeners();
   }
 
   Future<void> refreshCurrentChapterIndex() async =>
