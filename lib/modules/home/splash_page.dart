@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/theme_presets.dart';
+
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -28,11 +30,16 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
+    final nyan = resolveNyanTheme(Theme.of(context));
+    final splashAsset = nyan.brightness == Brightness.dark
+        ? 'assets/images/splash_screen_dark.png'
+        : 'assets/images/splash_screen.png';
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: nyan.background,
       body: Center(
         child: Image.asset(
-          'assets/images/splash_screen.png',
+          splashAsset,
           width: double.infinity,
           height: double.infinity,
           fit: BoxFit.cover,
