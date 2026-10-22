@@ -2,6 +2,13 @@
 
 This document turns the architecture/performance constraints from `AGENTS.md` into repeatable engineering checks.
 
+The reader navigation diagnostic baseline and its explicit coverage limits are
+recorded in [READER_NAVIGATION_BASELINE.md](READER_NAVIGATION_BASELINE.md).
+It is an opt-in failing regression suite until the corresponding defects are
+fixed; do not treat its current results as a release certification.
+The 01A/02 implementation, remaining failures, and repeated emulator measurements
+are recorded in [READER_TURN_FIXES_01A_02.md](READER_TURN_FIXES_01A_02.md).
+
 ## 1) Non-negotiable rules
 
 These are merge-blocking rules for reader-related changes.

@@ -480,6 +480,15 @@ class TxtReaderEngine
   }
 
   final ItemScrollController _itemScrollController = ItemScrollController();
+  ScrollPosition? _scrollPosition;
+  ReadingPosition? _pendingRestore;
+  final ValueNotifier<bool> _restoreCover = ValueNotifier(false);
+  int _navigationSerial = 0;
+  int _viewportEpoch = 0;
+  int? _applyingRestore;
+  bool _disposed = false;
+  Size? _viewportSize;
+  double? _viewportTextScale;
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
 
@@ -575,7 +584,6 @@ class TxtReaderEngine
   ];
 
   int _initialIndex = 0;
-  bool _hasRestoredPosition = false;
   final PaginationEstimateCalculator _paginationCalculator;
 
   TxtReaderEngine(
@@ -590,6 +598,7 @@ class TxtReaderEngine
   ReaderCapabilities get capabilities => _capabilities;
 
   void _updateCurrentPosition() {
+    if (_disposed || _pendingRestore != null) return;
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isNotEmpty) {
       int? minIndex;
@@ -627,6 +636,8 @@ class TxtReaderEngine
       index: topmost.index.clamp(0, _lineCount - 1),
       leadingEdge: topmost.itemLeadingEdge,
       trailingEdge: topmost.itemTrailingEdge,
+      scrollOffset: _scrollPosition?.pixels,
+      viewportEpoch: _viewportEpoch,
     );
   }
 
@@ -640,6 +651,7 @@ class TxtReaderEngine
   /// headings at the top (off-by-one chapter in bar / TOC).
   int _viewportAnchorParagraphIndex() {
     if (_lineCount == 0) return 0;
+    if (_pendingRestore != null) return _pendingRestore!.paragraphIndex!;
     return _currentViewportAnchor()?.index ??
         _initialIndex.clamp(0, _lineCount - 1);
   }
@@ -690,6 +702,11 @@ class TxtReaderEngine
 
   @override
   void setConfig(ReaderConfig config) {
+    if (_config.fontSize != config.fontSize ||
+        _config.lineHeight != config.lineHeight ||
+        _config.useSerif != config.useSerif) {
+      _invalidateViewportLayout();
+    }
     _config = config;
     _configNotifier.value = config;
   }
@@ -730,126 +747,132 @@ class TxtReaderEngine
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Not awaited: the estimate lands via _pageInfoNotifier when ready;
-        // the helper defers its TextPainter work past this build frame and
-        // re-validates the layout key on completion.
-        unawaited(_recalculatePagination(
-            constraints.biggest, MediaQuery.textScalerOf(context)));
+    return _TxtViewport(
+        key: ObjectKey(this),
+        engine: this,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final scale = MediaQuery.textScalerOf(context).scale(1);
+            if (_viewportSize != constraints.biggest ||
+                _viewportTextScale != scale) {
+              _viewportSize = constraints.biggest;
+              _viewportTextScale = scale;
+              _invalidateViewportLayout();
+            }
+            // Not awaited: the estimate lands via _pageInfoNotifier when ready;
+            // the helper defers its TextPainter work past this build frame and
+            // re-validates the layout key on completion.
+            unawaited(_recalculatePagination(
+                constraints.biggest, MediaQuery.textScalerOf(context)));
 
-        return Stack(
-          children: [
-            SizedBox.expand(
-              child: ValueListenableBuilder<ReaderConfig>(
-                valueListenable: _configNotifier,
-                builder: (context, config, child) {
-                  return ValueListenableBuilder<int>(
-                    valueListenable: _highlightRenderVersion,
-                    builder: (context, _, __) {
-                      return _buildList(context, config);
+            return Stack(
+              children: [
+                SizedBox.expand(
+                  child: ValueListenableBuilder<ReaderConfig>(
+                    valueListenable: _configNotifier,
+                    builder: (context, config, child) {
+                      return ValueListenableBuilder<int>(
+                        valueListenable: _highlightRenderVersion,
+                        builder: (context, _, __) {
+                          return _buildList(context, config);
+                        },
+                      );
                     },
-                  );
-                },
-              ),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: ValueListenableBuilder<ReaderConfig>(
-                valueListenable: _configNotifier,
-                builder: (context, config, child) {
-                  return ValueListenableBuilder<int>(
-                    valueListenable: _pageInfoNotifier,
-                    builder: (context, _, __) {
-                      return ValueListenableBuilder<Iterable<ItemPosition>>(
-                        valueListenable: _itemPositionsListener.itemPositions,
-                        builder: (context, positions, _) {
-                          if (!_isPaginationCalculated) {
-                            return const SizedBox();
-                          }
-                          final progressPercent = (getProgress() ?? 0.0) * 100;
-                          final page = getCurrentPageIndex() + 1;
-                          final total = getPageCount();
-                          String chapterTitle =
-                              normalizeChapterHeadingForDisplay(
-                            _getCurrentChapterTitle(),
-                          );
-                          if (chapterTitle.isEmpty && _chapters.isNotEmpty) {
-                            chapterTitle = normalizeChapterHeadingForDisplay(
-                              _chapters.first.title,
-                            );
-                          }
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: ValueListenableBuilder<ReaderConfig>(
+                    valueListenable: _configNotifier,
+                    builder: (context, config, child) {
+                      return ValueListenableBuilder<int>(
+                        valueListenable: _pageInfoNotifier,
+                        builder: (context, _, __) {
+                          return ValueListenableBuilder<Iterable<ItemPosition>>(
+                            valueListenable:
+                                _itemPositionsListener.itemPositions,
+                            builder: (context, positions, _) {
+                              if (!_isPaginationCalculated) {
+                                return const SizedBox();
+                              }
+                              final progressPercent =
+                                  (getProgress() ?? 0.0) * 100;
+                              final page = getCurrentPageIndex() + 1;
+                              final total = getPageCount();
+                              String chapterTitle =
+                                  normalizeChapterHeadingForDisplay(
+                                _getCurrentChapterTitle(),
+                              );
+                              if (chapterTitle.isEmpty &&
+                                  _chapters.isNotEmpty) {
+                                chapterTitle =
+                                    normalizeChapterHeadingForDisplay(
+                                  _chapters.first.title,
+                                );
+                              }
 
-                          return Container(
-                            height: 20,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            color: config.backgroundColor,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    '${progressPercent.toInt()}%',
-                                    textAlign: TextAlign.left,
-                                    style: TextStyle(
-                                      color: config.textColor
-                                          .withValues(alpha: 0.6),
-                                      fontSize: 10,
+                              return Container(
+                                height: 20,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                color: config.backgroundColor,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '${progressPercent.toInt()}%',
+                                        textAlign: TextAlign.left,
+                                        style: TextStyle(
+                                          color: config.textColor
+                                              .withValues(alpha: 0.6),
+                                          fontSize: 10,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Text(
-                                    chapterTitle,
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: config.textColor
-                                          .withValues(alpha: 0.6),
-                                      fontSize: 10,
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        chapterTitle,
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: config.textColor
+                                              .withValues(alpha: 0.6),
+                                          fontSize: 10,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    '$page / $total',
-                                    textAlign: TextAlign.right,
-                                    style: TextStyle(
-                                      color: config.textColor
-                                          .withValues(alpha: 0.6),
-                                      fontSize: 10,
+                                    Expanded(
+                                      child: Text(
+                                        '$page / $total',
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          color: config.textColor
+                                              .withValues(alpha: 0.6),
+                                          fontSize: 10,
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              );
+                            },
                           );
                         },
                       );
                     },
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-      },
-    );
+                  ),
+                ),
+              ],
+            );
+          },
+        ));
   }
 
   Widget _buildList(BuildContext context, ReaderConfig config) {
-    if (_initialIndex > 0 && !_hasRestoredPosition) {
-      _hasRestoredPosition = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_itemScrollController.isAttached) {
-          _itemScrollController.jumpTo(index: _initialIndex);
-        }
-      });
-    }
-
     return ScrollablePositionedList.builder(
       itemCount: _lineCount,
       itemScrollController: _itemScrollController,
@@ -1026,21 +1049,9 @@ class TxtReaderEngine
   @override
   Future<void> goToPosition(ReadingPosition position) async {
     final paragraphIndex = position.paragraphIndex;
-    if (paragraphIndex == null) {
-      return;
-    }
-
-    if (_itemScrollController.isAttached) {
-      _goToParagraphPosition(
-        index: paragraphIndex,
-        paragraphLeadingEdge: position.paragraphLeadingEdge,
-        paragraphTrailingEdge: position.paragraphTrailingEdge,
-      );
-    } else {
-      _initialIndex = paragraphIndex;
-      _hasRestoredPosition = false;
-    }
+    if (_disposed || paragraphIndex == null || _lineCount == 0) return;
     _clearTurnHistory();
+    await _restorePosition(position);
   }
 
   @override
@@ -1054,19 +1065,16 @@ class TxtReaderEngine
 
   @override
   Future<void> seekToProgress(double progress) async {
-    if (_lineCount == 0) return;
-    final index = (progress * (_lineCount - 1)).round();
-
-    if (_itemScrollController.isAttached) {
-      _itemScrollController.jumpTo(index: index);
-    } else {
-      _initialIndex = index;
-    }
-    _clearTurnHistory();
+    if (_lineCount == 0 || !progress.isFinite) return;
+    await goToPosition(ReadingPosition(
+        paragraphIndex: (progress.clamp(0.0, 1.0) * (_lineCount - 1)).round()));
   }
 
   @override
   ReadingPosition? getCurrentPosition() {
+    // An accepted restore remains the logical position until its first layout
+    // commits. Persistence must not observe the temporary paragraph start.
+    if (_pendingRestore != null) return _pendingRestore;
     final anchor = _currentViewportAnchor();
     return TxtReadingPosition(
       paragraphIndex: anchor?.index ?? _viewportAnchorParagraphIndex(),
@@ -1118,6 +1126,8 @@ class TxtReaderEngine
 
   @override
   Future<void> nextPage() async {
+    if (_disposed || _pendingRestore != null || _scrollPosition == null) return;
+    final previousOffset = _scrollPosition!.pixels;
     final currentAnchor = _currentViewportAnchor();
     if (currentAnchor != null) {
       _backwardAnchorStack.add(currentAnchor);
@@ -1131,18 +1141,23 @@ class TxtReaderEngine
       ..sort((a, b) => a.index.compareTo(b.index));
 
     if (positions.isEmpty) {
-      _initialIndex = (_initialIndex + 20).clamp(0, _lineCount - 1);
       return;
     }
 
-    if (await _tryTurnInsideOversizedParagraph(positions, forward: true)) {
-      return;
+    if (!await _tryTurnInsideOversizedParagraph(positions, forward: true)) {
+      await _goToViewportDistanceTarget(positions, forward: true);
     }
-    await _goToViewportDistanceTarget(positions, forward: true);
+    if (_scrollPosition?.pixels == previousOffset &&
+        _backwardAnchorStack.isNotEmpty &&
+        identical(_backwardAnchorStack.last, currentAnchor)) {
+      // A clamped turn at EOF must not add another no-op to backward history.
+      _backwardAnchorStack.removeLast();
+    }
   }
 
   @override
   Future<void> previousPage() async {
+    if (_disposed || _pendingRestore != null || _scrollPosition == null) return;
     final currentAnchor = _currentViewportAnchor();
     if (currentAnchor != null && _backwardAnchorStack.isNotEmpty) {
       final anchor = _backwardAnchorStack.removeLast();
@@ -1155,7 +1170,6 @@ class TxtReaderEngine
       ..sort((a, b) => a.index.compareTo(b.index));
 
     if (positions.isEmpty) {
-      _initialIndex = (_initialIndex - 20).clamp(0, _lineCount - 1);
       return;
     }
 
@@ -1173,39 +1187,18 @@ class TxtReaderEngine
     if (!_itemScrollController.isAttached || positions.isEmpty) {
       return false;
     }
-    final first = positions.first;
-    final last = positions.last;
-    if (first.index != last.index) {
-      return false;
-    }
-
-    const viewportStep = 0.92;
-    final leading = first.itemLeadingEdge;
-    final trailing = first.itemTrailingEdge;
-    final ratio = trailing - leading;
-    if (ratio <= 1.0) {
-      return false;
-    }
-
-    final minLeading = 1.0 - ratio;
-    final maxLeading = 0.0;
-    final signedStep = forward ? -viewportStep : viewportStep;
-    final targetLeading = (leading + signedStep).clamp(minLeading, maxLeading);
-
-    if ((targetLeading - leading).abs() < 0.0001) {
-      return false;
-    }
-
-    final denominator = 1.0 - ratio;
-    if (denominator.abs() < 0.0001) {
-      return false;
-    }
-
-    final align = (targetLeading / denominator).clamp(0.0, 1.0);
-    await _goToIndex(
-      index: first.index,
-      alignment: align,
-    );
+    final visible = positions
+        .where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1)
+        .toList();
+    if (visible.length != 1) return false;
+    final first = visible.single;
+    if (first.itemTrailingEdge - first.itemLeadingEdge < 1) return false;
+    final scroll = _scrollPosition;
+    if (scroll == null) return false;
+    // Keep 8% context, and allow crossing the paragraph end. Clamping the
+    // leading edge to the paragraph's last viewport traps the reader there.
+    await _moveTo(
+        scroll.pixels + (forward ? 0.92 : -0.92) * scroll.viewportDimension);
     return true;
   }
 
@@ -1245,67 +1238,143 @@ class TxtReaderEngine
   }
 
   Future<void> _restoreAnchor(_ViewportAnchor anchor) async {
-    if (!_itemScrollController.isAttached) return;
-    final alignment = _alignmentFromEdges(
-      leadingEdge: anchor.leadingEdge,
-      trailingEdge: anchor.trailingEdge,
-    );
-    await _goToIndex(
-      index: anchor.index,
-      alignment: alignment ?? 0.0,
-    );
-  }
-
-  void _goToParagraphPosition({
-    required int index,
-    double? paragraphLeadingEdge,
-    double? paragraphTrailingEdge,
-  }) {
-    final clampedIndex = index.clamp(0, _lineCount - 1);
-    final alignment = (paragraphLeadingEdge != null && paragraphTrailingEdge != null)
-        ? _alignmentFromEdges(
-            leadingEdge: paragraphLeadingEdge,
-            trailingEdge: paragraphTrailingEdge,
-          )
-        : null;
-    // jumpTo for programmatic position restore; scrollTo (animated) is
-    // reserved for user-initiated page turns via nextPage/previousPage.
-    _itemScrollController.jumpTo(
-      index: clampedIndex,
-      alignment: alignment ?? 0.0,
-    );
-  }
-
-  double? _alignmentFromEdges({
-    required double leadingEdge,
-    required double trailingEdge,
-  }) {
-    final ratio = trailingEdge - leadingEdge;
-    final denominator = 1.0 - ratio;
-    if (denominator.abs() < 0.0001) {
-      return null;
+    if (_scrollPosition == null) return;
+    if (anchor.viewportEpoch == _viewportEpoch && anchor.scrollOffset != null) {
+      await _moveTo(anchor.scrollOffset!);
+    } else {
+      await _restorePosition(ReadingPosition(
+          paragraphIndex: anchor.index,
+          paragraphLeadingEdge: anchor.leadingEdge,
+          paragraphTrailingEdge: anchor.trailingEdge));
     }
-    return (leadingEdge / denominator).clamp(0.0, 1.0);
   }
 
   Future<void> _goToIndex({
     required int index,
     required double alignment,
   }) async {
-    if (_config.pageTurnMode == PageTurnMode.tap) {
-      _itemScrollController.jumpTo(index: index, alignment: alignment);
-      return;
+    final scroll = _scrollPosition;
+    if (scroll == null) return;
+    for (final item in _itemPositionsListener.itemPositions.value) {
+      if (item.index == index) {
+        await _moveTo(scroll.pixels +
+            (item.itemLeadingEdge - alignment) * scroll.viewportDimension);
+        return;
+      }
     }
-    await _itemScrollController.scrollTo(
-      index: index,
-      alignment: alignment,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    await _restorePosition(ReadingPosition(paragraphIndex: index));
   }
 
-  Future<void> _recalculatePagination(
-      Size size, TextScaler textScaler) async {
+  Future<void> _moveTo(double pixels) async {
+    final scroll = _scrollPosition;
+    if (_disposed || scroll == null || !scroll.hasContentDimensions) return;
+    final target = pixels.clamp(scroll.minScrollExtent, scroll.maxScrollExtent);
+    if (_config.pageTurnMode == PageTurnMode.tap) {
+      scroll.jumpTo(target);
+    } else {
+      await scroll.animateTo(target,
+          duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    }
+  }
+
+  Future<void> _restorePosition(ReadingPosition position) async {
+    if (_disposed || _lineCount == 0) return;
+    final index = position.paragraphIndex!.clamp(0, _lineCount - 1);
+    final leading = position.paragraphLeadingEdge;
+    final trailing = position.paragraphTrailingEdge;
+    final validEdges = index == position.paragraphIndex &&
+        leading != null &&
+        trailing != null &&
+        leading.isFinite &&
+        trailing.isFinite &&
+        (trailing - leading).isFinite &&
+        leading < 1 &&
+        trailing > 0 &&
+        trailing > leading;
+    _navigationSerial++;
+    _initialIndex = index;
+    _pendingRestore = TxtReadingPosition(
+        paragraphIndex: index,
+        paragraphLeadingEdge: validEdges ? leading : null,
+        paragraphTrailingEdge: validEdges ? trailing : null);
+    if (_scrollPosition == null || !_itemScrollController.isAttached) {
+      _restoreCover.value = true;
+      return;
+    }
+    await _applyPendingRestore();
+  }
+
+  Future<void> _applyPendingRestore() async {
+    final target = _pendingRestore;
+    final scroll = _scrollPosition;
+    final serial = _navigationSerial;
+    if (_disposed ||
+        target == null ||
+        scroll == null ||
+        !_itemScrollController.isAttached ||
+        _applyingRestore == serial) {
+      return;
+    }
+    _applyingRestore = serial;
+    // Both operations are synchronous and precede the same layout/paint.
+    // Using the public ScrollPosition avoids unsupported negative alignment
+    // values and the extra corrective frame of animateScroll(duration: 1ms).
+    _itemScrollController.jumpTo(index: target.paragraphIndex!);
+    final leading = target.paragraphLeadingEdge ?? 0;
+    final offset = scroll.pixels - leading * scroll.viewportDimension;
+    // Corrupt finite edge values can overflow during conversion to pixels.
+    if (offset.isFinite) scroll.jumpTo(offset);
+    await WidgetsBinding.instance.endOfFrame;
+    if (_disposed || serial != _navigationSerial) return;
+    _pendingRestore = null;
+    _applyingRestore = null;
+    _restoreCover.value = false;
+    _updateCurrentPosition();
+  }
+
+  void _attachScrollPosition(ScrollPosition position) {
+    if (_disposed) return;
+    _scrollPosition = position;
+    if (_pendingRestore != null) {
+      // Metrics arrive after layout; the pending target stays authoritative
+      // until the restored viewport has committed its next frame.
+      unawaited(_applyPendingRestore());
+    }
+  }
+
+  void _detachViewport() {
+    _scrollPosition = null;
+    _navigationSerial++;
+    _viewportEpoch++;
+    _applyingRestore = null;
+  }
+
+  void _invalidateViewportLayout() {
+    _viewportEpoch++;
+    final serial = ++_navigationSerial;
+    _applyingRestore = null;
+    // A pre-attach restore is measured against the upcoming first viewport.
+    // Only discard geometry if an existing viewport actually changes layout.
+    if (_scrollPosition == null) return;
+    if (_pendingRestore != null) {
+      _pendingRestore =
+          TxtReadingPosition(paragraphIndex: _pendingRestore!.paragraphIndex!);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_disposed || serial != _navigationSerial) return;
+      final scroll = _scrollPosition;
+      if (scroll == null) return;
+      // Cancel an old driven scroll after the new layout, before it can keep
+      // applying a pixel destination derived from the previous geometry.
+      scroll.jumpTo(scroll.pixels);
+      if (_pendingRestore != null) {
+        // This callback owns completion of the accepted pending restore.
+        unawaited(_applyPendingRestore());
+      }
+    });
+  }
+
+  Future<void> _recalculatePagination(Size size, TextScaler textScaler) async {
     if (_paginationSample.isEmpty || _totalTextLength == 0) return;
 
     // Inter-paragraph spacing added by _buildList to every list item.
@@ -1406,6 +1475,9 @@ class TxtReaderEngine
 
   @override
   void dispose() {
+    _disposed = true;
+    _detachViewport();
+    _restoreCover.dispose();
     _itemPositionsListener.itemPositions.removeListener(_updateCurrentPosition);
     _configNotifier.dispose();
     _highlightRenderVersion.dispose();
@@ -1429,12 +1501,14 @@ class _PaginationLayoutKey {
   final double lineHeight;
   final EdgeInsets padding;
   final Orientation orientation;
+
   /// Scalar extracted from MediaQuery via `textScaler.scale(1.0)`.  Stored
   /// as a plain double to avoid relying on TextScaler object equality across
   /// widget rebuilds (different TextScaler instances for the same factor
   /// have reliable == only via their internal double comparison, but widget
   /// build cycles may produce instances whose equality is not stable).
   final double textScaleFactor;
+
   /// Inter-paragraph spacing used by the list renderer (`fontSize * 0.6`).
   final double paragraphBottomMargin;
 
@@ -1481,9 +1555,54 @@ class _ViewportAnchor {
     required this.index,
     required this.leadingEdge,
     required this.trailingEdge,
+    this.scrollOffset,
+    this.viewportEpoch,
   });
 
   final int index;
   final double leadingEdge;
   final double trailingEdge;
+  final double? scrollOffset;
+  final int? viewportEpoch;
+}
+
+// Lifecycle and public Scrollable context belong to the rendered viewport;
+// navigation targets and the authoritative reading position stay in the engine.
+class _TxtViewport extends StatefulWidget {
+  const _TxtViewport({super.key, required this.engine, required this.child});
+  final TxtReaderEngine engine;
+  final Widget child;
+
+  @override
+  State<_TxtViewport> createState() => _TxtViewportState();
+}
+
+class _TxtViewportState extends State<_TxtViewport> {
+  @override
+  void dispose() {
+    widget.engine._detachViewport();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      NotificationListener<ScrollMetricsNotification>(
+        onNotification: (notification) {
+          final context = notification.context;
+          if (notification.depth == 0) {
+            final scrollable = Scrollable.maybeOf(context);
+            if (scrollable != null) {
+              widget.engine._attachScrollPosition(scrollable.position);
+            }
+          }
+          return false;
+        },
+        child: ValueListenableBuilder<bool>(
+          valueListenable: widget.engine._restoreCover,
+          child: widget.child,
+          builder: (_, covered, child) => IgnorePointer(
+              ignoring: covered,
+              child: Opacity(opacity: covered ? 0 : 1, child: child)),
+        ),
+      );
 }

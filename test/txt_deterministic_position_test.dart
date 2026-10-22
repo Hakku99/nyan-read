@@ -8,6 +8,8 @@ import 'package:nyan_read/modules/reader/reader_engine/reader_engine.dart';
 import 'package:nyan_read/modules/reader/reader_engine/txt/txt_position.dart';
 import 'package:nyan_read/modules/reader/reader_engine/txt/txt_reader.dart';
 
+import '../tool/reader_baseline/baseline_support.dart' show perform;
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -46,7 +48,7 @@ void main() {
       // First session: seek to position
       final engine1 = TxtReaderEngine(book);
       addTearDown(engine1.dispose);
-      await engine1.initialize();
+      await tester.runAsync(engine1.initialize);
       engine1.setConfig(const ReaderConfig(
         backgroundColor: Colors.white,
         textColor: Colors.black,
@@ -55,7 +57,8 @@ void main() {
       ));
 
       await _pumpReader(tester, engine1, const Size(320, 640));
-      await engine1.goToPosition(TxtReadingPosition(paragraphIndex: 75));
+      await perform(tester,
+          () => engine1.goToPosition(TxtReadingPosition(paragraphIndex: 75)));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
 
@@ -65,7 +68,7 @@ void main() {
       // Second session: restore exact same position
       final engine2 = TxtReaderEngine(book);
       addTearDown(engine2.dispose);
-      await engine2.initialize();
+      await tester.runAsync(engine2.initialize);
       engine2.setConfig(const ReaderConfig(
         backgroundColor: Colors.white,
         textColor: Colors.black,
@@ -74,7 +77,8 @@ void main() {
       ));
 
       await _pumpReader(tester, engine2, const Size(320, 640));
-      await engine2.goToPosition(TxtReadingPosition.fromJson(serialized1));
+      await perform(tester,
+          () => engine2.goToPosition(TxtReadingPosition.fromJson(serialized1)));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
 
@@ -97,7 +101,7 @@ void main() {
       // First session: navigate and save
       final engine1 = TxtReaderEngine(book);
       addTearDown(engine1.dispose);
-      await engine1.initialize();
+      await tester.runAsync(engine1.initialize);
       engine1.setConfig(const ReaderConfig(
         backgroundColor: Colors.white,
         textColor: Colors.black,
@@ -107,17 +111,18 @@ void main() {
       ));
 
       await _pumpReader(tester, engine1, const Size(320, 640));
-      await engine1.goToPosition(TxtReadingPosition(paragraphIndex: 50));
+      await perform(tester,
+          () => engine1.goToPosition(TxtReadingPosition(paragraphIndex: 50)));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
 
       // Navigate next
-      await engine1.nextPage();
+      await perform(tester, () => engine1.nextPage());
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
 
       // Navigate back to previous
-      await engine1.previousPage();
+      await perform(tester, () => engine1.previousPage());
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
       final afterPrevious = engine1.getCurrentPosition() as TxtReadingPosition;
@@ -128,7 +133,7 @@ void main() {
       // Second session: restore the navigated position directly
       final engine2 = TxtReaderEngine(book);
       addTearDown(engine2.dispose);
-      await engine2.initialize();
+      await tester.runAsync(engine2.initialize);
       engine2.setConfig(const ReaderConfig(
         backgroundColor: Colors.white,
         textColor: Colors.black,
@@ -138,11 +143,13 @@ void main() {
       ));
 
       await _pumpReader(tester, engine2, const Size(320, 640));
-      await engine2.goToPosition(TxtReadingPosition.fromJson(serialized));
+      await perform(tester,
+          () => engine2.goToPosition(TxtReadingPosition.fromJson(serialized)));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
 
-      final restoredDirectly = engine2.getCurrentPosition() as TxtReadingPosition;
+      final restoredDirectly =
+          engine2.getCurrentPosition() as TxtReadingPosition;
 
       // Restored position should match the original navigated position
       expect(restoredDirectly.paragraphIndex, afterPrevious.paragraphIndex);
@@ -153,8 +160,7 @@ void main() {
       );
     });
 
-    testWidgets(
-        'multiple reopen cycles preserve position deterministically',
+    testWidgets('multiple reopen cycles preserve position deterministically',
         (tester) async {
       final targetParagraph = 100;
       String? lastSerialized;
@@ -162,7 +168,7 @@ void main() {
       for (int cycle = 0; cycle < 3; cycle++) {
         final engine = TxtReaderEngine(book);
         addTearDown(engine.dispose);
-        await engine.initialize();
+        await tester.runAsync(engine.initialize);
         engine.setConfig(const ReaderConfig(
           backgroundColor: Colors.white,
           textColor: Colors.black,
@@ -174,18 +180,22 @@ void main() {
 
         if (cycle == 0) {
           // First cycle: seek to target
-          await engine.goToPosition(TxtReadingPosition(
-            paragraphIndex: targetParagraph,
-          ));
+          await perform(
+              tester,
+              () => engine.goToPosition(TxtReadingPosition(
+                    paragraphIndex: targetParagraph,
+                  )));
         } else {
           // Subsequent cycles: restore from previous serialized position
-          await engine.goToPosition(
-            TxtReadingPosition.fromJson(lastSerialized!),
-          );
+          await perform(
+              tester,
+              () => engine.goToPosition(
+                    TxtReadingPosition.fromJson(lastSerialized!),
+                  ));
         }
 
         await tester.pump(const Duration(milliseconds: 400));
-      await tester.pump();
+        await tester.pump();
         final position = engine.getCurrentPosition() as TxtReadingPosition;
         final serialized = position.toJson();
 
@@ -206,7 +216,7 @@ void main() {
       // First session at small viewport
       final engine1 = TxtReaderEngine(book);
       addTearDown(engine1.dispose);
-      await engine1.initialize();
+      await tester.runAsync(engine1.initialize);
       engine1.setConfig(const ReaderConfig(
         backgroundColor: Colors.white,
         textColor: Colors.black,
@@ -215,7 +225,8 @@ void main() {
       ));
 
       await _pumpReader(tester, engine1, const Size(320, 640));
-      await engine1.goToPosition(TxtReadingPosition(paragraphIndex: 120));
+      await perform(tester,
+          () => engine1.goToPosition(TxtReadingPosition(paragraphIndex: 120)));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
 
@@ -225,7 +236,7 @@ void main() {
       // Second session: same viewport, restore position
       final engine2 = TxtReaderEngine(book);
       addTearDown(engine2.dispose);
-      await engine2.initialize();
+      await tester.runAsync(engine2.initialize);
       engine2.setConfig(const ReaderConfig(
         backgroundColor: Colors.white,
         textColor: Colors.black,
@@ -234,7 +245,8 @@ void main() {
       ));
 
       await _pumpReader(tester, engine2, const Size(320, 640));
-      await engine2.goToPosition(TxtReadingPosition.fromJson(serialized1));
+      await perform(tester,
+          () => engine2.goToPosition(TxtReadingPosition.fromJson(serialized1)));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
 
@@ -258,7 +270,7 @@ void main() {
       // First session with fontSize 16
       final engine1 = TxtReaderEngine(book);
       addTearDown(engine1.dispose);
-      await engine1.initialize();
+      await tester.runAsync(engine1.initialize);
       engine1.setConfig(const ReaderConfig(
         backgroundColor: Colors.white,
         textColor: Colors.black,
@@ -267,7 +279,8 @@ void main() {
       ));
 
       await _pumpReader(tester, engine1, const Size(320, 640));
-      await engine1.goToPosition(TxtReadingPosition(paragraphIndex: 65));
+      await perform(tester,
+          () => engine1.goToPosition(TxtReadingPosition(paragraphIndex: 65)));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
 
@@ -277,7 +290,7 @@ void main() {
       // Second session with fontSize 20 (different pagination)
       final engine2 = TxtReaderEngine(book);
       addTearDown(engine2.dispose);
-      await engine2.initialize();
+      await tester.runAsync(engine2.initialize);
       engine2.setConfig(const ReaderConfig(
         backgroundColor: Colors.white,
         textColor: Colors.black,
@@ -286,7 +299,8 @@ void main() {
       ));
 
       await _pumpReader(tester, engine2, const Size(320, 640));
-      await engine2.goToPosition(TxtReadingPosition.fromJson(serialized1));
+      await perform(tester,
+          () => engine2.goToPosition(TxtReadingPosition.fromJson(serialized1)));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
 
@@ -305,7 +319,7 @@ void main() {
       // Path 1: Direct seek
       final engine1 = TxtReaderEngine(book);
       addTearDown(engine1.dispose);
-      await engine1.initialize();
+      await tester.runAsync(engine1.initialize);
       engine1.setConfig(const ReaderConfig(
         backgroundColor: Colors.white,
         textColor: Colors.black,
@@ -315,7 +329,7 @@ void main() {
       ));
 
       await _pumpReader(tester, engine1, const Size(320, 640));
-      await engine1.goToPosition(targetPosition);
+      await perform(tester, () => engine1.goToPosition(targetPosition));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
 
@@ -325,7 +339,7 @@ void main() {
       // Path 2: Navigate there via next/previous
       final engine2 = TxtReaderEngine(book);
       addTearDown(engine2.dispose);
-      await engine2.initialize();
+      await tester.runAsync(engine2.initialize);
       engine2.setConfig(const ReaderConfig(
         backgroundColor: Colors.white,
         textColor: Colors.black,
@@ -335,24 +349,26 @@ void main() {
       ));
 
       await _pumpReader(tester, engine2, const Size(320, 640));
-      await engine2.goToPosition(TxtReadingPosition(paragraphIndex: 50));
+      await perform(tester,
+          () => engine2.goToPosition(TxtReadingPosition(paragraphIndex: 50)));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
 
       // Navigate forward several times
       for (int i = 0; i < 5; i++) {
-        await engine2.nextPage();
+        await perform(tester, () => engine2.nextPage());
         await tester.pump(const Duration(milliseconds: 100));
       }
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
 
       // Go back to the target
-      await engine2.goToPosition(targetPosition);
+      await perform(tester, () => engine2.goToPosition(targetPosition));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
 
-      final positionNavigated = engine2.getCurrentPosition() as TxtReadingPosition;
+      final positionNavigated =
+          engine2.getCurrentPosition() as TxtReadingPosition;
       final serializedNavigated = positionNavigated.toJson();
 
       // Both paths should arrive at the same deterministic position

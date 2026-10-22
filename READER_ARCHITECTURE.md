@@ -257,6 +257,35 @@ Core characteristics:
 - highlight rendering and anchor healing are supported
 - pagination is layout-sensitive and cached by layout key
 
+Navigation and restore (01A/02, 2026-10-19):
+- Single visible paragraphs at least one viewport high advance by 0.92 of the
+  actual content viewport, including across their trailing edge. Ordinary
+  paragraph selection retains its existing viewport-distance policy.
+- TXT uses the public Flutter `ScrollPosition` obtained from scroll metrics for
+  pixel motion. It does not pass negative alignment to `ItemScrollController`
+  or import dependency internals. Adjacent turns avoid the positioned list's
+  two-list `scrollTo` transition.
+- Restore synchronously establishes an index anchor and applies its saved
+  leading-edge pixel offset before the next paint. Pre-attachment targets stay
+  in the engine and are applied once metrics become available; the initial
+  uncorrected layout is hidden. `getCurrentPosition()` reports the accepted
+  target until that layout commits, protecting concurrent saves.
+- A mounted restore Future completes after the target frame; a pre-attachment
+  request returns once accepted so initialization can proceed to mount the view.
+- Navigation generations prevent superseded restore completion from replacing
+  a newer target. Layout changes cancel old driven motion; teardown detaches
+  the public scroll position. Same-layout backward history keeps pixel anchors.
+- `ReadingPosition` JSON, paragraph enumeration, database schema, progress and
+  page-count estimation are unchanged. Old index-only positions still work.
+  Manual-scroll history invalidation (04) and precise cross-layout character
+  anchors/mode switching (05) remain separate work.
+
+The shared `SmoothPageReader` waits for paint using `endOfFrame`, reserves a
+turn before asynchronous snapshot capture, and falls back to one direct turn
+when capture is unavailable. It no longer reads `debugNeedsPaint` in production.
+Capture/animation disposal and dispatch failures release the turn reservation.
+The existing 360 ms animation and midpoint content switch remain unchanged.
+
 Implements optional capabilities:
 - `TextReaderCapability`
 - `TextExtractionCapability`

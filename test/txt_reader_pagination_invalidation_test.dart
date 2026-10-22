@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../tool/reader_baseline/baseline_support.dart' show perform;
 import 'package:nyan_read/core/models/book.dart';
 import 'package:nyan_read/core/services/reader_preferences_service.dart';
 import 'package:nyan_read/modules/reader/reader_engine/reader_engine.dart';
@@ -149,7 +151,8 @@ void main() {
         'recalculates pagination when orientation changes and preserves position',
         (tester) async {
       await _pumpReader(tester, engine, const Size(320, 640));
-      await engine.goToPosition(TxtReadingPosition(paragraphIndex: 80));
+      await perform(tester,
+          () => engine.goToPosition(TxtReadingPosition(paragraphIndex: 80)));
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
       final portraitPageCount = engine.getPageCount();
@@ -172,7 +175,8 @@ void main() {
         lineHeight: 1.4,
         pageTurnMode: PageTurnMode.tap,
       ));
-      await engine.goToPosition(TxtReadingPosition(paragraphIndex: 64));
+      await perform(tester,
+          () => engine.goToPosition(TxtReadingPosition(paragraphIndex: 64)));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
 
@@ -187,7 +191,8 @@ void main() {
       final restored = engine.getCurrentPosition() as TxtReadingPosition;
       expect(restored.paragraphIndex, start.paragraphIndex);
       expect(
-        (restored.paragraphLeadingEdge ?? 0) - (start.paragraphLeadingEdge ?? 0),
+        (restored.paragraphLeadingEdge ?? 0) -
+            (start.paragraphLeadingEdge ?? 0),
         closeTo(0, 0.08),
       );
     });
@@ -196,8 +201,7 @@ void main() {
         // Windows CI: Isolate.run()-based pagination inside testWidgets can
         // deadlock waiting for a pump cycle that never advances — skip to avoid
         // a hang, same as the in-flight dedup test above.
-        skip: Platform.isWindows,
-        (tester) async {
+        skip: Platform.isWindows, (tester) async {
       engine.dispose();
       final oversizedFile = File('${tempDir.path}/oversized_anchor.txt');
       final oversizedContent = [
@@ -229,7 +233,8 @@ void main() {
       ));
 
       await _pumpReader(tester, engine, const Size(320, 640));
-      await engine.goToPosition(TxtReadingPosition(paragraphIndex: 1));
+      await perform(tester,
+          () => engine.goToPosition(TxtReadingPosition(paragraphIndex: 1)));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
       await engine.nextPage();
@@ -237,17 +242,19 @@ void main() {
       await tester.pump(const Duration(milliseconds: 80));
 
       final saved = engine.getCurrentPosition() as TxtReadingPosition;
-      await engine.goToPosition(TxtReadingPosition(paragraphIndex: 0));
+      await perform(tester,
+          () => engine.goToPosition(TxtReadingPosition(paragraphIndex: 0)));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
-      await engine.goToPosition(saved);
+      await perform(tester, () => engine.goToPosition(saved));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
 
       final restored = engine.getCurrentPosition() as TxtReadingPosition;
       expect(restored.paragraphIndex, saved.paragraphIndex);
       expect(
-        (restored.paragraphLeadingEdge ?? 0) - (saved.paragraphLeadingEdge ?? 0),
+        (restored.paragraphLeadingEdge ?? 0) -
+            (saved.paragraphLeadingEdge ?? 0),
         closeTo(0, 0.10),
       );
     });
@@ -255,8 +262,7 @@ void main() {
     testWidgets('updown previousPage moves near one viewport distance',
         // Windows: upDown page-turn operations await a layout Completer that
         // requires a pump cycle — same deadlock as the oversized-anchor test.
-        skip: Platform.isWindows,
-        (tester) async {
+        skip: Platform.isWindows, (tester) async {
       await _pumpReader(tester, engine, const Size(320, 640));
       engine.setConfig(const ReaderConfig(
         backgroundColor: Colors.white,
@@ -266,7 +272,8 @@ void main() {
         pageTurnMode: PageTurnMode.swipe,
       ));
 
-      await engine.goToPosition(TxtReadingPosition(paragraphIndex: 80));
+      await perform(tester,
+          () => engine.goToPosition(TxtReadingPosition(paragraphIndex: 80)));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 120));
       final start = engine.getCurrentPosition() as TxtReadingPosition;
@@ -281,8 +288,7 @@ void main() {
     });
 
     testWidgets('updown previous and next keep symmetric page distance',
-        skip: Platform.isWindows,
-        (tester) async {
+        skip: Platform.isWindows, (tester) async {
       await _pumpReader(tester, engine, const Size(320, 640));
       engine.setConfig(const ReaderConfig(
         backgroundColor: Colors.white,
@@ -292,7 +298,8 @@ void main() {
         pageTurnMode: PageTurnMode.swipe,
       ));
 
-      await engine.goToPosition(TxtReadingPosition(paragraphIndex: 80));
+      await perform(tester,
+          () => engine.goToPosition(TxtReadingPosition(paragraphIndex: 80)));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 120));
       final base = engine.getCurrentPosition() as TxtReadingPosition;
@@ -303,7 +310,8 @@ void main() {
       final afterNext = engine.getCurrentPosition() as TxtReadingPosition;
       final forwardDelta = afterNext.paragraphIndex - base.paragraphIndex;
 
-      await engine.goToPosition(TxtReadingPosition(paragraphIndex: 80));
+      await perform(tester,
+          () => engine.goToPosition(TxtReadingPosition(paragraphIndex: 80)));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 120));
       await engine.previousPage();

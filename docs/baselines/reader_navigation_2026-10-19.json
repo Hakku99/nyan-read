@@ -1,0 +1,330 @@
+{
+  "date": "2026-10-19",
+  "productionRevision": "c41869fab15a49b402a5530e8e37760289a0f122",
+  "productionModified": false,
+  "flutter": "3.38.9",
+  "dart": "3.10.8",
+  "apkSha256": "ECF76CFA57C102DBF7117EBF66FAFE7C33F4AC6AD3F3A0A5B26A28A7D7EC70ED",
+  "sample": {
+    "bytes": 9190763,
+    "paragraphs": 124894,
+    "longestParagraphIndex": 34455,
+    "longestParagraphCodeUnits": 4122,
+    "sha256": "908BC3552974C31F1ED3C8C25EE83E289773CA44F7C84C84AA1A16A4DC5844A9"
+  },
+  "realTxtTestFont": {
+    "family": "Noto Sans SC",
+    "asset": "assets/fonts/subset/NotoSansSC-Regular.ttf",
+    "sha256": "CD006AD695C8682E4F41F024D33D27509481C7065D9DB65358BEE3FB91B90F31"
+  },
+  "navigationTests": {
+    "synthetic": {
+      "passed": 7,
+      "failed": 21,
+      "skipped": 0
+    },
+    "external": {
+      "passed": 2,
+      "failed": 4,
+      "skipped": 0
+    }
+  },
+  "existingRegression": {
+    "passed": 13,
+    "failed": 0,
+    "skipped": 4
+  },
+  "checks": {
+    "newToolsAnalyze": "pass",
+    "repositoryAnalyze": "2 existing async-context infos",
+    "designTokens": "fails on existing production color literals"
+  },
+  "profile": {
+    "device": "Android 16 x86_64 emulator",
+    "renderer": "Impeller OpenGLES",
+    "finalRecordingRounds": 1,
+    "scope": "Actual engines and SmoothPageReader; standalone harness, no app controllers or database",
+    "events": [
+      {
+        "event": "environment",
+        "profile": true,
+        "physicalWidth": 1080.0,
+        "physicalHeight": 2400.0,
+        "dpr": 2.625,
+        "refreshHz": 60.000003814697266
+      },
+      {
+        "event": "scenario-error",
+        "format": "txt",
+        "mode": "tap",
+        "source": "synthetic",
+        "interaction": "page-turn",
+        "type": "LateError",
+        "stack": "#0      LateError._throwLocalNotInitialized (dart:_internal-patch/internal_patch.dart:214)\n#1      RenderObject.debugNeedsPaint (package:flutter/src/rendering/object.dart)\n#2      SmoothPageReaderState._captureCurrentFrame (package:nyan_read/modules/reader/widgets/smooth_page_reader.dart:140)\n#3      SmoothPageReaderState.playTurn (package:nyan_read/modules/reader/widgets/smooth_page_reader.dart:85)\n#4      _ProfileReaderState._scenario.turn (workspace:///tool/reader_baseline/profile_reader.dart:260)\n#5      _ProfileReaderState._scenario (workspace:///tool/reader_baseline/profile_reader.dart:268)"
+      },
+      {
+        "event": "scenario",
+        "format": "txt",
+        "mode": "swipe",
+        "source": "synthetic",
+        "interaction": "page-turn",
+        "warmupTurns": 5,
+        "measuredTurns": 30,
+        "frames": 600,
+        "budgetMs": 16.666665607028605,
+        "buildMs": {
+          "p50": 0.401,
+          "p95": 1.19,
+          "p99": 1.415,
+          "max": 2.409
+        },
+        "rasterMs": {
+          "p50": 2.236,
+          "p95": 4.039,
+          "p99": 5.889,
+          "max": 10.695
+        },
+        "overBudgetFrames": 0,
+        "completionMs": {
+          "p50": 331.561,
+          "p95": 333.403,
+          "p99": 334.239,
+          "max": 334.239
+        },
+        "rssBeforeBytes": 292712448,
+        "rssAfterBytes": 301850624
+      },
+      {
+        "event": "scenario",
+        "format": "txt",
+        "mode": "disabled",
+        "source": "synthetic",
+        "interaction": "relative-scroll",
+        "warmupTurns": 5,
+        "measuredTurns": 30,
+        "frames": 600,
+        "budgetMs": 16.666665607028605,
+        "buildMs": {
+          "p50": 0.442,
+          "p95": 1.261,
+          "p99": 1.39,
+          "max": 1.773
+        },
+        "rasterMs": {
+          "p50": 2.324,
+          "p95": 4.196,
+          "p99": 7.522,
+          "max": 14.175
+        },
+        "overBudgetFrames": 0,
+        "completionMs": {
+          "p50": 331.299,
+          "p95": 333.829,
+          "p99": 334.093,
+          "max": 334.093
+        },
+        "rssBeforeBytes": 311480320,
+        "rssAfterBytes": 305549312
+      },
+      {
+        "event": "scenario-error",
+        "format": "epub",
+        "mode": "tap",
+        "source": "synthetic",
+        "interaction": "page-turn",
+        "type": "LateError",
+        "stack": "#0      LateError._throwLocalNotInitialized (dart:_internal-patch/internal_patch.dart:214)\n#1      RenderObject.debugNeedsPaint (package:flutter/src/rendering/object.dart)\n#2      SmoothPageReaderState._captureCurrentFrame (package:nyan_read/modules/reader/widgets/smooth_page_reader.dart:140)\n#3      SmoothPageReaderState.playTurn (package:nyan_read/modules/reader/widgets/smooth_page_reader.dart:85)\n#4      _ProfileReaderState._scenario.turn (workspace:///tool/reader_baseline/profile_reader.dart:260)\n#5      _ProfileReaderState._scenario (workspace:///tool/reader_baseline/profile_reader.dart:268)"
+      },
+      {
+        "event": "scenario",
+        "format": "epub",
+        "mode": "swipe",
+        "source": "synthetic",
+        "interaction": "page-turn",
+        "warmupTurns": 5,
+        "measuredTurns": 30,
+        "frames": 510,
+        "budgetMs": 16.666665607028605,
+        "buildMs": {
+          "p50": 0.34,
+          "p95": 1.26,
+          "p99": 1.434,
+          "max": 1.799
+        },
+        "rasterMs": {
+          "p50": 2.649,
+          "p95": 5.917,
+          "p99": 8.198,
+          "max": 12.107
+        },
+        "overBudgetFrames": 0,
+        "completionMs": {
+          "p50": 280.548,
+          "p95": 283.394,
+          "p99": 283.698,
+          "max": 283.698
+        },
+        "rssBeforeBytes": 312373248,
+        "rssAfterBytes": 312963072
+      },
+      {
+        "event": "scenario",
+        "format": "epub",
+        "mode": "disabled",
+        "source": "synthetic",
+        "interaction": "relative-scroll",
+        "warmupTurns": 5,
+        "measuredTurns": 30,
+        "frames": 600,
+        "budgetMs": 16.666665607028605,
+        "buildMs": {
+          "p50": 0.362,
+          "p95": 1.127,
+          "p99": 1.281,
+          "max": 1.668
+        },
+        "rasterMs": {
+          "p50": 4.148,
+          "p95": 11.137,
+          "p99": 16.903,
+          "max": 20.094
+        },
+        "overBudgetFrames": 11,
+        "completionMs": {
+          "p50": 331.585,
+          "p95": 333.433,
+          "p99": 333.751,
+          "max": 333.751
+        },
+        "rssBeforeBytes": 304840704,
+        "rssAfterBytes": 308400128
+      },
+      {
+        "event": "scenario-error",
+        "format": "pdf",
+        "mode": "tap",
+        "source": "synthetic",
+        "interaction": "page-turn",
+        "type": "LateError",
+        "stack": "#0      LateError._throwLocalNotInitialized (dart:_internal-patch/internal_patch.dart:214)\n#1      RenderObject.debugNeedsPaint (package:flutter/src/rendering/object.dart)\n#2      SmoothPageReaderState._captureCurrentFrame (package:nyan_read/modules/reader/widgets/smooth_page_reader.dart:140)\n#3      SmoothPageReaderState.playTurn (package:nyan_read/modules/reader/widgets/smooth_page_reader.dart:85)\n#4      _ProfileReaderState._scenario.turn (workspace:///tool/reader_baseline/profile_reader.dart:260)\n#5      _ProfileReaderState._scenario (workspace:///tool/reader_baseline/profile_reader.dart:268)"
+      },
+      {
+        "event": "scenario",
+        "format": "pdf",
+        "mode": "swipe",
+        "source": "synthetic",
+        "interaction": "page-turn",
+        "warmupTurns": 5,
+        "measuredTurns": 30,
+        "frames": 600,
+        "budgetMs": 16.666665607028605,
+        "buildMs": {
+          "p50": 0.235,
+          "p95": 0.468,
+          "p99": 0.594,
+          "max": 4.916
+        },
+        "rasterMs": {
+          "p50": 2.872,
+          "p95": 10.618,
+          "p99": 17.622,
+          "max": 19.782
+        },
+        "overBudgetFrames": 14,
+        "completionMs": {
+          "p50": 331.186,
+          "p95": 332.649,
+          "p99": 332.807,
+          "max": 332.807
+        },
+        "rssBeforeBytes": 310276096,
+        "rssAfterBytes": 297332736
+      },
+      {
+        "event": "scenario-error",
+        "format": "txt",
+        "mode": "tap",
+        "source": "external",
+        "interaction": "page-turn",
+        "type": "LateError",
+        "stack": "#0      LateError._throwLocalNotInitialized (dart:_internal-patch/internal_patch.dart:214)\n#1      RenderObject.debugNeedsPaint (package:flutter/src/rendering/object.dart)\n#2      SmoothPageReaderState._captureCurrentFrame (package:nyan_read/modules/reader/widgets/smooth_page_reader.dart:140)\n#3      SmoothPageReaderState.playTurn (package:nyan_read/modules/reader/widgets/smooth_page_reader.dart:85)\n#4      _ProfileReaderState._scenario.turn (workspace:///tool/reader_baseline/profile_reader.dart:260)\n#5      _ProfileReaderState._scenario (workspace:///tool/reader_baseline/profile_reader.dart:268)"
+      },
+      {
+        "event": "scenario",
+        "format": "txt",
+        "mode": "swipe",
+        "source": "external",
+        "interaction": "page-turn",
+        "warmupTurns": 5,
+        "measuredTurns": 30,
+        "frames": 601,
+        "budgetMs": 16.666665607028605,
+        "buildMs": {
+          "p50": 1.037,
+          "p95": 1.727,
+          "p99": 2.609,
+          "max": 6.431
+        },
+        "rasterMs": {
+          "p50": 2.131,
+          "p95": 13.658,
+          "p99": 17.465,
+          "max": 19.621
+        },
+        "overBudgetFrames": 11,
+        "completionMs": {
+          "p50": 331.692,
+          "p95": 333.611,
+          "p99": 333.618,
+          "max": 333.618
+        },
+        "rssBeforeBytes": 215003136,
+        "rssAfterBytes": 226947072
+      },
+      {
+        "event": "scenario",
+        "format": "txt",
+        "mode": "disabled",
+        "source": "external",
+        "interaction": "relative-scroll",
+        "warmupTurns": 5,
+        "measuredTurns": 30,
+        "frames": 600,
+        "budgetMs": 16.666665607028605,
+        "buildMs": {
+          "p50": 1.004,
+          "p95": 1.506,
+          "p99": 1.927,
+          "max": 4.773
+        },
+        "rasterMs": {
+          "p50": 2.034,
+          "p95": 4.601,
+          "p99": 7.362,
+          "max": 12.247
+        },
+        "overBudgetFrames": 0,
+        "completionMs": {
+          "p50": 331.427,
+          "p95": 332.98,
+          "p99": 333.06,
+          "max": 333.06
+        },
+        "rssBeforeBytes": 210644992,
+        "rssAfterBytes": 222834688
+      },
+      {
+        "event": "complete",
+        "failedScenarios": 4
+      }
+    ]
+  },
+  "limitations": [
+    "Not a physical-device or full-app certification.",
+    "No release APK run; release impact inferred from assert-only Flutter getter.",
+    "Relative scroll drives ScrollPosition, not real gestures.",
+    "Simple synthetic PDF, not a scanned-document workload.",
+    "RSS snapshots do not establish peak usage or memory leaks.",
+    "Exploratory recordings excluded from final statistics."
+  ]
+}
