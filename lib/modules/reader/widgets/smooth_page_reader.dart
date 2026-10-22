@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 
 class SmoothPageReader extends StatefulWidget {
   const SmoothPageReader({
@@ -52,6 +53,7 @@ class SmoothPageReaderState extends State<SmoothPageReader>
   void dispose() {
     _controller.dispose();
     _outgoingImage?.dispose();
+    _outgoingImage = null;
     super.dispose();
   }
 
@@ -80,50 +82,54 @@ class SmoothPageReaderState extends State<SmoothPageReader>
     required bool forward,
     required Future<void> Function() dispatchTurn,
   }) async {
-    if (_isAnimating) return;
-
-    final captured = await _captureCurrentFrame();
-    if (!mounted) return;
-    _outgoingImage?.dispose();
-    _outgoingImage = captured;
-    _forward = forward;
+    if (!mounted || _isAnimating) return;
+    // Reserve the turn before capture yields, so concurrent inputs cannot
+    // capture and dispatch the same outgoing page twice.
     _isAnimating = true;
-    setState(() {});
-
-    var didDispatch = false;
-    final dispatchDone = Completer<void>();
-
-    Future<void> runDispatchOnce() async {
-      if (didDispatch) return;
-      didDispatch = true;
-      try {
-        await dispatchTurn();
-      } finally {
-        if (!dispatchDone.isCompleted) {
-          dispatchDone.complete();
-        }
-      }
+    Future<void>? dispatch;
+    Object? dispatchError;
+    StackTrace? dispatchStack;
+    void runDispatchOnce() {
+      if (dispatch != null || !mounted) return;
+      // Observe failures immediately; rethrow to the caller after animation.
+      dispatch = Future<void>.sync(dispatchTurn).then<void>((_) {},
+          onError: (Object error, StackTrace stack) {
+        dispatchError = error;
+        dispatchStack = stack;
+      });
     }
 
     void progressListener() {
-      if (_controller.value >= 0.5 && !didDispatch) {
-        unawaited(runDispatchOnce());
-      }
+      if (_controller.value >= 0.5) runDispatchOnce();
     }
 
-    _controller.addListener(progressListener);
+    var listening = false;
     try {
-      if (!mounted) return;
-      await _controller.forward(from: 0);
-      if (!didDispatch) {
-        await runDispatchOnce();
+      final captured = await _captureCurrentFrame();
+      if (!mounted) {
+        captured?.dispose();
+        return;
       }
-      await dispatchDone.future.timeout(
-        const Duration(seconds: 2),
-        onTimeout: () {},
-      );
+      _outgoingImage = captured;
+      _forward = forward;
+      if (captured != null) {
+        setState(() {});
+        _controller.addListener(progressListener);
+        listening = true;
+        try {
+          await _controller.forward(from: 0).orCancel;
+        } on TickerCanceled {
+          // Disposal cancels an in-flight animation without dispatching a new
+          // navigation against a reader that is no longer mounted.
+        }
+      }
+      runDispatchOnce();
+      if (dispatch != null) await dispatch;
+      if (dispatchError != null) {
+        Error.throwWithStackTrace(dispatchError!, dispatchStack!);
+      }
     } finally {
-      _controller.removeListener(progressListener);
+      if (listening) _controller.removeListener(progressListener);
       _isAnimating = false;
       _outgoingImage?.dispose();
       _outgoingImage = null;
@@ -134,16 +140,28 @@ class SmoothPageReaderState extends State<SmoothPageReader>
   }
 
   Future<ui.Image?> _captureCurrentFrame() async {
-    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
-    final boundary =
-        _captureKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-    if (boundary == null || boundary.debugNeedsPaint) {
-      await Future<void>.delayed(Duration.zero);
+    try {
+      // Wait for paint in all build modes. debugNeedsPaint is assert-only and
+      // throws in profile/release; a zero-delay timer does not await paint.
+      await SchedulerBinding.instance.endOfFrame;
+      if (!mounted) return null;
+      final boundary = _captureKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null ||
+          !boundary.attached ||
+          !boundary.hasSize ||
+          boundary.size.isEmpty) {
+        return null;
+      }
+      return await boundary.toImage(
+          pixelRatio: MediaQuery.devicePixelRatioOf(context));
+    } catch (error) {
+      // The visible fallback is an immediate page turn, preserving the input
+      // even when an optional snapshot cannot be created.
+      debugPrint(
+          'Page snapshot unavailable (${error.runtimeType}); turning directly.');
+      return null;
     }
-    final readyBoundary =
-        _captureKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-    if (readyBoundary == null) return null;
-    return readyBoundary.toImage(pixelRatio: pixelRatio);
   }
 
   @override
