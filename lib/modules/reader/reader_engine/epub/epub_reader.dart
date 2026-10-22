@@ -29,7 +29,8 @@ import 'epub_parse_helpers.dart';
 /// plain styled text blocks. Publisher CSS is deliberately dropped — the
 /// paper-like house typography overrides book styling by design.
 ///
-/// Position model: absolute paragraph index only. Legacy positions were
+/// Position model: absolute paragraph index plus same-layout viewport edges.
+/// Legacy positions were
 /// persisted as CFI + paragraphIndex pairs, so restoring by paragraphIndex
 /// covers every existing book; new positions no longer carry a CFI.
 ///
@@ -55,6 +56,18 @@ class EpubReaderEngine
   final Book book;
 
   final ItemScrollController _itemScrollController = ItemScrollController();
+  ScrollPosition? _scrollPosition;
+  ReadingPosition? _pendingRestore;
+  final ValueNotifier<bool> _restoreCover = ValueNotifier(false);
+  int _navigationSerial = 0;
+  int? _applyingRestore;
+  bool _disposed = false;
+  Size? _viewportSize;
+  TextScaler? _textScaler;
+  final List<_EpubTurn> _turns = [];
+  // Retain bounded roundtrip anchors, including a shortened turn at EOF.
+  static const _historyLimit = 48;
+  static const _viewportStep = .92;
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
 
@@ -84,9 +97,8 @@ class EpubReaderEngine
   /// re-copying 100+ MB per image was the alternative.
   Future<PdfCompatibleSource>? _readableSource;
 
-  Future<PdfCompatibleSource> _resolveReadableSource() =>
-      _readableSource ??=
-          BookSourceAccess.prepareReadableFile(book, extension: '.epub');
+  Future<PdfCompatibleSource> _resolveReadableSource() => _readableSource ??=
+      BookSourceAccess.prepareReadableFile(book, extension: '.epub');
 
   final ValueNotifier<ReaderConfig> _configNotifier =
       ValueNotifier<ReaderConfig>(const ReaderConfig(
@@ -145,8 +157,9 @@ class EpubReaderEngine
         },
         growable: false,
       );
-      _initialIndex = _readInitialParagraphIndexFromBook();
       _isInit = true;
+      final initial = _readInitialPositionFromBook();
+      if (initial != null) await goToPosition(initial);
     } catch (e) {
       throw FormatException('Failed to open EPUB: $e');
     }
@@ -169,6 +182,12 @@ class EpubReaderEngine
 
   @override
   void setConfig(ReaderConfig config) {
+    if (_config.fontSize != config.fontSize ||
+        _config.lineHeight != config.lineHeight ||
+        _config.useSerif != config.useSerif ||
+        _config.pageTurnMode != config.pageTurnMode) {
+      _invalidateLayout();
+    }
     _configNotifier.value = config;
   }
 
@@ -181,27 +200,39 @@ class EpubReaderEngine
       );
     }
 
-    return ValueListenableBuilder<ReaderConfig>(
-      valueListenable: _configNotifier,
-      builder: (context, config, _) {
-        return ValueListenableBuilder<int>(
-          valueListenable: _highlightRenderVersion,
-          builder: (context, _, __) {
-            return Container(
-              color: config.backgroundColor,
-              child: ScrollablePositionedList.builder(
-                itemCount: _paragraphCount,
-                initialScrollIndex: _initialIndex.clamp(
-                    0, _paragraphCount > 0 ? _paragraphCount - 1 : 0),
-                itemScrollController: _itemScrollController,
-                itemPositionsListener: _itemPositionsListener,
-                itemBuilder: (context, index) =>
-                    _buildParagraph(context, index, config),
-              ),
+    return _EpubViewport(
+      key: ObjectKey(this),
+      engine: this,
+      child: LayoutBuilder(builder: (context, constraints) {
+        final scaler = MediaQuery.textScalerOf(context);
+        if (_viewportSize != constraints.biggest || _textScaler != scaler) {
+          _viewportSize = constraints.biggest;
+          _textScaler = scaler;
+          _invalidateLayout();
+        }
+        return ValueListenableBuilder<ReaderConfig>(
+          valueListenable: _configNotifier,
+          builder: (context, config, _) {
+            return ValueListenableBuilder<int>(
+              valueListenable: _highlightRenderVersion,
+              builder: (context, _, __) {
+                return Container(
+                  color: config.backgroundColor,
+                  child: ScrollablePositionedList.builder(
+                    itemCount: _paragraphCount,
+                    initialScrollIndex: _initialIndex.clamp(
+                        0, _paragraphCount > 0 ? _paragraphCount - 1 : 0),
+                    itemScrollController: _itemScrollController,
+                    itemPositionsListener: _itemPositionsListener,
+                    itemBuilder: (context, index) =>
+                        _buildParagraph(context, index, config),
+                  ),
+                );
+              },
             );
           },
         );
-      },
+      }),
     );
   }
 
@@ -215,10 +246,11 @@ class EpubReaderEngine
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapUp: (details) => _onContentTap?.call(details.globalPosition),
-          child: _EpubImageBlock(
+          child: SizeChangedLayoutNotifier(
+              child: _EpubImageBlock(
             loadBytes: () => _imageBytesFor(_paragraphText(index)),
             config: config,
-          ),
+          )),
         ),
       );
     }
@@ -247,9 +279,8 @@ class EpubReaderEngine
             : NyanTypography.uiFontFamily,
       ),
       backgroundColor: config.backgroundColor,
-      padding: isHeading
-          ? padding.copyWith(top: config.fontSize * 0.8)
-          : padding,
+      padding:
+          isHeading ? padding.copyWith(top: config.fontSize * 0.8) : padding,
       onTextSelected: (paragraphIdx, start, end, selectedText, colorCode) {
         _onTextHighlighted?.call(
             paragraphIdx, start, end, selectedText, colorCode);
@@ -266,10 +297,12 @@ class EpubReaderEngine
         // inflates only the requested entry, so peak memory is the decoded
         // image — the book is never loaded into RAM to serve a figure.
         final source = await _resolveReadableSource();
-        return await Isolate.run(
-            () => extractEpubImageBytesFromFile(source.path, rawSrc));
+        // A top-level callback sends only strings. An instance closure can
+        // capture this engine's live ScrollPosition/Futures, which isolates
+        // cannot receive once the reader is mounted.
+        return await compute(_extractEpubImage, (source.path, rawSrc));
       } catch (e) {
-        debugPrint('[EpubReaderEngine] image load failed for $rawSrc: $e');
+        debugPrint('[EpubReaderEngine] Image load failed (${e.runtimeType}).');
         return null;
       }
     });
@@ -311,8 +344,7 @@ class EpubReaderEngine
   @override
   Future<String?> getSnippet() async {
     final pos = getCurrentPosition();
-    return getTextAtPosition(
-        pos ?? const ReadingPosition(paragraphIndex: 0));
+    return getTextAtPosition(pos ?? const ReadingPosition(paragraphIndex: 0));
   }
 
   @override
@@ -351,38 +383,16 @@ class EpubReaderEngine
 
   int _viewportAnchorIndex() {
     if (_paragraphCount == 0) return 0;
+    if (_pendingRestore != null) return _pendingRestore!.paragraphIndex!;
     final anchor = _currentViewportAnchor();
     return (anchor?.index ?? _initialIndex).clamp(0, _paragraphCount - 1);
-  }
-
-  /// Mirrors TxtReaderEngine._alignmentFromEdges: converts a captured
-  /// leading/trailing edge pair back into a ScrollablePositionedList
-  /// alignment so restore lands mid-paragraph exactly where the reader
-  /// left off, not snapped to the paragraph top.
-  double? _alignmentFromEdges({
-    required double leadingEdge,
-    required double trailingEdge,
-  }) {
-    final ratio = trailingEdge - leadingEdge;
-    final denominator = 1.0 - ratio;
-    if (denominator.abs() < 0.0001) {
-      return null;
-    }
-    return (leadingEdge / denominator).clamp(0.0, 1.0);
-  }
-
-  int _visibleParagraphCount() {
-    final positions = _itemPositionsListener.itemPositions.value;
-    var visible = 0;
-    for (final p in positions) {
-      if (p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1.0) visible++;
-    }
-    return visible;
   }
 
   @override
   ReadingPosition? getCurrentPosition() {
     if (!_isInit || _paragraphCount == 0) return null;
+    // Saves during restoration must never observe the temporary index anchor.
+    if (_pendingRestore != null) return _pendingRestore;
     final anchor = _currentViewportAnchor();
     // Paragraph-index anchoring (no CFIs): legacy rows always persisted
     // paragraphIndex alongside their CFI, so both directions restore through
@@ -412,34 +422,49 @@ class EpubReaderEngine
   @override
   Future<void> goToPosition(ReadingPosition position) async {
     final index = position.paragraphIndex;
-    if (index == null) {
+    if (index == null || _disposed || _paragraphCount == 0) {
       // CFI-only positions cannot exist in practice (legacy always dual-
       // wrote paragraphIndex); if one shows up, the caller's progress
       // fallback takes over.
       return;
     }
+    _turns.clear();
+    final clamped = index.clamp(0, _paragraphCount - 1);
     final leading = position.paragraphLeadingEdge;
     final trailing = position.paragraphTrailingEdge;
-    final alignment = (leading != null && trailing != null)
-        ? _alignmentFromEdges(leadingEdge: leading, trailingEdge: trailing)
-        : null;
-    await _jumpToIndex(index, alignment: alignment ?? 0.0);
+    final validEdges = clamped == index &&
+        leading != null &&
+        trailing != null &&
+        leading.isFinite &&
+        trailing.isFinite &&
+        (trailing - leading).isFinite &&
+        leading < 1 &&
+        trailing > 0 &&
+        trailing > leading;
+    _navigationSerial++;
+    _initialIndex = clamped;
+    _pendingRestore = ReadingPosition(
+        paragraphIndex: clamped,
+        paragraphLeadingEdge: validEdges ? leading : null,
+        paragraphTrailingEdge: validEdges ? trailing : null,
+        enumVersion: kEpubEnumerationVersion);
+    if (_scrollPosition == null || !_itemScrollController.isAttached) {
+      _restoreCover.value = true;
+      return;
+    }
+    await _applyPendingRestore();
   }
 
   @override
   Future<void> seekToProgress(double progress) async {
-    if (_paragraphCount <= 0) return;
+    if (_disposed || _paragraphCount <= 0 || !progress.isFinite) return;
     final clamped = progress.clamp(0.0, 1.0);
     final targetIndex = (clamped * (_paragraphCount - 1)).round();
-    if (_config.pageTurnMode == PageTurnMode.tap) {
-      await _jumpToIndex(targetIndex);
-    } else {
-      await _scrollToIndex(targetIndex);
-    }
-    _lastKnownProgress = clamped;
+    await goToPosition(ReadingPosition(paragraphIndex: targetIndex));
   }
 
-  Future<void> jumpToChapterStart(int startIndex) => _jumpToIndex(startIndex);
+  Future<void> jumpToChapterStart(int startIndex) =>
+      goToPosition(ReadingPosition(paragraphIndex: startIndex));
 
   @override
   Future<void> goToChapter(ChapterLocator locator) async {
@@ -460,64 +485,147 @@ class EpubReaderEngine
   @override
   Future<void> previousPage() => _stepByViewport(forward: false);
 
-  /// Steps by the actually-visible paragraph count — the self-hosted list
-  /// exposes its ItemPositionsListener, so no single-item extrapolation is
-  /// needed anymore (the legacy engine could only estimate).
+  /// Pixel motion retains unread tails regardless of paragraph height.
   Future<void> _stepByViewport({required bool forward}) async {
-    if (_paragraphCount == 0) return;
-    final maxIndex = _paragraphCount - 1;
-    final current = _viewportAnchorIndex();
-    final step = _visibleParagraphCount().clamp(1, 200);
+    final scroll = _scrollPosition;
+    if (_disposed ||
+        _pendingRestore != null ||
+        scroll == null ||
+        !scroll.hasContentDimensions ||
+        _paragraphCount == 0) {
+      return;
+    }
+    final before = getCurrentPosition();
+    if (before == null) return;
+    final start = scroll.pixels;
+    final last = _turns.isEmpty ? null : _turns.last;
+    if (last != null && !last.endsAt(start, before, scroll.viewportDimension)) {
+      _turns.clear();
+    }
+    final reverse = _turns.isNotEmpty && _turns.last.forward != forward;
+    final requested = reverse
+        ? _turns.last.start
+        : start +
+            (forward ? _viewportStep : -_viewportStep) *
+                scroll.viewportDimension;
     final target =
-        (forward ? current + step : current - step).clamp(0, maxIndex);
-    await seekToProgress(maxIndex == 0 ? 0.0 : target / maxIndex);
-  }
-
-  Future<void> _jumpToIndex(int index, {double alignment = 0.0}) async {
-    if (_paragraphCount == 0) return;
-    final clamped = index.clamp(0, _paragraphCount - 1);
-    _initialIndex = clamped;
-    await _waitForViewAttached();
-    if (_itemScrollController.isAttached) {
-      _itemScrollController.jumpTo(index: clamped, alignment: alignment);
-      // One frame for the positions listener to observe the jump before
-      // callers read getCurrentPosition (mirrors the legacy 60ms settle).
-      await Future<void>.delayed(const Duration(milliseconds: 60));
+        requested.clamp(scroll.minScrollExtent, scroll.maxScrollExtent);
+    if ((target - start).abs() < .01) return;
+    final serial = ++_navigationSerial;
+    if (_config.pageTurnMode == PageTurnMode.tap) {
+      scroll.jumpTo(target);
+    } else {
+      await scroll.animateTo(target,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic);
+    }
+    await WidgetsBinding.instance.endOfFrame;
+    if (_disposed ||
+        serial != _navigationSerial ||
+        !identical(scroll, _scrollPosition)) {
+      return;
+    }
+    // Interrupted motion must not create a valid-looking historical turn.
+    if ((scroll.pixels - target).abs() > 2) {
+      _turns.clear();
+      return;
+    }
+    if (reverse) {
+      _turns.removeLast();
+    } else {
+      _turns.add(_EpubTurn(
+          start: start,
+          end: scroll.pixels,
+          position: getCurrentPosition()!,
+          forward: forward));
+      if (_turns.length > _historyLimit) _turns.removeAt(0);
     }
   }
 
-  Future<void> _scrollToIndex(int index) async {
-    if (_paragraphCount == 0) return;
-    final clamped = index.clamp(0, _paragraphCount - 1);
-    _initialIndex = clamped;
-    await _waitForViewAttached();
-    if (_itemScrollController.isAttached) {
-      await _itemScrollController.scrollTo(
-        index: clamped,
-        alignment: 0,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
-      );
+  Future<void> _applyPendingRestore() async {
+    final target = _pendingRestore;
+    final scroll = _scrollPosition;
+    final serial = _navigationSerial;
+    if (_disposed ||
+        target == null ||
+        scroll == null ||
+        !_itemScrollController.isAttached ||
+        _applyingRestore == serial) {
+      return;
+    }
+    _applyingRestore = serial;
+    // Both public jumps precede one paint; negative item alignment and a
+    // second corrective animation are neither required nor supported.
+    _itemScrollController.jumpTo(index: target.paragraphIndex!);
+    final offset = scroll.pixels -
+        (target.paragraphLeadingEdge ?? 0) * scroll.viewportDimension;
+    if (offset.isFinite) scroll.jumpTo(offset);
+    await WidgetsBinding.instance.endOfFrame;
+    if (_disposed || serial != _navigationSerial) return;
+    _pendingRestore = null;
+    _applyingRestore = null;
+    _restoreCover.value = false;
+  }
+
+  void _attachScrollPosition(ScrollPosition position) {
+    if (_disposed) return;
+    _scrollPosition = position;
+    if (_pendingRestore != null) {
+      // Metrics own completion of a restore accepted before mounting.
+      unawaited(_applyPendingRestore());
     }
   }
 
-  /// The list attaches on its first frame; restore paths can race it.
-  Future<void> _waitForViewAttached() async {
-    if (_itemScrollController.isAttached) return;
-    for (var waited = 0; waited < 5000; waited += 50) {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      if (_itemScrollController.isAttached) return;
-    }
+  void _interruptGesture() {
+    _navigationSerial++;
+    _turns.clear();
+    _pendingRestore = null;
+    _applyingRestore = null;
+    _restoreCover.value = false;
   }
 
-  int _readInitialParagraphIndexFromBook() {
-    if (book.lastPositionType != 'epub') return 0;
+  void _detachViewport() {
+    _navigationSerial++;
+    _turns.clear();
+    _scrollPosition = null;
+    _applyingRestore = null;
+  }
+
+  void _invalidateLayout() {
+    _turns.clear();
+    final serial = ++_navigationSerial;
+    _applyingRestore = null;
+    if (_scrollPosition == null) return;
+    if (_pendingRestore != null) {
+      _pendingRestore = ReadingPosition(
+          paragraphIndex: _pendingRestore!.paragraphIndex,
+          enumVersion: kEpubEnumerationVersion);
+    }
+    // Layout notifications can arrive during build/layout, so cancel motion
+    // after layout rather than mutating a ScrollPosition from build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_disposed || serial != _navigationSerial) return;
+      final scroll = _scrollPosition;
+      if (scroll == null) return;
+      scroll.jumpTo(scroll.pixels);
+      if (_pendingRestore != null) {
+        // This frame owns retrying the accepted target after a layout change.
+        unawaited(_applyPendingRestore());
+      }
+    });
+  }
+
+  ReadingPosition? _readInitialPositionFromBook() {
+    if (book.lastPositionType != 'epub') return null;
     final payload = book.lastPositionPayload;
-    if (payload == null || payload.isEmpty) return 0;
+    if (payload == null || payload.isEmpty) return null;
     try {
-      return ReadingPosition.fromJson('epub', payload).paragraphIndex ?? 0;
-    } catch (_) {
-      return 0;
+      return ReadingPosition.fromJson('epub', payload);
+    } catch (error) {
+      // The visible fallback is the book start; never log a user's payload.
+      debugPrint(
+          'EPUB saved position unavailable (${error.runtimeType}); opening at start.');
+      return null;
     }
   }
 
@@ -526,6 +634,10 @@ class EpubReaderEngine
 
   @override
   void dispose() {
+    _disposed = true;
+    _detachViewport();
+    _pendingRestore = null;
+    _restoreCover.dispose();
     _configNotifier.dispose();
     _highlightRenderVersion.dispose();
     // Reclaim the session temp copy for SAF sources. Fire-and-forget: a
@@ -541,6 +653,91 @@ class EpubReaderEngine
       }).catchError((_) {}));
     }
   }
+}
+
+Uint8List? _extractEpubImage((String, String) source) =>
+    extractEpubImageBytesFromFile(source.$1, source.$2);
+
+class _EpubTurn {
+  const _EpubTurn(
+      {required this.start,
+      required this.end,
+      required this.position,
+      required this.forward});
+  final double start;
+  final double end;
+  final ReadingPosition position;
+  final bool forward;
+
+  bool endsAt(double pixels, ReadingPosition current, double height) =>
+      (pixels - end).abs() <= 2 &&
+      position.paragraphIndex == current.paragraphIndex &&
+      ((position.paragraphLeadingEdge ?? 0) -
+                      (current.paragraphLeadingEdge ?? 0))
+                  .abs() *
+              height <=
+          2 &&
+      ((position.paragraphTrailingEdge ?? 0) -
+                      (current.paragraphTrailingEdge ?? 0))
+                  .abs() *
+              height <=
+          2;
+}
+
+// The viewport owns attachment only. Positions and navigation remain in the
+// engine, including targets accepted before this widget exists.
+class _EpubViewport extends StatefulWidget {
+  const _EpubViewport({super.key, required this.engine, required this.child});
+  final EpubReaderEngine engine;
+  final Widget child;
+
+  @override
+  State<_EpubViewport> createState() => _EpubViewportState();
+}
+
+class _EpubViewportState extends State<_EpubViewport> {
+  @override
+  void dispose() {
+    widget.engine._detachViewport();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      NotificationListener<SizeChangedLayoutNotification>(
+        onNotification: (_) {
+          widget.engine._invalidateLayout();
+          return false;
+        },
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification.depth == 0 &&
+                notification is ScrollStartNotification &&
+                notification.dragDetails != null) {
+              widget.engine._interruptGesture();
+            }
+            return false;
+          },
+          child: NotificationListener<ScrollMetricsNotification>(
+            onNotification: (notification) {
+              if (notification.depth == 0) {
+                final scrollable = Scrollable.maybeOf(notification.context);
+                if (scrollable != null) {
+                  widget.engine._attachScrollPosition(scrollable.position);
+                }
+              }
+              return false;
+            },
+            child: ValueListenableBuilder<bool>(
+              valueListenable: widget.engine._restoreCover,
+              child: widget.child,
+              builder: (_, covered, child) => IgnorePointer(
+                  ignoring: covered,
+                  child: Opacity(opacity: covered ? 0 : 1, child: child)),
+            ),
+          ),
+        ),
+      );
 }
 
 /// Async image block: shows a neutral placeholder while the zip extraction
@@ -580,8 +777,7 @@ class _EpubImageBlockState extends State<_EpubImageBlock> {
           height: 120,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            border: Border.all(
-                color: config.textColor.withValues(alpha: 0.25)),
+            border: Border.all(color: config.textColor.withValues(alpha: 0.25)),
             borderRadius: BorderRadius.circular(12),
           ),
           child: snapshot.connectionState != ConnectionState.done

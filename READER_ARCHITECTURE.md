@@ -319,6 +319,29 @@ Core characteristics:
   `TextReaderCapability`), like TXT
 - page metrics are intentionally not exposed
 
+Navigation and restore (03, 2026-10-22):
+- Adjacent EPUB turns move 0.92 of the actual content viewport, clamped at
+  document boundaries. Counting visible paragraphs is no longer used: a
+  partially visible paragraph may still contain many unread screens.
+- Pixel movement uses the public Flutter ScrollPosition. Tap mode jumps under
+  the existing horizontal wrapper; vertical mode retains its 250 ms curve.
+- Up to 48 completed turn anchors support reverse traversal, including a
+  shortened boundary turn. Anchors are invalidated by gestures, explicit
+  navigation, layout/image size changes, or mismatched viewport geometry.
+- Index navigation and saved leading-edge offsets are applied synchronously
+  before the target paint. The engine retains a pre-mount restore and reports
+  that accepted target until its layout completes; Book metadata also retains
+  the full position. Generations reject stale async completions.
+- Chapter, bookmark and progress seeks share this immediate restore path;
+  vertical progress seeks no longer use the positioned list's two-list
+  animated transition. Adjacent vertical turns remain animated.
+- Image extraction sends only strings through a top-level compute callback,
+  avoiding capture of a live engine's unsendable scroll state.
+- No public method signatures, position JSON fields, enumeration version,
+  paragraph ordering, database schema or dependencies change. Cross-layout
+  content anchoring (05), image layout stability (10), progress semantics (14)
+  and shared horizontal animation/performance (08/13) remain separate work.
+
 Implements optional capabilities:
 - `TextReaderCapability`
 - `TextExtractionCapability`

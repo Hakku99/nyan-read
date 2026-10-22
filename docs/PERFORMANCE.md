@@ -8,6 +8,8 @@ It is an opt-in failing regression suite until the corresponding defects are
 fixed; do not treat its current results as a release certification.
 The 01A/02 implementation, remaining failures, and repeated emulator measurements
 are recorded in [READER_TURN_FIXES_01A_02.md](READER_TURN_FIXES_01A_02.md).
+The EPUB viewport navigation fix and authorized large-book validation are
+recorded in [EPUB_TURN_FIX_03.md](EPUB_TURN_FIX_03.md).
 
 ## 1) Non-negotiable rules
 
