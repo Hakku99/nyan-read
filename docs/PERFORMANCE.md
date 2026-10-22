@@ -10,6 +10,8 @@ The 01A/02 implementation, remaining failures, and repeated emulator measurement
 are recorded in [READER_TURN_FIXES_01A_02.md](READER_TURN_FIXES_01A_02.md).
 The EPUB viewport navigation fix and authorized large-book validation are
 recorded in [EPUB_TURN_FIX_03.md](EPUB_TURN_FIX_03.md).
+The TXT turn-history invalidation fix and mixed-input validation are recorded in
+[TXT_TURN_HISTORY_FIX_04.md](TXT_TURN_HISTORY_FIX_04.md).
 
 ## 1) Non-negotiable rules
 

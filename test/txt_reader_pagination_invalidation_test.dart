@@ -181,10 +181,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 80));
 
       final start = engine.getCurrentPosition() as TxtReadingPosition;
-      await engine.nextPage();
+      await perform(tester, engine.nextPage);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
-      await engine.previousPage();
+      await perform(tester, engine.previousPage);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
 
@@ -237,7 +237,7 @@ void main() {
           () => engine.goToPosition(TxtReadingPosition(paragraphIndex: 1)));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
-      await engine.nextPage();
+      await perform(tester, engine.nextPage);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
 
@@ -278,7 +278,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 120));
       final start = engine.getCurrentPosition() as TxtReadingPosition;
 
-      await engine.previousPage();
+      await perform(tester, engine.previousPage);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 320));
       final moved = engine.getCurrentPosition() as TxtReadingPosition;
@@ -304,7 +304,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 120));
       final base = engine.getCurrentPosition() as TxtReadingPosition;
 
-      await engine.nextPage();
+      await perform(tester, engine.nextPage);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 320));
       final afterNext = engine.getCurrentPosition() as TxtReadingPosition;
@@ -314,7 +314,7 @@ void main() {
           () => engine.goToPosition(TxtReadingPosition(paragraphIndex: 80)));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 120));
-      await engine.previousPage();
+      await perform(tester, engine.previousPage);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 320));
       final afterPrevious = engine.getCurrentPosition() as TxtReadingPosition;

@@ -277,8 +277,23 @@ Navigation and restore (01A/02, 2026-10-19):
   the public scroll position. Same-layout backward history keeps pixel anchors.
 - `ReadingPosition` JSON, paragraph enumeration, database schema, progress and
   page-count estimation are unchanged. Old index-only positions still work.
-  Manual-scroll history invalidation (04) and precise cross-layout character
-  anchors/mode switching (05) remain separate work.
+  Precise cross-layout character anchors/mode switching (05) remain separate work.
+
+TXT turn-history validity (04, 2026-10-22):
+- Up to 48 completed forward turns retain both start and end viewport anchors.
+  Previous reuses an anchor only when its endpoint matches the current paragraph,
+  edges, scroll offset and viewport epoch within two logical pixels.
+- User drag/scroll notifications invalidate history immediately; endpoint checks
+  also reject unannounced external movement. Explicit navigation, font/size/mode
+  changes, teardown and a replacement scroll position invalidate old records.
+- A turn Future completes after the resulting frame so history records actual
+  layout. Canceled, superseded, incomplete and no-op turns create no records.
+  Even a boundary no-op supersedes an earlier animation and stops its motion.
+- The unused forward stack is removed. Distance selection and the 300 ms vertical
+  animation remain unchanged; the current engine position remains authoritative.
+- No public signatures, position JSON, persistence schema, paragraph enumeration
+  or page-count estimation change. Clearing history on a layout change does not
+  provide the precise cross-layout anchoring still tracked in 05.
 
 The shared `SmoothPageReader` waits for paint using `endOfFrame`, reserves a
 turn before asynchronous snapshot capture, and falls back to one direct turn

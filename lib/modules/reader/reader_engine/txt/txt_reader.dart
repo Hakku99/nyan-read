@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:fast_gbk/fast_gbk.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../../../core/models/book.dart';
@@ -528,8 +529,9 @@ class TxtReaderEngine
   final Set<_PaginationLayoutKey> _inFlightPaginationKeys =
       <_PaginationLayoutKey>{};
   final ValueNotifier<int> _pageInfoNotifier = ValueNotifier(0);
-  final List<_ViewportAnchor> _backwardAnchorStack = <_ViewportAnchor>[];
-  final List<_ViewportAnchor> _forwardAnchorStack = <_ViewportAnchor>[];
+  // Only completed, contiguous turns are eligible for precise backtracking.
+  final List<_TxtTurn> _turns = [];
+  static const _historyLimit = 48;
 
   List<ReaderChapter> _chapters = const [];
 
@@ -704,7 +706,8 @@ class TxtReaderEngine
   void setConfig(ReaderConfig config) {
     if (_config.fontSize != config.fontSize ||
         _config.lineHeight != config.lineHeight ||
-        _config.useSerif != config.useSerif) {
+        _config.useSerif != config.useSerif ||
+        _config.pageTurnMode != config.pageTurnMode) {
       _invalidateViewportLayout();
     }
     _config = config;
@@ -1125,156 +1128,89 @@ class TxtReaderEngine
   }
 
   @override
-  Future<void> nextPage() async {
-    if (_disposed || _pendingRestore != null || _scrollPosition == null) return;
-    final previousOffset = _scrollPosition!.pixels;
-    final currentAnchor = _currentViewportAnchor();
-    if (currentAnchor != null) {
-      _backwardAnchorStack.add(currentAnchor);
-      if (_backwardAnchorStack.length > 48) {
-        _backwardAnchorStack.removeAt(0);
-      }
-    }
-    _forwardAnchorStack.clear();
-
-    final positions = _itemPositionsListener.itemPositions.value.toList()
-      ..sort((a, b) => a.index.compareTo(b.index));
-
-    if (positions.isEmpty) {
-      return;
-    }
-
-    if (!await _tryTurnInsideOversizedParagraph(positions, forward: true)) {
-      await _goToViewportDistanceTarget(positions, forward: true);
-    }
-    if (_scrollPosition?.pixels == previousOffset &&
-        _backwardAnchorStack.isNotEmpty &&
-        identical(_backwardAnchorStack.last, currentAnchor)) {
-      // A clamped turn at EOF must not add another no-op to backward history.
-      _backwardAnchorStack.removeLast();
-    }
-  }
+  Future<void> nextPage() => _turnPage(forward: true);
 
   @override
-  Future<void> previousPage() async {
-    if (_disposed || _pendingRestore != null || _scrollPosition == null) return;
-    final currentAnchor = _currentViewportAnchor();
-    if (currentAnchor != null && _backwardAnchorStack.isNotEmpty) {
-      final anchor = _backwardAnchorStack.removeLast();
-      _forwardAnchorStack.add(currentAnchor);
-      await _restoreAnchor(anchor);
+  Future<void> previousPage() => _turnPage(forward: false);
+
+  Future<void> _turnPage({required bool forward}) async {
+    final scroll = _scrollPosition;
+    if (_disposed ||
+        _pendingRestore != null ||
+        scroll == null ||
+        !scroll.hasContentDimensions ||
+        !_itemScrollController.isAttached) {
       return;
     }
-
+    // Even a boundary no-op supersedes an older in-flight turn.
+    final serial = ++_navigationSerial;
+    final before = _currentViewportAnchor();
+    if (before == null) return;
+    if (_turns.isNotEmpty &&
+        !_turns.last.end.matches(before, scroll.viewportDimension)) {
+      // Wheel input and external movement may not carry drag details.
+      _clearTurnHistory();
+    }
+    final previous = !forward && _turns.isNotEmpty ? _turns.last : null;
     final positions = _itemPositionsListener.itemPositions.value.toList()
       ..sort((a, b) => a.index.compareTo(b.index));
-
-    if (positions.isEmpty) {
-      return;
-    }
-
-    if (await _tryTurnInsideOversizedParagraph(positions, forward: false)) {
-      return;
-    }
-
-    await _goToViewportDistanceTarget(positions, forward: false);
-  }
-
-  Future<bool> _tryTurnInsideOversizedParagraph(
-    List<ItemPosition> positions, {
-    required bool forward,
-  }) async {
-    if (!_itemScrollController.isAttached || positions.isEmpty) {
-      return false;
-    }
+    if (positions.isEmpty) return;
     final visible = positions
         .where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1)
         .toList();
-    if (visible.length != 1) return false;
-    final first = visible.single;
-    if (first.itemTrailingEdge - first.itemLeadingEdge < 1) return false;
-    final scroll = _scrollPosition;
-    if (scroll == null) return false;
-    // Keep 8% context, and allow crossing the paragraph end. Clamping the
-    // leading edge to the paragraph's last viewport traps the reader there.
-    await _moveTo(
-        scroll.pixels + (forward ? 0.92 : -0.92) * scroll.viewportDimension);
-    return true;
-  }
-
-  Future<void> _goToViewportDistanceTarget(
-    List<ItemPosition> positions, {
-    required bool forward,
-  }) async {
-    if (!_itemScrollController.isAttached || positions.isEmpty) {
-      return;
-    }
-
-    final visible = positions
-        .where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1.0)
-        .toList();
     final pool = visible.isNotEmpty ? visible : positions;
-    if (pool.isEmpty) {
+    final oversized = visible.length == 1 &&
+        visible.single.itemTrailingEdge - visible.single.itemLeadingEdge >= 1;
+    // Preserve the existing TXT distance policy: 92% inside oversized rows,
+    // otherwise align the visible bottom/top row to the opposite viewport edge.
+    final requested = previous?.start.scrollOffset ??
+        (scroll.pixels +
+            (oversized
+                ? (forward ? .92 : -.92) * scroll.viewportDimension
+                : ((forward ? pool.last : pool.first).itemLeadingEdge -
+                        (forward ? 0 : 1)) *
+                    scroll.viewportDimension));
+    final target =
+        requested.clamp(scroll.minScrollExtent, scroll.maxScrollExtent);
+    if ((target - scroll.pixels).abs() < .01) {
+      if (scroll.isScrollingNotifier.value) scroll.jumpTo(scroll.pixels);
       return;
     }
-
-    final firstVisible = pool.first;
-    final lastVisible = pool.last;
-    final targetIndex = forward ? lastVisible.index : firstVisible.index;
-    final targetAlignment = forward ? 0.0 : 1.0;
-
-    // Geometry-based fallback is more stable than index-distance fallback
-    // for mixed-height rows: next aligns the bottom anchor to top, previous
-    // aligns the top anchor to bottom (near one viewport in either direction).
-    await _goToIndex(
-      index: targetIndex,
-      alignment: targetAlignment,
-    );
-  }
-
-  void _clearTurnHistory() {
-    _backwardAnchorStack.clear();
-    _forwardAnchorStack.clear();
-  }
-
-  Future<void> _restoreAnchor(_ViewportAnchor anchor) async {
-    if (_scrollPosition == null) return;
-    if (anchor.viewportEpoch == _viewportEpoch && anchor.scrollOffset != null) {
-      await _moveTo(anchor.scrollOffset!);
-    } else {
-      await _restorePosition(ReadingPosition(
-          paragraphIndex: anchor.index,
-          paragraphLeadingEdge: anchor.leadingEdge,
-          paragraphTrailingEdge: anchor.trailingEdge));
-    }
-  }
-
-  Future<void> _goToIndex({
-    required int index,
-    required double alignment,
-  }) async {
-    final scroll = _scrollPosition;
-    if (scroll == null) return;
-    for (final item in _itemPositionsListener.itemPositions.value) {
-      if (item.index == index) {
-        await _moveTo(scroll.pixels +
-            (item.itemLeadingEdge - alignment) * scroll.viewportDimension);
-        return;
-      }
-    }
-    await _restorePosition(ReadingPosition(paragraphIndex: index));
-  }
-
-  Future<void> _moveTo(double pixels) async {
-    final scroll = _scrollPosition;
-    if (_disposed || scroll == null || !scroll.hasContentDimensions) return;
-    final target = pixels.clamp(scroll.minScrollExtent, scroll.maxScrollExtent);
     if (_config.pageTurnMode == PageTurnMode.tap) {
       scroll.jumpTo(target);
     } else {
       await scroll.animateTo(target,
           duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
     }
+    // ItemPositionsListener commits geometry after layout. Never record the
+    // starting frame, nor a canceled animation that completed its Future.
+    await WidgetsBinding.instance.endOfFrame;
+    if (_disposed ||
+        serial != _navigationSerial ||
+        !identical(scroll, _scrollPosition)) {
+      return;
+    }
+    final after = _currentViewportAnchor();
+    if (after == null || (scroll.pixels - target).abs() > 2) {
+      _clearTurnHistory();
+      return;
+    }
+    if (previous != null) {
+      _turns.removeLast();
+    } else if (forward) {
+      _turns.add(_TxtTurn(before, after));
+      if (_turns.length > _historyLimit) _turns.removeAt(0);
+    }
+  }
+
+  void _clearTurnHistory() => _turns.clear();
+
+  void _interruptGesture() {
+    _navigationSerial++;
+    _clearTurnHistory();
+    _pendingRestore = null;
+    _applyingRestore = null;
+    _restoreCover.value = false;
   }
 
   Future<void> _restorePosition(ReadingPosition position) async {
@@ -1334,6 +1270,9 @@ class TxtReaderEngine
 
   void _attachScrollPosition(ScrollPosition position) {
     if (_disposed) return;
+    if (_scrollPosition != null && !identical(_scrollPosition, position)) {
+      _detachViewport();
+    }
     _scrollPosition = position;
     if (_pendingRestore != null) {
       // Metrics arrive after layout; the pending target stays authoritative
@@ -1343,6 +1282,7 @@ class TxtReaderEngine
   }
 
   void _detachViewport() {
+    _clearTurnHistory();
     _scrollPosition = null;
     _navigationSerial++;
     _viewportEpoch++;
@@ -1350,6 +1290,7 @@ class TxtReaderEngine
   }
 
   void _invalidateViewportLayout() {
+    _clearTurnHistory();
     _viewportEpoch++;
     final serial = ++_navigationSerial;
     _applyingRestore = null;
@@ -1564,6 +1505,21 @@ class _ViewportAnchor {
   final double trailingEdge;
   final double? scrollOffset;
   final int? viewportEpoch;
+
+  bool matches(_ViewportAnchor other, double height) =>
+      index == other.index &&
+      viewportEpoch == other.viewportEpoch &&
+      scrollOffset != null &&
+      other.scrollOffset != null &&
+      (scrollOffset! - other.scrollOffset!).abs() <= 2 &&
+      (leadingEdge - other.leadingEdge).abs() * height <= 2 &&
+      (trailingEdge - other.trailingEdge).abs() * height <= 2;
+}
+
+class _TxtTurn {
+  const _TxtTurn(this.start, this.end);
+  final _ViewportAnchor start;
+  final _ViewportAnchor end;
 }
 
 // Lifecycle and public Scrollable context belong to the rendered viewport;
@@ -1586,23 +1542,35 @@ class _TxtViewportState extends State<_TxtViewport> {
 
   @override
   Widget build(BuildContext context) =>
-      NotificationListener<ScrollMetricsNotification>(
+      NotificationListener<ScrollNotification>(
         onNotification: (notification) {
-          final context = notification.context;
-          if (notification.depth == 0) {
-            final scrollable = Scrollable.maybeOf(context);
-            if (scrollable != null) {
-              widget.engine._attachScrollPosition(scrollable.position);
-            }
+          if (notification.depth == 0 &&
+              ((notification is ScrollStartNotification &&
+                      notification.dragDetails != null) ||
+                  (notification is UserScrollNotification &&
+                      notification.direction != ScrollDirection.idle))) {
+            widget.engine._interruptGesture();
           }
           return false;
         },
-        child: ValueListenableBuilder<bool>(
-          valueListenable: widget.engine._restoreCover,
-          child: widget.child,
-          builder: (_, covered, child) => IgnorePointer(
-              ignoring: covered,
-              child: Opacity(opacity: covered ? 0 : 1, child: child)),
+        child: NotificationListener<ScrollMetricsNotification>(
+          onNotification: (notification) {
+            final context = notification.context;
+            if (notification.depth == 0) {
+              final scrollable = Scrollable.maybeOf(context);
+              if (scrollable != null) {
+                widget.engine._attachScrollPosition(scrollable.position);
+              }
+            }
+            return false;
+          },
+          child: ValueListenableBuilder<bool>(
+            valueListenable: widget.engine._restoreCover,
+            child: widget.child,
+            builder: (_, covered, child) => IgnorePointer(
+                ignoring: covered,
+                child: Opacity(opacity: covered ? 0 : 1, child: child)),
+          ),
         ),
       );
 }
