@@ -344,7 +344,41 @@ The shared `SmoothPageReader` waits for paint using `endOfFrame`, reserves a
 turn before asynchronous snapshot capture, and falls back to one direct turn
 when capture is unavailable. It no longer reads `debugNeedsPaint` in production.
 Capture/animation disposal and dispatch failures release the turn reservation.
-The existing 360 ms animation and midpoint content switch remain unchanged.
+Item 08 replaces the midpoint switch with a preparation phase: the outgoing
+snapshot covers the live reader, navigation runs once, and the 360 ms slide
+starts only after target presentation is ready. The engine remains the sole
+owner of position; cancelling presentation never rolls back accepted navigation.
+
+`PageTurnRequest` invalidates capture, queued navigation and image waits on
+layout/mode changes, overlay opening, backgrounding, disposal or the UI deadline.
+`ReaderController.nextPage/previousPage` accept an optional request; existing
+callers remain source-compatible. Queue failures now reach their caller while a
+separate recovery future keeps the queue usable. `currentPosition` delegates to
+the engine, and `waitForPagePresentation` is the UI-facing readiness entry point.
+No `ReaderEngine` navigation signature, position JSON or database schema changes.
+The reader body's narrow selector includes mode and typography/color inputs as
+well as `renderEpoch`: the preferences service provider alone does not subscribe
+to its notifier. A programmatic preference change must update the gesture surface
+and cancel old presentation even without an unrelated parent rebuild.
+
+The additive optional `PagePresentationCapability` exposes
+`waitForPagePresentation(PageTurnRequest)`. PDF waits on the existing public
+`PdfPageImageProvider` for the target page; EPUB waits on mounted visible image
+blocks and their existing decode cache. TXT uses its completed navigation layout
+plus a committed frame. Image listeners are removed on completion/cancellation;
+the capability owns neither a second position nor a second image cache.
+
+Capture has a 350 ms deadline and navigation/readiness each have a 1500 ms
+deadline, bounded by the reader's overall 3 s request. A late GPU capture is
+disposed and cannot dispatch navigation; only one capture can remain pending.
+Unavailable captures fall back to one direct navigation. A target-image timeout
+reveals the reader's normal loading state instead of animating an unready page.
+Navigation errors reach the existing localized error feedback.
+
+The live body stays mounted throughout preparation and animation. Item 08 uses
+one outgoing snapshot over the live target; item 13's rendering optimizations
+remain separate, unaccepted work. See `docs/READER_TURN_FIX_08.md` for the isolated
+verification scope and known body-gesture limitations.
 
 Implements optional capabilities:
 - `TextReaderCapability`
@@ -400,7 +434,8 @@ Navigation and restore (03, 2026-10-22):
 - No public method signatures, position JSON fields, enumeration version,
   paragraph ordering, database schema or dependencies change. Item 05 adds
   cross-layout content anchoring; image layout stability (10), progress semantics (14)
-  and shared horizontal animation/performance (08/13) remain separate work.
+  remain separate work. Item 08 adds shared target readiness and cancellation,
+  described above and in `docs/READER_TURN_FIX_08.md`; item 13 remains separate.
 
 Implements optional capabilities:
 - `TextReaderCapability`

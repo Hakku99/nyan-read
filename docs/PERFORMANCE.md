@@ -16,6 +16,8 @@ Mode/reflow anchoring, cold recovery and paired before/after measurements are
 recorded in [READER_REFLOW_FIX_05.md](READER_REFLOW_FIX_05.md). Compare both the
 engine and the animation container; invalid intermediate runs and truncated
 Android logs are excluded from final measurements.
+Horizontal turn preparation, cancellation and image readiness are documented in
+[READER_TURN_FIX_08.md](READER_TURN_FIX_08.md). Item 13 performance acceptance remains pending.
 
 ## 1) Non-negotiable rules
 

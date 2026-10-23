@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'page_turn_request.dart';
 
 import 'package:flutter/material.dart';
 
@@ -253,6 +254,12 @@ abstract class PageMetricsCapability {
   int getPageCount();
 
   int getCurrentPageIndex();
+}
+
+/// Optional readiness for formats whose navigation completes before painting.
+/// False means presentation should reveal the normal loader without animating it.
+abstract class PagePresentationCapability {
+  Future<bool> waitForPagePresentation(PageTurnRequest request);
 }
 
 extension ReaderEngineCapabilityAccess on ReaderEngine {

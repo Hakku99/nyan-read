@@ -19,6 +19,8 @@ import '../../../../l10n/app_localizations.dart';
 // analysis — contract-level, not a one-off violation).
 import '../../widgets/highlightable_text.dart';
 import '../reader_engine.dart';
+import '../page_turn_request.dart';
+import '../page_presentation.dart';
 import '../text_layout_anchor.dart';
 import 'epub_parse_helpers.dart';
 
@@ -44,7 +46,12 @@ import 'epub_parse_helpers.dart';
 /// AnchorHealer for EPUB rows. Rollback: admin panel → legacy renderer
 /// (which keeps its historical all-`none` surface).
 class EpubReaderEngine
-    implements ReaderEngine, TextReaderCapability, TextExtractionCapability {
+    implements
+        ReaderEngine,
+        TextReaderCapability,
+        TextExtractionCapability,
+        PagePresentationCapability {
+  final _imagePresentations = <int, Future<bool> Function(PageTurnRequest)>{};
   static const ReaderCapabilities _capabilities = ReaderCapabilities(
     typography: CapabilityLevel.full,
     theme: CapabilityLevel.full,
@@ -291,6 +298,9 @@ class EpubReaderEngine
           onTapUp: (details) => _onContentTap?.call(details.globalPosition),
           child: SizeChangedLayoutNotifier(
               child: _EpubImageBlock(
+            key: ValueKey(index),
+            index: index,
+            presentations: _imagePresentations,
             loadBytes: () => _imageBytesFor(_paragraphText(index)),
             config: config,
           )),
@@ -350,6 +360,20 @@ class EpubReaderEngine
         return null;
       }
     });
+  }
+
+  @override
+  Future<bool> waitForPagePresentation(PageTurnRequest request) async {
+    await request.wait(WidgetsBinding.instance.endOfFrame);
+    final waits = <Future<bool>>[];
+    for (final row in _itemPositionsListener.itemPositions.value) {
+      if (row.itemTrailingEdge <= 0 || row.itemLeadingEdge >= 1) continue;
+      final wait = _imagePresentations[row.index];
+      if (wait != null) waits.add(wait(request));
+    }
+    final results = await Future.wait(waits);
+    await request.wait(WidgetsBinding.instance.endOfFrame);
+    return !_disposed && results.every((ready) => ready);
   }
 
   // ── TextReaderCapability / TextExtractionCapability (P3) ─────────────
@@ -724,6 +748,7 @@ class EpubReaderEngine
   @override
   void dispose() {
     _disposed = true;
+    _imagePresentations.clear();
     _itemPositionsListener.itemPositions
         .removeListener(_updateCommittedPosition);
     _detachViewport();
@@ -829,7 +854,15 @@ class _EpubViewportState extends State<_EpubViewport> {
 /// Async image block: shows a neutral placeholder while the zip extraction
 /// runs, the bitmap on success, and a quiet fallback box on failure.
 class _EpubImageBlock extends StatefulWidget {
-  const _EpubImageBlock({required this.loadBytes, required this.config});
+  const _EpubImageBlock(
+      {super.key,
+      required this.loadBytes,
+      required this.config,
+      required this.index,
+      required this.presentations});
+
+  final int index;
+  final Map<int, Future<bool> Function(PageTurnRequest)> presentations;
 
   final Future<Uint8List?> Function() loadBytes;
   final ReaderConfig config;
@@ -840,6 +873,26 @@ class _EpubImageBlock extends StatefulWidget {
 
 class _EpubImageBlockState extends State<_EpubImageBlock> {
   late final Future<Uint8List?> _future = widget.loadBytes();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.presentations[widget.index] = _waitForFrame;
+  }
+
+  @override
+  void dispose() {
+    if (widget.presentations[widget.index] == _waitForFrame) {
+      widget.presentations.remove(widget.index);
+    }
+    super.dispose();
+  }
+
+  Future<bool> _waitForFrame(PageTurnRequest request) async {
+    final bytes = await request.wait(_future);
+    if (!mounted || bytes == null || bytes.isEmpty) return false;
+    return waitForImageFrame(MemoryImage(bytes), request);
+  }
 
   @override
   Widget build(BuildContext context) {

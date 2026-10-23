@@ -9,9 +9,13 @@ import '../../../../core/services/reader_preferences_service.dart';
 import '../../../../core/theme/theme_presets.dart';
 import '../../../../core/utils/book_source_access.dart';
 import '../reader_engine.dart';
+import '../page_turn_request.dart';
+import '../page_presentation.dart';
 import 'pdf_position.dart';
 
-class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
+class PdfReaderEngine
+    implements ReaderEngine, PageMetricsCapability, PagePresentationCapability {
+  final _presentations = <int, ImageProvider>{};
   static const ReaderCapabilities _capabilities = ReaderCapabilities(
     typography: CapabilityLevel.none,
     theme: CapabilityLevel.none,
@@ -24,6 +28,7 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
   final Book book;
   late PdfController _pdfController;
   bool _isInit = false;
+  bool _disposed = false;
   String? _temporaryPdfPath;
   // Retained so dispose() can chain temp-file cleanup if it races ahead of
   // _preparePdfDocument() completing — the future resolves after dispose, but
@@ -66,7 +71,7 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
     // are surfaced the next time a caller interacts with the controller.
     unawaited(documentFuture.then(
       (_) {
-        _isDocumentReady = true;
+        _isDocumentReady = !_disposed;
         _pendingDocumentFuture = null;
       },
       onError: (Object error, StackTrace stack) {
@@ -110,6 +115,7 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
       // in pdfx relies on Material's default blue spinner, which violates
       // AGENTS.md §4.4 ("CircularProgressIndicator 的默认蓝色必须显式指定").
       builders: PdfViewBuilders<DefaultBuilderOptions>(
+        pageBuilder: _buildPage,
         options: const DefaultBuilderOptions(),
         documentLoaderBuilder: _buildPlaceholder,
         pageLoaderBuilder: _buildPlaceholder,
@@ -130,6 +136,34 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
         ),
       ),
     );
+  }
+
+  PhotoViewGalleryPageOptions _buildPage(BuildContext context,
+      Future<PdfPageImage> image, int index, PdfDocument document) {
+    final provider = PdfPageImageProvider(image, index, document.id);
+    _presentations[index] = provider;
+    // Only nearby page handles are needed; never retain a second book cache.
+    _presentations.removeWhere((key, _) => (key - index).abs() > 2);
+    return PhotoViewGalleryPageOptions(
+      imageProvider: provider,
+      minScale: PhotoViewComputedScale.contained,
+      maxScale: PhotoViewComputedScale.contained * 3.0,
+      initialScale: PhotoViewComputedScale.contained,
+      heroAttributes: PhotoViewHeroAttributes(tag: '${document.id}-$index'),
+    );
+  }
+
+  @override
+  Future<bool> waitForPagePresentation(PageTurnRequest request) async {
+    await request.wait(WidgetsBinding.instance.endOfFrame);
+    if (_disposed || !_isDocumentReady) return false;
+    final page = _pdfController.page;
+    final provider = _presentations[page - 1];
+    if (provider == null || !await waitForImageFrame(provider, request)) {
+      return false;
+    }
+    await request.wait(WidgetsBinding.instance.endOfFrame);
+    return _isDocumentReady && _pdfController.page == page;
   }
 
   Widget _buildErrorPlaceholder(BuildContext context, Exception error) {
@@ -252,6 +286,9 @@ class PdfReaderEngine implements ReaderEngine, PageMetricsCapability {
 
   @override
   void dispose() {
+    _disposed = true;
+    _isDocumentReady = false;
+    _presentations.clear();
     if (_isInit) {
       _pdfController.dispose();
     }

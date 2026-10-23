@@ -16,6 +16,7 @@ import '../../core/ui/nyan_theme_context.dart';
 import '../bookmark/bookmark_list_page.dart';
 import '../notes/notes_list_page.dart';
 import 'reader_engine/reader_engine.dart';
+import 'reader_engine/page_turn_request.dart';
 import 'reader_error.dart';
 import 'widgets/reader_error_view.dart';
 import 'widgets/highlight_note_dialog.dart';
@@ -93,6 +94,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   DateTime? _lastTapLogicAt;
   DateTime? _lastPageTurnAt;
   bool _isPageTurning = false;
+  PageTurnRequest? _pageTurnRequest;
   Timer? _pageTurnLockTimer;
   static const Duration _pageTurnLockTimeout = Duration(seconds: 3);
   Timer? _chapterSyncDebounce;
@@ -133,6 +135,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
 
   @override
   void dispose() {
+    _pageTurnRequest?.cancel();
     _readingIntervalTimer?.cancel();
     _countdownTimer?.cancel();
     _restSecondsRemaining.dispose();
@@ -204,6 +207,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
+      _pageTurnRequest?.cancel();
       _readingIntervalTimer?.cancel();
     } else if (state == AppLifecycleState.resumed && !_showRestReminder) {
       _setupReadingTimer();
@@ -378,12 +382,39 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                               // setState (e.g. a user tap),
                                               // so the loading spinner would
                                               // hang until the next tap.
-                                              child: _ControllerSelect<int>(
+                                              child: _ControllerSelect<
+                                                  (
+                                                    int,
+                                                    PageTurnMode,
+                                                    double,
+                                                    double,
+                                                    bool,
+                                                    Color,
+                                                    Color
+                                                  )>(
                                                 listenable: controller,
-                                                selector: () =>
-                                                    controller.renderEpoch,
+                                                // Preferences is a service Provider,
+                                                // not a reactive notifier Provider.
+                                                // Observe only presentation inputs
+                                                // through controller notifications.
+                                                selector: () => (
+                                                  controller.renderEpoch,
+                                                  readerPrefs.pageTurnMode,
+                                                  readerPrefs.fontSize,
+                                                  readerPrefs.lineHeight,
+                                                  readerPrefs.useSerif,
+                                                  controller.backgroundColor,
+                                                  controller.textColor,
+                                                ),
                                                 builder: (context, _, __) =>
                                                     SmoothPageReader(
+                                                  layoutIdentity: (
+                                                    readerPrefs.fontSize,
+                                                    readerPrefs.lineHeight,
+                                                    readerPrefs.useSerif,
+                                                    controller.backgroundColor,
+                                                    controller.textColor,
+                                                  ),
                                                   enabled: readerPrefs
                                                           .pageTurnMode ==
                                                       PageTurnMode.tap,
@@ -1027,18 +1058,23 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   Future<void> _dispatchPageTurn(
     ReaderController controller, {
     required bool forward,
+    required PageTurnRequest request,
   }) async {
     if (controller.settingsManager.preferences.pageTurnMode ==
         PageTurnMode.tap) {
       final smoothState = _smoothPageReaderKey.currentState;
-      if (smoothState != null && !smoothState.isAnimating) {
+      if (smoothState != null) {
+        final before = controller.currentPosition?.toJson();
         await smoothState.playTurn(
+          request: request,
           forward: forward,
+          waitForReady: () => controller.waitForPagePresentation(request),
+          didMove: () => controller.currentPosition?.toJson() != before,
           dispatchTurn: () async {
             if (forward) {
-              await controller.nextPage();
+              await controller.nextPage(request: request);
             } else {
-              await controller.previousPage();
+              await controller.previousPage(request: request);
             }
           },
         );
@@ -1047,9 +1083,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     }
 
     if (forward) {
-      await controller.nextPage();
+      await controller.nextPage(request: request);
     } else {
-      await controller.previousPage();
+      await controller.previousPage(request: request);
     }
   }
 }

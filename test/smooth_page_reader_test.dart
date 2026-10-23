@@ -7,7 +7,7 @@ import 'package:nyan_read/modules/reader/widgets/smooth_page_reader.dart';
 void main() {
   for (final duringAnimation in [false, true]) {
     testWidgets(
-        'disabling during ${duringAnimation ? 'animation' : 'capture'} cancels late dispatch',
+        'disabling during ${duringAnimation ? 'animation' : 'capture'} never dispatches after cancellation',
         (tester) async {
       final key = GlobalKey<SmoothPageReaderState>();
       var calls = 0;
@@ -31,13 +31,15 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 30));
       }
+      // Item 08 dispatches before sliding; cancellation keeps an accepted turn.
+      expect(calls, duringAnimation ? 1 : 0);
       await rebuild(false);
       expect(key.currentState, same(state));
       await tester.pumpAndSettle();
       await turn;
       await tester.tapAt(const Offset(10, 10));
       await tester.pumpAndSettle();
-      expect(calls, 0);
+      expect(calls, duringAnimation ? 1 : 0);
       expect(state.isAnimating, isFalse);
     });
   }
@@ -109,7 +111,7 @@ void main() {
     expect(calls, 0);
   });
 
-  testWidgets('disposal during animation completes without a late dispatch',
+  testWidgets('disposal after navigation keeps exactly one accepted turn',
       (tester) async {
     final key = await mount(tester);
     var calls = 0;
@@ -120,10 +122,11 @@ void main() {
         });
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 30));
+    expect(calls, 1);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
     await turn;
-    expect(calls, 0);
+    expect(calls, 1);
   });
 
   testWidgets('dispatch failures reach caller and release the turn',
