@@ -5,6 +5,42 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/modules/reader/widgets/smooth_page_reader.dart';
 
 void main() {
+  for (final duringAnimation in [false, true]) {
+    testWidgets(
+        'disabling during ${duringAnimation ? 'animation' : 'capture'} cancels late dispatch',
+        (tester) async {
+      final key = GlobalKey<SmoothPageReaderState>();
+      var calls = 0;
+      Future<void> rebuild(bool enabled) => tester.pumpWidget(MaterialApp(
+            home: SmoothPageReader(
+                key: key,
+                enabled: enabled,
+                onPreviousTap: () => calls++,
+                onNextTap: () => calls++,
+                onCenterTap: () => calls++,
+                child: const ColoredBox(color: Colors.white)),
+          ));
+      await rebuild(true);
+      final state = key.currentState!;
+      final turn = state.playTurn(
+          forward: true,
+          dispatchTurn: () async {
+            calls++;
+          });
+      if (duringAnimation) {
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 30));
+      }
+      await rebuild(false);
+      expect(key.currentState, same(state));
+      await tester.pumpAndSettle();
+      await turn;
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+      expect(calls, 0);
+      expect(state.isAnimating, isFalse);
+    });
+  }
   Future<GlobalKey<SmoothPageReaderState>> mount(WidgetTester tester,
       {bool empty = false}) async {
     final key = GlobalKey<SmoothPageReaderState>();

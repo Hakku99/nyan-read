@@ -13,10 +13,12 @@ class SmoothPageReader extends StatefulWidget {
     required this.onPreviousTap,
     required this.onNextTap,
     required this.onCenterTap,
+    this.enabled = true,
     this.duration = const Duration(milliseconds: 360),
     this.curve = Curves.easeInOutCubic,
   });
 
+  final bool enabled;
   final Widget child;
   final VoidCallback onPreviousTap;
   final VoidCallback onNextTap;
@@ -35,6 +37,7 @@ class SmoothPageReaderState extends State<SmoothPageReader>
     vsync: this,
     duration: widget.duration,
   );
+  int _interactionEpoch = 0;
   bool _forward = true;
   ui.Image? _outgoingImage;
   bool _isAnimating = false;
@@ -44,6 +47,10 @@ class SmoothPageReaderState extends State<SmoothPageReader>
   @override
   void didUpdateWidget(covariant SmoothPageReader oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.enabled != widget.enabled) {
+      _interactionEpoch++;
+      if (!widget.enabled) _controller.stop(canceled: true);
+    }
     if (oldWidget.duration != widget.duration) {
       _controller.duration = widget.duration;
     }
@@ -65,6 +72,7 @@ class SmoothPageReaderState extends State<SmoothPageReader>
   }
 
   void _handleTap(TapUpDetails details) {
+    if (!widget.enabled) return;
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
     final localX = box.globalToLocal(details.globalPosition).dx;
@@ -82,7 +90,8 @@ class SmoothPageReaderState extends State<SmoothPageReader>
     required bool forward,
     required Future<void> Function() dispatchTurn,
   }) async {
-    if (!mounted || _isAnimating) return;
+    if (!mounted || _isAnimating || !widget.enabled) return;
+    final epoch = _interactionEpoch;
     // Reserve the turn before capture yields, so concurrent inputs cannot
     // capture and dispatch the same outgoing page twice.
     _isAnimating = true;
@@ -90,7 +99,7 @@ class SmoothPageReaderState extends State<SmoothPageReader>
     Object? dispatchError;
     StackTrace? dispatchStack;
     void runDispatchOnce() {
-      if (dispatch != null || !mounted) return;
+      if (dispatch != null || !mounted || epoch != _interactionEpoch) return;
       // Observe failures immediately; rethrow to the caller after animation.
       dispatch = Future<void>.sync(dispatchTurn).then<void>((_) {},
           onError: (Object error, StackTrace stack) {
@@ -106,7 +115,7 @@ class SmoothPageReaderState extends State<SmoothPageReader>
     var listening = false;
     try {
       final captured = await _captureCurrentFrame();
-      if (!mounted) {
+      if (!mounted || epoch != _interactionEpoch) {
         captured?.dispose();
         return;
       }
@@ -168,16 +177,14 @@ class SmoothPageReaderState extends State<SmoothPageReader>
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTapUp: _handleTap,
+      onTapUp: widget.enabled ? _handleTap : null,
       child: RepaintBoundary(
         key: _captureKey,
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
             final t = widget.curve.transform(_controller.value);
-            if (_outgoingImage == null) {
-              return child ?? const SizedBox.shrink();
-            }
+            final active = _outgoingImage != null && widget.enabled;
 
             final width = MediaQuery.sizeOf(context).width;
             final outgoingX = _forward ? -t * width : t * width;
@@ -187,44 +194,49 @@ class SmoothPageReaderState extends State<SmoothPageReader>
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Transform.translate(
-                    offset: Offset(outgoingX, 0),
-                    child: RawImage(
-                      image: _outgoingImage,
-                      fit: BoxFit.cover,
-                      filterQuality: FilterQuality.high,
+                  if (active)
+                    Transform.translate(
+                      offset: Offset(outgoingX, 0),
+                      child: RawImage(
+                        image: _outgoingImage,
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
+                      ),
                     ),
-                  ),
+                  // The live reader stays at one keyed location through capture,
+                  // animation, cancellation and mode changes.
                   Transform.translate(
-                    offset: Offset(incomingX, 0),
+                    key: const ValueKey('live-reader'),
+                    offset: Offset(active ? incomingX : 0, 0),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
                         child ?? const SizedBox.shrink(),
-                        Align(
-                          alignment: _forward
-                              ? Alignment.centerLeft
-                              : Alignment.centerRight,
-                          child: IgnorePointer(
-                            child: Container(
-                              width: 22,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: _forward
-                                      ? Alignment.centerLeft
-                                      : Alignment.centerRight,
-                                  end: _forward
-                                      ? Alignment.centerRight
-                                      : Alignment.centerLeft,
-                                  colors: const [
-                                    Color(0x22000000),
-                                    Color(0x00000000),
-                                  ],
+                        if (active)
+                          Align(
+                            alignment: _forward
+                                ? Alignment.centerLeft
+                                : Alignment.centerRight,
+                            child: IgnorePointer(
+                              child: Container(
+                                width: 22,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: _forward
+                                        ? Alignment.centerLeft
+                                        : Alignment.centerRight,
+                                    end: _forward
+                                        ? Alignment.centerRight
+                                        : Alignment.centerLeft,
+                                    colors: const [
+                                      Color(0x22000000),
+                                      Color(0x00000000),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -232,7 +244,9 @@ class SmoothPageReaderState extends State<SmoothPageReader>
               ),
             );
           },
-          child: widget.child,
+          // Moving the live page must not repaint its text on every animation
+          // tick. Navigation can repaint this boundary independently.
+          child: RepaintBoundary(child: widget.child),
         ),
       ),
     );

@@ -18,6 +18,7 @@ import '../../../../core/theme/nyan_typography.dart';
 import '../../../../core/utils/book_source_access.dart';
 import '../../widgets/highlightable_text.dart';
 import '../reader_engine.dart';
+import '../text_layout_anchor.dart';
 import 'pagination_helper.dart';
 import 'txt_position.dart';
 
@@ -483,13 +484,36 @@ class TxtReaderEngine
   final ItemScrollController _itemScrollController = ItemScrollController();
   ScrollPosition? _scrollPosition;
   ReadingPosition? _pendingRestore;
+  final _textLayouts = TextLayoutAnchors();
+  Locale? _textLocale;
+  TextDirection? _textDirection;
+  String? get _layoutIdentity => _viewportSize == null
+      ? null
+      : jsonEncode([
+          1,
+          'txt',
+          defaultTargetPlatform.name,
+          _textLocale?.toLanguageTag(),
+          _textDirection?.name,
+          _viewportSize!.width,
+          _viewportSize!.height,
+          _config.fontSize,
+          _config.lineHeight,
+          _config.useSerif,
+          _viewportTextScale?.scale(_config.fontSize),
+          _viewportTextScale?.scale(_config.fontSize * 1.3),
+        ]);
+  ReadingPosition? _committedPosition;
+  double? _committedPixels;
+  ReadingPosition? _settledAnchor;
+  double? _settledPixels;
   final ValueNotifier<bool> _restoreCover = ValueNotifier(false);
   int _navigationSerial = 0;
   int _viewportEpoch = 0;
   int? _applyingRestore;
   bool _disposed = false;
   Size? _viewportSize;
-  double? _viewportTextScale;
+  TextScaler? _viewportTextScale;
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
 
@@ -601,6 +625,9 @@ class TxtReaderEngine
 
   void _updateCurrentPosition() {
     if (_disposed || _pendingRestore != null) return;
+    if (_settledPixels != _scrollPosition?.pixels) _settledAnchor = null;
+    _committedPosition = getCurrentPosition();
+    _committedPixels = _scrollPosition?.pixels;
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isNotEmpty) {
       int? minIndex;
@@ -632,6 +659,17 @@ class TxtReaderEngine
     for (final p in pool) {
       if (p.itemLeadingEdge < topmost.itemLeadingEdge) {
         topmost = p;
+      }
+    }
+    // At a scroll boundary the retained reading line can be below the top.
+    // Keep that logical anchor while its restored scroll position is unchanged.
+    if (_settledAnchor?.textOffset != null &&
+        _settledPixels == _scrollPosition?.pixels) {
+      for (final p in visible) {
+        if (p.index == _settledAnchor!.paragraphIndex) {
+          topmost = p;
+          break;
+        }
       }
     }
     return _ViewportAnchor(
@@ -708,7 +746,10 @@ class TxtReaderEngine
         _config.lineHeight != config.lineHeight ||
         _config.useSerif != config.useSerif ||
         _config.pageTurnMode != config.pageTurnMode) {
-      _invalidateViewportLayout();
+      _invalidateViewportLayout(
+          preservePaint: _config.fontSize == config.fontSize &&
+              _config.lineHeight == config.lineHeight &&
+              _config.useSerif == config.useSerif);
     }
     _config = config;
     _configNotifier.value = config;
@@ -755,12 +796,18 @@ class TxtReaderEngine
         engine: this,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final scale = MediaQuery.textScalerOf(context).scale(1);
+            final scale = MediaQuery.textScalerOf(context);
+            final locale = Localizations.maybeLocaleOf(context);
+            final direction = Directionality.of(context);
             if (_viewportSize != constraints.biggest ||
-                _viewportTextScale != scale) {
+                _viewportTextScale != scale ||
+                _textLocale != locale ||
+                _textDirection != direction) {
+              _invalidateViewportLayout();
               _viewportSize = constraints.biggest;
               _viewportTextScale = scale;
-              _invalidateViewportLayout();
+              _textLocale = locale;
+              _textDirection = direction;
             }
             // Not awaited: the estimate lands via _pageInfoNotifier when ready;
             // the helper defers its TextPainter work past this build frame and
@@ -913,6 +960,7 @@ class TxtReaderEngine
         }
 
         return HighlightableText(
+          layoutAnchors: _textLayouts,
           text: line,
           paragraphIndex: index,
           highlights: _renderHighlights,
@@ -1079,11 +1127,18 @@ class TxtReaderEngine
     // commits. Persistence must not observe the temporary paragraph start.
     if (_pendingRestore != null) return _pendingRestore;
     final anchor = _currentViewportAnchor();
-    return TxtReadingPosition(
+    final position = TxtReadingPosition(
       paragraphIndex: anchor?.index ?? _viewportAnchorParagraphIndex(),
       paragraphLeadingEdge: anchor?.leadingEdge,
       paragraphTrailingEdge: anchor?.trailingEdge,
     );
+    return TxtReadingPosition.fromPosition(_textLayouts.capture(
+        position, _scrollPosition?.viewportDimension ?? 0,
+        layoutIdentity: _layoutIdentity,
+        preferredOffset: _settledPixels == _scrollPosition?.pixels &&
+                _settledAnchor?.paragraphIndex == position.paragraphIndex
+            ? _settledAnchor?.textOffset
+            : null));
   }
 
   @override
@@ -1207,6 +1262,7 @@ class TxtReaderEngine
 
   void _interruptGesture() {
     _navigationSerial++;
+    _settledAnchor = null;
     _clearTurnHistory();
     _pendingRestore = null;
     _applyingRestore = null;
@@ -1232,6 +1288,11 @@ class TxtReaderEngine
     _pendingRestore = TxtReadingPosition(
         paragraphIndex: index,
         paragraphLeadingEdge: validEdges ? leading : null,
+        textOffset:
+            index == position.paragraphIndex ? position.textOffset : null,
+        textViewportOffset: position.textViewportOffset,
+        layoutIdentity: position.layoutIdentity,
+        anchorVersion: position.anchorVersion,
         paragraphTrailingEdge: validEdges ? trailing : null);
     if (_scrollPosition == null || !_itemScrollController.isAttached) {
       _restoreCover.value = true;
@@ -1252,16 +1313,28 @@ class TxtReaderEngine
       return;
     }
     _applyingRestore = serial;
-    // Both operations are synchronous and precede the same layout/paint.
-    // Using the public ScrollPosition avoids unsupported negative alignment
-    // values and the extra corrective frame of animateScroll(duration: 1ms).
     _itemScrollController.jumpTo(index: target.paragraphIndex!);
-    final leading = target.paragraphLeadingEdge ?? 0;
-    final offset = scroll.pixels - leading * scroll.viewportDimension;
-    // Corrupt finite edge values can overflow during conversion to pixels.
-    if (offset.isFinite) scroll.jumpTo(offset);
+    var offset = -(target.paragraphLeadingEdge ?? 0) * scroll.viewportDimension;
+    if (target.anchorVersion == 1 &&
+        target.textOffset != null &&
+        target.layoutIdentity != _layoutIdentity) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (_disposed || serial != _navigationSerial) return;
+      offset =
+          _textLayouts.restoreOffset(target, scroll.viewportDimension) ?? 0;
+    }
+    final destination = scroll.pixels + offset;
+    if (destination.isFinite) scroll.jumpTo(destination);
     await WidgetsBinding.instance.endOfFrame;
     if (_disposed || serial != _navigationSerial) return;
+    // jumpTo may start a boundary correction after the new extent is known.
+    // Commit the anchor only after that correction has finished.
+    while (scroll.isScrollingNotifier.value) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (_disposed || serial != _navigationSerial) return;
+    }
+    _settledAnchor = target;
+    _settledPixels = scroll.pixels;
     _pendingRestore = null;
     _applyingRestore = null;
     _restoreCover.value = false;
@@ -1289,18 +1362,22 @@ class TxtReaderEngine
     _applyingRestore = null;
   }
 
-  void _invalidateViewportLayout() {
+  void _invalidateViewportLayout({bool preservePaint = false}) {
+    if (_scrollPosition != null) {
+      _pendingRestore ??= _committedPixels == _scrollPosition?.pixels
+          ? (_committedPosition ?? getCurrentPosition())
+          : getCurrentPosition();
+      _initialIndex = _pendingRestore?.paragraphIndex ?? _initialIndex;
+      if (!preservePaint && _pendingRestore?.textOffset != null) {
+        _restoreCover.value = true;
+      }
+    }
     _clearTurnHistory();
     _viewportEpoch++;
     final serial = ++_navigationSerial;
     _applyingRestore = null;
-    // A pre-attach restore is measured against the upcoming first viewport.
-    // Only discard geometry if an existing viewport actually changes layout.
+    // Targets accepted before mounting remain authoritative until attachment.
     if (_scrollPosition == null) return;
-    if (_pendingRestore != null) {
-      _pendingRestore =
-          TxtReadingPosition(paragraphIndex: _pendingRestore!.paragraphIndex!);
-    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_disposed || serial != _navigationSerial) return;
       final scroll = _scrollPosition;
@@ -1564,13 +1641,8 @@ class _TxtViewportState extends State<_TxtViewport> {
             }
             return false;
           },
-          child: ValueListenableBuilder<bool>(
-            valueListenable: widget.engine._restoreCover,
-            child: widget.child,
-            builder: (_, covered, child) => IgnorePointer(
-                ignoring: covered,
-                child: Opacity(opacity: covered ? 0 : 1, child: child)),
-          ),
+          child: RestoreVisibility(
+              covered: widget.engine._restoreCover, child: widget.child),
         ),
       );
 }

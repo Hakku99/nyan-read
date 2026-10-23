@@ -116,13 +116,12 @@ Future<void> pumpReader(
     supportedLocales: AppLocalizations.supportedLocales,
     home: Scaffold(body: Builder(builder: (context) {
       final body = engine.buildReader(context);
-      return mode == PageTurnMode.tap
-          ? SmoothPageReader(
-              onPreviousTap: () {},
-              onNextTap: () {},
-              onCenterTap: () {},
-              child: body)
-          : body;
+      return SmoothPageReader(
+          enabled: mode == PageTurnMode.tap,
+          onPreviousTap: () {},
+          onNextTap: () {},
+          onCenterTap: () {},
+          child: body);
     })),
   ));
   await tester.pumpAndSettle();

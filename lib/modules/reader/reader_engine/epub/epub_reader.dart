@@ -19,6 +19,7 @@ import '../../../../l10n/app_localizations.dart';
 // analysis — contract-level, not a one-off violation).
 import '../../widgets/highlightable_text.dart';
 import '../reader_engine.dart';
+import '../text_layout_anchor.dart';
 import 'epub_parse_helpers.dart';
 
 /// Self-hosted EPUB renderer (2026-07, "EPUB 自研" P1).
@@ -58,6 +59,29 @@ class EpubReaderEngine
   final ItemScrollController _itemScrollController = ItemScrollController();
   ScrollPosition? _scrollPosition;
   ReadingPosition? _pendingRestore;
+  final _textLayouts = TextLayoutAnchors();
+  Locale? _textLocale;
+  TextDirection? _textDirection;
+  String? get _layoutIdentity => _viewportSize == null
+      ? null
+      : jsonEncode([
+          1,
+          'epub',
+          defaultTargetPlatform.name,
+          _textLocale?.toLanguageTag(),
+          _textDirection?.name,
+          _viewportSize!.width,
+          _viewportSize!.height,
+          _config.fontSize,
+          _config.lineHeight,
+          _config.useSerif,
+          _textScaler?.scale(_config.fontSize),
+          _textScaler?.scale(_config.fontSize * 1.3),
+        ]);
+  ReadingPosition? _committedPosition;
+  double? _committedPixels;
+  ReadingPosition? _settledAnchor;
+  double? _settledPixels;
   final ValueNotifier<bool> _restoreCover = ValueNotifier(false);
   int _navigationSerial = 0;
   int? _applyingRestore;
@@ -110,7 +134,16 @@ class EpubReaderEngine
 
   ReaderConfig get _config => _configNotifier.value;
 
-  EpubReaderEngine(this.book);
+  EpubReaderEngine(this.book) {
+    _itemPositionsListener.itemPositions.addListener(_updateCommittedPosition);
+  }
+
+  void _updateCommittedPosition() {
+    if (_disposed || _pendingRestore != null) return;
+    if (_settledPixels != _scrollPosition?.pixels) _settledAnchor = null;
+    _committedPosition = getCurrentPosition();
+    _committedPixels = _scrollPosition?.pixels;
+  }
 
   @override
   ReaderCapabilities get capabilities => _capabilities;
@@ -186,7 +219,10 @@ class EpubReaderEngine
         _config.lineHeight != config.lineHeight ||
         _config.useSerif != config.useSerif ||
         _config.pageTurnMode != config.pageTurnMode) {
-      _invalidateLayout();
+      _invalidateLayout(
+          preservePaint: _config.fontSize == config.fontSize &&
+              _config.lineHeight == config.lineHeight &&
+              _config.useSerif == config.useSerif);
     }
     _configNotifier.value = config;
   }
@@ -205,10 +241,17 @@ class EpubReaderEngine
       engine: this,
       child: LayoutBuilder(builder: (context, constraints) {
         final scaler = MediaQuery.textScalerOf(context);
-        if (_viewportSize != constraints.biggest || _textScaler != scaler) {
+        final locale = Localizations.maybeLocaleOf(context);
+        final direction = Directionality.of(context);
+        if (_viewportSize != constraints.biggest ||
+            _textScaler != scaler ||
+            _textLocale != locale ||
+            _textDirection != direction) {
+          _invalidateLayout();
           _viewportSize = constraints.biggest;
           _textScaler = scaler;
-          _invalidateLayout();
+          _textLocale = locale;
+          _textDirection = direction;
         }
         return ValueListenableBuilder<ReaderConfig>(
           valueListenable: _configNotifier,
@@ -266,6 +309,7 @@ class EpubReaderEngine
     // Ratio-based so it tracks the user's font-size setting.
     final isHeading = _isHeadingParagraph(index);
     return HighlightableText(
+      layoutAnchors: _textLayouts,
       text: text,
       paragraphIndex: index,
       highlights: _renderHighlights,
@@ -378,6 +422,17 @@ class EpubReaderEngine
         topmost = p;
       }
     }
+    // Reflow can clamp at the book boundary while the reading line stays visible.
+    if (_settledAnchor?.textOffset != null &&
+        _settledPixels == _scrollPosition?.pixels) {
+      for (final p in positions) {
+        if (p.index == _settledAnchor!.paragraphIndex &&
+            p.itemTrailingEdge > 0 &&
+            p.itemLeadingEdge < 1) {
+          return p;
+        }
+      }
+    }
     return topmost ?? positions.reduce((a, b) => a.index < b.index ? a : b);
   }
 
@@ -398,7 +453,7 @@ class EpubReaderEngine
     // paragraphIndex alongside their CFI, so both directions restore through
     // the same field. Viewport edges refine restore to sub-paragraph
     // precision (same scheme as TXT).
-    return ReadingPosition(
+    final position = ReadingPosition(
       paragraphIndex:
           (anchor?.index ?? _initialIndex).clamp(0, _paragraphCount - 1),
       paragraphLeadingEdge: anchor?.itemLeadingEdge,
@@ -407,6 +462,13 @@ class EpubReaderEngine
       // (2026-07); pre-switch payloads have no marker. Forensic only.
       enumVersion: kEpubEnumerationVersion,
     );
+    return _textLayouts.capture(
+        position, _scrollPosition?.viewportDimension ?? 0,
+        layoutIdentity: _layoutIdentity,
+        preferredOffset: _settledPixels == _scrollPosition?.pixels &&
+                _settledAnchor?.paragraphIndex == position.paragraphIndex
+            ? _settledAnchor?.textOffset
+            : null);
   }
 
   @override
@@ -446,6 +508,11 @@ class EpubReaderEngine
     _pendingRestore = ReadingPosition(
         paragraphIndex: clamped,
         paragraphLeadingEdge: validEdges ? leading : null,
+        textOffset:
+            clamped == position.paragraphIndex ? position.textOffset : null,
+        textViewportOffset: position.textViewportOffset,
+        layoutIdentity: position.layoutIdentity,
+        anchorVersion: position.anchorVersion,
         paragraphTrailingEdge: validEdges ? trailing : null,
         enumVersion: kEpubEnumerationVersion);
     if (_scrollPosition == null || !_itemScrollController.isAttached) {
@@ -554,21 +621,38 @@ class EpubReaderEngine
       return;
     }
     _applyingRestore = serial;
-    // Both public jumps precede one paint; negative item alignment and a
-    // second corrective animation are neither required nor supported.
     _itemScrollController.jumpTo(index: target.paragraphIndex!);
-    final offset = scroll.pixels -
-        (target.paragraphLeadingEdge ?? 0) * scroll.viewportDimension;
-    if (offset.isFinite) scroll.jumpTo(offset);
+    var offset = -(target.paragraphLeadingEdge ?? 0) * scroll.viewportDimension;
+    if (target.anchorVersion == 1 &&
+        target.textOffset != null &&
+        target.layoutIdentity != _layoutIdentity) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (_disposed || serial != _navigationSerial) return;
+      offset =
+          _textLayouts.restoreOffset(target, scroll.viewportDimension) ?? 0;
+    }
+    final destination = scroll.pixels + offset;
+    if (destination.isFinite) scroll.jumpTo(destination);
     await WidgetsBinding.instance.endOfFrame;
     if (_disposed || serial != _navigationSerial) return;
+    // The new extent may start a boundary correction after jumpTo.
+    while (scroll.isScrollingNotifier.value) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (_disposed || serial != _navigationSerial) return;
+    }
+    _settledAnchor = target;
+    _settledPixels = scroll.pixels;
     _pendingRestore = null;
     _applyingRestore = null;
     _restoreCover.value = false;
+    _updateCommittedPosition();
   }
 
   void _attachScrollPosition(ScrollPosition position) {
     if (_disposed) return;
+    if (_scrollPosition != null && !identical(_scrollPosition, position)) {
+      _detachViewport();
+    }
     _scrollPosition = position;
     if (_pendingRestore != null) {
       // Metrics own completion of a restore accepted before mounting.
@@ -578,6 +662,7 @@ class EpubReaderEngine
 
   void _interruptGesture() {
     _navigationSerial++;
+    _settledAnchor = null;
     _turns.clear();
     _pendingRestore = null;
     _applyingRestore = null;
@@ -591,16 +676,20 @@ class EpubReaderEngine
     _applyingRestore = null;
   }
 
-  void _invalidateLayout() {
+  void _invalidateLayout({bool preservePaint = false}) {
+    if (_scrollPosition != null) {
+      _pendingRestore ??= _committedPixels == _scrollPosition?.pixels
+          ? (_committedPosition ?? getCurrentPosition())
+          : getCurrentPosition();
+      _initialIndex = _pendingRestore?.paragraphIndex ?? _initialIndex;
+      if (!preservePaint && _pendingRestore?.textOffset != null) {
+        _restoreCover.value = true;
+      }
+    }
     _turns.clear();
     final serial = ++_navigationSerial;
     _applyingRestore = null;
     if (_scrollPosition == null) return;
-    if (_pendingRestore != null) {
-      _pendingRestore = ReadingPosition(
-          paragraphIndex: _pendingRestore!.paragraphIndex,
-          enumVersion: kEpubEnumerationVersion);
-    }
     // Layout notifications can arrive during build/layout, so cancel motion
     // after layout rather than mutating a ScrollPosition from build.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -635,6 +724,8 @@ class EpubReaderEngine
   @override
   void dispose() {
     _disposed = true;
+    _itemPositionsListener.itemPositions
+        .removeListener(_updateCommittedPosition);
     _detachViewport();
     _pendingRestore = null;
     _restoreCover.dispose();
@@ -728,13 +819,8 @@ class _EpubViewportState extends State<_EpubViewport> {
               }
               return false;
             },
-            child: ValueListenableBuilder<bool>(
-              valueListenable: widget.engine._restoreCover,
-              child: widget.child,
-              builder: (_, covered, child) => IgnorePointer(
-                  ignoring: covered,
-                  child: Opacity(opacity: covered ? 0 : 1, child: child)),
-            ),
+            child: RestoreVisibility(
+                covered: widget.engine._restoreCover, child: widget.child),
           ),
         ),
       );

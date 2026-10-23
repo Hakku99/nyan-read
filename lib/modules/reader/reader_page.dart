@@ -383,41 +383,34 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                 selector: () =>
                                                     controller.renderEpoch,
                                                 builder: (context, _, __) =>
-                                                    readerPrefs.pageTurnMode ==
-                                                            PageTurnMode.tap
-                                                        ? SmoothPageReader(
-                                                            key:
-                                                                _smoothPageReaderKey,
-                                                            onPreviousTap: () {
-                                                              _triggerPageTurn(
-                                                                controller,
-                                                                forward: false,
-                                                                at: DateTime
-                                                                    .now(),
-                                                              );
-                                                            },
-                                                            onNextTap: () {
-                                                              _triggerPageTurn(
-                                                                controller,
-                                                                forward: true,
-                                                                at: DateTime
-                                                                    .now(),
-                                                              );
-                                                            },
-                                                            onCenterTap: () {
-                                                              _showReaderControls(
-                                                                context,
-                                                                controller,
-                                                              );
-                                                            },
-                                                            child: controller
-                                                                .engine
-                                                                .buildReader(
-                                                                    context),
-                                                          )
-                                                        : controller.engine
-                                                            .buildReader(
-                                                                context),
+                                                    SmoothPageReader(
+                                                  enabled: readerPrefs
+                                                          .pageTurnMode ==
+                                                      PageTurnMode.tap,
+                                                  key: _smoothPageReaderKey,
+                                                  onPreviousTap: () {
+                                                    _triggerPageTurn(
+                                                      controller,
+                                                      forward: false,
+                                                      at: DateTime.now(),
+                                                    );
+                                                  },
+                                                  onNextTap: () {
+                                                    _triggerPageTurn(
+                                                      controller,
+                                                      forward: true,
+                                                      at: DateTime.now(),
+                                                    );
+                                                  },
+                                                  onCenterTap: () {
+                                                    _showReaderControls(
+                                                      context,
+                                                      controller,
+                                                    );
+                                                  },
+                                                  child: controller.engine
+                                                      .buildReader(context),
+                                                ),
                                               ),
                                             ),
                                           ),

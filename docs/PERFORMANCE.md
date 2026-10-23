@@ -12,6 +12,10 @@ The EPUB viewport navigation fix and authorized large-book validation are
 recorded in [EPUB_TURN_FIX_03.md](EPUB_TURN_FIX_03.md).
 The TXT turn-history invalidation fix and mixed-input validation are recorded in
 [TXT_TURN_HISTORY_FIX_04.md](TXT_TURN_HISTORY_FIX_04.md).
+Mode/reflow anchoring, cold recovery and paired before/after measurements are
+recorded in [READER_REFLOW_FIX_05.md](READER_REFLOW_FIX_05.md). Compare both the
+engine and the animation container; invalid intermediate runs and truncated
+Android logs are excluded from final measurements.
 
 ## 1) Non-negotiable rules
 

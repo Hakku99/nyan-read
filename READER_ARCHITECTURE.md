@@ -179,18 +179,63 @@ Unified position model used for save/restore and current-location tracking.
 
 Fields:
 - `paragraphIndex` (+ optional `paragraphLeadingEdge` / `paragraphTrailingEdge` viewport refinement)
+- Optional `textOffset` (UTF-16 in the exact displayed paragraph),
+  `textViewportOffset` (normalized reading-line top), `layoutIdentity`, and
+  `anchorVersion` (1). Added by item 05 for TXT/EPUB reflow restoration.
 - `pageNumber`
 - `cfi` (legacy EPUB field — read for backward compatibility, no longer written)
 - `chapterIndex`
 
 Usage:
-- TXT uses `paragraphIndex` + viewport edges
+- TXT uses `paragraphIndex` + viewport edges + optional text anchor; the runtime
+  snapshot remains a `TxtReadingPosition` for existing consumers.
 - PDF uses `pageNumber`
 - EPUB uses `paragraphIndex` + viewport edges (2026-07 self-hosted renderer;
   pre-rework rows also carried a `cfi`, which restore ignores in favor of the
   dual-written `paragraphIndex`)
 
 `ReadingProgressManager` serializes and restores this model through `DatabaseService`.
+
+TXT/EPUB mode and reflow restoration (05, 2026-10-22):
+
+- `ReaderPage` keeps `SmoothPageReader` mounted in every mode; `enabled` only
+  controls horizontal tap handling. A mode change cancels an undispatched old
+  capture/animation. A stable keyed live-reader slot also prevents animation
+  start/end from remounting the engine body. Mode-only changes preserve the live
+  scrollable and paint. The live body has its own repaint boundary so translating
+  it does not repeatedly paint paragraph text. Snapshot resolution and transition
+  timing are unchanged.
+- Engines own the last committed viewport snapshot and the accepted restore.
+  Text widgets register only mounted geometry handles in `TextLayoutAnchors`;
+  no second controller/widget position owner or whole-book layout pass is added.
+- Anchors use the actual `RenderEditable` line/caret geometry, including the
+  actual font, heading style, padding and text scaling. Capturing the last
+  committed frame avoids sampling already-rescaled text with old viewport edges.
+  Build-phase progress reads never query render geometry, and detached text
+  handles are ignored; measurement belongs to commands/committed-frame callbacks.
+- Layout identity includes format, platform, locale/direction, viewport size,
+  typography and scaled body/heading sizes. Matching layouts retain exact edges;
+  changed layouts restore the original character on the first reading line.
+  The accepted character survives repeated reflows until navigation/scrolling
+  changes the reading location. Boundary correction must finish before the
+  restored pixels are committed. When a short book fits entirely in the new
+  viewport, the still-visible retained paragraph remains the logical position
+  (including progress/chapter selection), even below the top of the viewport.
+  Scrolling or a new drag releases that exception. A partially visible final
+  text line is a valid fallback when no fully visible line remains in its row.
+- Reflow targets stay authoritative for saves until layout commits. A paint-only
+  gate suppresses intermediate paragraph-start frames; new drags can supersede
+  restoration. This can briefly hide text during reflow and is not an animation
+  optimization. Stale serials cannot overwrite newer navigation or layout.
+- The JSON change is additive; unknown/invalid optional anchor fields fall back
+  safely. Old records without text offsets keep legacy edge/paragraph recovery;
+  their exact former text cannot be reconstructed after reflow. Existing JSON
+  columns need no schema migration. Older builds ignore the new keys and may
+  discard the precision when saving again. Fonts/rendering changes require
+  reviewing the layout/anchor version before reusing historical geometry.
+- Paragraph enumeration, highlights, chapter locators, progress percentages and
+  PDF positioning remain unchanged. Image-only slots use existing geometry
+  fallback; async image sizing is still tracked separately in item 10.
 
 ### `ChapterLocator`
 
@@ -277,7 +322,7 @@ Navigation and restore (01A/02, 2026-10-19):
   the public scroll position. Same-layout backward history keeps pixel anchors.
 - `ReadingPosition` JSON, paragraph enumeration, database schema, progress and
   page-count estimation are unchanged. Old index-only positions still work.
-  Precise cross-layout character anchors/mode switching (05) remain separate work.
+  Item 05 subsequently adds optional character anchors and stable mode switching.
 
 TXT turn-history validity (04, 2026-10-22):
 - Up to 48 completed forward turns retain both start and end viewport anchors.
@@ -293,7 +338,7 @@ TXT turn-history validity (04, 2026-10-22):
   animation remain unchanged; the current engine position remains authoritative.
 - No public signatures, position JSON, persistence schema, paragraph enumeration
   or page-count estimation change. Clearing history on a layout change does not
-  provide the precise cross-layout anchoring still tracked in 05.
+  itself provide cross-layout anchoring; item 05 adds that separately.
 
 The shared `SmoothPageReader` waits for paint using `endOfFrame`, reserves a
 turn before asynchronous snapshot capture, and falls back to one direct turn
@@ -353,8 +398,8 @@ Navigation and restore (03, 2026-10-22):
 - Image extraction sends only strings through a top-level compute callback,
   avoiding capture of a live engine's unsendable scroll state.
 - No public method signatures, position JSON fields, enumeration version,
-  paragraph ordering, database schema or dependencies change. Cross-layout
-  content anchoring (05), image layout stability (10), progress semantics (14)
+  paragraph ordering, database schema or dependencies change. Item 05 adds
+  cross-layout content anchoring; image layout stability (10), progress semantics (14)
   and shared horizontal animation/performance (08/13) remain separate work.
 
 Implements optional capabilities:
