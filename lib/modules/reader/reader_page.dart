@@ -63,6 +63,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   final GlobalKey<ScaffoldState> readerPageScaffoldKey =
       GlobalKey<ScaffoldState>();
   final GlobalKey _readerBodyKey = GlobalKey();
+  final _textSelections = ReaderTextSelectionRegistry();
   bool _showControls = false;
 
   /// One Paper: which sheet the dock has grown into (`chapters` / `settings`),
@@ -441,6 +442,28 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                     );
                                                   },
                                                   child: ReaderTextGestures(
+                                                    selections: _textSelections,
+                                                    onCenterInteraction: () =>
+                                                        _pageTurnRequest
+                                                            ?.cancel(),
+                                                    isTurnZone: (position) {
+                                                      final box =
+                                                          _smoothPageReaderKey
+                                                                  .currentContext
+                                                                  ?.findRenderObject()
+                                                              as RenderBox?;
+                                                      if (box == null ||
+                                                          !box.hasSize) {
+                                                        return false;
+                                                      }
+                                                      final ratio = box
+                                                              .globalToLocal(
+                                                                  position)
+                                                              .dx /
+                                                          box.size.width;
+                                                      return ratio < .20 ||
+                                                          ratio > .80;
+                                                    },
                                                     horizontal: readerPrefs
                                                             .pageTurnMode ==
                                                         PageTurnMode.tap,

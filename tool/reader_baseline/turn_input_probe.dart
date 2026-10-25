@@ -133,8 +133,18 @@ Future<Map<String, Object>> verifyTurnInputs(
   }
   controller.setPageTurnMode(PageTurnMode.tap);
   await _pause(800);
+  final overlayOrigin = controller.currentPosition!.toJson();
   await _tap(.98);
-  await _pause(100);
+  for (var i = 0;
+      i < 200 && controller.currentPosition!.toJson() == overlayOrigin;
+      i++) {
+    await _pause(10);
+  }
+  if (controller.currentPosition!.toJson() == overlayOrigin ||
+      !_reader().$1.isAnimating) {
+    throw StateError(
+        'Overlay cancellation did not begin during an accepted turn');
+  }
   final beforeOverlay = controller.currentPosition!;
   await _tap(.5);
   await _pause(1000);
@@ -142,8 +152,7 @@ Future<Map<String, Object>> verifyTurnInputs(
   _same(beforeOverlay, controller.currentPosition!);
   await _tap(.5);
   await _pause(800);
-  // Keep the independently observed text-selection conflict visible in results.
-  // It is distinct from input locking at the blank page-turn edge.
+  // Body input is a required gate, independent of blank-edge input locking.
   await controller.handleBookmarkSelection({
     'position_type': controller.book.format,
     'position_payload': start.toJson(),
@@ -198,6 +207,9 @@ Future<Map<String, Object>> verifyTurnInputs(
     'position_payload': start.toJson(),
   });
   await _pause(400);
+  if (!bodySwipe || !bodyRoundTrip || selectedFields != 0) {
+    throw StateError('Body gesture acceptance failed');
+  }
   return {
     'bodyHorizontalSwipe': bodySwipe,
     'bodyRapidRoundTrip': bodyRoundTrip,

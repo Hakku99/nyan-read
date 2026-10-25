@@ -2,6 +2,7 @@ part of 'reader_page.dart';
 
 extension _ReaderPageGestureHandler on _ReaderPageState {
   void _handleTapDown(BuildContext context, TapDownDetails details) {
+    _textSelections.beginInput();
     _tapDownPosition = details.globalPosition;
     _panStartPosition = details.globalPosition;
     _isPanning = false;
@@ -137,6 +138,9 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
   }
 
   void _handleSwipeLogic(DragEndDetails details) {
+    // A selection in any mounted paragraph owns dragging, including when the
+    // parent recognizer wins on iOS or the pointer starts in paragraph padding.
+    if (_textSelections.hasSelection) return;
     final controller = _boundController;
     final start = _panStartPosition;
     final end = _panLastPosition;
@@ -195,6 +199,10 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     required bool forward,
     required DateTime at,
   }) {
+    if (_textSelections.hasSelection) {
+      FocusScope.of(context).unfocus();
+      return;
+    }
     if (_lastTapLogicAt != null &&
         at.difference(_lastTapLogicAt!) <
             _ReaderPageState._tapLogicDedupWindow) {

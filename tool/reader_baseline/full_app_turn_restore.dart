@@ -100,7 +100,7 @@ Future<void> main() async {
       'epub': String.fromEnvironment('BASELINE_EPUB'),
     };
     for (final format in sources.keys) {
-      final id = 'turn-0813-acceptance-$format';
+      final id = 'gesture-g1g2-verified-$format';
       if (await db.getBookById(id) == null) {
         await db.insertBook(Book(
                 id: id,
@@ -135,13 +135,33 @@ Future<void> main() async {
         await controller.handleBookmarkSelection({
           'position_type': format,
           'position_payload':
+              ReadingPosition(paragraphIndex: format == 'txt' ? 12544 : 61007)
+                  .toJson(),
+        });
+        await _settle();
+        final normalInputs = await verifyTurnInputs(controller);
+        _emit({
+          'event': 'inputs',
+          'format': format,
+          'scene': 'normal',
+          ...normalInputs
+        });
+        await controller.handleBookmarkSelection({
+          'position_type': format,
+          'position_payload':
               ReadingPosition(paragraphIndex: format == 'txt' ? 34455 : 149859)
                   .toJson(),
         });
         await controller.nextPage();
         await _settle();
         final inputChecks = await verifyTurnInputs(controller);
-        _emit({'event': 'inputs', 'format': format, ...inputChecks});
+        _emit({
+          'event': 'inputs',
+          'format': format,
+          'scene': 'long',
+          ...inputChecks
+        });
+        await _verifyNative(controller, format);
         final anchor = controller.engine.getCurrentPosition()!;
         if ((anchor.textOffset ?? 0) <= 0) {
           throw StateError('Expected a mid-paragraph anchor');
@@ -214,4 +234,37 @@ Future<void> main() async {
       'stack': stack.toString().split('\n').take(8).join('\n')
     });
   }
+}
+
+Future<void> _verifyNative(ReaderController controller, String format) async {
+  if (!const bool.fromEnvironment('GESTURE_NATIVE')) return;
+  final start = controller.currentPosition!;
+  await controller.nextPage();
+  final next = controller.currentPosition!;
+  await controller.previousPage();
+  await _settle();
+  bool same(ReadingPosition a, ReadingPosition b) =>
+      a.paragraphIndex == b.paragraphIndex && a.textOffset == b.textOffset;
+  Future<void> waitFor(ReadingPosition expected) async {
+    for (var attempt = 0; attempt < 600; attempt++) {
+      if (same(controller.currentPosition!, expected)) {
+        await Future<void>.delayed(const Duration(milliseconds: 800));
+        if (!same(controller.currentPosition!, expected)) {
+          throw StateError('Native input double turn');
+        }
+        return;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+    throw StateError('Native swipe timed out');
+  }
+
+  if (!same(controller.currentPosition!, start)) {
+    throw StateError('Native start mismatch');
+  }
+  _emit({'event': 'native-ready', 'format': format});
+  await waitFor(next);
+  _emit({'event': 'native-forward', 'format': format});
+  await waitFor(start);
+  _emit({'event': 'native-complete', 'format': format, 'passed': true});
 }

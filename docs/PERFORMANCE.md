@@ -125,3 +125,7 @@ Reject changes that introduce:
 
 G1 text-drag routing and its independent validation are documented in
 [READER_GESTURE_FIX_G1.md](READER_GESTURE_FIX_G1.md).
+
+G2 input arbitration and joint device evidence are documented in
+[READER_GESTURE_FIX_G1_G2.md](READER_GESTURE_FIX_G1_G2.md). Those historical device
+checks included the item 13 candidate and are not isolated performance evidence.

@@ -385,7 +385,13 @@ into the reader's existing navigation callbacks. `ReaderSelectableText` uses
 public `EditableText` / `TextSelectionGestureDetectorBuilder` APIs, retaining
 native long-press selection, handles and vertical scrolling. `ReaderTextGestures`
 provides UI routing only; position and paragraph layout ownership do not change.
-See `docs/READER_GESTURE_FIX_G1.md`. Rapid-tap selection arbitration remains G2.
+See `docs/READER_GESTURE_FIX_G1.md`.
+G2 moves horizontal taps into the winning text recognizer: side-zone touch
+multi-taps navigate without selecting words; center single taps wait for the
+double-tap window while center pointer-down immediately cancels presentation.
+Mounted selection ownership and input epochs suppress navigation during selection
+and invalidate delayed controls after a newer input. No reading position is
+stored in this UI registry. See `docs/READER_GESTURE_FIX_G1_G2.md`.
 
 Implements optional capabilities:
 - `TextReaderCapability`

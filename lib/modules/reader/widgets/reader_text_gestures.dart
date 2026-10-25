@@ -1,5 +1,21 @@
 import 'package:flutter/widgets.dart';
 
+/// Mounted selection ownership only; never stores reading position or text.
+class ReaderTextSelectionRegistry {
+  final _owners = <Object>{};
+  int _inputEpoch = 0;
+  int get inputEpoch => _inputEpoch;
+  void beginInput() => _inputEpoch++;
+  bool get hasSelection => _owners.isNotEmpty;
+  void update(Object owner, bool selected) {
+    if (selected) {
+      _owners.add(owner);
+    } else {
+      _owners.remove(owner);
+    }
+  }
+}
+
 /// Routes a text recognizer's winning drag to the reader without competing
 /// against that same recognizer in a parent gesture arena.
 class ReaderTextGestures extends InheritedWidget {
@@ -9,6 +25,9 @@ class ReaderTextGestures extends InheritedWidget {
     required this.onStart,
     required this.onUpdate,
     required this.onEnd,
+    this.isTurnZone,
+    this.selections,
+    this.onCenterInteraction,
     required super.child,
   });
 
@@ -16,6 +35,9 @@ class ReaderTextGestures extends InheritedWidget {
   final GestureDragStartCallback onStart;
   final GestureDragUpdateCallback onUpdate;
   final GestureDragEndCallback onEnd;
+  final bool Function(Offset position)? isTurnZone;
+  final ReaderTextSelectionRegistry? selections;
+  final VoidCallback? onCenterInteraction;
 
   static ReaderTextGestures? of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<ReaderTextGestures>();
@@ -25,5 +47,8 @@ class ReaderTextGestures extends InheritedWidget {
       horizontal != oldWidget.horizontal ||
       onStart != oldWidget.onStart ||
       onUpdate != oldWidget.onUpdate ||
-      onEnd != oldWidget.onEnd;
+      onEnd != oldWidget.onEnd ||
+      isTurnZone != oldWidget.isTurnZone ||
+      selections != oldWidget.selections ||
+      onCenterInteraction != oldWidget.onCenterInteraction;
 }

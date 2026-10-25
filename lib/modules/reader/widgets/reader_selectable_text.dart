@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -14,12 +15,14 @@ class ReaderSelectableText extends StatefulWidget {
     required this.style,
     required this.onSelectionChanged,
     required this.contextMenuBuilder,
+    this.onTap,
   });
 
   final TextSpan span;
   final TextStyle style;
   final SelectionChangedCallback onSelectionChanged;
   final EditableTextContextMenuBuilder contextMenuBuilder;
+  final ValueChanged<Offset>? onTap;
 
   @override
   State<ReaderSelectableText> createState() => _ReaderSelectableTextState();
@@ -66,6 +69,7 @@ class _ReaderSelectableTextState extends State<ReaderSelectableText>
     if (!_focus.hasFocus &&
         SchedulerBinding.instance.lifecycleState == AppLifecycleState.resumed) {
       _controller.selection = const TextSelection.collapsed(offset: -1);
+      routing?.selections?.update(this, false);
       widget.onSelectionChanged(
           _controller.selection, SelectionChangedCause.tap);
       if (_handles) setState(() => _handles = false);
@@ -76,16 +80,21 @@ class _ReaderSelectableTextState extends State<ReaderSelectableText>
   void didUpdateWidget(ReaderSelectableText oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.span != oldWidget.span) {
+      _gestures.cancelPendingTap();
       _controller.span = widget.span;
       final text = widget.span.toPlainText(includeSemanticsLabels: false);
       if (_controller.text != text) {
         _controller.value = TextEditingValue(text: text);
+        routing?.selections?.update(this, false);
+        _handles = false;
       }
     }
   }
 
   @override
   void dispose() {
+    _gestures.cancelPendingTap();
+    routing?.selections?.update(this, false);
     _focus.removeListener(_focusChanged);
     _focus.dispose();
     _controller.dispose();
@@ -94,6 +103,7 @@ class _ReaderSelectableTextState extends State<ReaderSelectableText>
 
   void _selectionChanged(
       TextSelection selection, SelectionChangedCause? cause) {
+    routing?.selections?.update(this, hasSelection);
     final handles = hasSelection &&
         cause != SelectionChangedCause.keyboard &&
         _gestures.shouldShowSelectionToolbar;
@@ -107,8 +117,19 @@ class _ReaderSelectableTextState extends State<ReaderSelectableText>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final nextRoute = ReaderTextGestures.of(context);
+    _gestures.cancelPendingTap();
+    if (nextRoute?.selections != routing?.selections) {
+      routing?.selections?.update(this, false);
+      nextRoute?.selections?.update(this, hasSelection);
+    }
+    routing = nextRoute;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    routing = ReaderTextGestures.of(context);
     final theme = Theme.of(context);
     final defaults = DefaultTextStyle.of(context);
     final selection = DefaultSelectionStyle.of(context);
@@ -174,22 +195,93 @@ class _ReaderSelectionBuilder extends TextSelectionGestureDetectorBuilder {
   final _ReaderSelectableTextState owner;
   bool _selectedAtDown = false;
   ReaderTextGestures? _dragRoute;
+  Timer? _tapTimer;
+  TapDragDownDetails? _down;
+  bool _turnTap = false;
+
+  void cancelPendingTap() => _tapTimer?.cancel();
+
+  bool get _anySelection =>
+      owner.hasSelection || owner.routing?.selections?.hasSelection == true;
 
   @override
   void onTapDown(TapDragDownDetails details) {
-    _selectedAtDown = owner.hasSelection;
+    cancelPendingTap();
+    _down = details;
+    _selectedAtDown = _anySelection;
+    _turnTap = details.kind == PointerDeviceKind.touch &&
+        owner.routing?.horizontal == true &&
+        !_selectedAtDown &&
+        owner.routing?.isTurnZone?.call(details.globalPosition) == true;
+    // The builder still receives pointer-down positions for long-press selection.
     super.onTapDown(details);
   }
 
   @override
+  void onDoubleTapDown(TapDragDownDetails details) {
+    cancelPendingTap();
+    if (!_turnTap) super.onDoubleTapDown(details);
+  }
+
+  @override
+  void onTripleTapDown(TapDragDownDetails details) {
+    cancelPendingTap();
+    if (!_turnTap) super.onTripleTapDown(details);
+  }
+
+  @override
+  bool get onUserTapAlwaysCalled => true;
+
+  @override
+  void onUserTap() {
+    if (_turnTap && !_anySelection) {
+      owner.widget.onTap?.call(_down!.globalPosition);
+    }
+  }
+
+  @override
+  void onSingleTapUp(TapDragUpDetails details) {
+    if (_turnTap) return;
+    super.onSingleTapUp(details);
+    if (owner.routing?.horizontal != true || _selectedAtDown || _anySelection) {
+      return;
+    }
+    // A center tap opens controls only after a possible word-selection tap.
+    // This is Flutter's gesture window, not an independent reader debounce.
+    final inputEpoch = owner.routing?.selections?.inputEpoch;
+    _tapTimer = Timer(kDoubleTapTimeout, () {
+      if (owner.mounted &&
+          owner.routing?.horizontal == true &&
+          owner.routing?.selections?.inputEpoch == inputEpoch &&
+          !_anySelection) {
+        owner.widget.onTap?.call(details.globalPosition);
+      }
+    });
+  }
+
+  @override
+  void onSingleTapCancel() {
+    cancelPendingTap();
+    super.onSingleTapCancel();
+  }
+
+  @override
+  void onSingleLongTapStart(LongPressStartDetails details) {
+    cancelPendingTap();
+    _turnTap = false;
+    super.onSingleLongTapStart(details);
+  }
+
+  @override
   void onDragSelectionStart(TapDragStartDetails details) {
+    cancelPendingTap();
     final route = owner.routing;
     final touch = details.kind == PointerDeviceKind.touch;
     if (route?.horizontal == true &&
         touch &&
         !_selectedAtDown &&
-        !owner.hasSelection &&
-        details.consecutiveTapCount == 1) {
+        !_anySelection &&
+        (details.consecutiveTapCount == 1 || _turnTap)) {
       _dragRoute = route;
       route!.onStart(DragStartDetails(
           globalPosition: details.globalPosition,
@@ -206,7 +298,7 @@ class _ReaderSelectionBuilder extends TextSelectionGestureDetectorBuilder {
   void onDragSelectionUpdate(TapDragUpdateDetails details) {
     final route = _dragRoute;
     if (route != null) {
-      if (owner.routing?.horizontal != true) return;
+      if (!identical(owner.routing, route) || !route.horizontal) return;
       route.onUpdate(DragUpdateDetails(
           globalPosition: details.globalPosition,
           localPosition: details.localPosition,
@@ -222,7 +314,7 @@ class _ReaderSelectionBuilder extends TextSelectionGestureDetectorBuilder {
     final route = _dragRoute;
     _dragRoute = null;
     if (route != null) {
-      if (owner.routing?.horizontal == true) {
+      if (identical(owner.routing, route) && route.horizontal) {
         route.onEnd(DragEndDetails(
             velocity: details.velocity,
             globalPosition: details.globalPosition,

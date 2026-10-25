@@ -8,6 +8,7 @@ import 'package:flutter/gestures.dart';
 import 'dart:async';
 import 'text_selection_menu.dart';
 import 'reader_selectable_text.dart';
+import 'reader_text_gestures.dart';
 import '../reader_engine/text_layout_anchor.dart';
 
 /// Text widget that renders highlights and supports selection
@@ -98,12 +99,21 @@ class _HighlightableTextState extends State<HighlightableText> {
 
   @override
   Widget build(BuildContext context) {
+    final routing = ReaderTextGestures.of(context);
+    final horizontal = routing?.horizontal == true;
     return Container(
       color: widget.backgroundColor,
       padding: widget.padding,
       child: Listener(
         key: _listenerKey,
         onPointerDown: (event) {
+          routing?.selections?.beginInput();
+          // Interrupt presentation immediately; opening controls still waits for
+          // double-tap disambiguation in the selection builder.
+          if (horizontal &&
+              routing?.isTurnZone?.call(event.position) == false) {
+            routing?.onCenterInteraction?.call();
+          }
           _pointerDownPosition = event.position;
           _isScrolling = false;
         },
@@ -117,6 +127,9 @@ class _HighlightableTextState extends State<HighlightableText> {
           }
         },
         onPointerUp: (event) {
+          // Horizontal mode dispatches from the winning selection recognizer,
+          // so links/highlights and multi-taps cannot race a raw-pointer timer.
+          if (horizontal) return;
           // Only trigger tap if not scrolling and no text selected
           if (_isScrolling) {
             _isScrolling = false;
@@ -150,6 +163,7 @@ class _HighlightableTextState extends State<HighlightableText> {
         },
         child: ReaderSelectableText(
           span: _buildTextSpan(),
+          onTap: widget.onTap,
           style: widget.style,
           onSelectionChanged: (selection, cause) {
             _currentSelection = selection;
