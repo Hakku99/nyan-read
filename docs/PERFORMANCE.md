@@ -122,3 +122,6 @@ Reject changes that introduce:
 - Reintroducing private `epub_view/src/*` imports
 - Moving heavy file operations back onto main isolate
 - Broad widget tree listening where leaf listenable binding exists
+
+G1 text-drag routing and its independent validation are documented in
+[READER_GESTURE_FIX_G1.md](READER_GESTURE_FIX_G1.md).

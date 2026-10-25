@@ -380,6 +380,13 @@ one outgoing snapshot over the live target; item 13's rendering optimizations
 remain separate, unaccepted work. See `docs/READER_TURN_FIX_08.md` for the isolated
 verification scope and known body-gesture limitations.
 
+G1 routes ordinary horizontal touch drags from the text selection recognizer
+into the reader's existing navigation callbacks. `ReaderSelectableText` uses
+public `EditableText` / `TextSelectionGestureDetectorBuilder` APIs, retaining
+native long-press selection, handles and vertical scrolling. `ReaderTextGestures`
+provides UI routing only; position and paragraph layout ownership do not change.
+See `docs/READER_GESTURE_FIX_G1.md`. Rapid-tap selection arbitration remains G2.
+
 Implements optional capabilities:
 - `TextReaderCapability`
 - `TextExtractionCapability`

@@ -7,6 +7,7 @@ import '../../../core/models/highlight.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:async';
 import 'text_selection_menu.dart';
+import 'reader_selectable_text.dart';
 import '../reader_engine/text_layout_anchor.dart';
 
 /// Text widget that renders highlights and supports selection
@@ -147,8 +148,8 @@ class _HighlightableTextState extends State<HighlightableText> {
           _isScrolling = false;
           _pointerDownPosition = null;
         },
-        child: SelectableText.rich(
-          _buildTextSpan(),
+        child: ReaderSelectableText(
+          span: _buildTextSpan(),
           style: widget.style,
           onSelectionChanged: (selection, cause) {
             _currentSelection = selection;

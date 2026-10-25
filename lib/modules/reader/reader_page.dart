@@ -35,6 +35,7 @@ import 'widgets/chapter_list_widget.dart';
 import 'widgets/one_paper_dock.dart';
 import 'widgets/reader_brightness_popover.dart';
 import 'widgets/smooth_page_reader.dart';
+import 'widgets/reader_text_gestures.dart';
 import '../../core/services/reading_reminder_service.dart';
 import '../../core/ui/nyan_icons.dart';
 import '../../core/utils/snackbar_utils.dart';
@@ -439,8 +440,22 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                       controller,
                                                     );
                                                   },
-                                                  child: controller.engine
-                                                      .buildReader(context),
+                                                  child: ReaderTextGestures(
+                                                    horizontal: readerPrefs
+                                                            .pageTurnMode ==
+                                                        PageTurnMode.tap,
+                                                    onStart: (details) =>
+                                                        _handlePanStart(
+                                                            context, details),
+                                                    onUpdate: (details) =>
+                                                        _handlePanUpdate(
+                                                            context, details),
+                                                    onEnd: (details) =>
+                                                        _handlePanEnd(
+                                                            context, details),
+                                                    child: controller.engine
+                                                        .buildReader(context),
+                                                  ),
                                                 ),
                                               ),
                                             ),
