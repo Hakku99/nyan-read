@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'dart:convert';
 import 'package:archive/archive.dart';
+import 'package:image/image.dart' as img;
 import 'package:nyan_read/core/models/book.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import 'package:nyan_read/modules/reader/reader_engine/epub/epub_reader.dart';
@@ -235,8 +236,7 @@ void main() {
           archive.addFile(item);
         }
       }
-      final png = base64Decode(
-          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=');
+      final png = img.encodePng(img.Image(width: 1, height: 1));
       archive.addFile(ArchiveFile('image.png', png.length, png));
       await file.writeAsBytes(ZipEncoder().encode(archive));
       return file;
@@ -276,6 +276,85 @@ void main() {
     await perform(tester, engine.previousPage);
     expectSameViewport(before, engine.getCurrentPosition()!);
   });
+
+  for (final evictBitmap in [false, true]) {
+    testWidgets('image remount preserves geometry (evicted: $evictBitmap)',
+        (tester) async {
+      final file = await tester.runAsync(() async {
+        final file = await writeFixture('epub', baselineParagraphs());
+        final original = ZipDecoder().decodeBytes(await file.readAsBytes());
+        final archive = Archive();
+        for (final item in original.files) {
+          if (item.name == 'body.xhtml') {
+            final text = utf8
+                .decode(item.content)
+                .replaceFirst('<body>', '<body><img src="image.png"/>');
+            final bytes = utf8.encode(text);
+            archive.addFile(ArchiveFile(item.name, bytes.length, bytes));
+          } else {
+            archive.addFile(item);
+          }
+        }
+        final png = img.encodePng(img.Image(width: 120, height: 240));
+        archive.addFile(ArchiveFile('image.png', png.length, png));
+        await file.writeAsBytes(ZipEncoder().encode(archive));
+        return file;
+      });
+      final engine = EpubReaderEngine(Book(
+          id: 'remount',
+          title: 'Fixture',
+          author: '',
+          filePath: file!.path,
+          format: 'epub'));
+      await tester.runAsync(engine.initialize);
+      engine.setConfig(baselineConfig(PageTurnMode.tap));
+      tester.view.physicalSize = baselineViewport;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        engine.dispose();
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      await tester.pumpWidget(MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(builder: engine.buildReader)));
+      for (var i = 0; i < 30 && find.byType(Image).evaluate().isEmpty; i++) {
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(find.byType(Image), findsOneWidget);
+      final height = tester.getSize(find.byType(Image)).height;
+      expect(height, greaterThan(120));
+      final start = engine.getCurrentPosition()!;
+      await perform(tester,
+          () => engine.goToPosition(const ReadingPosition(paragraphIndex: 70)));
+      expect(find.byType(Image), findsNothing);
+      if (evictBitmap) {
+        PaintingBinding.instance.imageCache.clear();
+        PaintingBinding.instance.imageCache.clearLiveImages();
+      }
+      // Inspect the first remounted frame, before a completed Future can cause
+      // a second build. A settled-only assertion misses the placeholder flash.
+      final restore = engine.goToPosition(start);
+      await tester.pump();
+      expect(find.byType(Image), findsOneWidget);
+      expect(tester.getSize(find.byType(Image)).height, closeTo(height, .01));
+      await tester.pumpAndSettle();
+      await restore;
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pumpAndSettle();
+      expectSameViewport(start, engine.getCurrentPosition()!);
+      await perform(tester, engine.nextPage);
+      await perform(tester, engine.previousPage);
+      expectSameViewport(start, engine.getCurrentPosition()!);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('gesture interruption cannot create a stale completed turn',
       (tester) async {
@@ -353,8 +432,26 @@ void main() {
         'short and empty inputs have stable boundaries (${text.length})',
         (tester) async {
       final file = await tester.runAsync(() => writeFixture('epub', [text]));
-      final engine = await mountFixture(tester, 'epub', PageTurnMode.tap,
-          path: file!.path, initialIndex: 0);
+      final engine = EpubReaderEngine(Book(
+          id: 'remount',
+          title: 'Fixture',
+          author: '',
+          filePath: file!.path,
+          format: 'epub'));
+      await tester.runAsync(engine.initialize);
+      engine.setConfig(baselineConfig(PageTurnMode.tap));
+      tester.view.physicalSize = baselineViewport;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        engine.dispose();
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      await tester.pumpWidget(MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(builder: engine.buildReader)));
       final before = engine.getCurrentPosition()!;
       await perform(tester, engine.nextPage);
       await perform(tester, engine.previousPage);

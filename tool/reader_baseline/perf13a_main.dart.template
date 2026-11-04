@@ -253,7 +253,16 @@ Future<void> runFullApp() async {
   await preferences.setUseSerif(false);
   await preferences.setPageTurnMode(PageTurnMode.tap);
   runApp(UncontrolledProviderScope(container: container, child: const NyanApp()));
-  await pause(1500);
+  // The splash page owns a delayed navigation. Opening a book before it
+  // finishes can unmount the reader while its engine is still initializing.
+  for (var i = 0; i < 200 &&
+      appRouter.routeInformationProvider.value.uri.path != '/'; i++) {
+    await pause(50);
+  }
+  if (appRouter.routeInformationProvider.value.uri.path != '/') {
+    throw StateError('Initial bookshelf navigation timeout');
+  }
+  await pause(300);
   for (final scene in (config['scenes'] as List).cast<String>()) {
     final format = scene.split('_').first;
     final id = '13a-$format';

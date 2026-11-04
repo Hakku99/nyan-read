@@ -385,8 +385,11 @@ does not add a production listener or change reader contracts. Independent
 comparison against the G2 commit and frame/system evidence are documented in
 `docs/READER_PERFORMANCE_13A_RESULTS.md`. Full-app worst-round performance is
 still outside the budget. Image-size notifications can invalidate EPUB turn
-history and restoration during cancellation; both comparison variants retain
-this correctness defect, which needs a separate protected-surface fix.
+history and restoration during cancellation in both historical comparison
+variants. The separate EPUB image lifecycle fix now retains completed image
+data and decoded dimensions across list remounts, including bitmap eviction.
+It preserves existing navigation/restoration ownership and public contracts;
+see `docs/READER_EPUB_IMAGE_POSITION_FIX.md` for verification and limits.
 
 G1 routes ordinary horizontal touch drags from the text selection recognizer
 into the reader's existing navigation callbacks. `ReaderSelectableText` uses

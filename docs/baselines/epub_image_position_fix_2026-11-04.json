@@ -1,0 +1,351 @@
+{
+  "date": "2026-11-04",
+  "base": "fbe18f1",
+  "shortRuns": [
+    {
+      "run": "foreground-imagefix-input-2-B",
+      "passed": true,
+      "inputs": {
+        "bodyHorizontalSwipe": true,
+        "bodyRapidRoundTrip": true,
+        "selectedTextFieldsAfterBodyBurst": 0,
+        "tapRoundTrip": true,
+        "rapidThreeTapsOneTurn": true,
+        "horizontalSwipe": true,
+        "modeCancellation": true,
+        "overlayCancellation": true
+      },
+      "imageLayoutNotifications": 0,
+      "layoutInvalidations": 2,
+      "accepted": 11,
+      "ignored": 4,
+      "ended": 11,
+      "maxPositionErrorPx": 0.0,
+      "warmRoundTrip": true,
+      "performanceExcluded": true,
+      "performanceExclusionReason": "Overlapping sample validation cannot be ruled out",
+      "performance": {
+        "scene": "epub_image",
+        "temperature": "warm",
+        "config": {
+          "id": "foreground-imagefix-input-2-B",
+          "variant": "B",
+          "apkName": "input-B.apk",
+          "fullApp": true,
+          "trace": true,
+          "scenes": [
+            "epub_image"
+          ],
+          "windowCondition": "foreground",
+          "incrementalPull": false,
+          "apkSha256": "fe9434480fcda5f0ae9b9f60ab47265e123308457b91aab3f6ffb2757cd9b493",
+          "compiledVariant": "B"
+        },
+        "turns": 12,
+        "frames": 276,
+        "slow": 34,
+        "slowPercent": 12.318840579710145,
+        "slowPerTurn": {
+          "n": 12,
+          "p50": 2,
+          "p95": 6,
+          "p99": 6,
+          "max": 6
+        },
+        "meanSlowPerTurn": 2.8333333333333335,
+        "maxConsecutiveSlow": 2,
+        "buildMs": {
+          "n": 276,
+          "p50": 1.229,
+          "p95": 4.762,
+          "p99": 8.863,
+          "max": 10.797
+        },
+        "rasterMs": {
+          "n": 276,
+          "p50": 5.072,
+          "p95": 21.561,
+          "p99": 32.488,
+          "max": 35.5
+        },
+        "firstMoveMs": {
+          "n": 12,
+          "p50": 293.263,
+          "p95": 466.807,
+          "p99": 466.807,
+          "max": 466.807
+        },
+        "completionMs": {
+          "n": 12,
+          "p50": 658.73,
+          "p95": 818.782,
+          "p99": 818.782,
+          "max": 818.782
+        },
+        "slowStages": {
+          "motionFirst": 5,
+          "motionMiddle": 21,
+          "coverOld": 1,
+          "navigate": 3,
+          "captureNew": 2,
+          "revealOrAfter": 1,
+          "motionLast": 1
+        },
+        "allStages": {
+          "captureOld": 12,
+          "coverOld": 12,
+          "navigate": 12,
+          "ready": 24,
+          "readyFrame": 12,
+          "captureNew": 12,
+          "motionFirst": 27,
+          "motionMiddle": 127,
+          "motionLast": 14,
+          "revealOrAfter": 24
+        },
+        "clockMatchedPaintMarks": 192,
+        "crossStageSlow": 6,
+        "rssBefore": 290283520,
+        "rssAfter": 294608896,
+        "cacheBytes": 79663856
+      },
+      "pendingReadbackAtCancellation": 1,
+      "snapshotReferencesAfterRelease": 0,
+      "laterCaptureCompleted": true
+    },
+    {
+      "run": "foreground-imagefix-input-3-B",
+      "passed": true,
+      "inputs": {
+        "bodyHorizontalSwipe": true,
+        "bodyRapidRoundTrip": true,
+        "selectedTextFieldsAfterBodyBurst": 0,
+        "tapRoundTrip": true,
+        "rapidThreeTapsOneTurn": true,
+        "horizontalSwipe": true,
+        "modeCancellation": true,
+        "overlayCancellation": true
+      },
+      "imageLayoutNotifications": 0,
+      "layoutInvalidations": 2,
+      "accepted": 11,
+      "ignored": 4,
+      "ended": 11,
+      "maxPositionErrorPx": 0.0,
+      "warmRoundTrip": true,
+      "performanceExcluded": false,
+      "performanceExclusionReason": null,
+      "performance": {
+        "scene": "epub_image",
+        "temperature": "warm",
+        "config": {
+          "id": "foreground-imagefix-input-3-B",
+          "variant": "B",
+          "apkName": "input-B.apk",
+          "fullApp": true,
+          "trace": true,
+          "scenes": [
+            "epub_image"
+          ],
+          "turns": 12,
+          "windowCondition": "foreground",
+          "incrementalPull": false,
+          "apkSha256": "fe9434480fcda5f0ae9b9f60ab47265e123308457b91aab3f6ffb2757cd9b493",
+          "compiledVariant": "B"
+        },
+        "turns": 12,
+        "frames": 372,
+        "slow": 14,
+        "slowPercent": 3.763440860215054,
+        "slowPerTurn": {
+          "n": 12,
+          "p50": 0,
+          "p95": 10,
+          "p99": 10,
+          "max": 10
+        },
+        "meanSlowPerTurn": 1.1666666666666667,
+        "maxConsecutiveSlow": 2,
+        "buildMs": {
+          "n": 372,
+          "p50": 0.488,
+          "p95": 0.674,
+          "p99": 1.074,
+          "max": 3.706
+        },
+        "rasterMs": {
+          "n": 372,
+          "p50": 1.425,
+          "p95": 16.533,
+          "p99": 18.059,
+          "max": 19.474
+        },
+        "firstMoveMs": {
+          "n": 12,
+          "p50": 163.985,
+          "p95": 180.78,
+          "p99": 180.78,
+          "max": 180.78
+        },
+        "completionMs": {
+          "n": 12,
+          "p50": 517.08,
+          "p95": 534.592,
+          "p99": 534.592,
+          "max": 534.592
+        },
+        "slowStages": {
+          "ready": 2,
+          "motionFirst": 1,
+          "motionMiddle": 6,
+          "motionLast": 1,
+          "revealOrAfter": 1,
+          "navigate": 1,
+          "coverOld": 1,
+          "readyFrame": 1
+        },
+        "allStages": {
+          "captureOld": 12,
+          "coverOld": 12,
+          "navigate": 12,
+          "ready": 24,
+          "readyFrame": 12,
+          "captureNew": 12,
+          "motionFirst": 36,
+          "motionMiddle": 204,
+          "motionLast": 24,
+          "revealOrAfter": 24
+        },
+        "clockMatchedPaintMarks": 288,
+        "crossStageSlow": 6,
+        "rssBefore": 535826432,
+        "rssAfter": 290426880,
+        "cacheBytes": 79663856
+      },
+      "pendingReadbackAtCancellation": 1,
+      "snapshotReferencesAfterRelease": 0,
+      "laterCaptureCompleted": true
+    },
+    {
+      "run": "foreground-imagefix-input-4-B",
+      "passed": true,
+      "inputs": {
+        "bodyHorizontalSwipe": true,
+        "bodyRapidRoundTrip": true,
+        "selectedTextFieldsAfterBodyBurst": 0,
+        "tapRoundTrip": true,
+        "rapidThreeTapsOneTurn": true,
+        "horizontalSwipe": true,
+        "modeCancellation": true,
+        "overlayCancellation": true
+      },
+      "imageLayoutNotifications": 0,
+      "layoutInvalidations": 2,
+      "accepted": 11,
+      "ignored": 4,
+      "ended": 11,
+      "maxPositionErrorPx": 0.0,
+      "warmRoundTrip": true,
+      "performanceExcluded": false,
+      "performanceExclusionReason": null,
+      "performance": {
+        "scene": "epub_image",
+        "temperature": "warm",
+        "config": {
+          "id": "foreground-imagefix-input-4-B",
+          "variant": "B",
+          "apkName": "input-B.apk",
+          "fullApp": true,
+          "trace": true,
+          "scenes": [
+            "epub_image"
+          ],
+          "turns": 12,
+          "windowCondition": "foreground",
+          "incrementalPull": false,
+          "apkSha256": "fe9434480fcda5f0ae9b9f60ab47265e123308457b91aab3f6ffb2757cd9b493",
+          "compiledVariant": "B"
+        },
+        "turns": 12,
+        "frames": 372,
+        "slow": 21,
+        "slowPercent": 5.645161290322581,
+        "slowPerTurn": {
+          "n": 12,
+          "p50": 0,
+          "p95": 11,
+          "p99": 11,
+          "max": 11
+        },
+        "meanSlowPerTurn": 1.75,
+        "maxConsecutiveSlow": 3,
+        "buildMs": {
+          "n": 372,
+          "p50": 0.494,
+          "p95": 0.745,
+          "p99": 1.084,
+          "max": 3.796
+        },
+        "rasterMs": {
+          "n": 372,
+          "p50": 1.429,
+          "p95": 16.686,
+          "p99": 18.358,
+          "max": 20.608
+        },
+        "firstMoveMs": {
+          "n": 12,
+          "p50": 164.197,
+          "p95": 182.95,
+          "p99": 182.95,
+          "max": 182.95
+        },
+        "completionMs": {
+          "n": 12,
+          "p50": 515.667,
+          "p95": 533.06,
+          "p99": 533.06,
+          "max": 533.06
+        },
+        "slowStages": {
+          "navigate": 1,
+          "readyFrame": 2,
+          "ready": 1,
+          "motionFirst": 2,
+          "motionMiddle": 13,
+          "motionLast": 2
+        },
+        "allStages": {
+          "captureOld": 12,
+          "coverOld": 12,
+          "navigate": 12,
+          "ready": 24,
+          "readyFrame": 12,
+          "captureNew": 12,
+          "motionFirst": 36,
+          "motionMiddle": 204,
+          "motionLast": 24,
+          "revealOrAfter": 24
+        },
+        "clockMatchedPaintMarks": 288,
+        "crossStageSlow": 5,
+        "rssBefore": 291831808,
+        "rssAfter": 288235520,
+        "cacheBytes": 79663856
+      },
+      "pendingReadbackAtCancellation": 1,
+      "snapshotReferencesAfterRelease": 0,
+      "laterCaptureCompleted": true
+    }
+  ],
+  "unitPassed": 48,
+  "samplePassed": 3,
+  "longTestRun": false,
+  "startupInvalidRun": "foreground-imagefix-input-1-B",
+  "sourceSha256": "10bf05f3788e2a96a2dea7229afd68b75cd73499a6269894338f4dca8608b2cd",
+  "staticAnalysis": "passed (3 changed Dart files)",
+  "sampleSha256": {
+    "epub": "486fff823e05f54e623528ce488b211b6196c6aa751272b74e6565ef133d3915",
+    "txt": "908bc3552974c31f1ed3c8c25ee83e289773ca44f7c84c84aa1a16a4dc5844a9"
+  }
+}
