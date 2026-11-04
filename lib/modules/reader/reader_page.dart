@@ -410,6 +410,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                 ),
                                                 builder: (context, _, __) =>
                                                     SmoothPageReader(
+                                                  snapshotIncoming:
+                                                      controller.book.format !=
+                                                          'pdf',
                                                   layoutIdentity: (
                                                     readerPrefs.fontSize,
                                                     readerPrefs.lineHeight,

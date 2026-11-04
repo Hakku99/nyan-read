@@ -20,6 +20,7 @@ Future<ui.Image> snapshot() async {
 Future<GlobalKey<SmoothPageReaderState>> mount(WidgetTester tester,
     {required Future<ui.Image?> Function() capture,
     Object? layout = 1,
+    bool snapshotIncoming = false,
     GlobalKey<SmoothPageReaderState>? key}) async {
   final actual = key ?? GlobalKey<SmoothPageReaderState>();
   await tester.pumpWidget(MaterialApp(
@@ -29,6 +30,7 @@ Future<GlobalKey<SmoothPageReaderState>> mount(WidgetTester tester,
     child: SmoothPageReader(
         key: actual,
         layoutIdentity: layout,
+        snapshotIncoming: snapshotIncoming,
         captureFrame: capture,
         captureTimeout: const Duration(milliseconds: 50),
         prepareTimeout: const Duration(milliseconds: 150),
@@ -49,6 +51,65 @@ Offset liveOffset(WidgetTester tester) {
 }
 
 void main() {
+  testWidgets(
+      'cancelling the incoming capture frees both images without another turn',
+      (tester) async {
+    final outgoing = await tester.runAsync(snapshot);
+    final incoming = Completer<ui.Image?>();
+    var captures = 0;
+    var calls = 0;
+    final request = PageTurnRequest();
+    final key = await mount(tester,
+        snapshotIncoming: true,
+        capture: () =>
+            captures++ == 0 ? Future.value(outgoing) : incoming.future);
+    final turn = key.currentState!.playTurn(
+        forward: true,
+        request: request,
+        dispatchTurn: () async {
+          calls++;
+        });
+    for (var frame = 0; frame < 5; frame++) {
+      await tester.pump();
+    }
+    expect(captures, 2);
+    expect(calls, 1);
+    request.cancel();
+    await tester.pump();
+    await turn;
+    expect(outgoing!.debugDisposed, isTrue);
+    final late = await tester.runAsync(snapshot);
+    incoming.complete(late);
+    await tester.pump();
+    expect(late!.debugDisposed, isTrue);
+    expect(calls, 1);
+    expect(key.currentState!.isAnimating, isFalse);
+  });
+  testWidgets('both page images release after a text slide without remounting',
+      (tester) async {
+    final outgoing = await tester.runAsync(snapshot);
+    final incoming = await tester.runAsync(snapshot);
+    var captures = 0;
+    final key = await mount(tester,
+        snapshotIncoming: true,
+        capture: () async => captures++ == 0 ? outgoing : incoming);
+    final body = tester.element(find.byType(ColoredBox).last);
+    final turn =
+        key.currentState!.playTurn(forward: true, dispatchTurn: () async {});
+    for (var frame = 0; frame < 8; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(captures, 2);
+    expect(find.byType(RawImage), findsNWidgets(2));
+    expect(tester.element(find.byType(ColoredBox).last), same(body));
+    expect(tester.widget<Opacity>(find.byType(Opacity).last).opacity, 0);
+    await tester.pumpAndSettle();
+    await turn;
+    expect(outgoing!.debugDisposed, isTrue);
+    expect(incoming!.debugDisposed, isTrue);
+    expect(find.byType(RawImage), findsNothing);
+    expect(tester.element(find.byType(ColoredBox).last), same(body));
+  });
   testWidgets('old page covers navigation until target is ready',
       (tester) async {
     final image = await tester.runAsync(snapshot);

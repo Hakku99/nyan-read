@@ -391,6 +391,19 @@ data and decoded dimensions across list remounts, including bitmap eviction.
 It preserves existing navigation/restoration ownership and public contracts;
 see `docs/READER_EPUB_IMAGE_POSITION_FIX.md` for verification and limits.
 
+The following item 13 rendering changes remain experimental and have not passed
+overall performance acceptance.
+The live body remains mounted in one repaint boundary; only that body is captured.
+Snapshots retain device pixel resolution and use bilinear translation sampling.
+TXT/EPUB also capture the ready target once and suppress live painting using
+static opacity 0 during the slide (layout and state stay mounted). Both images
+are disposed when presentation ends. The additional RGBA target is limited to
+16 MiB; larger viewports or unavailable target captures retain live painting.
+PDF already paints an image and uses only the outgoing capture. The legacy
+hardcoded black edge gradient is removed. No screenshot downsampling,
+animation-duration reduction, full-book layout cache or new dependency is added.
+
+
 G1 routes ordinary horizontal touch drags from the text selection recognizer
 into the reader's existing navigation callbacks. `ReaderSelectableText` uses
 public `EditableText` / `TextSelectionGestureDetectorBuilder` APIs, retaining

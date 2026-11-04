@@ -21,6 +21,7 @@ class SmoothPageReader extends StatefulWidget {
     this.prepareTimeout = const Duration(milliseconds: 1500),
     this.captureFrame,
     this.onTurnMeasured,
+    this.snapshotIncoming = true,
     this.duration = const Duration(milliseconds: 360),
     this.curve = Curves.easeInOutCubic,
   });
@@ -32,6 +33,9 @@ class SmoothPageReader extends StatefulWidget {
   @visibleForTesting
   final Future<ui.Image?> Function()? captureFrame;
   final ValueChanged<Map<String, num>>? onTurnMeasured;
+
+  /// Text pages benefit from rasterizing once; PDF pages already use an image.
+  final bool snapshotIncoming;
   final Widget child;
   final VoidCallback onPreviousTap;
   final VoidCallback onNextTap;
@@ -45,6 +49,8 @@ class SmoothPageReader extends StatefulWidget {
 
 class SmoothPageReaderState extends State<SmoothPageReader>
     with SingleTickerProviderStateMixin {
+  // Bound the additional RGBA image to 16 MiB; large displays keep live paint.
+  static const _maxIncomingSnapshotPixels = 4 * 1024 * 1024;
   final GlobalKey _captureKey = GlobalKey();
   late final AnimationController _controller = AnimationController(
     vsync: this,
@@ -56,6 +62,7 @@ class SmoothPageReaderState extends State<SmoothPageReader>
   bool _preparing = false;
   bool _forward = true;
   ui.Image? _outgoingImage;
+  ui.Image? _incomingImage;
   bool _isAnimating = false;
 
   bool get isAnimating => _isAnimating;
@@ -96,6 +103,8 @@ class SmoothPageReaderState extends State<SmoothPageReader>
     _controller.dispose();
     _outgoingImage?.dispose();
     _outgoingImage = null;
+    _incomingImage?.dispose();
+    _incomingImage = null;
     super.dispose();
   }
 
@@ -171,6 +180,15 @@ class SmoothPageReaderState extends State<SmoothPageReader>
       if (!ready) return;
       await turn.wait(SchedulerBinding.instance.endOfFrame);
       turn.checkActive();
+      if (widget.snapshotIncoming &&
+          metrics['snapshotPixels']! <= _maxIncomingSnapshotPixels) {
+        phase.reset();
+        _incomingImage = await _captureFor(turn);
+        metrics['incomingCaptureMs'] = phase.elapsedMicroseconds / 1000;
+        metrics['snapshotPixels'] = metrics['snapshotPixels']! +
+            (_incomingImage?.width ?? 0) * (_incomingImage?.height ?? 0);
+        turn.checkActive();
+      }
       _controller.value = 0;
       setState(() => _preparing = false);
       phase.reset();
@@ -188,6 +206,8 @@ class SmoothPageReaderState extends State<SmoothPageReader>
       _activeRequest = null;
       _outgoingImage?.dispose();
       _outgoingImage = null;
+      _incomingImage?.dispose();
+      _incomingImage = null;
       metrics['totalMs'] = total.elapsedMicroseconds / 1000;
       widget.onTurnMeasured?.call(Map.unmodifiable(metrics));
       if (mounted) setState(() {});
@@ -260,7 +280,6 @@ class SmoothPageReaderState extends State<SmoothPageReader>
         behavior: HitTestBehavior.opaque,
         onTapUp: widget.enabled ? _handleTap : null,
         child: RepaintBoundary(
-          key: _captureKey,
           child: AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
@@ -283,32 +302,20 @@ class SmoothPageReaderState extends State<SmoothPageReader>
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          child ?? const SizedBox.shrink(),
-                          if (active && !_preparing)
-                            Align(
-                              alignment: _forward
-                                  ? Alignment.centerLeft
-                                  : Alignment.centerRight,
-                              child: IgnorePointer(
-                                child: Container(
-                                  width: 22,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: _forward
-                                          ? Alignment.centerLeft
-                                          : Alignment.centerRight,
-                                      end: _forward
-                                          ? Alignment.centerRight
-                                          : Alignment.centerLeft,
-                                      colors: const [
-                                        Color(0x22000000),
-                                        Color(0x00000000),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                          // Keep layout/selection state mounted while avoiding
+                          // repeated glyph rasterization during translation.
+                          Opacity(
+                            opacity:
+                                active && !_preparing && _incomingImage != null
+                                    ? 0
+                                    : 1,
+                            child: child ?? const SizedBox.shrink(),
+                          ),
+                          if (active && !_preparing && _incomingImage != null)
+                            RawImage(
+                                image: _incomingImage,
+                                fit: BoxFit.cover,
+                                filterQuality: FilterQuality.low),
                         ],
                       ),
                     ),
@@ -318,7 +325,10 @@ class SmoothPageReaderState extends State<SmoothPageReader>
                         child: RawImage(
                           image: _outgoingImage,
                           fit: BoxFit.cover,
-                          filterQuality: FilterQuality.high,
+                          // The snapshot retains device resolution. Bilinear
+                          // sampling only interpolates fractional translation;
+                          // expensive rescaling filters add no detail here.
+                          filterQuality: FilterQuality.low,
                         ),
                       ),
                   ],
@@ -327,7 +337,7 @@ class SmoothPageReaderState extends State<SmoothPageReader>
             },
             // Moving the live page must not repaint its text on every animation
             // tick. Navigation can repaint this boundary independently.
-            child: RepaintBoundary(child: widget.child),
+            child: RepaintBoundary(key: _captureKey, child: widget.child),
           ),
         ),
       ),
