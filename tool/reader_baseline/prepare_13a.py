@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import io
 import json
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -40,8 +41,13 @@ def instrument(source):
     }
     for old, new in hooks.items():
         source = replace_once(source, old, new)
-    if '        _incomingImage = await _captureFor(turn);' in source:
-        source = replace_once(source, '        _incomingImage = await _captureFor(turn);', "        PerfTrace.mark('captureNew');\n        _incomingImage = await _captureFor(turn);")
+    incoming_calls = re.findall(r'        _incomingImage = await _captureFor\(turn(?:, frameReady: true)?\);', source)
+    if len(incoming_calls) > 1:
+        raise ValueError('Ambiguous incoming capture instrumentation')
+    if not incoming_calls and '_incomingImage = await' in source:
+        raise ValueError('Unrecognized incoming capture instrumentation')
+    if incoming_calls:
+        source = replace_once(source, incoming_calls[0], "        PerfTrace.mark('captureNew');\n" + incoming_calls[0])
     incoming = '_incomingImage' if '_incomingImage' in source else 'null'
     source = source.replace("      PerfTrace.mark('release');", f"      PerfTrace.resources(_outgoingImage, {incoming}, _capturePending);\n      PerfTrace.mark('release');")
     source = source.replace("      PerfTrace.mark('revealScheduled');", f"      PerfTrace.resources(_outgoingImage, {incoming}, _capturePending);\n      PerfTrace.mark('revealScheduled');")

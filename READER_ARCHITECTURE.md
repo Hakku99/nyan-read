@@ -348,6 +348,11 @@ Item 08 replaces the midpoint switch with a preparation phase: the outgoing
 snapshot covers the live reader, navigation runs once, and the 360 ms slide
 starts only after target presentation is ready. The engine remains the sole
 owner of position; cancelling presentation never rolls back accepted navigation.
+The target snapshot reuses the frame already awaited after presentation readiness.
+It must not request another `endOfFrame` solely for capture: from idle that
+schedules an extra covered frame. Outgoing capture still awaits paint normally;
+the private `frameReady` path is used only immediately after the readiness frame.
+Pixel tests include a final visual update published with readiness and cancellation.
 
 `PageTurnRequest` invalidates capture, queued navigation and image waits on
 layout/mode changes, overlay opening, backgrounding, disposal or the UI deadline.

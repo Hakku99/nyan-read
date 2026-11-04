@@ -183,7 +183,9 @@ class SmoothPageReaderState extends State<SmoothPageReader>
       if (widget.snapshotIncoming &&
           metrics['snapshotPixels']! <= _maxIncomingSnapshotPixels) {
         phase.reset();
-        _incomingImage = await _captureFor(turn);
+        // The readiness frame just finished painting. Reuse it instead of
+        // scheduling another covered frame solely to take the target snapshot.
+        _incomingImage = await _captureFor(turn, frameReady: true);
         metrics['incomingCaptureMs'] = phase.elapsedMicroseconds / 1000;
         metrics['snapshotPixels'] = metrics['snapshotPixels']! +
             (_incomingImage?.width ?? 0) * (_incomingImage?.height ?? 0);
@@ -214,15 +216,16 @@ class SmoothPageReaderState extends State<SmoothPageReader>
     }
   }
 
-  Future<ui.Image?> _captureFor(PageTurnRequest request) async {
+  Future<ui.Image?> _captureFor(PageTurnRequest request,
+      {bool frameReady = false}) async {
     // A timed-out GPU readback cannot be cancelled. Never start a second one
     // until it returns, and dispose its late image rather than retaining it.
     if (_capturePending) return null;
     _capturePending = true;
     var accepted = true;
-    final capture =
-        Future<ui.Image?>.sync(widget.captureFrame ?? _captureCurrentFrame)
-            .then((image) {
+    final capture = Future<ui.Image?>.sync(widget.captureFrame ??
+            () => _captureCurrentFrame(frameReady: frameReady))
+        .then((image) {
       if (!accepted || !request.isActive || !mounted) {
         image?.dispose();
         return null;
@@ -244,11 +247,11 @@ class SmoothPageReaderState extends State<SmoothPageReader>
     }
   }
 
-  Future<ui.Image?> _captureCurrentFrame() async {
+  Future<ui.Image?> _captureCurrentFrame({bool frameReady = false}) async {
     try {
       // Wait for paint in all build modes. debugNeedsPaint is assert-only and
       // throws in profile/release; a zero-delay timer does not await paint.
-      await SchedulerBinding.instance.endOfFrame;
+      if (!frameReady) await SchedulerBinding.instance.endOfFrame;
       if (!mounted) return null;
       final boundary = _captureKey.currentContext?.findRenderObject()
           as RenderRepaintBoundary?;

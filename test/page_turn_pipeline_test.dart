@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/modules/reader/reader_engine/page_turn_request.dart';
 import 'package:nyan_read/modules/reader/widgets/smooth_page_reader.dart';
@@ -51,6 +52,122 @@ Offset liveOffset(WidgetTester tester) {
 }
 
 void main() {
+  for (final cancel in [false, true]) {
+    testWidgets(
+        'ready frame captures fresh pixels and ${cancel ? 'cancels' : 'slides'}',
+        (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(800, 600);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final key = GlobalKey<SmoothPageReaderState>();
+      final screenKey = GlobalKey();
+      final bodyKey = GlobalKey();
+      final color = ValueNotifier(Colors.red);
+      final ready = Completer<bool>();
+      final request = PageTurnRequest();
+      Map<String, num>? measured;
+      await tester.pumpWidget(MaterialApp(
+        home: RepaintBoundary(
+          key: screenKey,
+          child: SmoothPageReader(
+            key: key,
+            prepareTimeout: const Duration(seconds: 2),
+            onTurnMeasured: (value) => measured = value,
+            onPreviousTap: () {},
+            onNextTap: () {},
+            onCenterTap: () {},
+            child: RepaintBoundary(
+              key: bodyKey,
+              child: ValueListenableBuilder<Color>(
+                valueListenable: color,
+                builder: (context, value, child) => ColoredBox(color: value),
+              ),
+            ),
+          ),
+        ),
+      ));
+      final body = bodyKey.currentContext;
+      final initialOffset = tester.getTopLeft(find.byKey(bodyKey));
+      var dispatched = false;
+      final turn = key.currentState!.playTurn(
+        forward: true,
+        request: request,
+        dispatchTurn: () async {
+          color.value = Colors.blue;
+          dispatched = true;
+        },
+        waitForReady: () => ready.future,
+      );
+      // Real toImage completes outside the fake widget-test clock.
+      Future<void> tick() async {
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)));
+      }
+
+      for (var i = 0; i < 30 && !dispatched; i++) {
+        await tick();
+      }
+      expect(dispatched, isTrue);
+      await tick();
+      expect(bodyKey.currentContext, same(body));
+      expect(tester.getTopLeft(find.byKey(bodyKey)), initialOffset);
+
+      Future<List<int>> pixel(ui.Image image) async {
+        final bytes = await image.toByteData();
+        return bytes!.buffer.asUint8List(bytes.offsetInBytes, 4).toList();
+      }
+
+      Future<List<int>> capturePixel(GlobalKey target) async {
+        final boundary =
+            target.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        final image = await boundary.toImage();
+        try {
+          return await pixel(image);
+        } finally {
+          image.dispose();
+        }
+      }
+
+      List<int> rgba(Color value) => [
+            (value.r * 255).round(),
+            (value.g * 255).round(),
+            (value.b * 255).round(),
+            (value.a * 255).round(),
+          ];
+      final oldPixel = rgba(Colors.red);
+      final newPixel = rgba(Colors.blue);
+      expect(await tester.runAsync(() => capturePixel(screenKey)), oldPixel);
+      expect(await tester.runAsync(() => capturePixel(bodyKey)), newPixel);
+      final finalPixel = cancel ? newPixel : rgba(Colors.green);
+      if (cancel) {
+        request.cancel();
+      } else {
+        // Readiness may publish a final visual update in the same turn.
+        color.value = Colors.green;
+        ready.complete(true);
+        for (var i = 0;
+            i < 30 && find.byType(RawImage).evaluate().length < 2;
+            i++) {
+          await tick();
+        }
+        final images =
+            tester.widgetList<RawImage>(find.byType(RawImage)).toList();
+        expect(images, hasLength(2), reason: 'Turn metrics: $measured');
+        expect(
+            await tester.runAsync(() => pixel(images.first.image!)), finalPixel);
+      }
+      await tester.pumpAndSettle();
+      await turn;
+      if (cancel) ready.complete(true);
+      expect(bodyKey.currentContext, same(body));
+      expect(tester.getTopLeft(find.byKey(bodyKey)), initialOffset);
+      expect(await tester.runAsync(() => capturePixel(screenKey)), finalPixel);
+      await tester.pumpWidget(const SizedBox.shrink());
+      color.dispose();
+    });
+  }
   testWidgets(
       'cancelling the incoming capture frees both images without another turn',
       (tester) async {
