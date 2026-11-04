@@ -380,6 +380,14 @@ one outgoing snapshot over the live target; item 13's rendering optimizations
 remain separate, unaccepted work. See `docs/READER_TURN_FIX_08.md` for the isolated
 verification scope and known body-gesture limitations.
 
+Item 13A instrumentation is confined to a disposable diagnostic project; it
+does not add a production listener or change reader contracts. Independent
+comparison against the G2 commit and frame/system evidence are documented in
+`docs/READER_PERFORMANCE_13A_RESULTS.md`. Full-app worst-round performance is
+still outside the budget. Image-size notifications can invalidate EPUB turn
+history and restoration during cancellation; both comparison variants retain
+this correctness defect, which needs a separate protected-surface fix.
+
 G1 routes ordinary horizontal touch drags from the text selection recognizer
 into the reader's existing navigation callbacks. `ReaderSelectableText` uses
 public `EditableText` / `TextSelectionGestureDetectorBuilder` APIs, retaining

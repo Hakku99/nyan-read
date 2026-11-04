@@ -1,0 +1,279 @@
+// Development-only profile target for a separately identified test installation.
+import 'dart:async';
+import 'dart:convert';
+import 'dart:developer' as dev;
+import 'dart:io';
+import 'dart:isolate';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nyan_read/core/models/book.dart';
+import 'package:nyan_read/core/router/app_router.dart';
+import 'package:nyan_read/core/services/reader_preferences_service.dart';
+import 'package:nyan_read/core/services/riverpod_providers.dart';
+import 'package:nyan_read/core/services/service_locator.dart';
+import 'package:nyan_read/core/theme/nyan_colors.dart';
+import 'package:nyan_read/l10n/app_localizations.dart';
+import 'package:nyan_read/main.dart' show NyanApp;
+import 'package:nyan_read/modules/reader/controllers/reader_controller.dart';
+import 'package:nyan_read/modules/reader/reader_engine/epub/epub_reader.dart';
+import 'package:nyan_read/modules/reader/reader_engine/epub/epub_parse_helpers.dart';
+import 'package:nyan_read/modules/reader/reader_engine/txt/txt_reader.dart';
+import 'package:nyan_read/modules/reader/reader_engine/pdf/pdf_reader.dart';
+import 'package:nyan_read/modules/reader/reader_engine/reader_engine.dart';
+import 'package:nyan_read/modules/reader/reader_engine/page_turn_request.dart';
+import 'package:nyan_read/modules/reader/widgets/smooth_page_reader.dart';
+import 'perf13a_trace.dart';
+import 'perf13a_fixtures.dart';
+import 'perf13a_input_probe.dart';
+
+const _directory = '/sdcard/Android/data/com.example.nyan_read.perf13a/files';
+Map<String, dynamic> config = {'id': 'startup'};
+final results = <Map<String, Object?>>[];
+int pointer = 2000;
+Future<void> pause(int ms) => Future<void>.delayed(Duration(milliseconds: ms));
+
+Future<void> writeResult(String suffix, Object value) async {
+  final id = config['id'] as String;
+  await Isolate.run(() async {
+    await Directory('$_directory/results').create(recursive: true);
+    await Process.run('/system/bin/chmod', ['777', '$_directory/results']);
+    final output = '$_directory/results/$id-$suffix.json';
+    await File(output).writeAsString(jsonEncode(value));
+    await Process.run('/system/bin/chmod', ['644', output]);
+  });
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (!kProfileMode) throw StateError('Profile mode required');
+  try {
+    config = await Isolate.run(() async => jsonDecode(await File('$_directory/config.json').readAsString()) as Map<String, dynamic>);
+    const compiledVariant = String.fromEnvironment('PERF13A_VARIANT');
+    if (config['variant'] != compiledVariant) throw StateError('APK variant mismatch');
+    config['compiledVariant'] = compiledVariant;
+    PerfTrace.enabled = config['trace'] != false;
+    PerfTrace.heavy = config['heavy'] == true;
+    if (config['fullApp'] == true) {
+      await runFullApp();
+    } else {
+      runApp(const MaterialApp(localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales, home: Harness()));
+    }
+  } catch (e) { await failure(e); }
+}
+
+Future<void> failure(Object error) async {
+  debugPrint('PERF13A ERROR ${error.runtimeType}');
+  try { await writeResult('error', {'type': error.runtimeType.toString()}); }
+  catch (exportError) { debugPrint('PERF13A EXPORT_ERROR ${exportError.runtimeType}'); }
+}
+
+Future<int> sceneIndex(String scene) async {
+  if (scene == 'epub_image') {
+    return Isolate.run(() async {
+      final parsed = await parseEpubFileInIsolate('$_directory/sample.epub');
+      for (var i = 1000; i < parsed.paragraphCount; i++) {
+        if (parsed.paragraphKinds[i] == EpubParagraphKind.image) return i - 2;
+      }
+      throw StateError('Image scene missing');
+    });
+  }
+  return switch (scene) {
+    'txt_normal' => 12544, 'txt_long' => 34455,
+    'epub_normal' => 61007, 'epub_long' => 149859, _ => 10,
+  };
+}
+
+SmoothPageReaderState findSmooth() {
+  SmoothPageReaderState? found;
+  void visit(Element e) {
+    if (e is StatefulElement && e.state is SmoothPageReaderState) found = e.state as SmoothPageReaderState;
+    e.visitChildren(visit);
+  }
+  visit(WidgetsBinding.instance.rootElement!);
+  return found ?? (throw StateError('Reader missing'));
+}
+
+Future<void> touchTurn(bool forward) async {
+  final state = findSmooth();
+  final box = state.context.findRenderObject()! as RenderBox;
+  final point = box.localToGlobal(Offset(box.size.width * (forward ? .85 : .15), box.size.height * .5));
+  final id = pointer++;
+  PerfTrace.mark('pointerDown');
+  GestureBinding.instance.handlePointerEvent(PointerDownEvent(pointer: id, position: point, kind: PointerDeviceKind.touch));
+  await pause(15);
+  GestureBinding.instance.handlePointerEvent(PointerUpEvent(pointer: id, position: point, kind: PointerDeviceKind.touch));
+  for (var i = 0; i < 50 && !state.isAnimating; i++) { await pause(2); }
+  if (!state.isAnimating) throw StateError('Body tap was not accepted');
+  while (state.isAnimating) { await pause(2); }
+}
+
+Future<void> measure(String scene, ReaderEngine engine, Future<void> Function(bool) turn, int index) async {
+  final origin = ReadingPosition(paragraphIndex: index, pageNumber: 10);
+  Future<void> reset() async { await engine.goToPosition(origin); await pause(1500); }
+  await reset();
+  Future<void> block(String temperature, int count) async {
+    final turns = <Map<String, Object?>>[];
+    PerfTrace.begin();
+    final rssBefore = ProcessInfo.currentRss;
+    try {
+      for (var i = 0; i < count; i++) {
+        PerfTrace.request = i;
+        final before = engine.getCurrentPosition()!.toJson();
+        final start = dev.Timeline.now;
+        PerfTrace.mark('input');
+        await turn(i < count ~/ 2);
+        final returned = dev.Timeline.now;
+        PerfTrace.mark('returned');
+        await SchedulerBinding.instance.endOfFrame;
+        PerfTrace.mark('postFrame');
+        turns.add({'id': i, 'start': start, 'returned': returned, 'before': before,
+          'after': engine.getCurrentPosition()!.toJson(), 'rss': ProcessInfo.currentRss});
+        await pause(150);
+        PerfTrace.mark('windowEnd');
+        PerfTrace.request = -1;
+      }
+      // Timings are delivered in batches; attribution uses their own timestamps.
+      await pause(1500);
+    } finally {
+      final trace = PerfTrace.end();
+      final result = <String, Object?>{'scene': scene, 'temperature': temperature,
+        'config': config, 'turns': turns, 'rssBefore': rssBefore, 'rssAfter': ProcessInfo.currentRss,
+        'cacheBytes': PaintingBinding.instance.imageCache.currentSizeBytes, ...trace};
+      results.add({'scene': scene, 'temperature': temperature, 'turns': turns.length});
+      await writeResult('$scene-$temperature', result);
+      debugPrint('PERF13A BLOCK $scene $temperature ${turns.length}');
+    }
+  }
+  await block('first', 2);
+  await reset();
+  final warmups = scene == 'epub_image' ? 12 : 2;
+  for (var i = 0; i < warmups; i++) { await turn(i < warmups ~/ 2); await pause(150); }
+  await reset();
+  await block('warm', (config['turns'] as int?) ?? 12);
+  final stressSeconds = (config['stressSeconds'] as int?) ?? 0;
+  if (stressSeconds > 0) {
+    final watch = Stopwatch()..start();
+    var batch = 0;
+    while (watch.elapsed.inSeconds < stressSeconds) {
+      await block('stress${batch++}', 12);
+    }
+  }
+}
+
+Future<void> finish() async {
+  await writeResult('complete', {'blocks': results, 'profile': kProfileMode,
+    'refreshHz': WidgetsBinding.instance.platformDispatcher.views.first.display.refreshRate,
+    'physicalSize': WidgetsBinding.instance.platformDispatcher.views.first.physicalSize.toString(),
+    'dpr': WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio});
+  debugPrint('PERF13A COMPLETE');
+}
+
+class Harness extends StatefulWidget {
+  const Harness({super.key});
+  @override State<Harness> createState() => HarnessState();
+}
+class HarnessState extends State<Harness> {
+  ReaderEngine? engine;
+  final key = GlobalKey<SmoothPageReaderState>();
+  @override void initState() {
+    super.initState();
+    // Startup runs after a real layout and reports failures to the host runner.
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(run()));
+  }
+  Future<void> run() async {
+    Map<String, String>? fixtures;
+    try {
+      fixtures = await Isolate.run(createSources);
+      for (final scene in (config['scenes'] as List).cast<String>()) {
+        final format = scene.split('_').first;
+        final index = await sceneIndex(scene);
+        final book = Book(id: '13a-$scene', title: 'Performance sample', author: '',
+          format: format, filePath: format == 'pdf' ? fixtures!['pdf']! : '$_directory/sample.$format');
+        final ReaderEngine current = switch (format) {
+          'txt' => TxtReaderEngine(book), 'epub' => EpubReaderEngine(book), _ => PdfReaderEngine(book),
+        };
+        await current.initialize();
+        current.setConfig(ReaderConfig(backgroundColor: NyanColors.creamBackground,
+          textColor: NyanColors.creamTextMain, fontSize: 18, lineHeight: 1.5, pageTurnMode: PageTurnMode.tap));
+        setState(() => engine = current);
+        await pause(2000);
+        Future<void> turn(bool forward) async {
+          final request = PageTurnRequest();
+          final before = current.getCurrentPosition()!.toJson();
+          await key.currentState!.playTurn(forward: forward, request: request,
+            dispatchTurn: () => forward ? current.nextPage() : current.previousPage(),
+            didMove: () => current.getCurrentPosition()!.toJson() != before,
+            waitForReady: () async {
+              if (current is PagePresentationCapability) {
+                final ready = await (current as PagePresentationCapability).waitForPagePresentation(request);
+                if (!ready) throw StateError('Target not ready');
+                return ready;
+              }
+              await SchedulerBinding.instance.endOfFrame;
+              return true;
+            });
+        }
+        await measure(scene, current, turn, index);
+        setState(() => engine = null);
+        await pause(100);
+        current.dispose();
+      }
+    } catch (e) { await failure(e); }
+    finally {
+      if (fixtures != null) {
+        try { final paths = fixtures.values.toList(); await compute(deleteSources, paths); }
+        catch (e) { await failure(e); }
+      }
+    }
+    await finish();
+  }
+  @override Widget build(BuildContext context) => Scaffold(body: engine == null
+    ? const SizedBox.shrink() : SmoothPageReader(key: key, onPreviousTap: () {},
+      onNextTap: () {}, onCenterTap: () {}, child: engine!.buildReader(context)));
+}
+
+final class Observer extends ProviderObserver {
+  Completer<ReaderController>? pending;
+  @override void didAddProvider(ProviderObserverContext context, Object? value) {
+    if (value is ReaderController && pending != null && !pending!.isCompleted) pending!.complete(value);
+  }
+}
+Future<void> runFullApp() async {
+  await setupServiceLocator();
+  final observer = Observer();
+  final container = ProviderContainer(observers: [observer]);
+  final db = container.read(databaseServiceRpProvider);
+  final preferences = container.read(readerPreferencesRpProvider);
+  await preferences.setFontSize(18);
+  await preferences.setLineHeight(1.5);
+  await preferences.setUseSerif(false);
+  await preferences.setPageTurnMode(PageTurnMode.tap);
+  runApp(UncontrolledProviderScope(container: container, child: const NyanApp()));
+  await pause(1500);
+  for (final scene in (config['scenes'] as List).cast<String>()) {
+    final format = scene.split('_').first;
+    final id = '13a-$format';
+    if (await db.getBookById(id) == null) {
+      await db.insertBook(Book(id: id, title: 'Performance sample', author: '',
+        filePath: '$_directory/sample.$format', format: format).toMap());
+    }
+    observer.pending = Completer<ReaderController>();
+    appRouter.go('/reader/$id');
+    final controller = await observer.pending!.future.timeout(const Duration(seconds: 30));
+    for (var i = 0; controller.renderEpoch < 3 && i < 600; i++) { await pause(100); }
+    if (controller.renderEpoch < 3) throw StateError('Reader initialization timeout');
+    await pause(1500);
+    await measure(scene, controller.engine, touchTurn, await sceneIndex(scene));
+    if (config['inputChecks'] == true) {
+      final inputs = await verifyTurnInputs(controller);
+      await writeResult('$scene-inputs', inputs);
+    }
+    appRouter.go('/');
+    await pause(1000);
+  }
+  await finish();
+}

@@ -129,3 +129,16 @@ G1 text-drag routing and its independent validation are documented in
 G2 input arbitration and joint device evidence are documented in
 [READER_GESTURE_FIX_G1_G2.md](READER_GESTURE_FIX_G1_G2.md). Those historical device
 checks included the item 13 candidate and are not isolated performance evidence.
+
+Item 13A independently compares the pinned G2 commit with the frozen rendering
+candidate. Probes are injected only into a disposable profile project with a
+separate application ID; production has no new timing listener. See
+[READER_PERFORMANCE_13A_RESULTS.md](READER_PERFORMANCE_13A_RESULTS.md) and the
+[reproduction guide](../tool/reader_baseline/README_13A.md).
+Keep full-app, engine/container, overhead controls and heavy traces separate.
+Foreground-window conditions materially affect emulator raster timings.
+The candidate improves aggregate text-page results but still fails worst-round
+acceptance; image-layout cancellation also exposes a shared position defect.
+Do not mark item 13 accepted or infer synchronous image-disposal cost from a
+slow reveal frame. The original scope is recorded in
+[READER_PERFORMANCE_13A_PLAN.md](READER_PERFORMANCE_13A_PLAN.md).
