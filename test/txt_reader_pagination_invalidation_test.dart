@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../tool/reader_baseline/baseline_support.dart' show perform;
 import 'package:nyan_read/core/models/book.dart';
 import 'package:nyan_read/core/services/reader_preferences_service.dart';
+import 'package:nyan_read/core/theme/nyan_typography.dart';
 import 'package:nyan_read/modules/reader/reader_engine/reader_engine.dart';
 import 'package:nyan_read/modules/reader/reader_engine/txt/txt_position.dart';
 import 'package:nyan_read/modules/reader/reader_engine/txt/txt_reader.dart';
@@ -17,6 +19,40 @@ void main() {
     late Directory tempDir;
     late File txtFile;
     late TxtReaderEngine engine;
+    ReaderConfig estimateConfig(
+            {double fontSize = 16, bool useSerif = false}) =>
+        ReaderConfig(
+          backgroundColor: Colors.white,
+          textColor: Colors.black,
+          fontSize: fontSize,
+          lineHeight: 1.4,
+          useSerif: useSerif,
+        );
+    final config = estimateConfig();
+
+    Future<List<_EstimateCall>> useControlledCalculator(
+        WidgetTester tester) async {
+      final calls = <_EstimateCall>[];
+      final book = engine.book;
+      engine.dispose();
+      engine = TxtReaderEngine(book, paginationCalculator: ({
+        required String text,
+        required TextStyle style,
+        required double maxWidth,
+        required double maxHeight,
+        required EdgeInsets padding,
+        TextScaler? textScaler,
+        double? paragraphBottomMargin,
+        int? totalTextLength,
+      }) {
+        final call = _EstimateCall(style, textScaler!);
+        calls.add(call);
+        return call.result.future;
+      });
+      await tester.runAsync(engine.initialize);
+      engine.setConfig(config);
+      return calls;
+    }
 
     setUp(() async {
       tempDir = await Directory.systemTemp.createTemp('nyan_txt_reader_test');
@@ -39,12 +75,7 @@ void main() {
         ),
       );
       await engine.initialize();
-      engine.setConfig(const ReaderConfig(
-        backgroundColor: Colors.white,
-        textColor: Colors.black,
-        fontSize: 16,
-        lineHeight: 1.4,
-      ));
+      engine.setConfig(config);
     });
 
     tearDown(() async {
@@ -101,51 +132,88 @@ void main() {
     testWidgets(
         'does not start duplicate pagination for the same in-flight layout key',
         (tester) async {
-      var calculationCount = 0;
-
-      engine.dispose();
-      engine = TxtReaderEngine(
-        Book(
-          id: 'txt-test-book',
-          title: 'TXT Test',
-          author: 'Tester',
-          filePath: txtFile.path,
-          format: 'txt',
-        ),
-        paginationCalculator: ({
-          required String text,
-          required TextStyle style,
-          required double maxWidth,
-          required double maxHeight,
-          required EdgeInsets padding,
-          TextScaler? textScaler,
-          double? paragraphBottomMargin,
-          int? totalTextLength,
-        }) {
-          calculationCount++;
-          return Future<List<int>>.delayed(
-            const Duration(milliseconds: 120),
-            () => [107, 312],
-          );
-        },
-      );
-      await engine.initialize();
-      engine.setConfig(const ReaderConfig(
-        backgroundColor: Colors.white,
-        textColor: Colors.black,
-        fontSize: 16,
-        lineHeight: 1.4,
-      ));
-
-      await _pumpReader(tester, engine, const Size(320, 640));
-      await _pumpReader(tester, engine, const Size(320, 640));
-
-      expect(calculationCount, 1);
-
-      await tester.pump(const Duration(milliseconds: 180));
-
+      final calls = await useControlledCalculator(tester);
+      const viewport = Size(320, 640);
+      final firstScaler = _NonlinearScaler(1.4);
+      final equivalentScaler = _NonlinearScaler(1.4);
+      expect(identical(firstScaler, equivalentScaler), isFalse);
+      await _pumpReader(tester, engine, viewport, textScaler: firstScaler);
+      await _pumpReader(tester, engine, viewport, textScaler: equivalentScaler);
+      expect(calls, hasLength(1));
+      calls.single.result.complete([107, 312]);
+      await tester.pump();
       expect(engine.getPageCount(), 107);
-    }, skip: Platform.isWindows);
+      await _pumpReader(tester, engine, viewport,
+          textScaler: _NonlinearScaler(1.4));
+      expect(calls, hasLength(1));
+    });
+
+    testWidgets('changing the font family refreshes the mounted page count',
+        (tester) async {
+      final calls = await useControlledCalculator(tester);
+      await _pumpReader(tester, engine, const Size(320, 640));
+      expect(calls.single.style.fontFamily, NyanTypography.uiFontFamily);
+      calls.single.result.complete([107, 312]);
+      await tester.pump();
+
+      engine.setConfig(estimateConfig(useSerif: true));
+      await tester.pump();
+      expect(calls, hasLength(2));
+      expect(
+          calls.last.style.fontFamily, NyanTypography.readingSerifFontFamily);
+      calls.last.result.complete([123, 260]);
+      await tester.pump();
+      expect(engine.getPageCount(), 123);
+    });
+
+    testWidgets('compares nonlinear scaling at the estimated font size',
+        (tester) async {
+      final calls = await useControlledCalculator(tester);
+      const viewport = Size(320, 640);
+      final first = _NonlinearScaler(1.2);
+      final second = _NonlinearScaler(1.6);
+      expect(first.scale(1), second.scale(1));
+      expect(
+          first.scale(config.fontSize), isNot(second.scale(config.fontSize)));
+
+      await _pumpReader(tester, engine, viewport, textScaler: first);
+      calls.single.result.complete([107, 312]);
+      await tester.pump();
+      await _pumpReader(tester, engine, viewport, textScaler: second);
+      expect(calls, hasLength(2));
+      expect(calls.last.scaler.scale(config.fontSize),
+          second.scale(config.fontSize));
+      calls.last.result.complete([150, 210]);
+      await tester.pump();
+      expect(engine.getPageCount(), 150);
+    });
+
+    for (final aFinishesFirst in [false, true]) {
+      testWidgets('A -> B -> A publishes A only (A first: $aFinishesFirst)',
+          (tester) async {
+        final calls = await useControlledCalculator(tester);
+        await _pumpReader(tester, engine, const Size(320, 640));
+        engine.setConfig(estimateConfig(fontSize: 24));
+        await tester.pump();
+        engine.setConfig(config);
+        await tester.pump();
+        expect(calls.map((call) => call.style.fontSize), [16, 24]);
+
+        if (aFinishesFirst) {
+          calls.first.result.complete([107, 312]);
+          await tester.pump();
+          expect(engine.getPageCount(), 107);
+          calls.last.result.complete([150, 210]);
+        } else {
+          calls.last.result.complete([150, 210]);
+          await tester.pump();
+          expect(engine.getPageCount(), 1);
+          calls.first.result.complete([107, 312]);
+        }
+        await tester.pump();
+        expect(engine.getPageCount(), 107);
+      });
+    }
 
     testWidgets(
         'recalculates pagination when orientation changes and preserves position',
@@ -330,8 +398,9 @@ void main() {
 Future<void> _pumpReader(
   WidgetTester tester,
   TxtReaderEngine engine,
-  Size viewport,
-) async {
+  Size viewport, {
+  TextScaler? textScaler,
+}) async {
   tester.view.physicalSize = viewport;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(() {
@@ -341,6 +410,12 @@ Future<void> _pumpReader(
 
   await tester.pumpWidget(
     MaterialApp(
+      builder: (context, child) => textScaler == null
+          ? child!
+          : MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+              child: child!,
+            ),
       home: Scaffold(
         body: Center(
           child: SizedBox(
@@ -357,6 +432,27 @@ Future<void> _pumpReader(
 
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));
+}
+
+class _EstimateCall {
+  _EstimateCall(this.style, this.scaler);
+
+  final TextStyle style;
+  final TextScaler scaler;
+  final result = Completer<List<int>>();
+}
+
+class _NonlinearScaler extends TextScaler {
+  const _NonlinearScaler(this.factor);
+
+  final double factor;
+
+  @override
+  double scale(double fontSize) =>
+      fontSize <= 1 ? fontSize : 1 + (fontSize - 1) * factor;
+
+  @override
+  double get textScaleFactor => factor;
 }
 
 Future<void> _deleteDirectoryWithRetry(Directory dir) async {

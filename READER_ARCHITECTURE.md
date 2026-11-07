@@ -302,6 +302,15 @@ Core characteristics:
 - highlight rendering and anchor healing are supported
 - pagination is layout-sensitive and cached by layout key
 
+The TXT page estimate uses the selected font family and the effective size
+from `TextScaler.scale(fontSize)` as part of the layout key. The estimator
+measures a sample at one text style, so the scaled size identifies its input
+even for nonlinear scaling. Viewport and typography changes both request an
+estimate. The engine records the requested key before checking in-flight work
+and publishes results only for that key. Returning from A to B to A can reuse
+A's pending estimate, while a late B result cannot replace it. The estimate
+feeds the page bar. Navigation and restore use viewport anchors separately.
+
 Navigation and restore (01A/02, 2026-10-19):
 - Single visible paragraphs at least one viewport high advance by 0.92 of the
   actual content viewport, including across their trailing edge. Ordinary

@@ -548,8 +548,11 @@ class TxtReaderEngine
   List<int> _paragraphOffsets = [];
   int _totalPages = 1;
   int _charsPerPage = 1;
-  bool _isPaginationCalculated = false;
-  _PaginationLayoutKey? _lastPaginationKey;
+  _PaginationLayoutKey? _requestedPaginationKey;
+  _PaginationLayoutKey? _estimatedPaginationKey;
+  bool get _isPaginationCalculated =>
+      _estimatedPaginationKey != null &&
+      _estimatedPaginationKey == _requestedPaginationKey;
   final Set<_PaginationLayoutKey> _inFlightPaginationKeys =
       <_PaginationLayoutKey>{};
   final ValueNotifier<int> _pageInfoNotifier = ValueNotifier(0);
@@ -752,6 +755,13 @@ class TxtReaderEngine
               _config.useSerif == config.useSerif);
     }
     _config = config;
+    final viewport = _viewportSize;
+    final textScaler = _viewportTextScale;
+    if (viewport != null && textScaler != null) {
+      // A settings update can rebuild only the list and page bar, without
+      // running the outer LayoutBuilder again at the same viewport size.
+      unawaited(_recalculatePagination(viewport, textScaler));
+    }
     _configNotifier.value = config;
   }
 
@@ -812,8 +822,7 @@ class TxtReaderEngine
             // Not awaited: the estimate lands via _pageInfoNotifier when ready;
             // the helper defers its TextPainter work past this build frame and
             // re-validates the layout key on completion.
-            unawaited(_recalculatePagination(
-                constraints.biggest, MediaQuery.textScalerOf(context)));
+            unawaited(_recalculatePagination(constraints.biggest, scale));
 
             return Stack(
               children: [
@@ -1393,45 +1402,41 @@ class TxtReaderEngine
   }
 
   Future<void> _recalculatePagination(Size size, TextScaler textScaler) async {
-    if (_paginationSample.isEmpty || _totalTextLength == 0) return;
+    if (_disposed || _paginationSample.isEmpty || _totalTextLength == 0) {
+      return;
+    }
 
     // Inter-paragraph spacing added by _buildList to every list item.
     final double paragraphBottomMargin = _config.fontSize * 0.6;
 
-    // Collapse TextScaler to a plain double so the key comparison is a
-    // simple double == double check.  TextScaler instances produced by
-    // different widget-build cycles are not always identical objects even
-    // when they represent the same scale factor; using the double avoids
-    // spurious key mismatches that would discard freshly-computed results.
-    final double textScaleFactor = textScaler.scale(1.0);
-
     final paginationKey = _PaginationLayoutKey(
       viewportSize: size,
       fontSize: _config.fontSize,
+      fontFamily: _config.useSerif
+          ? NyanTypography.readingSerifFontFamily
+          : NyanTypography.uiFontFamily,
       lineHeight: _config.lineHeight,
       padding: _paginationPadding,
       orientation: size.width >= size.height
           ? Orientation.landscape
           : Orientation.portrait,
-      textScaleFactor: textScaleFactor,
+      scaledFontSize: textScaler.scale(_config.fontSize),
       paragraphBottomMargin: paragraphBottomMargin,
     );
-    if (_lastPaginationKey == paginationKey && _isPaginationCalculated) return;
-    if (_inFlightPaginationKeys.contains(paginationKey)) return;
-
-    _lastPaginationKey = paginationKey;
-    _inFlightPaginationKeys.add(paginationKey);
-    _isPaginationCalculated = false;
+    // A -> B -> A can reuse A's pending result only if A is recorded as the
+    // requested layout before checking for work already in flight.
+    _requestedPaginationKey = paginationKey;
+    if (_isPaginationCalculated ||
+        !_inFlightPaginationKeys.add(paginationKey)) {
+      return;
+    }
 
     // Pagination must use the same font family the reader will render with;
-    // a mismatch here would produce incorrect page-break positions and break
-    // the §3.6 determinism invariant (same settings → same pagination).
+    // use the values from the key so estimation and deduplication agree.
     final style = TextStyle(
-      fontSize: _config.fontSize,
-      height: _config.lineHeight,
-      fontFamily: _config.useSerif
-          ? NyanTypography.readingSerifFontFamily
-          : NyanTypography.uiFontFamily,
+      fontSize: paginationKey.fontSize,
+      height: paginationKey.lineHeight,
+      fontFamily: paginationKey.fontFamily,
     );
 
     try {
@@ -1452,19 +1457,16 @@ class TxtReaderEngine
         totalTextLength: _totalTextLength,
       );
 
-      if (_lastPaginationKey != paginationKey) {
-        _inFlightPaginationKeys.remove(paginationKey);
-        return;
-      }
+      if (_disposed || _requestedPaginationKey != paginationKey) return;
 
       _totalPages = result[0];
       _charsPerPage = result[1];
-      _isPaginationCalculated = true;
-      _inFlightPaginationKeys.remove(paginationKey);
+      _estimatedPaginationKey = paginationKey;
       _pageInfoNotifier.value++;
     } catch (e) {
-      _inFlightPaginationKeys.remove(paginationKey);
       debugPrint('Pagination error: $e');
+    } finally {
+      _inFlightPaginationKeys.remove(paginationKey);
     }
   }
 
@@ -1507,25 +1509,23 @@ class _PaginationLayoutKey {
   const _PaginationLayoutKey({
     required this.viewportSize,
     required this.fontSize,
+    required this.fontFamily,
     required this.lineHeight,
     required this.padding,
     required this.orientation,
-    required this.textScaleFactor,
+    required this.scaledFontSize,
     required this.paragraphBottomMargin,
   });
 
   final Size viewportSize;
   final double fontSize;
+  final String fontFamily;
   final double lineHeight;
   final EdgeInsets padding;
   final Orientation orientation;
 
-  /// Scalar extracted from MediaQuery via `textScaler.scale(1.0)`.  Stored
-  /// as a plain double to avoid relying on TextScaler object equality across
-  /// widget rebuilds (different TextScaler instances for the same factor
-  /// have reliable == only via their internal double comparison, but widget
-  /// build cycles may produce instances whose equality is not stable).
-  final double textScaleFactor;
+  /// The estimator lays out one TextStyle at this effective font size.
+  final double scaledFontSize;
 
   /// Inter-paragraph spacing used by the list renderer (`fontSize * 0.6`).
   final double paragraphBottomMargin;
@@ -1536,10 +1536,11 @@ class _PaginationLayoutKey {
     return other is _PaginationLayoutKey &&
         other.viewportSize == viewportSize &&
         other.fontSize == fontSize &&
+        other.fontFamily == fontFamily &&
         other.lineHeight == lineHeight &&
         other.padding == padding &&
         other.orientation == orientation &&
-        other.textScaleFactor == textScaleFactor &&
+        other.scaledFontSize == scaledFontSize &&
         other.paragraphBottomMargin == paragraphBottomMargin;
   }
 
@@ -1547,10 +1548,11 @@ class _PaginationLayoutKey {
   int get hashCode => Object.hash(
         viewportSize,
         fontSize,
+        fontFamily,
         lineHeight,
         padding,
         orientation,
-        textScaleFactor,
+        scaledFontSize,
         paragraphBottomMargin,
       );
 
@@ -1559,10 +1561,11 @@ class _PaginationLayoutKey {
     return '_PaginationLayoutKey('
         'viewportSize: $viewportSize, '
         'fontSize: $fontSize, '
+        'fontFamily: $fontFamily, '
         'lineHeight: $lineHeight, '
         'padding: $padding, '
         'orientation: $orientation, '
-        'textScaleFactor: $textScaleFactor, '
+        'scaledFontSize: $scaledFontSize, '
         'paragraphBottomMargin: $paragraphBottomMargin'
         ')';
   }
