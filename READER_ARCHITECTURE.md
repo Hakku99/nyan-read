@@ -517,6 +517,53 @@ Core characteristics:
 - no text highlights or snippets in the current architecture
 - synthetic TOC only, so `chapterNavigation` is `synthetic`
 
+PDF location restoration during loading (item 06):
+- `initialize()` still returns before document loading finishes. After
+  initialization, the engine retains one latest pending page/progress target;
+  chapter jumps and early page turns participate in the same navigation order.
+  This is a requested target, not a second owner of the current position.
+- Document resolution alone is insufficient: pdfx 2.9.2 reports document success
+  before its PageView attaches. A private viewport widget releases navigation
+  after the loaded view's frame, using public pdfx APIs and no fixed delay.
+  Unmounted callbacks cannot mark a detached viewport ready; remounting also
+  checks an already-loaded document.
+- Page targets are clamped to the document's page range. A pending progress
+  target resolves against the loaded page count, including any subsequent early
+  next/previous steps. Newer requests supersede older requests rather than
+  replaying an old restore over a later user action.
+- Navigation futures wait until the target is handed to the mounted page
+  controller. Superseded requests and disposal release waiters without replay;
+  document-open errors reject pending/future navigation, while PdfView displays
+  its existing error state. Completion does not imply decoded page pixels;
+  `waitForPagePresentation` remains the separate presentation readiness gate.
+- Public method signatures and database persistence are unchanged. Targeted
+  regressions are in `test/pdf_page_presentation_test.dart`; these channel-based
+  tests establish lifecycle/order behavior, not native rendering performance.
+
+PDF native resource ownership:
+- The engine owns the opened `PdfDocument`. In pinned pdfx 2.9.2,
+  `PdfController.dispose()` releases only the page controller, so engine disposal
+  separately schedules document closure exactly once, including late opens.
+- Every page-image future submitted through the page builder is observed until
+  completion. pdfx resolves it only after its `finally` closes the native page;
+  cleanup drains all such futures, including queued requests, before closing
+  the document. Waiting only for the renderer would race native page closure.
+- A non-failing load-settlement signal separates cleanup from the original
+  document-open error. The existing loader/navigation paths report that error;
+  disposal does not re-await a rejected document future or close a missing
+  document.
+- Temporary source deletion follows successful document closure (or failed-open
+  settlement when no document exists). Close failure is reported through
+  `FlutterError.reportError` and leaves the temporary source intact. Cleanup is
+  asynchronous because the public `dispose()` contract remains synchronous;
+  it adds no fixed delay and does not block the UI.
+- `test/pdf_document_lifecycle_test.dart` covers normal/repeated disposal, late
+  loading, in-flight rendering, page closure, queued requests, failed open,
+  temporary-file ordering and close failure. Rendering dimensions, page cache
+  policy and position restoration are unchanged. Item 13B-4's performance
+  variation and complex-PDF coverage remain open; resource cleanup is not a
+  demonstrated fix for the historical slow frames.
+
 Implements optional capabilities:
 - `PageMetricsCapability`
 
