@@ -464,6 +464,17 @@ Core characteristics:
   `TextReaderCapability`), like TXT
 - page metrics are intentionally not exposed
 
+Paragraph progress (14): each paragraph or image slot has equal weight.
+The engine divides the anchor index plus the fraction of that slot above the
+viewport by the slot count. During restore it uses the accepted target and its
+edges when available. Missing edges contribute zero fractional progress, and a
+detached viewport retains the last estimate. The value reaches 1.0 when the
+scrollable viewport reaches its end with the final slot's trailing edge visible.
+Incomplete estimates are capped at 99.49% so whole-percent labels cannot round
+up to completion. Progress seeks still map to a whole paragraph using the
+legacy normalized seek formula. Saved position anchors remain the source of
+exact restore locations.
+
 Navigation and restore (03, 2026-10-22):
 - Adjacent EPUB turns move 0.92 of the actual content viewport, clamped at
   document boundaries. Counting visible paragraphs is no longer used: a
@@ -484,8 +495,8 @@ Navigation and restore (03, 2026-10-22):
   avoiding capture of a live engine's unsendable scroll state.
 - No public method signatures, position JSON fields, enumeration version,
   paragraph ordering, database schema or dependencies change. Item 05 adds
-  cross-layout content anchoring; image layout stability (10), progress semantics (14)
-  remain separate work. Item 08 adds shared target readiness and cancellation,
+  cross-layout content anchoring. Image layout stability (10) remains separate
+  work. Item 08 adds shared target readiness and cancellation,
   described above and in `docs/READER_TURN_FIX_08.md`; item 13 remains separate.
 
 Implements optional capabilities:

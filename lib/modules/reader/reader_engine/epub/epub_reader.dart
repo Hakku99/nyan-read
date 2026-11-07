@@ -99,6 +99,8 @@ class EpubReaderEngine
   // Retain bounded roundtrip anchors, including a shortened turn at EOF.
   static const _historyLimit = 48;
   static const _viewportStep = .92;
+  // Reader and shelf labels round to whole percentages. Reserve 100% for EOF.
+  static const _maxIncompleteProgress = .9949;
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
 
@@ -471,13 +473,6 @@ class EpubReaderEngine
     return topmost ?? positions.reduce((a, b) => a.index < b.index ? a : b);
   }
 
-  int _viewportAnchorIndex() {
-    if (_paragraphCount == 0) return 0;
-    if (_pendingRestore != null) return _pendingRestore!.paragraphIndex!;
-    final anchor = _currentViewportAnchor();
-    return (anchor?.index ?? _initialIndex).clamp(0, _paragraphCount - 1);
-  }
-
   @override
   ReadingPosition? getCurrentPosition() {
     if (!_isInit || _paragraphCount == 0) return null;
@@ -508,12 +503,42 @@ class EpubReaderEngine
 
   @override
   double? getProgress() {
-    if (!_isInit || _paragraphCount <= 1) {
-      return _lastKnownProgress.clamp(0.0, 1.0);
+    if (!_isInit || _paragraphCount == 0) return 0.0;
+    final pending = _pendingRestore;
+    if (pending != null) {
+      // The temporary viewport is not authoritative during a restore.
+      return _lastKnownProgress = _estimateProgress(pending.paragraphIndex!,
+          pending.paragraphLeadingEdge, pending.paragraphTrailingEdge);
     }
-    final progress = _viewportAnchorIndex() / (_paragraphCount - 1);
-    _lastKnownProgress = progress.clamp(0.0, 1.0);
-    return _lastKnownProgress;
+    final scroll = _scrollPosition;
+    if (scroll == null || !scroll.hasContentDimensions) {
+      return _lastKnownProgress;
+    }
+    final anchor = _currentViewportAnchor();
+    if (anchor == null) return _lastKnownProgress;
+
+    // Positioned lists can have a temporary scroll limit before the last
+    // paragraph is laid out. Confirm the actual tail is in the viewport too.
+    if (scroll.maxScrollExtent > scroll.minScrollExtent &&
+        scroll.extentAfter == 0 &&
+        _itemPositionsListener.itemPositions.value.any((item) =>
+            item.index == _paragraphCount - 1 &&
+            item.itemTrailingEdge > 0 &&
+            item.itemTrailingEdge <= 1)) {
+      return _lastKnownProgress = 1.0;
+    }
+    return _lastKnownProgress = _estimateProgress(
+        anchor.index, anchor.itemLeadingEdge, anchor.itemTrailingEdge);
+  }
+
+  double _estimateProgress(int index, double? leading, double? trailing) {
+    var fraction = 0.0;
+    if (leading != null && trailing != null && leading < 0 && trailing > 0) {
+      final extent = trailing - leading;
+      if (extent.isFinite) fraction = -leading / extent;
+    }
+    return ((index + fraction) / _paragraphCount)
+        .clamp(0.0, _maxIncompleteProgress);
   }
 
   @override

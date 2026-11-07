@@ -19,16 +19,20 @@ void main() {
         (tester) async {
       final engine = await mountFixture(tester, 'epub', mode, oversized: true);
       final anchors = <ReadingPosition>[engine.getCurrentPosition()!];
+      final progress = <double>[engine.getProgress()!];
       for (var i = 0; i < 20; i++) {
         await perform(tester, engine.nextPage);
         final current = engine.getCurrentPosition()!;
         expect(advanced(anchors.last, current), isTrue);
         anchors.add(current);
+        expect(engine.getProgress(), greaterThan(progress.last));
+        progress.add(engine.getProgress()!);
       }
       expect(anchors.last.paragraphIndex!, greaterThan(20));
       for (var i = 19; i >= 0; i--) {
         await perform(tester, engine.previousPage);
         expectSameViewport(anchors[i], engine.getCurrentPosition()!);
+        expect(engine.getProgress(), closeTo(progress[i], .0002));
       }
     });
 
@@ -39,21 +43,26 @@ void main() {
           ]));
       final engine = await mountFixture(tester, 'epub', mode,
           path: file!.path, initialIndex: 0);
+      expect(engine.getProgress(), 0);
       var steps = 0;
       while (steps++ < 200) {
         final before = engine.getCurrentPosition()!;
+        final previousProgress = engine.getProgress()!;
         await perform(tester, engine.nextPage);
         if (!advanced(before, engine.getCurrentPosition()!)) break;
+        expect(engine.getProgress(), greaterThan(previousProgress));
       }
       expect(steps, greaterThan(20));
       expect(steps, lessThan(200));
       final end = engine.getCurrentPosition()!;
       expect(end.paragraphTrailingEdge, closeTo(1, .004));
+      expect(engine.getProgress(), 1);
       for (var i = 0; i < 3; i++) {
         await perform(tester, engine.nextPage);
         expectSameViewport(end, engine.getCurrentPosition()!);
       }
       await perform(tester, engine.previousPage);
+      expect(engine.getProgress(), lessThan(1));
       expect(engine.getCurrentPosition()!.paragraphLeadingEdge!,
           greaterThan(end.paragraphLeadingEdge!));
     });
@@ -167,6 +176,76 @@ void main() {
     await perform(tester, engine.nextPage);
     await perform(tester, engine.previousPage);
     expect(engine.getCurrentPosition(), isNull);
+    expect(engine.getProgress(), 0);
+  });
+
+  testWidgets('long final paragraph reaches 100% only at scroll end',
+      (tester) async {
+    final file = await tester.runAsync(() => writeFixture('epub', [
+          ...List.filled(100, 'Opening paragraph.'),
+          'The final paragraph takes many screens to read. ' * 180,
+        ]));
+    final engine = await mountFixture(tester, 'epub', PageTurnMode.tap,
+        path: file!.path, initialIndex: 0);
+    await perform(tester, () => engine.seekToProgress(1));
+    expect(engine.getCurrentPosition()!.paragraphIndex, 100);
+    expect(engine.getProgress(), closeTo(100 / 101, .00001));
+    final scroll =
+        tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+    scroll.jumpTo(scroll.maxScrollExtent - 1);
+    await tester.pumpAndSettle();
+    final almostFinished = engine.getProgress()!;
+    final position = engine.getCurrentPosition()!;
+    final leading = position.paragraphLeadingEdge!;
+    final trailing = position.paragraphTrailingEdge!;
+    final uncapped = (100 - leading / (trailing - leading)) / 101;
+    expect((uncapped * 100).round(), 100);
+    expect(almostFinished, greaterThan(100 / 101));
+    expect((almostFinished * 100).round(), lessThan(100));
+
+    await perform(tester, engine.nextPage);
+    expect(engine.getProgress(), 1);
+    await perform(tester, engine.previousPage);
+    expect(engine.getProgress(), closeTo(almostFinished, .0002));
+  });
+
+  testWidgets('one-screen EPUB does not start at 100%', (tester) async {
+    final file = await tester
+        .runAsync(() => writeFixture('epub', ['One short paragraph.']));
+    final engine = await mountFixture(tester, 'epub', PageTurnMode.tap,
+        path: file!.path, initialIndex: 0);
+    expect(engine.getProgress(), 0);
+    await perform(tester, engine.nextPage);
+    expect(engine.getProgress(), 0);
+  });
+
+  test('progress uses the accepted restore target before geometry is mounted',
+      () async {
+    final file = await writeFixture('epub', baselineParagraphs());
+    final engine = EpubReaderEngine(Book(
+      id: 'progress-restore',
+      title: 'Fixture',
+      author: '',
+      filePath: file.path,
+      format: 'epub',
+    ));
+    addTearDown(engine.dispose);
+    await engine.initialize();
+    expect(engine.getProgress(), 0);
+    await engine.goToPosition(const ReadingPosition(paragraphIndex: 40));
+    expect(engine.getProgress(), .4);
+    await engine.goToPosition(const ReadingPosition(
+      paragraphIndex: 40,
+      paragraphLeadingEdge: -.5,
+      paragraphTrailingEdge: 1.5,
+    ));
+    expect(engine.getProgress(), closeTo(.4025, .00001));
+    await engine.goToPosition(const ReadingPosition(
+      paragraphIndex: 99,
+      paragraphLeadingEdge: .1,
+      paragraphTrailingEdge: .1,
+    ));
+    expect(engine.getProgress(), .99);
   });
 
   testWidgets(
