@@ -406,10 +406,10 @@ comparison against the G2 commit and frame/system evidence are documented in
 `docs/READER_PERFORMANCE_13A_RESULTS.md`. Full-app worst-round performance is
 still outside the budget. Image-size notifications can invalidate EPUB turn
 history and restoration during cancellation in both historical comparison
-variants. The separate EPUB image lifecycle fix now retains completed image
-data and decoded dimensions across list remounts, including bitmap eviction.
-It preserves existing navigation/restoration ownership and public contracts;
-see `docs/READER_EPUB_IMAGE_POSITION_FIX.md` for verification and limits.
+variants. The separate EPUB image lifecycle fix introduced stable image
+dimensions across list remounts, including bitmap eviction. Item 16 below
+bounds retained encoded bytes while preserving that geometry. See
+`docs/READER_EPUB_IMAGE_POSITION_FIX.md` for the earlier verification.
 
 The following item 13 rendering changes remain experimental and have not passed
 overall performance acceptance.
@@ -499,6 +499,15 @@ Navigation and restore (03, 2026-10-22):
   animated transition. Adjacent vertical turns remain animated.
 - Image extraction sends only strings through a top-level compute callback,
   avoiding capture of a live engine's unsendable scroll state.
+- EPUB image retention (16) shares one in-flight extraction and first decode
+  per href. Mounted blocks and presentation waits pin their data. The idle
+  encoded-byte LRU retains up to 32 images and 16 MiB per engine, dropping the
+  matching completed Flutter cache entry on eviction without clearing live
+  tracking. Flutter still owns decoded images and their live listeners.
+  First-decoded dimensions outlive byte eviction within the session so known
+  slots keep the same geometry on the first remounted frame and while reloading
+  or showing an error. A first-time size change still invalidates turn history.
+  Closing the engine detaches decode waits and discards late results.
 - No public method signatures, position JSON fields, enumeration version,
   paragraph ordering, database schema or dependencies change. Item 05 adds
   cross-layout content anchoring. Image layout stability (10) remains separate

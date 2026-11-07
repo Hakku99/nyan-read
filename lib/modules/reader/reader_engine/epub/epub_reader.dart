@@ -113,13 +113,19 @@ class EpubReaderEngine
   int _initialIndex = 0;
   double _lastKnownProgress = 0.0;
 
-  /// One zip extraction per distinct image href per session; the Future is
-  /// cached so concurrent item builds share the same load.
+  // Cap only idle encoded data. Mounted blocks and presentation waits can
+  // outlive a cache trim, and in-flight loads must remain single-flight.
+  static const _idleImageLimit = 32;
+  static const _idleImageByteLimit = 16 * 1024 * 1024;
   final Map<String, Future<_EpubImageData?>> _imageFutures = {};
-  // Completed futures still produce a waiting snapshot after a list remount.
-  // Retain the same bytes and decoded dimensions, not another bitmap cache.
-  final Map<String, _EpubImageData> _loadedImages = {};
-  final _imageLoadLifetime = PageTurnRequest();
+  final _imageUsers = <String, int>{};
+  final _activeImages = <String, _EpubImageData>{};
+  final _idleImages = <String, _EpubImageData>{};
+  int _idleImageBytes = 0;
+  final _imageSizes = <String, Size>{};
+  final _failedImages = <String>{};
+  final _cancelImageDecodes = <VoidCallback>{};
+  final Future<Uint8List?> Function(String, String) _extractImage;
 
   // ── Highlights (P3) ───────────────────────────────────────────────────
   List<Highlight> _renderHighlights = const [];
@@ -147,7 +153,15 @@ class EpubReaderEngine
 
   ReaderConfig get _config => _configNotifier.value;
 
-  EpubReaderEngine(this.book) {
+  EpubReaderEngine(Book book) : this._(book, _extractImageInIsolate);
+
+  @visibleForTesting
+  EpubReaderEngine.withImageLoader(
+    Book book,
+    Future<Uint8List?> Function(String path, String rawSrc) extractImage,
+  ) : this._(book, extractImage);
+
+  EpubReaderEngine._(this.book, this._extractImage) {
     _itemPositionsListener.itemPositions.addListener(_updateCommittedPosition);
   }
 
@@ -306,9 +320,8 @@ class EpubReaderEngine
               child: _EpubImageBlock(
             key: ValueKey(index),
             index: index,
-            presentations: _imagePresentations,
-            loadBytes: () => _imageBytesFor(_paragraphText(index)),
-            initialImage: _loadedImages[_paragraphText(index)],
+            engine: this,
+            rawSrc: _paragraphText(index),
             config: config,
           )),
         ),
@@ -351,28 +364,111 @@ class EpubReaderEngine
     );
   }
 
+  _EpubImageData? _retainImage(String rawSrc) {
+    if (_disposed) return null;
+    _imageUsers.update(rawSrc, (count) => count + 1, ifAbsent: () => 1);
+    final idle = _idleImages.remove(rawSrc);
+    if (idle != null) {
+      _idleImageBytes -= idle.bytes.lengthInBytes;
+      _activeImages[rawSrc] = idle;
+    }
+    return _activeImages[rawSrc];
+  }
+
+  void _releaseImage(String rawSrc) {
+    if (_disposed) return;
+    final users = _imageUsers[rawSrc]!;
+    if (users > 1) {
+      _imageUsers[rawSrc] = users - 1;
+      return;
+    }
+    _imageUsers.remove(rawSrc);
+    final image = _activeImages.remove(rawSrc);
+    if (image != null) _cacheIdleImage(rawSrc, image);
+  }
+
+  void _cacheIdleImage(String rawSrc, _EpubImageData image) {
+    final bytes = image.bytes.lengthInBytes;
+    if (bytes > _idleImageByteLimit) {
+      _evictIdleBitmap(image);
+      return;
+    }
+    _idleImages[rawSrc] = image;
+    _idleImageBytes += bytes;
+    // The insertion order tracks when an image last finished being used.
+    while (_idleImages.length > _idleImageLimit ||
+        _idleImageBytes > _idleImageByteLimit) {
+      final oldest = _idleImages.remove(_idleImages.keys.first)!;
+      _idleImageBytes -= oldest.bytes.lengthInBytes;
+      _evictIdleBitmap(oldest);
+    }
+  }
+
   Future<_EpubImageData?> _imageBytesFor(String rawSrc) {
-    return _imageFutures.putIfAbsent(rawSrc, () async {
-      try {
-        // Per-image zip extraction inside an isolate: InputFileStream
-        // inflates only the requested entry, so peak memory is the decoded
-        // image — the book is never loaded into RAM to serve a figure.
-        final source = await _resolveReadableSource();
-        // A top-level callback sends only strings. An instance closure can
-        // capture this engine's live ScrollPosition/Futures, which isolates
-        // cannot receive once the reader is mounted.
-        final bytes = await compute(_extractEpubImage, (source.path, rawSrc));
-        if (_disposed || bytes == null || bytes.isEmpty) return null;
-        final image = await _resolveImageData(bytes, _imageLoadLifetime);
-        if (!_disposed) _loadedImages[rawSrc] = image;
-        return image;
-      } on PageTurnCancelled {
-        return null;
-      } catch (e) {
-        debugPrint('[EpubReaderEngine] Image load failed (${e.runtimeType}).');
+    if (_disposed || _failedImages.contains(rawSrc)) return Future.value();
+    return _imageFutures.putIfAbsent(rawSrc, () => _loadImage(rawSrc));
+  }
+
+  Future<_EpubImageData?> _loadImage(String rawSrc) async {
+    try {
+      final source = await _resolveReadableSource();
+      if (_disposed) return null;
+      final bytes = await _extractImage(source.path, rawSrc);
+      if (_disposed) return null;
+      if (bytes == null || bytes.isEmpty) {
+        _failedImages.add(rawSrc);
         return null;
       }
+      final image = await _resolveImageData(bytes);
+      if (_disposed) {
+        if (image != null) _evictIdleBitmap(image);
+        return null;
+      }
+      if (image == null) return null;
+      _imageSizes[rawSrc] = image.size;
+      if (_imageUsers.containsKey(rawSrc)) {
+        _activeImages[rawSrc] = image;
+      } else {
+        _cacheIdleImage(rawSrc, image);
+      }
+      return image;
+    } catch (error) {
+      if (!_disposed) _failedImages.add(rawSrc);
+      debugPrint(
+          '[EpubReaderEngine] Image load failed (${error.runtimeType}).');
+      return null;
+    } finally {
+      _imageFutures.remove(rawSrc);
+    }
+  }
+
+  Future<_EpubImageData?> _resolveImageData(Uint8List bytes) async {
+    // Reuse Flutter's decode (including orientation) and the exact paint key.
+    final ready = Completer<_EpubImageData?>();
+    final stream = MemoryImage(bytes).resolve(ImageConfiguration.empty);
+    final listener = ImageStreamListener((info, synchronous) {
+      if (!ready.isCompleted) {
+        ready.complete(_EpubImageData(bytes,
+            Size(info.image.width.toDouble(), info.image.height.toDouble())));
+      }
+      info.dispose();
+    }, onError: (Object error, StackTrace? stack) {
+      if (!ready.isCompleted) ready.completeError(error, stack);
     });
+    // A session-wide Future.any would keep the winning result reachable
+    // through its losing cancellation callback until the reader closes.
+    void cancel() {
+      if (!ready.isCompleted) ready.complete(null);
+    }
+
+    _cancelImageDecodes.add(cancel);
+    try {
+      stream.addListener(listener);
+      return await ready.future;
+    } finally {
+      stream.removeListener(listener);
+      _cancelImageDecodes.remove(cancel);
+    }
   }
 
   @override
@@ -784,9 +880,23 @@ class EpubReaderEngine
   @override
   void dispose() {
     _disposed = true;
-    _imageLoadLifetime.cancel();
+    for (final cancel in _cancelImageDecodes) {
+      cancel();
+    }
+    _cancelImageDecodes.clear();
     _imagePresentations.clear();
-    _loadedImages.clear();
+    for (final image in _idleImages.values) {
+      _evictIdleBitmap(image);
+    }
+    for (final image in _activeImages.values) {
+      _evictIdleBitmap(image);
+    }
+    _idleImages.clear();
+    _idleImageBytes = 0;
+    _activeImages.clear();
+    _imageUsers.clear();
+    _imageSizes.clear();
+    _failedImages.clear();
     _imageFutures.clear();
     _itemPositionsListener.itemPositions
         .removeListener(_updateCommittedPosition);
@@ -813,33 +923,24 @@ class EpubReaderEngine
 Uint8List? _extractEpubImage((String, String) source) =>
     extractEpubImageBytesFromFile(source.$1, source.$2);
 
+// Send only the path and href to the isolate. Capturing the engine would
+// also send its live ScrollPosition and Futures.
+Future<Uint8List?> _extractImageInIsolate(String path, String rawSrc) =>
+    compute(_extractEpubImage, (path, rawSrc));
+
 final class _EpubImageData {
-  const _EpubImageData(this.bytes, this.width, this.height);
+  const _EpubImageData(this.bytes, this.size);
   final Uint8List bytes;
-  final int width;
-  final int height;
+  final Size size;
 }
 
-Future<_EpubImageData> _resolveImageData(
-    Uint8List bytes, PageTurnRequest lifetime) async {
-  // Reuse Flutter's normal decode/cache, including orientation. Explicit
-  // dimensions keep remounts stable even after the bitmap cache is evicted.
-  final ready = Completer<_EpubImageData>();
-  final stream = MemoryImage(bytes).resolve(ImageConfiguration.empty);
-  final listener = ImageStreamListener((info, synchronous) {
-    if (!ready.isCompleted) {
-      ready
-          .complete(_EpubImageData(bytes, info.image.width, info.image.height));
-    }
-    info.dispose();
-  }, onError: (Object error, StackTrace? stack) {
-    if (!ready.isCompleted) ready.completeError(error, stack);
-  });
-  try {
-    stream.addListener(listener);
-    return await lifetime.wait(ready.future);
-  } finally {
-    stream.removeListener(listener);
+void _evictIdleBitmap(_EpubImageData image) {
+  final cache = PaintingBinding.instance.imageCache;
+  final key = MemoryImage(image.bytes);
+  // The key itself owns the encoded bytes. Drop its completed cache entry
+  // without disturbing listeners or a pending framework decode.
+  if (cache.statusForKey(key).keepAlive) {
+    cache.evict(key, includeLive: false);
   }
 }
 
@@ -925,17 +1026,14 @@ class _EpubViewportState extends State<_EpubViewport> {
 class _EpubImageBlock extends StatefulWidget {
   const _EpubImageBlock(
       {super.key,
-      required this.loadBytes,
-      required this.initialImage,
+      required this.engine,
+      required this.rawSrc,
       required this.config,
-      required this.index,
-      required this.presentations});
+      required this.index});
 
+  final EpubReaderEngine engine;
+  final String rawSrc;
   final int index;
-  final Map<int, Future<bool> Function(PageTurnRequest)> presentations;
-
-  final Future<_EpubImageData?> Function() loadBytes;
-  final _EpubImageData? initialImage;
   final ReaderConfig config;
 
   @override
@@ -943,26 +1041,45 @@ class _EpubImageBlock extends StatefulWidget {
 }
 
 class _EpubImageBlockState extends State<_EpubImageBlock> {
-  late final Future<_EpubImageData?> _future = widget.loadBytes();
+  static const _imageConstraints = BoxConstraints(maxHeight: 420);
+  late final Future<_EpubImageData?> _future;
+  late final _EpubImageData? _initialImage;
+  late final Size? _knownSize;
 
   @override
   void initState() {
     super.initState();
-    widget.presentations[widget.index] = _waitForFrame;
+    final engine = widget.engine;
+    final rawSrc = widget.rawSrc;
+    _initialImage = engine._retainImage(rawSrc);
+    _knownSize = engine._imageSizes[rawSrc];
+    _future = _initialImage == null
+        ? engine._imageBytesFor(rawSrc)
+        : Future.value(_initialImage);
+    engine._imagePresentations[widget.index] = _waitForFrame;
   }
 
   @override
   void dispose() {
-    if (widget.presentations[widget.index] == _waitForFrame) {
-      widget.presentations.remove(widget.index);
+    final engine = widget.engine;
+    if (engine._imagePresentations[widget.index] == _waitForFrame) {
+      engine._imagePresentations.remove(widget.index);
     }
+    engine._releaseImage(widget.rawSrc);
     super.dispose();
   }
 
   Future<bool> _waitForFrame(PageTurnRequest request) async {
     final image = await request.wait(_future);
-    if (!mounted || image == null) return false;
-    return waitForImageFrame(MemoryImage(image.bytes), request);
+    if (!mounted || image == null || widget.engine._disposed) return false;
+    final engine = widget.engine;
+    final rawSrc = widget.rawSrc;
+    engine._retainImage(rawSrc);
+    try {
+      return await waitForImageFrame(MemoryImage(image.bytes), request);
+    } finally {
+      engine._releaseImage(rawSrc);
+    }
   }
 
   @override
@@ -970,23 +1087,24 @@ class _EpubImageBlockState extends State<_EpubImageBlock> {
     final config = widget.config;
     return FutureBuilder<_EpubImageData?>(
       future: _future,
-      initialData: widget.initialImage,
+      initialData: _initialImage,
       builder: (context, snapshot) {
         final image = snapshot.data;
         if (image != null) {
           return ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 420),
+              constraints: _imageConstraints,
               child: Image.memory(image.bytes,
-                  width: image.width.toDouble(),
-                  height: image.height.toDouble(),
+                  width: image.size.width,
+                  height: image.size.height,
                   fit: BoxFit.contain),
             ),
           );
         }
-        return Container(
-          height: 120,
+        final knownSize = _knownSize;
+        final feedback = Container(
+          height: knownSize == null ? 120 : null,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             border: Border.all(color: config.textColor.withValues(alpha: 0.25)),
@@ -1011,6 +1129,17 @@ class _EpubImageBlockState extends State<_EpubImageBlock> {
                     color: config.textColor.withValues(alpha: 0.7),
                   ),
                 ),
+        );
+        if (knownSize == null) return feedback;
+        // Match Image's explicit dimensions under the current constraints.
+        // Falling back to the first-load height would invalidate turn anchors.
+        return ConstrainedBox(
+          constraints: _imageConstraints,
+          child: SizedBox(
+            width: knownSize.width,
+            height: knownSize.height,
+            child: feedback,
+          ),
         );
       },
     );
