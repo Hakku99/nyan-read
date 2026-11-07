@@ -1110,6 +1110,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
           request: request,
           forward: forward,
           waitForReady: () => controller.waitForPagePresentation(request),
+          readyIncludesPaint: controller.pageReadinessIncludesPaint,
           didMove: () => controller.currentPosition?.toJson() != before,
           dispatchTurn: () async {
             if (forward) {

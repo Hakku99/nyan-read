@@ -357,11 +357,17 @@ Item 08 replaces the midpoint switch with a preparation phase: the outgoing
 snapshot covers the live reader, navigation runs once, and the 360 ms slide
 starts only after target presentation is ready. The engine remains the sole
 owner of position; cancelling presentation never rolls back accepted navigation.
-The target snapshot reuses the frame already awaited after presentation readiness.
-It must not request another `endOfFrame` solely for capture: from idle that
-schedules an extra covered frame. Outgoing capture still awaits paint normally;
-the private `frameReady` path is used only immediately after the readiness frame.
-Pixel tests include a final visual update published with readiness and cancellation.
+The target snapshot uses a painted frame. In item 13C, the controller opts
+EPUB into reusing the final frame awaited by its readiness callback after the
+visible image checks. If Flutter already has another frame scheduled, the turn
+waits for that paint before capturing. Readiness without the EPUB paint opt-in
+still waits for a frame after the callback. The private `frameReady` capture
+path reads the selected frame directly, since another `endOfFrame` from idle
+would schedule an extra covered frame. Outgoing capture waits for paint as well.
+EPUB widget tests compare the reused text and illustration pixels with the
+settled target. The turn pipeline also covers delayed image paint, cancellation
+and timeout. These tests verify frame order and pixels. Device latency remains
+unmeasured for this change.
 
 `PageTurnRequest` invalidates capture, queued navigation and image waits on
 layout/mode changes, overlay opening, backgrounding, disposal or the UI deadline.

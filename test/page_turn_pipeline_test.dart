@@ -22,6 +22,7 @@ Future<GlobalKey<SmoothPageReaderState>> mount(WidgetTester tester,
     {required Future<ui.Image?> Function() capture,
     Object? layout = 1,
     bool snapshotIncoming = false,
+    Widget child = const ColoredBox(color: Colors.blue),
     GlobalKey<SmoothPageReaderState>? key}) async {
   final actual = key ?? GlobalKey<SmoothPageReaderState>();
   await tester.pumpWidget(MaterialApp(
@@ -38,7 +39,7 @@ Future<GlobalKey<SmoothPageReaderState>> mount(WidgetTester tester,
         onPreviousTap: () {},
         onNextTap: () {},
         onCenterTap: () {},
-        child: const ColoredBox(color: Colors.blue)),
+        child: child),
   )));
   return actual;
 }
@@ -155,8 +156,8 @@ void main() {
         final images =
             tester.widgetList<RawImage>(find.byType(RawImage)).toList();
         expect(images, hasLength(2), reason: 'Turn metrics: $measured');
-        expect(
-            await tester.runAsync(() => pixel(images.first.image!)), finalPixel);
+        expect(await tester.runAsync(() => pixel(images.first.image!)),
+            finalPixel);
       }
       await tester.pumpAndSettle();
       await turn;
@@ -202,6 +203,68 @@ void main() {
     expect(calls, 1);
     expect(key.currentState!.isAnimating, isFalse);
   });
+  testWidgets('a delayed image queued for paint reaches the target snapshot',
+      (tester) async {
+    final outgoing = (await tester.runAsync(snapshot))!;
+    final decoded = (await tester.runAsync(snapshot))!;
+    addTearDown(decoded.dispose);
+    final imageReady = Completer<ui.Image>();
+    final bodyKey = GlobalKey();
+    var captures = 0;
+    ui.Image? target;
+    addTearDown(() => target?.dispose());
+    final key = await mount(
+      tester,
+      snapshotIncoming: true,
+      child: RepaintBoundary(
+        key: bodyKey,
+        child: FutureBuilder<ui.Image>(
+          future: imageReady.future,
+          builder: (_, state) => state.hasData
+              ? RawImage(image: state.data, fit: BoxFit.fill)
+              : const ColoredBox(color: Colors.blue),
+        ),
+      ),
+      capture: () async {
+        if (captures++ == 0) return outgoing;
+        final boundary = bodyKey.currentContext!.findRenderObject()!
+            as RenderRepaintBoundary;
+        final image = await boundary.toImage();
+        target = image.clone();
+        return image;
+      },
+    );
+    final turn = key.currentState!.playTurn(
+      forward: true,
+      dispatchTurn: () async {},
+      waitForReady: () async {
+        await imageReady.future;
+        return true;
+      },
+      readyIncludesPaint: true,
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(captures, 1);
+    expect(liveOffset(tester), Offset.zero);
+    // A late image can dirty the painted page as readiness is published.
+    imageReady.complete(decoded);
+    for (var i = 0; i < 20 && target == null; i++) {
+      await tester.pump();
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)));
+    }
+    expect(target, isNotNull);
+    final pixel = await tester.runAsync(() async {
+      final data = (await target!.toByteData())!;
+      return data.buffer.asUint8List(data.offsetInBytes, 4).toList();
+    });
+    expect(pixel, [244, 67, 54, 255]); // The fixture uses Colors.red.
+    await tester.pumpAndSettle();
+    await turn;
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('both page images release after a text slide without remounting',
       (tester) async {
     final outgoing = await tester.runAsync(snapshot);
@@ -322,7 +385,12 @@ void main() {
         'pending target ${changeLayout ? 'layout cancellation' : 'timeout'} reveals committed page',
         (tester) async {
       final image = await tester.runAsync(snapshot);
-      final key = await mount(tester, capture: () async => image);
+      var captures = 0;
+      final key =
+          await mount(tester, snapshotIncoming: true, capture: () async {
+        captures++;
+        return image;
+      });
       final ready = Completer<bool>();
       var calls = 0;
       final turn = key.currentState!.playTurn(
@@ -330,7 +398,8 @@ void main() {
           dispatchTurn: () async {
             calls++;
           },
-          waitForReady: () => ready.future);
+          waitForReady: () => ready.future,
+          readyIncludesPaint: true);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 20));
       expect(calls, 1);
@@ -344,6 +413,7 @@ void main() {
       ready.complete(true);
       await tester.pumpAndSettle();
       expect(calls, 1);
+      expect(captures, 1);
       expect(find.byType(RawImage), findsNothing);
       expect(liveOffset(tester), Offset.zero);
       expect(image!.debugDisposed, isTrue);

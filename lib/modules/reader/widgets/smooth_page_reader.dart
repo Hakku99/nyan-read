@@ -130,10 +130,12 @@ class SmoothPageReaderState extends State<SmoothPageReader>
     }
   }
 
+  /// Set [readyIncludesPaint] only when [waitForReady] awaits target paint.
   Future<void> playTurn({
     required bool forward,
     required Future<void> Function() dispatchTurn,
     Future<bool> Function()? waitForReady,
+    bool readyIncludesPaint = false,
     bool Function()? didMove,
     PageTurnRequest? request,
   }) async {
@@ -178,13 +180,18 @@ class SmoothPageReaderState extends State<SmoothPageReader>
       metrics['readyMs'] = phase.elapsedMicroseconds / 1000;
       turn.checkActive();
       if (!ready) return;
-      await turn.wait(SchedulerBinding.instance.endOfFrame);
+      // A visual update queued after readiness must still reach the snapshot.
+      final scheduler = SchedulerBinding.instance;
+      if (!readyIncludesPaint ||
+          waitForReady == null ||
+          scheduler.hasScheduledFrame) {
+        await turn.wait(scheduler.endOfFrame);
+      }
       turn.checkActive();
       if (widget.snapshotIncoming &&
           metrics['snapshotPixels']! <= _maxIncomingSnapshotPixels) {
         phase.reset();
-        // The readiness frame just finished painting. Reuse it instead of
-        // scheduling another covered frame solely to take the target snapshot.
+        // Capture the selected painted frame without scheduling another one.
         _incomingImage = await _captureFor(turn, frameReady: true);
         metrics['incomingCaptureMs'] = phase.elapsedMicroseconds / 1000;
         metrics['snapshotPixels'] = metrics['snapshotPixels']! +
