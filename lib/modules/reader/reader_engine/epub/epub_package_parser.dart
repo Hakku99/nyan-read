@@ -104,7 +104,7 @@ EpubPackage parseEpubPackageFromArchive(Archive archive) {
   } catch (e) {
     throw FormatException('Malformed OPF: $e');
   }
-  final opfDir = _parentDir(opfPath);
+  final opfDir = zipParentDir(opfPath);
 
   // 2. Manifest: id → (href, media-type, properties).
   final manifest = <String, ({String href, String mediaType, String props})>{};
@@ -138,7 +138,7 @@ EpubPackage parseEpubPackageFromArchive(Archive archive) {
     final navPath = resolveHref(opfDir, navItem.first.href).path;
     final navXml = readZipText(archive, navPath);
     if (navXml != null) {
-      toc = _parseEpub3Nav(navXml, _parentDir(navPath));
+      toc = _parseEpub3Nav(navXml, zipParentDir(navPath));
     }
   }
   if (toc.isEmpty) {
@@ -149,7 +149,7 @@ EpubPackage parseEpubPackageFromArchive(Archive archive) {
       final ncxPath = resolveHref(opfDir, ncxItem.first.href).path;
       final ncxXml = readZipText(archive, ncxPath);
       if (ncxXml != null) {
-        toc = _parseNcx(ncxXml, _parentDir(ncxPath));
+        toc = _parseNcx(ncxXml, zipParentDir(ncxPath));
       }
     }
   }
@@ -300,7 +300,8 @@ List<EpubTocEntry> _parseNavPoints(XmlElement parent, String ncxDir) {
   return (path: segments.join('/'), anchor: anchor);
 }
 
-String _parentDir(String path) {
+/// Returns the parent of a ZIP path, including separator-mangled paths.
+String zipParentDir(String path) {
   final normalized = path.replaceAll('\\', '/');
   final slash = normalized.lastIndexOf('/');
   return slash == -1 ? '' : normalized.substring(0, slash);
@@ -344,12 +345,19 @@ Uint8List? readZipBytes(Archive archive, String path,
   } catch (_) {
     return null;
   }
-  if (entry == null) return null;
+  return entry == null
+      ? null
+      : readZipEntryBytes(entry, maxEntryBytes: maxEntryBytes);
+}
+
+/// Reads only the selected entry while enforcing the same bounds as lookup.
+Uint8List? readZipEntryBytes(ArchiveFile entry,
+    {int maxEntryBytes = kMaxEpubEntryBytes}) {
   // The central directory declares the uncompressed size — reject before
   // inflating anything.
   if (entry.size > maxEntryBytes) {
     throw FormatException(
-        'EPUB entry too large: $path (${entry.size} > $maxEntryBytes bytes)');
+        'EPUB entry too large: ${entry.name} (${entry.size} > $maxEntryBytes bytes)');
   }
   final Uint8List content;
   try {
@@ -365,13 +373,19 @@ Uint8List? readZipBytes(Archive archive, String path,
   // show up in the wild.
   if (content.length > maxEntryBytes) {
     throw FormatException(
-        'EPUB entry too large after inflate: $path (${content.length} bytes)');
+        'EPUB entry too large after inflate: ${entry.name} (${content.length} bytes)');
   }
   return content.isEmpty ? null : Uint8List.fromList(content);
 }
 
-String? readZipText(Archive archive, String path) {
-  final bytes = readZipBytes(archive, path);
+String? readZipText(Archive archive, String path) =>
+    _decodeZipText(readZipBytes(archive, path));
+
+/// Decodes a chapter whose entry has already been selected.
+String? readZipEntryText(ArchiveFile entry) =>
+    _decodeZipText(readZipEntryBytes(entry));
+
+String? _decodeZipText(Uint8List? bytes) {
   if (bytes == null) return null;
   try {
     return utf8.decode(bytes);

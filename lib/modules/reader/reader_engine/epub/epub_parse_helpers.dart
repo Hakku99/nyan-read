@@ -34,8 +34,7 @@ class EpubParagraphKind {
 
   static const int text = 0;
 
-  /// The paragraph content is an image resource href (raw `src` attribute),
-  /// not display text.
+  /// The paragraph content identifies an image resource, not display text.
   static const int image = 1;
 
   /// Text that lives inside an `<h1>`–`<h6>` element — rendered with the
@@ -71,8 +70,8 @@ class EpubParseResult {
 
   /// UTF-8 of every paragraph's content concatenated; index with
   /// [paragraphRanges] (flat `[start, end]` pairs, 2 ints per paragraph).
-  /// For [EpubParagraphKind.image] paragraphs the "content" is the raw
-  /// image `src` attribute.
+  /// Package parsing stores a chapter-resolved ZIP path for image slots.
+  /// The source-only golden helper stores the original `src`.
   final Uint8List paragraphBytes;
   final List<int> paragraphRanges;
   final Uint8List paragraphKinds;
@@ -185,18 +184,33 @@ Future<EpubParseResult> computeEpubParseResultForPackage(
   final fileStart = <String, int>{};
   final fileEnd = <String, int>{};
   final fileAnchors = <String, Map<String, int>>{};
+  Map<String, String?>? foldedImagePaths;
 
   for (final path in contentOrder) {
     fileStart[path] = paragraphCount;
-    final document = _chapterDocument(readZipText(package.archive, path));
-    if (document == null) {
+    final entry = findZipEntry(package.archive, path);
+    final document =
+        _chapterDocument(entry == null ? null : readZipEntryText(entry));
+    if (entry == null || document == null) {
       fileAnchors[path] = const {};
     } else {
+      final chapterDir = zipParentDir(entry.name);
       final linearized = _linearizeChapterDocument(document);
       fileAnchors[path] = linearized.anchorToParagraph;
       paragraphCount += linearized.texts.length;
       for (var i = 0; i < linearized.texts.length; i++) {
-        final encoded = utf8.encode(linearized.texts[i]);
+        var content = linearized.texts[i];
+        if (linearized.kinds[i] == EpubParagraphKind.image) {
+          content = _resolveImagePath(chapterDir, content);
+          if (content.isNotEmpty &&
+              package.archive.findFile(content)?.isFile != true) {
+            final paths =
+                foldedImagePaths ??= _uniqueFoldedPaths(package.archive);
+            // Keep a missing or ambiguous path unresolved for exact lookup.
+            content = paths[content.toLowerCase()] ?? content;
+          }
+        }
+        final encoded = utf8.encode(content);
         contentBytes.add(encoded);
         contentRanges
           ..add(contentCursor)
@@ -469,21 +483,16 @@ Future<EpubParseResult> parseEpubFileInIsolate(String path,
 /// multi-GB pathological files at the door.
 const int kMaxEpubPackageBytes = 512 * 1024 * 1024;
 
-/// File-path variant of [extractEpubImageBytes]: streams the zip central
-/// directory from disk ([InputFileStream]) and inflates ONLY the requested
-/// entry — peak memory is the decoded image, not the whole book. Loading a
-/// 184 MB illustrated EPUB into RAM per figure was an OOM face on tight
-/// devices (and the reason the first field build showed "[Image load
-/// failed]" placeholders).
-Uint8List? extractEpubImageBytesFromFile(String path, String rawSrc) {
+/// Streams the ZIP directory and inflates only the resolved image entry.
+/// A suffix search here could substitute another chapter's image.
+Uint8List? extractEpubImageBytesFromFile(String path, String entryPath) {
+  if (entryPath.isEmpty) return null;
   InputFileStream? input;
   try {
-    final needle = _normalizeImageNeedle(rawSrc);
-    if (needle == null) return null;
-
     input = InputFileStream(path);
     final archive = ZipDecoder().decodeStream(input);
-    return readZipBytes(archive, needle);
+    final entry = archive.findFile(entryPath);
+    return entry != null && entry.isFile ? readZipEntryBytes(entry) : null;
   } catch (_) {
     return null;
   } finally {
@@ -491,12 +500,43 @@ Uint8List? extractEpubImageBytesFromFile(String path, String rawSrc) {
   }
 }
 
+final _imageHrefSuffix = RegExp(r'[?#]');
+
+String _resolveImagePath(String chapterDir, String rawSrc) {
+  var href = rawSrc.trim().replaceAll('\\', '/');
+  final suffix = href.indexOf(_imageHrefSuffix);
+  if (suffix != -1) href = href.substring(0, suffix);
+  final uri = Uri.tryParse(href);
+  if (href.isEmpty || uri == null || uri.hasScheme || uri.hasAuthority) {
+    return '';
+  }
+  try {
+    // Strip literal suffixes before decoding so encoded # and ? can be part
+    // of the ZIP entry name.
+    return resolveHref(href.startsWith('/') ? '' : chapterDir, href).path;
+  } on ArgumentError {
+    return '';
+  } on FormatException {
+    return '';
+  }
+}
+
+Map<String, String?> _uniqueFoldedPaths(Archive archive) {
+  final paths = <String, String?>{};
+  for (final entry in archive.files) {
+    if (!entry.isFile) continue;
+    final path = entry.name.replaceAll('\\', '/').toLowerCase();
+    paths.update(path, (_) => null, ifAbsent: () => entry.name);
+  }
+  return paths;
+}
+
 /// Strips query/fragment and leading `./`/`../` segments; lowercases for
 /// case-insensitive matching. Returns null for unusable inputs.
 String? _normalizeImageNeedle(String rawSrc) {
   var needle = rawSrc.trim();
   if (needle.isEmpty) return null;
-  final cut = needle.indexOf(RegExp(r'[?#]'));
+  final cut = needle.indexOf(_imageHrefSuffix);
   if (cut != -1) needle = needle.substring(0, cut);
   needle = needle.replaceAll('\\', '/');
   while (needle.startsWith('./') || needle.startsWith('../')) {

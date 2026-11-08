@@ -497,13 +497,17 @@ Navigation and restore (03, 2026-10-22):
 - Chapter, bookmark and progress seeks share this immediate restore path;
   vertical progress seeks no longer use the positioned list's two-list
   animated transition. Adjacent vertical turns remain animated.
-- Image extraction sends only strings through a top-level compute callback,
-  avoiding capture of a live engine's unsendable scroll state.
+- Image slots store the full ZIP path resolved from the actual chapter
+  directory. Exact path spelling wins, with a unique case-insensitive full
+  path as a fallback. Missing or ambiguous resources keep their image slots
+  and show the load error. This preserves paragraph and chapter indexes.
+  The streaming extractor opens that exact entry in an isolate.
 - EPUB image retention (16) shares one in-flight extraction and first decode
-  per href. Mounted blocks and presentation waits pin their data. The idle
-  encoded-byte LRU retains up to 32 images and 16 MiB per engine, dropping the
-  matching completed Flutter cache entry on eviction without clearing live
-  tracking. Flutter still owns decoded images and their live listeners.
+  per resolved ZIP path. Mounted blocks and presentation waits pin their
+  data. The idle encoded-byte LRU retains up to 32 images and 16 MiB per
+  engine, dropping the matching completed Flutter cache entry on eviction
+  without clearing live tracking. Flutter still owns decoded images and
+  their live listeners.
   First-decoded dimensions outlive byte eviction within the session so known
   slots keep the same geometry on the first remounted frame and while reloading
   or showing an error. A first-time size change still invalidates turn history.

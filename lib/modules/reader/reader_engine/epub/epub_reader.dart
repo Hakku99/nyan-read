@@ -158,7 +158,7 @@ class EpubReaderEngine
   @visibleForTesting
   EpubReaderEngine.withImageLoader(
     Book book,
-    Future<Uint8List?> Function(String path, String rawSrc) extractImage,
+    Future<Uint8List?> Function(String path, String entryPath) extractImage,
   ) : this._(book, extractImage);
 
   EpubReaderEngine._(this.book, this._extractImage) {
@@ -321,7 +321,7 @@ class EpubReaderEngine
             key: ValueKey(index),
             index: index,
             engine: this,
-            rawSrc: _paragraphText(index),
+            entryPath: _paragraphText(index),
             config: config,
           )),
         ),
@@ -364,36 +364,36 @@ class EpubReaderEngine
     );
   }
 
-  _EpubImageData? _retainImage(String rawSrc) {
+  _EpubImageData? _retainImage(String entryPath) {
     if (_disposed) return null;
-    _imageUsers.update(rawSrc, (count) => count + 1, ifAbsent: () => 1);
-    final idle = _idleImages.remove(rawSrc);
+    _imageUsers.update(entryPath, (count) => count + 1, ifAbsent: () => 1);
+    final idle = _idleImages.remove(entryPath);
     if (idle != null) {
       _idleImageBytes -= idle.bytes.lengthInBytes;
-      _activeImages[rawSrc] = idle;
+      _activeImages[entryPath] = idle;
     }
-    return _activeImages[rawSrc];
+    return _activeImages[entryPath];
   }
 
-  void _releaseImage(String rawSrc) {
+  void _releaseImage(String entryPath) {
     if (_disposed) return;
-    final users = _imageUsers[rawSrc]!;
+    final users = _imageUsers[entryPath]!;
     if (users > 1) {
-      _imageUsers[rawSrc] = users - 1;
+      _imageUsers[entryPath] = users - 1;
       return;
     }
-    _imageUsers.remove(rawSrc);
-    final image = _activeImages.remove(rawSrc);
-    if (image != null) _cacheIdleImage(rawSrc, image);
+    _imageUsers.remove(entryPath);
+    final image = _activeImages.remove(entryPath);
+    if (image != null) _cacheIdleImage(entryPath, image);
   }
 
-  void _cacheIdleImage(String rawSrc, _EpubImageData image) {
+  void _cacheIdleImage(String entryPath, _EpubImageData image) {
     final bytes = image.bytes.lengthInBytes;
     if (bytes > _idleImageByteLimit) {
       _evictIdleBitmap(image);
       return;
     }
-    _idleImages[rawSrc] = image;
+    _idleImages[entryPath] = image;
     _idleImageBytes += bytes;
     // The insertion order tracks when an image last finished being used.
     while (_idleImages.length > _idleImageLimit ||
@@ -404,19 +404,21 @@ class EpubReaderEngine
     }
   }
 
-  Future<_EpubImageData?> _imageBytesFor(String rawSrc) {
-    if (_disposed || _failedImages.contains(rawSrc)) return Future.value();
-    return _imageFutures.putIfAbsent(rawSrc, () => _loadImage(rawSrc));
+  Future<_EpubImageData?> _imageBytesFor(String entryPath) {
+    if (_disposed || entryPath.isEmpty || _failedImages.contains(entryPath)) {
+      return Future.value();
+    }
+    return _imageFutures.putIfAbsent(entryPath, () => _loadImage(entryPath));
   }
 
-  Future<_EpubImageData?> _loadImage(String rawSrc) async {
+  Future<_EpubImageData?> _loadImage(String entryPath) async {
     try {
       final source = await _resolveReadableSource();
       if (_disposed) return null;
-      final bytes = await _extractImage(source.path, rawSrc);
+      final bytes = await _extractImage(source.path, entryPath);
       if (_disposed) return null;
       if (bytes == null || bytes.isEmpty) {
-        _failedImages.add(rawSrc);
+        _failedImages.add(entryPath);
         return null;
       }
       final image = await _resolveImageData(bytes);
@@ -425,20 +427,20 @@ class EpubReaderEngine
         return null;
       }
       if (image == null) return null;
-      _imageSizes[rawSrc] = image.size;
-      if (_imageUsers.containsKey(rawSrc)) {
-        _activeImages[rawSrc] = image;
+      _imageSizes[entryPath] = image.size;
+      if (_imageUsers.containsKey(entryPath)) {
+        _activeImages[entryPath] = image;
       } else {
-        _cacheIdleImage(rawSrc, image);
+        _cacheIdleImage(entryPath, image);
       }
       return image;
     } catch (error) {
-      if (!_disposed) _failedImages.add(rawSrc);
+      if (!_disposed) _failedImages.add(entryPath);
       debugPrint(
           '[EpubReaderEngine] Image load failed (${error.runtimeType}).');
       return null;
     } finally {
-      _imageFutures.remove(rawSrc);
+      _imageFutures.remove(entryPath);
     }
   }
 
@@ -999,10 +1001,10 @@ class EpubReaderEngine
 Uint8List? _extractEpubImage((String, String) source) =>
     extractEpubImageBytesFromFile(source.$1, source.$2);
 
-// Send only the path and href to the isolate. Capturing the engine would
+// Send only the book and entry paths to the isolate. Capturing the engine would
 // also send its live ScrollPosition and Futures.
-Future<Uint8List?> _extractImageInIsolate(String path, String rawSrc) =>
-    compute(_extractEpubImage, (path, rawSrc));
+Future<Uint8List?> _extractImageInIsolate(String path, String entryPath) =>
+    compute(_extractEpubImage, (path, entryPath));
 
 final class _EpubImageData {
   const _EpubImageData(this.bytes, this.size);
@@ -1103,12 +1105,12 @@ class _EpubImageBlock extends StatefulWidget {
   const _EpubImageBlock(
       {super.key,
       required this.engine,
-      required this.rawSrc,
+      required this.entryPath,
       required this.config,
       required this.index});
 
   final EpubReaderEngine engine;
-  final String rawSrc;
+  final String entryPath;
   final int index;
   final ReaderConfig config;
 
@@ -1126,11 +1128,11 @@ class _EpubImageBlockState extends State<_EpubImageBlock> {
   void initState() {
     super.initState();
     final engine = widget.engine;
-    final rawSrc = widget.rawSrc;
-    _initialImage = engine._retainImage(rawSrc);
-    _knownSize = engine._imageSizes[rawSrc];
+    final entryPath = widget.entryPath;
+    _initialImage = engine._retainImage(entryPath);
+    _knownSize = engine._imageSizes[entryPath];
     _future = _initialImage == null
-        ? engine._imageBytesFor(rawSrc)
+        ? engine._imageBytesFor(entryPath)
         : Future.value(_initialImage);
     engine._imagePresentations[widget.index] = _waitForFrame;
   }
@@ -1141,7 +1143,7 @@ class _EpubImageBlockState extends State<_EpubImageBlock> {
     if (engine._imagePresentations[widget.index] == _waitForFrame) {
       engine._imagePresentations.remove(widget.index);
     }
-    engine._releaseImage(widget.rawSrc);
+    engine._releaseImage(widget.entryPath);
     super.dispose();
   }
 
@@ -1149,12 +1151,12 @@ class _EpubImageBlockState extends State<_EpubImageBlock> {
     final image = await request.wait(_future);
     if (!mounted || image == null || widget.engine._disposed) return false;
     final engine = widget.engine;
-    final rawSrc = widget.rawSrc;
-    engine._retainImage(rawSrc);
+    final entryPath = widget.entryPath;
+    engine._retainImage(entryPath);
     try {
       return await waitForImageFrame(MemoryImage(image.bytes), request);
     } finally {
-      engine._releaseImage(rawSrc);
+      engine._releaseImage(entryPath);
     }
   }
 
