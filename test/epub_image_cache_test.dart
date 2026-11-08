@@ -208,6 +208,183 @@ void main() {
     expect(tester.getSize(_imageRow), size);
     expectSameViewport(initial, engine.getCurrentPosition()!);
   });
+
+  testWidgets('clipped image keeps its row fraction after viewport reflow',
+      (tester) async {
+    final engine = await _mount(
+        tester,
+        [
+          ['cover'],
+        ],
+        (_) async => _png(),
+        viewport: const Size(640, 360));
+    await _visit(tester, engine, 0);
+    await perform(tester, () => engine.goToPosition(_clippedImage));
+    _expectImageFraction(tester);
+    tester.view.physicalSize = baselineViewport;
+    await tester.pumpAndSettle();
+    expect(engine.getCurrentPosition()!.paragraphIndex, 0);
+    _expectImageFraction(tester);
+    tester.view.physicalSize = const Size(640, 360);
+    await tester.pumpAndSettle();
+    _expectImageFraction(tester);
+  });
+
+  for (final fails in [false, true]) {
+    testWidgets('cold image restore stays inside its row (fails: $fails)',
+        (tester) async {
+      final pending = Completer<Uint8List?>();
+      final engine = await _mount(
+          tester,
+          [
+            ['cover'],
+          ],
+          (_) => pending.future,
+          saved: _clippedImage);
+      // Cold restore lays out the target before committing its clipped offset.
+      await _pumpUntil(
+          tester,
+          () => visibleItems(tester)
+              .any((item) => item.index == 0 && item.itemLeadingEdge < 0));
+      expect(engine.getCurrentPosition()!.paragraphIndex, 0);
+      _expectImageFraction(tester);
+      pending.complete(fails ? null : _png());
+      if (!fails) await _waitForImage(tester);
+      await tester.pumpAndSettle();
+      expect(engine.getCurrentPosition()!.paragraphIndex, 0);
+      _expectImageFraction(tester);
+    });
+  }
+
+  testWidgets('late cold restore does not override a newer jump',
+      (tester) async {
+    final pending = Completer<Uint8List?>();
+    final bytes = _png();
+    var loading = false;
+    final engine = await _mount(tester, [
+      ['cover'],
+    ], (_) {
+      loading = true;
+      return pending.future;
+    }, saved: _clippedImage);
+    await _pumpUntil(tester, () => loading);
+    await _jump(tester, engine, _groupLength);
+    final newer = engine.getCurrentPosition()!;
+    pending.complete(bytes);
+    await _pumpUntil(tester, () => _kept(bytes));
+    await tester.pumpAndSettle();
+    expectSameViewport(newer, engine.getCurrentPosition()!);
+  });
+
+  testWidgets('clipped image stays the reading anchor at the book boundary',
+      (tester) async {
+    final engine = await _mount(tester, [<String>[]], (_) async => _png(),
+        viewport: const Size(360, 180), closingMarkup: '<img src="last"/>');
+    const index = 2 * _groupLength;
+    await _jump(tester, engine, index);
+    await _waitForImage(tester);
+    const saved = ReadingPosition(
+      paragraphIndex: index,
+      paragraphLeadingEdge: -1,
+      paragraphTrailingEdge: 250.8 / 180,
+    );
+    await perform(tester, () => engine.goToPosition(saved));
+    final before = engine.getCurrentPosition()!;
+    expect(before.paragraphIndex, index);
+    tester.view.physicalSize = baselineViewport;
+    await tester.pumpAndSettle();
+    expect(visibleItems(tester).map((item) => item.index), contains(index));
+    expect(engine.getCurrentPosition()!.paragraphIndex, index);
+    tester.view.physicalSize = const Size(360, 180);
+    await tester.pumpAndSettle();
+    expect(engine.getCurrentPosition()!.paragraphIndex, index);
+    expect(engine.getCurrentPosition()!.paragraphLeadingEdge,
+        closeTo(before.paragraphLeadingEdge!, 2 / 180));
+  });
+
+  for (final end in _ColdTurnEnd.values) {
+    testWidgets('cold image shrink rechecks the viewport (${end.name})',
+        (tester) async {
+      final first = Completer<Uint8List?>();
+      final second = Completer<Uint8List?>();
+      final reader = GlobalKey<SmoothPageReaderState>();
+      var captures = 0;
+      var waiting = false;
+      var bothImagesAtCapture = false;
+      final engine = await _mount(tester, [<String>[]],
+          (src) => src == 'first' ? first.future : second.future,
+          reader: reader,
+          viewport: const Size(360, 180),
+          openingMarkup: '<img src="first"/><h2>Heading</h2><p>Text.</p>'
+              '<figure><img src="second"/><figcaption>Caption</figcaption></figure>',
+          onCapture: () {
+        captures++;
+        if (captures == 2) {
+          bothImagesAtCapture = _paintedImage.evaluate().length == 2;
+        }
+      });
+      final request = PageTurnRequest();
+      addTearDown(request.cancel);
+      final turn = reader.currentState!.playTurn(
+        forward: false,
+        request: request,
+        dispatchTurn: () =>
+            engine.goToPosition(const ReadingPosition(paragraphIndex: 0)),
+        waitForReady: () {
+          waiting = true;
+          return engine.waitForPagePresentation(request);
+        },
+        readyIncludesPaint: true,
+      );
+      await _pumpUntil(tester, () => waiting);
+      await tester.pump();
+      expect(
+          visibleItems(tester).map((item) => item.index), isNot(contains(3)));
+      first.complete(img.encodePng(img.Image(width: 1, height: 1)));
+      await _pumpUntil(
+          tester, () => visibleItems(tester).any((item) => item.index == 3));
+      for (var frame = 0; frame < 6; frame++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      expect(captures, 1, reason: 'The newly visible second image is pending.');
+      final accepted = engine.getCurrentPosition()!;
+      if (end == _ColdTurnEnd.paint) {
+        second.complete(_png());
+        await _pumpUntil(tester, () => captures == 2);
+        expect(bothImagesAtCapture, isTrue);
+        await tester.pumpAndSettle();
+        await turn;
+      } else {
+        if (end == _ColdTurnEnd.cancel) {
+          request.cancel();
+        } else {
+          await tester.pump(const Duration(seconds: 2));
+        }
+        await _finish(tester, turn);
+        expect(captures, 1);
+        second.complete(_png());
+        await _pumpUntil(tester, () => _paintedImage.evaluate().length == 2);
+        await tester.pumpAndSettle();
+      }
+      expect(accepted.paragraphIndex, 0);
+      expectSameViewport(accepted, engine.getCurrentPosition()!);
+    });
+  }
+}
+
+enum _ColdTurnEnd { paint, cancel, timeout }
+
+const _clippedImage = ReadingPosition(
+  paragraphIndex: 0,
+  paragraphLeadingEdge: -300 / 360,
+  paragraphTrailingEdge: 130.8 / 360,
+);
+
+void _expectImageFraction(WidgetTester tester) {
+  final row = visibleItems(tester).first;
+  expect(row.index, 0);
+  expect(-row.itemLeadingEdge / (row.itemTrailingEdge - row.itemLeadingEdge),
+      closeTo(300 / 430.8, .015));
 }
 
 bool _kept(Uint8List bytes) => PaintingBinding.instance.imageCache
@@ -228,12 +405,18 @@ Future<EpubReaderEngine> _mount(
   Future<Uint8List?> Function(String) load, {
   GlobalKey<SmoothPageReaderState>? reader,
   bool closeInTest = false,
+  Size viewport = baselineViewport,
+  ReadingPosition? saved,
+  String? openingMarkup,
+  String? closingMarkup,
+  VoidCallback? onCapture,
 }) async {
   final file = (await tester.runAsync(() async {
     final fixture = await writeFixture('epub', []);
     final archive = ZipDecoder().decodeBytes(await fixture.readAsBytes());
     final paragraphs = baselineParagraphs().first;
     final body = StringBuffer('<html><body>');
+    if (openingMarkup != null) body.write(openingMarkup);
     for (final group in [...groups, <String>[]]) {
       for (final src in group) {
         body.write('<img src="$src"/>');
@@ -242,6 +425,7 @@ Future<EpubReaderEngine> _mount(
         body.write('<p>$paragraphs</p>');
       }
     }
+    if (closingMarkup != null) body.write(closingMarkup);
     body.write('</body></html>');
     final bytes = utf8.encode(body.toString());
     archive.addFile(ArchiveFile('body.xhtml', bytes.length, bytes));
@@ -253,14 +437,18 @@ Future<EpubReaderEngine> _mount(
         title: 'Fixture',
         author: '',
         filePath: file.path,
-        format: 'epub'),
+        format: 'epub',
+        lastPositionType: saved == null ? null : 'epub',
+        lastPositionPayload: saved?.toJson()),
     (_, src) => load(src),
   );
   await tester.runAsync(engine.initialize);
   engine.setConfig(baselineConfig(PageTurnMode.tap));
-  await engine.goToPosition(
-      ReadingPosition(paragraphIndex: groups.length * _groupLength));
-  tester.view.physicalSize = baselineViewport;
+  if (saved == null) {
+    await engine.goToPosition(
+        ReadingPosition(paragraphIndex: groups.length * _groupLength));
+  }
+  tester.view.physicalSize = viewport;
   tester.view.devicePixelRatio = 1;
   addTearDown(() async {
     await tester.pumpWidget(const SizedBox.shrink());
@@ -277,6 +465,7 @@ Future<EpubReaderEngine> _mount(
       return SmoothPageReader(
         key: reader,
         captureFrame: () async {
+          onCapture?.call();
           final recorder = ui.PictureRecorder();
           Canvas(recorder).drawColor(Colors.red, BlendMode.src);
           final picture = recorder.endRecording();
@@ -293,7 +482,7 @@ Future<EpubReaderEngine> _mount(
       );
     })),
   ));
-  await tester.pumpAndSettle();
+  if (saved == null) await tester.pumpAndSettle();
   return engine;
 }
 
@@ -317,11 +506,15 @@ Future<void> _visit(
   await _waitForImage(tester);
 }
 
+final _paintedImage = find.descendant(
+  of: _imageRow,
+  matching: find.byWidgetPredicate(
+      (widget) => widget is RawImage && widget.image != null),
+);
+
 Future<void> _waitForImage(WidgetTester tester) async {
-  final painted = find.byWidgetPredicate(
-      (widget) => widget is RawImage && widget.image != null);
-  await _pumpUntil(tester, () => painted.evaluate().isNotEmpty);
-  expect(painted, findsOneWidget);
+  await _pumpUntil(tester, () => _paintedImage.evaluate().isNotEmpty);
+  expect(_paintedImage, findsOneWidget);
   await tester.pumpAndSettle();
 }
 

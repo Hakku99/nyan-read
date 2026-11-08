@@ -474,15 +474,39 @@ class EpubReaderEngine
   @override
   Future<bool> waitForPagePresentation(PageTurnRequest request) async {
     await request.wait(WidgetsBinding.instance.endOfFrame);
-    final waits = <Future<bool>>[];
-    for (final row in _itemPositionsListener.itemPositions.value) {
-      if (row.itemTrailingEdge <= 0 || row.itemLeadingEdge >= 1) continue;
-      final wait = _imagePresentations[row.index];
-      if (wait != null) waits.add(wait(request));
+    final checked = <Future<bool> Function(PageTurnRequest), bool>{};
+    var painted = false;
+    while (!_disposed) {
+      final waits = <Future<void>>[];
+      var allChecked = true;
+      var allReady = true;
+      for (final row in _itemPositionsListener.itemPositions.value) {
+        if (row.itemTrailingEdge <= 0 ||
+            row.itemLeadingEdge >= 1 ||
+            !_isImageParagraph(row.index)) {
+          continue;
+        }
+        final wait = _imagePresentations[row.index];
+        final ready = checked[wait];
+        if (ready == null) {
+          allChecked = false;
+          if (wait != null) {
+            waits.add(wait(request).then<void>((ready) {
+              checked[wait] = ready;
+            }));
+          }
+        } else {
+          allReady = allReady && ready;
+        }
+      }
+      if (painted && allChecked && _pendingRestore == null) return allReady;
+      await Future.wait(waits);
+      // First decode can resize a row, move the restore anchor and reveal
+      // another image. Only the visible blocks in the painted frame count.
+      await request.wait(WidgetsBinding.instance.endOfFrame);
+      painted = true;
     }
-    final results = await Future.wait(waits);
-    await request.wait(WidgetsBinding.instance.endOfFrame);
-    return !_disposed && results.every((ready) => ready);
+    return false;
   }
 
   // ── TextReaderCapability / TextExtractionCapability (P3) ─────────────
@@ -555,11 +579,17 @@ class EpubReaderEngine
         topmost = p;
       }
     }
-    // Reflow can clamp at the book boundary while the reading line stays visible.
-    if (_settledAnchor?.textOffset != null &&
-        _settledPixels == _scrollPosition?.pixels) {
+    // Reflow can clamp at the book boundary while the target stays visible.
+    final settled = _settledAnchor;
+    final settledIndex = settled?.paragraphIndex;
+    if (settled != null &&
+        settledIndex != null &&
+        _settledPixels == _scrollPosition?.pixels &&
+        (settled.textOffset != null ||
+            (_isImageParagraph(settledIndex) &&
+                settled.paragraphLeadingEdge != null))) {
       for (final p in positions) {
-        if (p.index == _settledAnchor!.paragraphIndex &&
+        if (p.index == settledIndex &&
             p.itemTrailingEdge > 0 &&
             p.itemLeadingEdge < 1) {
           return p;
@@ -777,9 +807,19 @@ class EpubReaderEngine
       return;
     }
     _applyingRestore = serial;
-    _itemScrollController.jumpTo(index: target.paragraphIndex!);
+    final index = target.paragraphIndex!;
+    _itemScrollController.jumpTo(index: index);
     var offset = -(target.paragraphLeadingEdge ?? 0) * scroll.viewportDimension;
-    if (target.anchorVersion == 1 &&
+    final imageFraction = _clippedImageFraction(target);
+    if (imageFraction != null) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (_disposed || serial != _navigationSerial) return;
+      // Use row-relative progress so a taller viewport cannot scroll past
+      // the image. A cold placeholder supplies provisional geometry until
+      // its size notification reapplies the anchor to the decoded row.
+      offset =
+          _imageRestoreOffset(index, imageFraction, scroll.viewportDimension);
+    } else if (target.anchorVersion == 1 &&
         target.textOffset != null &&
         target.layoutIdentity != _layoutIdentity) {
       await WidgetsBinding.instance.endOfFrame;
@@ -802,6 +842,31 @@ class EpubReaderEngine
     _applyingRestore = null;
     _restoreCover.value = false;
     _updateCommittedPosition();
+  }
+
+  double? _clippedImageFraction(ReadingPosition? position) {
+    final index = position?.paragraphIndex;
+    final leading = position?.paragraphLeadingEdge ?? 0;
+    final trailing = position?.paragraphTrailingEdge ?? 0;
+    final extent = trailing - leading;
+    if (index == null ||
+        !_isImageParagraph(index) ||
+        !(leading < 0 && trailing > 0 && extent.isFinite)) {
+      return null;
+    }
+    return -leading / extent;
+  }
+
+  double _imageRestoreOffset(int index, double fraction, double viewport) {
+    for (final row in _itemPositionsListener.itemPositions.value) {
+      if (row.index != index) continue;
+      final extent = (row.itemTrailingEdge - row.itemLeadingEdge) * viewport;
+      if (extent <= 1 || !extent.isFinite) break;
+      // Item positions are rounded to pixels. Keep one pixel in the row so
+      // the next anchor capture cannot select its successor at the seam.
+      return (fraction * extent).clamp(0, extent - 1);
+    }
+    return 0;
   }
 
   void _attachScrollPosition(ScrollPosition position) {
@@ -833,10 +898,21 @@ class EpubReaderEngine
   }
 
   void _invalidateLayout({bool preservePaint = false}) {
-    if (_scrollPosition != null) {
-      _pendingRestore ??= _committedPixels == _scrollPosition?.pixels
-          ? (_committedPosition ?? getCurrentPosition())
-          : getCurrentPosition();
+    final pixels = _scrollPosition?.pixels;
+    if (pixels != null) {
+      if (_pendingRestore == null) {
+        final committed =
+            _committedPixels == pixels ? _committedPosition : null;
+        final settled = _settledAnchor;
+        // A cold placeholder rounds to whole pixels, and an EOF clamp can
+        // leave the image fully visible. Keep the requested fraction through
+        // either correction until an actual scroll or newer navigation.
+        final keepImageFraction = _settledPixels == pixels &&
+            settled?.paragraphIndex == committed?.paragraphIndex &&
+            _clippedImageFraction(settled) != null;
+        _pendingRestore =
+            (keepImageFraction ? settled : committed) ?? getCurrentPosition();
+      }
       _initialIndex = _pendingRestore?.paragraphIndex ?? _initialIndex;
       if (!preservePaint && _pendingRestore?.textOffset != null) {
         _restoreCover.value = true;

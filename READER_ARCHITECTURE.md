@@ -234,8 +234,8 @@ TXT/EPUB mode and reflow restoration (05, 2026-10-22):
   discard the precision when saving again. Fonts/rendering changes require
   reviewing the layout/anchor version before reusing historical geometry.
 - Paragraph enumeration, highlights, chapter locators, progress percentages and
-  PDF positioning remain unchanged. Image-only slots use existing geometry
-  fallback; async image sizing is still tracked separately in item 10.
+  PDF positioning remain unchanged. Clipped EPUB image slots use the existing
+  edge fields to recover their row-relative position after reflow (item 10).
 
 ### `ChapterLocator`
 
@@ -508,11 +508,20 @@ Navigation and restore (03, 2026-10-22):
   slots keep the same geometry on the first remounted frame and while reloading
   or showing an error. A first-time size change still invalidates turn history.
   Closing the engine detaches decode waits and discards late results.
+- Cold and reflowed image restores (10) apply the saved clipped fraction to
+  the laid-out row, including its paragraph gap. A cold placeholder provides
+  provisional geometry until the target image reports its decoded size. A
+  visible target remains the logical anchor if a book boundary clamps the
+  restore. An actual scroll or newer navigation supersedes that anchor.
+- After the target frame paints, EPUB readiness checks the visible image
+  blocks again and waits for any newly visible block or pending restoration.
+  Stable pages use the same ready frame. Cancellation or the existing
+  preparation timeout during readiness reveals the accepted navigation.
 - No public method signatures, position JSON fields, enumeration version,
   paragraph ordering, database schema or dependencies change. Item 05 adds
-  cross-layout content anchoring. Image layout stability (10) remains separate
-  work. Item 08 adds shared target readiness and cancellation,
-  described above and in `docs/READER_TURN_FIX_08.md`; item 13 remains separate.
+  cross-layout text anchoring. Item 08 adds shared target readiness and
+  cancellation, described above and in `docs/READER_TURN_FIX_08.md`;
+  item 13 remains separate.
 
 Implements optional capabilities:
 - `TextReaderCapability`
