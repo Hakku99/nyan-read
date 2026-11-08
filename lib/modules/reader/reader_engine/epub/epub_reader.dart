@@ -125,6 +125,7 @@ class EpubReaderEngine
   final _imageSizes = <String, Size>{};
   final _failedImages = <String>{};
   final _cancelImageDecodes = <VoidCallback>{};
+  final _imageHandoffs = <String, VoidCallback>{};
   final Future<Uint8List?> Function(String, String) _extractImage;
 
   // ── Highlights (P3) ───────────────────────────────────────────────────
@@ -383,6 +384,7 @@ class EpubReaderEngine
       return;
     }
     _imageUsers.remove(entryPath);
+    _imageHandoffs.remove(entryPath)?.call();
     final image = _activeImages.remove(entryPath);
     if (image != null) _cacheIdleImage(entryPath, image);
   }
@@ -421,7 +423,7 @@ class EpubReaderEngine
         _failedImages.add(entryPath);
         return null;
       }
-      final image = await _resolveImageData(bytes);
+      final image = await _resolveImageData(entryPath, bytes);
       if (_disposed) {
         if (image != null) _evictIdleBitmap(image);
         return null;
@@ -444,10 +446,12 @@ class EpubReaderEngine
     }
   }
 
-  Future<_EpubImageData?> _resolveImageData(Uint8List bytes) async {
+  Future<_EpubImageData?> _resolveImageData(
+      String entryPath, Uint8List bytes) async {
     // Reuse Flutter's decode (including orientation) and the exact paint key.
     final ready = Completer<_EpubImageData?>();
-    final stream = MemoryImage(bytes).resolve(ImageConfiguration.empty);
+    final provider = MemoryImage(bytes);
+    final stream = provider.resolve(ImageConfiguration.empty);
     final listener = ImageStreamListener((info, synchronous) {
       if (!ready.isCompleted) {
         ready.complete(_EpubImageData(bytes,
@@ -463,14 +467,41 @@ class EpubReaderEngine
       if (!ready.isCompleted) ready.complete(null);
     }
 
+    void detach() => stream.removeListener(listener);
+
+    var handedOff = false;
     _cancelImageDecodes.add(cancel);
     try {
       stream.addListener(listener);
-      return await ready.future;
+      final image = await ready.future;
+      if (image != null &&
+          !_disposed &&
+          _imageUsers.containsKey(entryPath) &&
+          !PaintingBinding.instance.imageCache
+              .statusForKey(provider)
+              .keepAlive) {
+        // Without an idle cache entry, removing the last listener here would
+        // make the mounted Image resolve the same bytes through a new codec.
+        _imageHandoffs[entryPath] = detach;
+        handedOff = true;
+      }
+      return image;
     } finally {
-      stream.removeListener(listener);
+      if (!handedOff) detach();
       _cancelImageDecodes.remove(cancel);
     }
+  }
+
+  void _finishImageHandoffAfterBuild(String entryPath) {
+    final detach = _imageHandoffs[entryPath];
+    if (detach == null) return;
+    // The Image gets to subscribe during this build. Use the current frame
+    // even when Flutter defers listening, so a hidden row cannot pin a bitmap.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!identical(_imageHandoffs[entryPath], detach)) return;
+      _imageHandoffs.remove(entryPath);
+      detach();
+    });
   }
 
   @override
@@ -962,6 +993,10 @@ class EpubReaderEngine
       cancel();
     }
     _cancelImageDecodes.clear();
+    for (final detach in _imageHandoffs.values) {
+      detach();
+    }
+    _imageHandoffs.clear();
     _imagePresentations.clear();
     for (final image in _idleImages.values) {
       _evictIdleBitmap(image);
@@ -1169,6 +1204,7 @@ class _EpubImageBlockState extends State<_EpubImageBlock> {
       builder: (context, snapshot) {
         final image = snapshot.data;
         if (image != null) {
+          widget.engine._finishImageHandoffAfterBuild(widget.entryPath);
           return ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: ConstrainedBox(

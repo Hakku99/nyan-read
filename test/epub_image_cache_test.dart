@@ -23,6 +23,109 @@ final _imageRow = find.byWidgetPredicate((widget) =>
     widget is SizeChangedLayoutNotifier && widget.child?.key is ValueKey<int>);
 
 void main() {
+  final binding = _ImageCacheBinding();
+  final cache = binding.imageCache as _CountingImageCache;
+
+  for (final keepAlive in [true, false]) {
+    testWidgets('first image frame decodes once (cache admits: $keepAlive)',
+        (tester) async {
+      final bytes = img.encodePng(
+          img.Image(width: 32, height: 48)..clear(img.ColorRgb8(210, 30, 90)));
+      const decodedBytes = 32 * 48 * 4;
+      _observeDecodes(
+          cache, bytes, keepAlive ? decodedBytes : decodedBytes - 1);
+      final engine = await _mount(
+          tester,
+          [
+            ['cover'],
+          ],
+          (_) async => bytes);
+      await _jump(tester, engine, 0);
+      final imageWidget =
+          find.descendant(of: _imageRow, matching: find.byType(Image));
+      await _pumpUntil(tester, () => imageWidget.evaluate().isNotEmpty);
+      expect(tester.getSize(imageWidget), const Size(328, 48));
+      expect(_paintedImage, findsOneWidget);
+      expect(cache.decodes, hasLength(1));
+      final image = tester.widget<RawImage>(_paintedImage).image!;
+      expect((image.width, image.height), (32, 48));
+      final pixels = await tester.runAsync(image.toByteData);
+      expect(pixels!.buffer.asUint8List(pixels.offsetInBytes, 4),
+          [210, 30, 90, 255]);
+
+      final request = PageTurnRequest();
+      addTearDown(request.cancel);
+      bool? ready;
+      final presentation =
+          engine.waitForPagePresentation(request).then((value) {
+        ready = value;
+      });
+      await _pumpUntil(tester, () => ready != null);
+      await presentation;
+      expect(ready, isTrue);
+      expect(cache.decodes, hasLength(1));
+      expect(cache.statusForKey(MemoryImage(bytes)).keepAlive, keepAlive);
+
+      await _jump(tester, engine, _groupLength);
+      expect(_imageRow, findsNothing);
+      expect(cache.statusForKey(MemoryImage(bytes)).live, isFalse);
+      expect(cache.decodes.single.hasListeners, isFalse);
+    });
+  }
+
+  testWidgets('pending turn readiness shares the uncached probe decode',
+      (tester) async {
+    final bytes = _png();
+    _observeDecodes(cache, bytes, 1);
+    final pending = Completer<Uint8List?>();
+    final engine = await _mount(
+        tester,
+        [
+          ['cover'],
+        ],
+        (_) => pending.future);
+    await _jump(tester, engine, 0);
+    final request = PageTurnRequest();
+    addTearDown(request.cancel);
+    bool? ready;
+    var paintedAtReady = false;
+    final presentation = engine.waitForPagePresentation(request).then((value) {
+      ready = value;
+      paintedAtReady = _paintedImage.evaluate().isNotEmpty;
+    });
+    await tester.pump();
+    expect(ready, isNull);
+    pending.complete(bytes);
+    await _pumpUntil(tester, () => ready != null);
+    await presentation;
+    expect(ready, isTrue);
+    expect(paintedAtReady, isTrue);
+    expect(cache.decodes, hasLength(1));
+    await _jump(tester, engine, _groupLength);
+    expect(cache.decodes.single.hasListeners, isFalse);
+  });
+
+  testWidgets('a deferred Image does not keep the uncached probe alive',
+      (tester) async {
+    final bytes = _png();
+    _observeDecodes(cache, bytes, 1);
+    final engine = await _mount(
+        tester,
+        [
+          ['cover'],
+        ],
+        (_) async => bytes,
+        tickersEnabled: false);
+    await _jump(tester, engine, 0);
+    final imageWidget =
+        find.descendant(of: _imageRow, matching: find.byType(Image));
+    await _pumpUntil(tester, () => imageWidget.evaluate().isNotEmpty);
+    expect(_paintedImage, findsNothing);
+    expect(cache.decodes, hasLength(1));
+    expect(cache.decodes.single.hasListeners, isFalse);
+    expect(cache.statusForKey(MemoryImage(bytes)).untracked, isTrue);
+  });
+
   testWidgets('idle cache retains 32 images and evicts the least recent key',
       (tester) async {
     final sources = List.generate(33, (index) => 'image-$index.png');
@@ -372,6 +475,42 @@ void main() {
   }
 }
 
+class _ImageCacheBinding extends AutomatedTestWidgetsFlutterBinding {
+  @override
+  ImageCache createImageCache() => _CountingImageCache();
+}
+
+class _CountingImageCache extends ImageCache {
+  Uint8List? observedBytes;
+  final decodes = <ImageStreamCompleter>[];
+
+  @override
+  ImageStreamCompleter? putIfAbsent(
+      Object key, ImageStreamCompleter Function() loader,
+      {ImageErrorListener? onError}) {
+    return super.putIfAbsent(key, () {
+      final stream = loader();
+      if (key is MemoryImage && identical(key.bytes, observedBytes)) {
+        decodes.add(stream);
+      }
+      return stream;
+    }, onError: onError);
+  }
+}
+
+void _observeDecodes(_CountingImageCache cache, Uint8List bytes, int limit) {
+  final previousLimit = cache.maximumSizeBytes;
+  cache
+    ..maximumSizeBytes = limit
+    ..observedBytes = bytes;
+  addTearDown(() {
+    cache
+      ..observedBytes = null
+      ..decodes.clear()
+      ..maximumSizeBytes = previousLimit;
+  });
+}
+
 enum _ColdTurnEnd { paint, cancel, timeout }
 
 const _clippedImage = ReadingPosition(
@@ -410,6 +549,7 @@ Future<EpubReaderEngine> _mount(
   String? openingMarkup,
   String? closingMarkup,
   VoidCallback? onCapture,
+  bool tickersEnabled = true,
 }) async {
   final file = (await tester.runAsync(() async {
     final fixture = await writeFixture('epub', []);
@@ -460,7 +600,8 @@ Future<EpubReaderEngine> _mount(
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     home: Scaffold(body: Builder(builder: (context) {
-      final body = engine.buildReader(context);
+      final body = TickerMode(
+          enabled: tickersEnabled, child: engine.buildReader(context));
       if (reader == null) return body;
       return SmoothPageReader(
         key: reader,
