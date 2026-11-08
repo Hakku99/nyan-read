@@ -295,6 +295,8 @@ class SmoothPageReaderState extends State<SmoothPageReader>
             builder: (context, child) {
               final t = widget.curve.transform(_controller.value);
               final active = _outgoingImage != null && widget.enabled;
+              final showIncoming =
+                  active && !_preparing && _incomingImage != null;
 
               final width = MediaQuery.sizeOf(context).width;
               final outgoingX = _forward ? -t * width : t * width;
@@ -312,16 +314,11 @@ class SmoothPageReaderState extends State<SmoothPageReader>
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          // Keep layout/selection state mounted while avoiding
-                          // repeated glyph rasterization during translation.
-                          Opacity(
-                            opacity:
-                                active && !_preparing && _incomingImage != null
-                                    ? 0
-                                    : 1,
+                          _LivePageVisibility(
+                            hidden: showIncoming,
                             child: child ?? const SizedBox.shrink(),
                           ),
-                          if (active && !_preparing && _incomingImage != null)
+                          if (showIncoming)
                             RawImage(
                                 image: _incomingImage,
                                 fit: BoxFit.cover,
@@ -352,5 +349,48 @@ class SmoothPageReaderState extends State<SmoothPageReader>
         ),
       ),
     );
+  }
+}
+
+/// Keep the live page mounted without an opacity layer at handoff.
+class _LivePageVisibility extends SingleChildRenderObjectWidget {
+  const _LivePageVisibility({required this.hidden, required super.child});
+
+  final bool hidden;
+
+  @override
+  _RenderLivePageVisibility createRenderObject(BuildContext context) =>
+      _RenderLivePageVisibility(hidden);
+
+  @override
+  void updateRenderObject(
+      BuildContext context, _RenderLivePageVisibility renderObject) {
+    renderObject.hidden = hidden;
+  }
+}
+
+class _RenderLivePageVisibility extends RenderProxyBox {
+  _RenderLivePageVisibility(this._hidden);
+
+  bool _hidden;
+  set hidden(bool value) {
+    if (value == _hidden) return;
+    _hidden = value;
+    markNeedsPaint();
+    markNeedsSemanticsUpdate();
+  }
+
+  @override
+  bool paintsChild(RenderObject child) => !_hidden && super.paintsChild(child);
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    if (!_hidden) super.paint(context, offset);
+  }
+
+  // Like the previous zero-opacity wrapper, leave hit testing intact.
+  @override
+  void visitChildrenForSemantics(RenderObjectVisitor visitor) {
+    if (!_hidden) super.visitChildrenForSemantics(visitor);
   }
 }

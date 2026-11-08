@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -265,31 +266,121 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('both page images release after a text slide without remounting',
-      (tester) async {
-    final outgoing = await tester.runAsync(snapshot);
-    final incoming = await tester.runAsync(snapshot);
-    var captures = 0;
-    final key = await mount(tester,
-        snapshotIncoming: true,
-        capture: () async => captures++ == 0 ? outgoing : incoming);
-    final body = tester.element(find.byType(ColoredBox).last);
-    final turn =
-        key.currentState!.playTurn(forward: true, dispatchTurn: () async {});
-    for (var frame = 0; frame < 8; frame++) {
+  for (final cancel in [false, true]) {
+    testWidgets('live page handoff after ${cancel ? 'cancel' : 'completion'}',
+        (tester) async {
+      final images = (await tester
+          .runAsync(() => Future.wait(List.generate(4, (_) => snapshot()))))!;
+      var captures = 0;
+      addTearDown(() {
+        for (final image in images.skip(captures)) {
+          image.dispose();
+        }
+      });
+      final key = GlobalKey<SmoothPageReaderState>();
+      final screenKey = GlobalKey();
+      final bodyKey = GlobalKey();
+      final color = ValueNotifier(Colors.blue);
+      addTearDown(color.dispose);
+      var paints = 0;
+      var navigations = 0;
+      await tester.pumpWidget(MaterialApp(
+        home: RepaintBoundary(
+          key: screenKey,
+          child: SmoothPageReader(
+            key: key,
+            captureFrame: () async => images[captures++],
+            onPreviousTap: () {},
+            onNextTap: () {},
+            onCenterTap: () {},
+            child: Semantics(
+              key: bodyKey,
+              container: true,
+              label: 'Reading text',
+              child: Listener(
+                behavior: HitTestBehavior.opaque,
+                child: CustomPaint(
+                  painter: _PagePaintProbe(color, () => paints++),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ));
+      final screen =
+          tester.renderObject<RenderRepaintBoundary>(find.byKey(screenKey));
+      final body = tester.element(find.byKey(bodyKey));
+      final boundary =
+          body.findRenderObject()!.parent! as RenderRepaintBoundary;
+      final visibility = boundary.parent! as RenderBox;
+      final text = find.semantics.byLabel('Reading text');
+      Iterable<OpacityLayer> opacityLayers() => screen.debugLayer!
+          .depthFirstIterateChildren()
+          .whereType<OpacityLayer>();
+      Future<List<int>?> pixel() => tester.runAsync(() async {
+            final image = await screen.toImage();
+            try {
+              final data = (await image.toByteData())!;
+              final offset =
+                  (image.width * (image.height ~/ 2) + image.width ~/ 2) * 4;
+              return data.buffer.asUint8List(data.offsetInBytes + offset, 4);
+            } finally {
+              image.dispose();
+            }
+          });
+      Future<void> start(PageTurnRequest request) => key.currentState!.playTurn(
+          forward: true,
+          request: request,
+          dispatchTurn: () async {
+            navigations++;
+          });
+
+      expect(text, findsOne);
+      expect(opacityLayers(), isEmpty);
+      final request = PageTurnRequest();
+      final turn = start(request);
+      for (var frame = 0; frame < 8; frame++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      expect(captures, 2);
+      expect(find.byType(RawImage), findsNWidgets(2));
+      expect(tester.element(find.byKey(bodyKey)), same(body));
+      expect(text, findsNothing);
+      expect(visibility.paintsChild(boundary), isFalse);
+      expect(
+          visibility.hitTest(BoxHitTestResult(),
+              position: visibility.size.center(Offset.zero)),
+          isTrue);
+      final hiddenPaints = paints;
+      color.value = Colors.green;
       await tester.pump(const Duration(milliseconds: 16));
-    }
-    expect(captures, 2);
-    expect(find.byType(RawImage), findsNWidgets(2));
-    expect(tester.element(find.byType(ColoredBox).last), same(body));
-    expect(tester.widget<Opacity>(find.byType(Opacity).last).opacity, 0);
-    await tester.pumpAndSettle();
-    await turn;
-    expect(outgoing!.debugDisposed, isTrue);
-    expect(incoming!.debugDisposed, isTrue);
-    expect(find.byType(RawImage), findsNothing);
-    expect(tester.element(find.byType(ColoredBox).last), same(body));
-  });
+      expect(paints, hiddenPaints);
+      expect(await pixel(), [244, 67, 54, 255]);
+      expect(opacityLayers(), isEmpty);
+
+      if (cancel) request.cancel();
+      await tester
+          .pump(cancel ? Duration.zero : const Duration(milliseconds: 360));
+      await turn;
+      // Inspect the handoff frame itself, before any settle pump.
+      expect(find.byType(RawImage), findsNothing);
+      expect(await pixel(), [76, 175, 80, 255]);
+      expect(paints, hiddenPaints + 1);
+      expect(tester.element(find.byKey(bodyKey)), same(body));
+      expect(visibility.paintsChild(boundary), isTrue);
+      expect(text, findsOne);
+      expect(opacityLayers(), isEmpty);
+      expect(images.take(2).every((image) => image.debugDisposed), isTrue);
+
+      final next = start(PageTurnRequest());
+      await tester.pumpAndSettle();
+      await next;
+      expect(captures, 4);
+      expect(navigations, 2);
+      expect(images.every((image) => image.debugDisposed), isTrue);
+      expect(tester.element(find.byKey(bodyKey)), same(body));
+    });
+  }
   testWidgets('old page covers navigation until target is ready',
       (tester) async {
     final image = await tester.runAsync(snapshot);
@@ -439,4 +530,21 @@ void main() {
     expect(liveOffset(tester), Offset.zero);
     expect(image!.debugDisposed, isTrue);
   });
+}
+
+class _PagePaintProbe extends CustomPainter {
+  _PagePaintProbe(this.color, this.onPaint) : super(repaint: color);
+
+  final ValueListenable<Color> color;
+  final VoidCallback onPaint;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    onPaint();
+    canvas.drawColor(color.value, BlendMode.src);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PagePaintProbe oldDelegate) =>
+      color != oldDelegate.color;
 }
