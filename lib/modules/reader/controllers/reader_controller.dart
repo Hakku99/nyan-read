@@ -13,6 +13,7 @@ import '../../../core/utils/book_source_access.dart';
 import '../../../core/utils/lifecycle_registry.dart';
 import 'brightness_controller.dart';
 import '../reader_engine/epub/epub_reader.dart';
+import '../reader_engine/pdf/pdf_reader.dart';
 import '../reader_engine/reader_engine.dart';
 import '../reader_engine/page_turn_request.dart';
 import '../reader_engine/reader_factory.dart';
@@ -207,8 +208,9 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
 
   ReadingPosition? get currentPosition => engine.getCurrentPosition();
 
-  /// EPUB's readiness callback waits for paint after its visible images load.
-  bool get pageReadinessIncludesPaint => engine is EpubReaderEngine;
+  /// EPUB and PDF readiness wait for paint after their visible images load.
+  bool get pageReadinessIncludesPaint =>
+      engine is EpubReaderEngine || engine is PdfReaderEngine;
 
   Future<bool> waitForPagePresentation(PageTurnRequest request) async {
     final reader = engine;

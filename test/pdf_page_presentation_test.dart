@@ -1,13 +1,36 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:nyan_read/core/models/book.dart';
+import 'package:nyan_read/core/services/database_service.dart';
+import 'package:nyan_read/core/services/reader_preferences_service.dart';
+import 'package:nyan_read/modules/reader/controllers/reader_controller.dart';
+import 'package:nyan_read/modules/reader/reader_engine/page_turn_request.dart';
 import 'package:nyan_read/modules/reader/reader_engine/pdf/pdf_reader.dart';
 import 'package:nyan_read/modules/reader/reader_engine/reader_engine.dart';
-import 'package:nyan_read/modules/reader/reader_engine/page_turn_request.dart';
+import 'package:nyan_read/modules/reader/widgets/smooth_page_reader.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+RenderRepaintBoundary _boundary(GlobalKey key) =>
+    key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+
+Future<List<int>?> _pixel(WidgetTester tester, GlobalKey key, int x, int y) =>
+    tester.runAsync(() async {
+      final image = await _boundary(key).toImage();
+      try {
+        final bytes = (await image.toByteData())!;
+        return bytes.buffer
+            .asUint8List(bytes.offsetInBytes + (y * image.width + x) * 4, 4)
+            .toList();
+      } finally {
+        image.dispose();
+      }
+    });
 
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
@@ -18,8 +41,10 @@ void main() {
   late Completer<void> openRequested;
   PlatformException? openFailure;
   Completer<void>? renderGate;
+  late bool renderStarted;
   setUp(() {
     renderGate = null;
+    renderStarted = false;
     openFailure = null;
     opened = Completer<Map<String, Object>>();
     openRequested = Completer<void>();
@@ -38,11 +63,18 @@ void main() {
             'height': 640
           };
         case 'render':
+          renderStarted = true;
           await renderGate?.future;
+          final image = img.Image(width: 4, height: 3);
+          final isTarget = (call.arguments as Map)['pageId'] == 'page-2';
+          img.fill(image,
+              color: isTarget
+                  ? img.ColorRgb8(0, 0, 255)
+                  : img.ColorRgb8(255, 0, 0));
           return {
-            'width': 1,
-            'height': 1,
-            'data': img.encodePng(img.Image(width: 1, height: 1)),
+            'width': image.width,
+            'height': image.height,
+            'data': img.encodePng(image),
           };
         case 'close.page':
         case 'close.document':
@@ -97,6 +129,141 @@ void main() {
     // Inspect the actual public PageController as well as the engine position.
     final pageView = find.byType(PageView).evaluate().single.widget as PageView;
     expect(pageView.controller!.page, closeTo(page - 1, 0.001));
+  }
+
+  Future<ReaderController> mountTurn(
+    WidgetTester tester,
+    GlobalKey<SmoothPageReaderState> smooth,
+    GlobalKey screen,
+    GlobalKey body, {
+    ValueNotifier<bool>? pendingPaint,
+    bool warmTarget = false,
+  }) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 240);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    SharedPreferences.setMockInitialValues({
+      'page_turn_mode': PageTurnMode.tap.index,
+    });
+    final preferences = ReaderPreferencesService();
+    await preferences.initialize();
+    final controller = ReaderController(
+      Book(
+          id: 'pdf-turn',
+          title: 'PDF turn',
+          author: '',
+          filePath: 'turn.pdf',
+          format: 'pdf'),
+      readerPreferencesService: preferences,
+      databaseService: DatabaseService(),
+    );
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+      preferences.dispose();
+      await tester.pump();
+    });
+    await controller.engine.initialize();
+    late final ui.Image outgoing;
+    await tester.pumpWidget(MaterialApp(
+      home: RepaintBoundary(
+        key: screen,
+        child: SmoothPageReader(
+          key: smooth,
+          snapshotIncoming: false,
+          duration: const Duration(milliseconds: 64),
+          curve: Curves.linear,
+          onPreviousTap: () {},
+          onNextTap: () {},
+          onCenterTap: () {},
+          captureFrame: () async => outgoing,
+          child: RepaintBoundary(
+            key: body,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Builder(builder: controller.engine.buildReader),
+                if (pendingPaint != null)
+                  Positioned(
+                    top: 16,
+                    left: 16,
+                    width: 16,
+                    height: 16,
+                    child: ValueListenableBuilder<bool>(
+                      valueListenable: pendingPaint,
+                      builder: (_, visible, child) =>
+                          visible ? child! : const SizedBox.shrink(),
+                      child: const ColoredBox(color: Color(0xFF00FF00)),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ));
+    opened.complete({'id': 'pdf-turn', 'pagesCount': 2});
+    await settleNativeWork(tester);
+    final engine = controller.engine as PdfReaderEngine;
+    if (warmTarget) {
+      await engine.goToPosition(const ReadingPosition(pageNumber: 2));
+      await settleNativeWork(tester);
+      await engine.goToPosition(const ReadingPosition(pageNumber: 1));
+      await settleNativeWork(tester);
+    }
+    expectPage(engine, 1);
+    outgoing = (await tester.runAsync(() => _boundary(body).toImage()))!;
+    addTearDown(() {
+      if (!outgoing.debugDisposed) outgoing.dispose();
+    });
+    if (!warmTarget) {
+      renderStarted = false;
+      final gate = renderGate = Completer<void>();
+      addTearDown(() {
+        if (!gate.isCompleted) gate.complete();
+      });
+    }
+    return controller;
+  }
+
+  Future<void> pumpUntil(WidgetTester tester, bool Function() reached) async {
+    for (var i = 0; i < 100; i++) {
+      if (reached()) return;
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await tester.pump();
+    }
+    fail('The expected PDF turn stage was not reached.');
+  }
+
+  Future<void> checkTurn(
+    WidgetTester tester,
+    ReaderController controller,
+    SmoothPageReaderState smooth, {
+    VoidCallback? onReady,
+    required Future<void> Function(PageTurnRequest, Future<void>) check,
+  }) async {
+    final request = PageTurnRequest();
+    final turn = smooth.playTurn(
+      forward: true,
+      request: request,
+      readyIncludesPaint: controller.pageReadinessIncludesPaint,
+      didMove: () => controller.currentPosition?.pageNumber == 2,
+      dispatchTurn: () => controller.nextPage(request: request),
+      waitForReady: () async {
+        final ready = await controller.waitForPagePresentation(request);
+        if (ready) onReady?.call();
+        return ready;
+      },
+    );
+    try {
+      await check(request, turn);
+    } finally {
+      request.cancel();
+      await tester.pump();
+      await turn;
+    }
   }
 
   testWidgets('PDF restore waits for delayed document and viewport',
@@ -259,6 +426,80 @@ void main() {
       await settleNativeWork(tester);
       if (!cancel) expect(await ready, isTrue);
       expect(engine.getCurrentPosition()?.pageNumber, 7);
+    });
+  }
+
+  for (final queuePaint in [false, true]) {
+    testWidgets(
+        'PDF painted target ${queuePaint ? 'waits for queued paint' : 'starts without an extra frame'}',
+        (tester) async {
+      final smooth = GlobalKey<SmoothPageReaderState>();
+      final screen = GlobalKey();
+      final body = GlobalKey();
+      final pendingPaint = ValueNotifier(false);
+      addTearDown(pendingPaint.dispose);
+      final controller = await mountTurn(tester, smooth, screen, body,
+          pendingPaint: pendingPaint, warmTarget: true);
+      expect(await _pixel(tester, screen, 300, 120), [255, 0, 0, 255]);
+      bool? scheduledAtReady;
+      await checkTurn(
+        tester,
+        controller,
+        smooth.currentState!,
+        onReady: () {
+          scheduledAtReady = binding.hasScheduledFrame;
+          if (queuePaint) pendingPaint.value = true;
+        },
+        check: (_, turn) async {
+          await pumpUntil(tester, () => scheduledAtReady != null);
+          expect(scheduledAtReady, isFalse);
+          expect(await _pixel(tester, body, 160, 120), [0, 0, 255, 255]);
+          expect(binding.transientCallbackCount, queuePaint ? 0 : 1,
+              reason:
+                  'The animation ticker should only wait for queued paint.');
+          if (queuePaint) {
+            await tester.pump();
+            expect(binding.transientCallbackCount, 1);
+          }
+          // The first tick has zero progress. The following frame exposes the
+          // left quarter of the target page on the right of the viewport.
+          await tester.pump(const Duration(milliseconds: 16));
+          await tester.pump(const Duration(milliseconds: 16));
+          expect(await _pixel(tester, screen, 300, 120), [0, 0, 255, 255]);
+          if (queuePaint) {
+            expect(await _pixel(tester, screen, 260, 20), [0, 255, 0, 255]);
+          }
+          await tester.pumpAndSettle();
+          await turn;
+        },
+      );
+      expectPage(controller.engine as PdfReaderEngine, 2);
+    });
+  }
+
+  for (final cancel in [false, true]) {
+    testWidgets(
+        'PDF turn ${cancel ? 'cancelled' : 'timed out'} during rendering keeps the committed page',
+        (tester) async {
+      final smooth = GlobalKey<SmoothPageReaderState>();
+      final screen = GlobalKey();
+      final controller = await mountTurn(tester, smooth, screen, GlobalKey());
+      await checkTurn(tester, controller, smooth.currentState!,
+          check: (request, turn) async {
+        await pumpUntil(tester, () => renderStarted);
+        expectPage(controller.engine as PdfReaderEngine, 2);
+        if (cancel) request.cancel();
+        await tester.pump(cancel ? Duration.zero : const Duration(seconds: 2));
+        await turn;
+        expect(smooth.currentState!.isAnimating, isFalse);
+        expectPage(controller.engine as PdfReaderEngine, 2);
+      });
+
+      renderGate!.complete();
+      await settleNativeWork(tester);
+      expect(smooth.currentState!.isAnimating, isFalse);
+      expectPage(controller.engine as PdfReaderEngine, 2);
+      expect(await _pixel(tester, screen, 300, 120), [0, 0, 255, 255]);
     });
   }
 }
