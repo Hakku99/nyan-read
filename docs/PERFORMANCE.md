@@ -186,3 +186,44 @@ The table gives all 48 measured latencies in ms. Each pair matches the same PDF,
 All 48 measured taps and the 16 warm-up taps each produced one acceptance, one engine call in the requested direction and one animation completion. On the next frame and again 150 ms later, the page number had advanced or retreated by exactly one. The four measured rounds completed with continuous monitoring, zero timeouts and zero replacement taps. The 16 warm-up taps are excluded from the latency figures.
 
 Local evidence is under `.dart_tool/pdfedge_phone/`. The paired values are in `paired.csv`, and per-tap events, page checks and foreground/refresh-rate logs are in `rounds/`. The initial launch stopped before any input because the app could not read its configuration. That startup record is in `results/`.
+
+## 9) PDF gesture regression on HONOR BKQ-N49 (60 Hz)
+
+### Gesture checks on `6ec98f9`
+
+Of 76 cases, **72 passed and 4 failed**. Each 13B-4 PDF had 36 passes and 2 failures. The isolated profile build received touch events through Flutter on the handset. Each check compared the page number, scale and image position after settling and again 150 ms later.
+
+| Gesture | Passed / tested (both PDFs) | Observed result |
+|---|---:|---|
+| Center double tap and independent single tap | 4 / 4 | The double tap zoomed once on the same page. The single tap opened the controls once. |
+| Two-finger zoom | 8 / 8 | Pinching at the left edge, center, right edge or across both edges enlarged and reduced the image on the same page. |
+| Drag after zoom | 6 / 6 | At 3× fit scale, drags from the center and either edge moved the image 45 logical pixels. Scale and page stayed fixed. |
+| Horizontal swipe in tap mode | 8 / 8 | With the edge partition enabled or disabled, the reader accepted each swipe once and turned one page in the requested direction. |
+| Overlapping edge and center touches | 32 / 32 | Stationary fingers produced no action. Spreading them zoomed. Lifting either finger caused no turn. The next independent edge tap turned one page. |
+| Taps across the 20% and 80% boundaries | 8 / 8 | In either tap order, only the edge tap turned a page. Neither zoom nor controls opened. |
+| Canceled edge touch | 4 / 4 | Cancellation left the page fixed. The next independent tap turned one page. |
+| Edge double tap in swipe mode | 2 / 2 | PhotoView zoomed on the same page. |
+| Upward swipe at fit scale in tap and swipe modes | 0 / 4 | The scanned PDF stayed on page 24 (expected 25), and the mixed PDF stayed on page 3 (expected 4). Each case stopped on the failed forward swipe. |
+
+Four groups in this gesture run had a host counter mismatch during finalization. Their case exports, unique completion markers and subsequent 60 Hz foreground samples were present and used to verify the results. Local evidence is in `.dart_tool/pdfgesture_honor/summary.json` and `.dart_tool/pdfgesture_honor/rounds/`.
+
+### Upward-swipe A/B comparison
+
+A was `3fee977` and B was `6ec98f9`. Each pair used the same PDF, mode, starting page and fit scale. One finger moved from (85%, 80%) to (85%, 20%) of the reading area in 12 equal steps scheduled 18 ms apart, then held for 60 ms before release. A passing swipe would advance the gallery by exactly one page.
+
+**Six of eight pairs reproduced the pre-existing behavior on A and B. Two pairs were indeterminate after monitor heartbeat timeouts.** Of 16 scheduled swipes, 15 were sent and 14 had complete monitoring. Across those 14, `PhotoViewGestureRecognizer` won and the gallery's vertical drag recognizer was rejected. PhotoView recorded one start, 12 updates and one end for each swipe. There was no gallery scroll notification or page-change event.
+
+The table lists A then B in each result cell, including for BA execution order. Gallery displacement is relative to the position at pointer down, in Flutter logical pixels. Every observed maximum was zero, including the displacement at release and after settling.
+
+| PDF | Turn mode | Run order | Maximum gallery displacement (A / B) | Stable page (A / B) | Pair result |
+|---|---|---|---:|---|---|
+| Scanned | Tap | AB | 0 / 0 | 24 / 24 | Pre-existing |
+| Scanned | Tap | BA | 0 / 0 | 24 / 24 | Pre-existing |
+| Scanned | Swipe | AB | 0 / 0 | 24 / 24 | Pre-existing |
+| Scanned | Swipe | BA | 0 / 0 | 24 / 24 | Pre-existing |
+| Mixed | Tap | AB | 0 / 0 | 3 / 3 | Indeterminate. B recorded PhotoView ownership, release and the stable page before the final heartbeat timed out. |
+| Mixed | Tap | BA | 0 / 0 | 3 / 3 | Pre-existing |
+| Mixed | Swipe | AB | 0 / 0 | 3 / 3 | Pre-existing |
+| Mixed | Swipe | BA | — / 0 | — / 3 | Indeterminate. A timed out before app launch and received no input. |
+
+Neither interrupted case was retried. Per-swipe recognizer decisions, offsets and page snapshots are in `.dart_tool/pdfvertical_ab/observations.json`. The original device and heartbeat logs are in `.dart_tool/pdfvertical_ab/rounds/`.
