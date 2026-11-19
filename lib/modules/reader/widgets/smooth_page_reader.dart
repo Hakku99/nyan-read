@@ -7,6 +7,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../reader_engine/page_turn_request.dart';
+import 'pdf_page_tap_region.dart';
+import 'reader_tap_zone.dart';
 
 class SmoothPageReader extends StatefulWidget {
   const SmoothPageReader({
@@ -16,6 +18,7 @@ class SmoothPageReader extends StatefulWidget {
     required this.onNextTap,
     required this.onCenterTap,
     this.enabled = true,
+    this.pdfTapZones = false,
     this.layoutIdentity,
     this.captureTimeout = const Duration(milliseconds: 350),
     this.prepareTimeout = const Duration(milliseconds: 1500),
@@ -27,6 +30,7 @@ class SmoothPageReader extends StatefulWidget {
   });
 
   final bool enabled;
+  final bool pdfTapZones;
   final Object? layoutIdentity;
   final Duration captureTimeout;
   final Duration prepareTimeout;
@@ -120,15 +124,24 @@ class SmoothPageReaderState extends State<SmoothPageReader>
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
     final localX = box.globalToLocal(details.globalPosition).dx;
-    final ratio = localX / box.size.width;
-    if (ratio < 0.20) {
-      widget.onPreviousTap();
-    } else if (ratio > 0.80) {
-      widget.onNextTap();
-    } else {
-      widget.onCenterTap();
+    switch (ReaderTapZone.at(localX, box.size.width)) {
+      case ReaderTapZone.previous:
+        widget.onPreviousTap();
+      case ReaderTapZone.next:
+        widget.onNextTap();
+      case ReaderTapZone.center:
+        widget.onCenterTap();
     }
   }
+
+  Widget _tapRegion(Widget child) => widget.pdfTapZones
+      ? PdfPageTapRegion(
+          enabled: widget.enabled, onTapUp: _handleTap, child: child)
+      : GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapUp: widget.enabled ? _handleTap : null,
+          child: child,
+        );
 
   /// Set [readyIncludesPaint] only when [waitForReady] awaits target paint.
   Future<void> playTurn({
@@ -286,10 +299,8 @@ class SmoothPageReaderState extends State<SmoothPageReader>
         if (notification.dragDetails != null) _activeRequest?.cancel();
         return false;
       },
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapUp: widget.enabled ? _handleTap : null,
-        child: RepaintBoundary(
+      child: _tapRegion(
+        RepaintBoundary(
           child: AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {

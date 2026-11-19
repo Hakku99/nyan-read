@@ -35,6 +35,7 @@ import 'widgets/chapter_list_widget.dart';
 import 'widgets/one_paper_dock.dart';
 import 'widgets/reader_brightness_popover.dart';
 import 'widgets/smooth_page_reader.dart';
+import 'widgets/reader_tap_zone.dart';
 import 'widgets/reader_text_gestures.dart';
 import '../../core/services/reading_reminder_service.dart';
 import '../../core/ui/nyan_icons.dart';
@@ -410,6 +411,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                 ),
                                                 builder: (context, _, __) =>
                                                     SmoothPageReader(
+                                                  pdfTapZones:
+                                                      controller.book.format ==
+                                                          'pdf',
                                                   snapshotIncoming:
                                                       controller.book.format !=
                                                           'pdf',
@@ -459,13 +463,13 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                           !box.hasSize) {
                                                         return false;
                                                       }
-                                                      final ratio = box
-                                                              .globalToLocal(
-                                                                  position)
-                                                              .dx /
-                                                          box.size.width;
-                                                      return ratio < .20 ||
-                                                          ratio > .80;
+                                                      final x = box
+                                                          .globalToLocal(
+                                                              position)
+                                                          .dx;
+                                                      return ReaderTapZone.at(x,
+                                                              box.size.width) !=
+                                                          ReaderTapZone.center;
                                                     },
                                                     horizontal: readerPrefs
                                                             .pageTurnMode ==
