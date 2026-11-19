@@ -268,3 +268,15 @@ Across the 122 completed steps, the gesture handler, page-change count and stabl
 **Separate left-edge pinch case.** The same installed APK ran one spread and one contraction on page 3 of the mixed PDF. PhotoView handled both steps. The spread increased the scale from 1× fit to 3×, and the contraction returned it to 1×, matching `6ec98f9`. Each step produced (0, 0) logical pixels of image displacement and zero page-change events. Both steps settled on page 3 and remained there at the 150 ms check. The per-step record is in `.dart_tool/pdfgesture_mixed_left_20261119_234327/pdfgesture_mixed_left_20261119_234327-case.json`.
 
 **Local evidence.** Under `.dart_tool/pdfgesture_83cbd1b_honor/`, `report.md` lists every case by PDF with both builds' step results. In `comparison.json`, each case's `evidence` field identifies its directory under `rounds/`, which holds the raw case export or stop record and the foreground and heartbeat log. The matching `6ec98f9` case is under `.dart_tool/pdfgesture_honor/rounds/<pdf>-<group>/`, keyed by the same case name.
+
+## 12) PDF gesture fix closeout on HONOR BKQ-N49 (60 Hz)
+
+Functional acceptance is complete for `83cbd1b` on the two 13B-4 PDFs. **76/76 cases passed cumulatively** on the isolated profile build. In all four fit-scale upward swipes (section 10), the gallery moved +398.514 Flutter logical pixels before release and advanced exactly one page in both turn modes. The scanned PDF settled on page 25 from page 24, and the mixed PDF on page 4 from page 3. All 72 remaining gesture cases matched the `6ec98f9` baseline (section 11).
+
+The edge-tap latency measurements in section 8 cover `3fee977` and `6ec98f9` only. Across 24 matched pairs (48 taps), median `pointerUp → accepted` latency fell from 301.076 ms to 0.176 ms, with a median paired reduction of 300.909 ms. This interval starts immediately before Flutter dispatches the synthetic pointer-up event and ends when the reader accepts the page turn.
+
+### Unverified scope
+
+- Edge-tap latency on `83cbd1b` and end-to-end time from physical touch to visible page change. Touchscreen sampling, Android input delivery, animation completion and display presentation fall outside the section 8 interval.
+- Other devices, platforms (including iOS), refresh rates and PDF layouts. Fit-scale swipe acceptance on this handset covers the original 12-step upward trajectory. A downward swipe to the previous page remains unverified.
+- Sustained frame pacing, heat and battery use during extended reading sessions.
