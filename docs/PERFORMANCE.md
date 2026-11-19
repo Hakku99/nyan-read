@@ -247,22 +247,24 @@ Local evidence is in `.dart_tool/pdfvertical_ab/observations.json` for the basel
 
 ## 11) Remaining PDF gesture regression on HONOR BKQ-N49 (60 Hz)
 
-The isolated profile build of `83cbd1b` passed 71 of the 72 cases that passed on `6ec98f9` in section 9. One case stopped before input. The scanned 13B-4 PDF started on page 24 and the mixed-content PDF on page 3, both at fit scale. Section 10 covers the four fit-scale vertical swipes separately.
+In the original round, the isolated profile build of `83cbd1b` passed 71 of the 72 cases that passed on `6ec98f9` in section 9. One case stopped before input. A separate run of that case brought the cumulative result to **72/72 passed**, as shown below. The scanned 13B-4 PDF started on page 24 and the mixed-content PDF on page 3, both at fit scale. Section 10 covers the four fit-scale vertical swipes separately.
 
 | Gesture | Evidence group | Scanned PDF (passed / planned) | Mixed PDF (passed / planned) |
 |---|---|---:|---:|
 | Center double tap and independent single tap | `center` | 2 / 2 | 2 / 2 |
-| Two-finger spread and contract (left, center, right, across both edges) | `pinch` | 4 / 4 | 3 / 4 |
+| Two-finger spread and contract (left, center, right, across both edges) | `pinch` | 4 / 4 | 4 / 4 |
 | Drag after zoom (center, left and right) | `pan` | 3 / 3 | 3 / 3 |
 | Horizontal swipe in tap mode (both directions, edge partition on and off) | `swipes` | 4 / 4 | 4 / 4 |
 | Overlapping edge and center touches, followed by an independent edge tap | `cross` | 16 / 16 | 16 / 16 |
 | Tap pairs across the 20% and 80% boundaries | `boundary` | 4 / 4 | 4 / 4 |
 | Canceled left or right edge touch, followed by an independent tap | `cancel` | 2 / 2 | 2 / 2 |
 | Edge double tap in swipe mode | `mode` | 1 / 1 | 1 / 1 |
-| **Total** | | **36 / 36** | **35 / 36** |
+| **Cumulative total** | | **36 / 36** | **36 / 36** |
 
-Across the 120 completed steps, the gesture handler, page-change count and stable page matched the corresponding baseline step. The final scale (relative to fit) and image displacement also matched within 0.001× and 0.001 Flutter logical pixels per axis. At 3× fit, all six drags moved the image down 45 logical pixels on the same page. Each horizontal swipe turned exactly one page in the requested direction. Each stable snapshot was checked again 150 ms later.
+Across the 122 completed steps, the gesture handler, page-change count and stable page matched the corresponding baseline step. The final scale (relative to fit) and image displacement also matched within 0.001× and 0.001 Flutter logical pixels per axis. At 3× fit, all six drags moved the image down 45 logical pixels on the same page. Each horizontal swipe turned exactly one page in the requested direction. Each stable snapshot was checked again 150 ms later.
 
-**Stopped case.** For the mixed PDF's left-edge pinch, the host monitor ended after startup validation and before it authorized input. The app timed out waiting for authorization. Neither the spread nor the contraction was sent, so this case has no measured result on `83cbd1b`. The remaining three pinch locations ran once each. The stop record and app error are in `.dart_tool/pdfgesture_83cbd1b_honor/rounds/pdf_mixed-pinch-01/`.
+**Original stop.** For the mixed PDF's left-edge pinch, the host monitor ended after startup validation and before it authorized input. The app timed out waiting for authorization. Neither the spread nor the contraction was sent in that round. The remaining three pinch locations ran once each. The stop record and app error are in `.dart_tool/pdfgesture_83cbd1b_honor/rounds/pdf_mixed-pinch-01/`.
+
+**Separate left-edge pinch case.** The same installed APK ran one spread and one contraction on page 3 of the mixed PDF. PhotoView handled both steps. The spread increased the scale from 1× fit to 3×, and the contraction returned it to 1×, matching `6ec98f9`. Each step produced (0, 0) logical pixels of image displacement and zero page-change events. Both steps settled on page 3 and remained there at the 150 ms check. The per-step record is in `.dart_tool/pdfgesture_mixed_left_20261119_234327/pdfgesture_mixed_left_20261119_234327-case.json`.
 
 **Local evidence.** Under `.dart_tool/pdfgesture_83cbd1b_honor/`, `report.md` lists every case by PDF with both builds' step results. In `comparison.json`, each case's `evidence` field identifies its directory under `rounds/`, which holds the raw case export or stop record and the foreground and heartbeat log. The matching `6ec98f9` case is under `.dart_tool/pdfgesture_honor/rounds/<pdf>-<group>/`, keyed by the same case name.
