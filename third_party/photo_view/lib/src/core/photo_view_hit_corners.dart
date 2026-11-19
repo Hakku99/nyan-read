@@ -1,9 +1,23 @@
+import 'package:flutter/foundation.dart' show precisionErrorTolerance;
 import 'package:flutter/widgets.dart';
 
 import 'package:photo_view/src/controller/photo_view_controller_delegate.dart'
     show PhotoViewControllerDelegate;
 
 mixin HitCornersDetector on PhotoViewControllerDelegate {
+  bool get canYieldAtContainedScale {
+    if (widget.enablePanAlways) return false;
+    final viewport = scaleBoundaries.outerSize;
+    final content = scaleBoundaries.childSize * scale;
+    final widthGap = viewport.width - content.width;
+    final heightGap = viewport.height - content.height;
+    // At fit, neither dimension overflows and at least one fills the viewport.
+    return widthGap >= -precisionErrorTolerance &&
+        heightGap >= -precisionErrorTolerance &&
+        (widthGap.abs() <= precisionErrorTolerance ||
+            heightGap.abs() <= precisionErrorTolerance);
+  }
+
   HitCorners _hitCornersX() {
     final double childWidth = scaleBoundaries.childSize.width * scale;
     final double screenWidth = scaleBoundaries.outerSize.width;

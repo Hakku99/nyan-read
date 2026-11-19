@@ -12,6 +12,8 @@ void main() {
   Future<void> mount(WidgetTester tester,
       {bool enabled = true,
       bool pdfTapZones = true,
+      Size viewport = const Size(400, 300),
+      ValueChanged<int>? onPageChanged,
       GestureDragEndCallback? onPanEnd}) async {
     final photoController = photo = PhotoViewController();
     final pageController = pages = PageController();
@@ -25,8 +27,8 @@ void main() {
       home: Align(
         alignment: Alignment.topLeft,
         child: SizedBox(
-          width: 400,
-          height: 300,
+          width: viewport.width,
+          height: viewport.height,
           child: GestureDetector(
             onPanEnd: onPanEnd,
             child: SmoothPageReader(
@@ -37,9 +39,10 @@ void main() {
               onCenterTap: () => taps.add('center'),
               child: PhotoViewGallery(
                 pageController: pages,
+                onPageChanged: onPageChanged,
                 scrollDirection: Axis.vertical,
                 pageOptions: [
-                  for (var i = 0; i < 2; i++)
+                  for (var i = 0; i < 3; i++)
                     PhotoViewGalleryPageOptions.customChild(
                       controller: i == 0 ? photo : null,
                       childSize: const Size(800, 900),
@@ -101,17 +104,24 @@ void main() {
     await mount(tester);
     final initial = photo.scale!;
     final edge = await tester.startGesture(const Offset(65, 140));
+    await edge.moveBy(const Offset(0, -4));
     final center = await tester.startGesture(const Offset(220, 140));
     await edge.moveBy(const Offset(-20, 0));
     await center.moveBy(const Offset(60, 0));
     await tester.pump();
     await center.moveBy(const Offset(45, 0));
+    expect(pages.position.pixels, 0);
     await edge.up();
     await center.up();
     await tester.pumpAndSettle();
     expect(photo.scale, greaterThan(initial));
     final before = photo.position;
-    await tester.dragFrom(const Offset(65, 140), const Offset(0, 45));
+    final drag = await tester.startGesture(const Offset(65, 140));
+    await drag.moveBy(const Offset(0, 40));
+    await drag.moveBy(const Offset(0, 5));
+    expect(photo.position, isNot(before));
+    expect(pages.position.pixels, 0);
+    await drag.up();
     await tester.pumpAndSettle();
     expect(photo.position, isNot(before));
     expect(pages.page, 0);
@@ -137,18 +147,103 @@ void main() {
     });
   }
 
+  for (final tapMode in [true, false]) {
+    testWidgets('HONOR 12-step swipe scrolls before release, tapMode=$tapMode',
+        (tester) async {
+      // The 13B-4 reading area, excluding the system bars.
+      const viewport = Size(1256 / 3.5, 2536 / 3.5);
+      await tester.binding.setSurfaceSize(viewport);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final changes = <int>[];
+      var readerSwipes = 0;
+      await mount(tester,
+          enabled: tapMode,
+          viewport: viewport,
+          onPageChanged: changes.add,
+          onPanEnd: (_) => readerSwipes++);
+      expect(pages.position.viewportDimension, closeTo(viewport.height, 1e-9));
+      final startPixels = pages.position.pixels;
+      final fit = photo.scale;
+      final x = viewport.width * 0.85;
+      final finger =
+          await tester.startGesture(Offset(x, viewport.height * 0.8));
+      const interval = Duration(milliseconds: 18);
+      for (var step = 1; step <= 12; step++) {
+        await tester.pump(interval);
+        await finger.moveTo(
+          Offset(x, viewport.height * (0.8 - 0.6 * step / 12)),
+          timeStamp: interval * step,
+        );
+      }
+      expect(pages.position.pixels, greaterThan(startPixels));
+      expect(photo.scale, fit);
+      expect(photo.position, Offset.zero);
+      const hold = Duration(milliseconds: 60);
+      await tester.pump(hold);
+      await finger.up(timeStamp: interval * 12 + hold);
+      await tester.pumpAndSettle();
+      expect(pages.page, 1);
+      expect(changes, [1]);
+      expect(readerSwipes, 0);
+      expect(taps, isEmpty);
+    });
+  }
+
+  testWidgets('a second finger cannot take over an active gallery drag',
+      (tester) async {
+    await mount(tester);
+    final fit = photo.scale;
+    final first = await tester.startGesture(const Offset(340, 260));
+    await first.moveBy(const Offset(0, -45));
+    await first.moveBy(const Offset(0, -45));
+    await tester.pump();
+    final beforeSecond = pages.position.pixels;
+    expect(beforeSecond, greaterThan(0));
+    final second = await tester.startGesture(const Offset(180, 100));
+    await second.moveBy(const Offset(-60, 0));
+    await second.up();
+    await first.moveBy(const Offset(0, -135));
+    expect(pages.position.pixels, greaterThan(beforeSecond));
+    expect(photo.scale, fit);
+    await first.up();
+    await tester.pumpAndSettle();
+    expect(pages.page, 1);
+    expect(taps, isEmpty);
+  });
+
   testWidgets('cancel and gallery swipe leave no pending edge turn',
       (tester) async {
     await mount(tester);
     const edge = Offset(360, 200);
     final canceled = await tester.startGesture(edge);
+    await canceled.moveBy(const Offset(0, -4));
     await canceled.cancel();
     await tester.pump(kDoubleTapTimeout);
+    expect(pages.position.pixels, 0);
     expect(taps, isEmpty);
     await tester.dragFrom(edge, const Offset(0, -235));
     await tester.pumpAndSettle();
     await tester.pump(kDoubleTapTimeout);
     expect(pages.page, 1);
+    expect(taps, isEmpty);
+    await tester.tapAt(edge);
+    expect(taps, ['next']);
+  });
+
+  testWidgets('cancel during a partial gallery drag clears the gesture',
+      (tester) async {
+    await mount(tester);
+    const edge = Offset(360, 200);
+    final fit = photo.scale;
+    final finger = await tester.startGesture(edge);
+    await finger.moveBy(const Offset(0, -40));
+    await finger.moveBy(const Offset(0, -30));
+    expect(pages.position.pixels, greaterThan(0));
+    await tester.pump(const Duration(milliseconds: 100));
+    await finger.cancel();
+    await tester.pumpAndSettle();
+    expect(pages.page, 0);
+    expect(photo.scale, fit);
     expect(taps, isEmpty);
     await tester.tapAt(edge);
     expect(taps, ['next']);

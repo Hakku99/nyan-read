@@ -165,11 +165,17 @@ class PhotoViewGestureRecognizer extends ScaleGestureRecognizer {
 
   Offset? _initialFocalPoint;
   Offset? _currentFocalPoint;
+  Offset? _pendingSingleTouchOrigin;
 
   bool ready = true;
 
   @override
-  void addAllowedPointer(event) {
+  void addAllowedPointer(PointerDownEvent event) {
+    _pendingSingleTouchOrigin = ready &&
+            validateAxis == Axis.vertical &&
+            event.kind == PointerDeviceKind.touch
+        ? event.position
+        : null;
     if (ready) {
       ready = false;
       _pointerLocations = <int, Offset>{};
@@ -178,7 +184,14 @@ class PhotoViewGestureRecognizer extends ScaleGestureRecognizer {
   }
 
   @override
+  void acceptGesture(int pointer) {
+    _pendingSingleTouchOrigin = null;
+    super.acceptGesture(pointer);
+  }
+
+  @override
   void didStopTrackingLastPointer(int pointer) {
+    _pendingSingleTouchOrigin = null;
     ready = true;
     super.didStopTrackingLastPointer(pointer);
   }
@@ -188,7 +201,7 @@ class PhotoViewGestureRecognizer extends ScaleGestureRecognizer {
     if (validateAxis != null) {
       _computeEvent(event);
       _updateDistances();
-      _decideIfWeAcceptEvent(event);
+      if (event is PointerMoveEvent && !_shouldTrackMove(event)) return;
     }
     super.handleEvent(event);
   }
@@ -216,15 +229,27 @@ class PhotoViewGestureRecognizer extends ScaleGestureRecognizer {
         count > 0 ? focalPoint / count.toDouble() : Offset.zero;
   }
 
-  void _decideIfWeAcceptEvent(PointerEvent event) {
-    if (!(event is PointerMoveEvent)) {
-      return;
+  bool _shouldTrackMove(PointerMoveEvent event) {
+    final origin = _pendingSingleTouchOrigin;
+    if (origin != null && !event.synthesized) {
+      final travel = event.position - origin;
+      final distanceY = travel.dy.abs();
+      if (distanceY > travel.dx.abs() && hitDetector!.canYieldAtContainedScale) {
+        // Keep small moves pending for a possible pinch. For a drag, yield
+        // before the base scale recognizer can claim the same move as a pan.
+        if (distanceY <= computeHitSlop(event.kind, gestureSettings)) {
+          return true;
+        }
+        resolve(GestureDisposition.rejected);
+        return false;
+      }
     }
     final move = _initialFocalPoint! - _currentFocalPoint!;
     final bool shouldMove = hitDetector!.shouldMove(move, validateAxis!);
     if (shouldMove || _pointerLocations.keys.length > 1) {
       acceptGesture(event.pointer);
     }
+    return true;
   }
 }
 
