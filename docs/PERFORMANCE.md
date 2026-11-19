@@ -227,3 +227,20 @@ The table lists A then B in each result cell, including for BA execution order. 
 | Mixed | Swipe | BA | — / 0 | — / 3 | Indeterminate. A timed out before app launch and received no input. |
 
 Neither interrupted case was retried. Per-swipe recognizer decisions, offsets and page snapshots are in `.dart_tool/pdfvertical_ab/observations.json`. The original device and heartbeat logs are in `.dart_tool/pdfvertical_ab/rounds/`.
+
+## 10) Fit-scale PDF upward-swipe acceptance on HONOR BKQ-N49 (60 Hz)
+
+All four PDF and turn-mode combinations passed on `83cbd1b`. Each completed case used one upward swipe on the same handset and 13B-4 sample as its `6ec98f9` reference in section 9. At fit scale, one finger moved from (85%, 80%) to (85%, 20%) of the reading area in 12 equal steps scheduled 18 ms apart. After the 60 ms hold, the probe sampled gallery position immediately before dispatching `pointerUp`. Displacement is relative to the position at pointer down, in Flutter logical pixels.
+
+| 13B-4 PDF | Turn mode | `6ec98f9` reference | `6ec98f9` winner / stable page | `83cbd1b` winner | Pre-release displacement on `83cbd1b` | Page changes on `83cbd1b` | Start → stable page |
+|---|---|---|---|---|---:|---:|---|
+| Scanned | Tap | `pdf_scan-tap-AB-B` | PhotoView / 24 | Gallery | +398.514 | 1 | 24 → 25 |
+| Scanned | Swipe | `pdf_scan-mode-AB-B` | PhotoView / 24 | Gallery | +398.514 | 1 | 24 → 25 |
+| Mixed | Tap | `pdf_mixed-tap-BA-B` | PhotoView / 3 | Gallery | +398.514 | 1 | 3 → 4 |
+| Mixed | Swipe | `pdf_mixed-mode-AB-B` | PhotoView / 3 | Gallery | +398.514 | 1 | 3 → 4 |
+
+In all four baseline recordings, gallery displacement and page-change count were both zero. On `83cbd1b`, the gallery’s `VerticalDragGestureRecognizer` won each swipe and PhotoView’s scale recognizer was rejected. Each swipe produced exactly one page-change event. After scrolling stopped and again 150 ms later, the gallery was on the target page at fit scale.
+
+The first scanned-PDF tap-mode case stopped before launch when the installed APK path lookup timed out after 5 seconds. No swipe was sent. A separately recorded case reused the same installed APK and passed with one swipe from page 24. The other three cases passed on their original runs.
+
+Local evidence is in `.dart_tool/pdfvertical_ab/observations.json` for the baseline, `.dart_tool/pdfvertical_83cbd1b_honor/results.json` for the original four case records (including the stop), and `.dart_tool/pdfvertical_scan_tap_20261119_232224/results.json` for the separate scanned-PDF tap-mode pass.
