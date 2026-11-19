@@ -280,3 +280,32 @@ The edge-tap latency measurements in section 8 cover `3fee977` and `6ec98f9` onl
 - Edge-tap latency on `83cbd1b` and end-to-end time from physical touch to visible page change. Touchscreen sampling, Android input delivery, animation completion and display presentation fall outside the section 8 interval.
 - Other devices, platforms (including iOS), refresh rates and PDF layouts. Fit-scale swipe acceptance on this handset covers the original 12-step upward trajectory. A downward swipe to the previous page remains unverified.
 - Sustained frame pacing, heat and battery use during extended reading sessions.
+
+## 13) PDF edge-tap latency after the gesture fix on HONOR BKQ-N49 (60 Hz)
+
+This follow-up measures the `83cbd1b` edge-tap latency left open in section 12. The isolated profile build used the same handset, two 13B-4 PDFs and tap-to-turn mode as section 8. Each synthetic tap held for 15 ms at 50% of the reading area's height and at 85% of its width to advance or 15% to go back. Round 1 opened the scanned PDF first and pairs with the historical `6ec98f9` AB round. Round 2 opened the mixed PDF first and pairs with the historical BA round.
+
+Both markers use the same monotonic clock within each build. `pointerUp → accepted` starts immediately before Flutter dispatches the synthetic pointer-up event and ends when the reader accepts the turn after its mounted, enabled and idle checks. Touchscreen sampling and Android input delivery precede this interval. Animation completion and display presentation follow it.
+
+Across 24 matched pairs, nearest-rank p50 was **0.176 ms on `6ec98f9`** and **0.167 ms on `83cbd1b`**. The p50 of the 24 individual differences (`83cbd1b` minus `6ec98f9`) was **−0.007 ms**, with a range of −0.047 to +0.061 ms. The largest delay on `83cbd1b` was 0.205 ms. These historical pairs show no recurrence of the roughly 300 ms wait in this sample.
+
+Each row gives one matched tap per round. All table values for latency and difference (Δ) are in microseconds.
+
+| PDF | Phase | Page turn | R1 · `6ec98f9` | R1 · `83cbd1b` | R1 · Δ | R2 · `6ec98f9` | R2 · `83cbd1b` | R2 · Δ |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| Scanned | First | 24→25 | 191 | 186 | −5 | 190 | 167 | −23 |
+| Scanned | First | 25→24 | 150 | 182 | +32 | 176 | 178 | +2 |
+| Scanned | After warm-up | 24→25 | 205 | 205 | 0 | 190 | 203 | +13 |
+| Scanned | After warm-up | 25→26 | 167 | 151 | −16 | 167 | 167 | 0 |
+| Scanned | After warm-up | 26→25 | 188 | 148 | −40 | 150 | 140 | −10 |
+| Scanned | After warm-up | 25→24 | 176 | 159 | −17 | 178 | 181 | +3 |
+| Mixed | First | 3→4 | 189 | 142 | −47 | 188 | 181 | −7 |
+| Mixed | First | 4→3 | 148 | 167 | +19 | 166 | 146 | −20 |
+| Mixed | After warm-up | 3→4 | 179 | 181 | +2 | 175 | 183 | +8 |
+| Mixed | After warm-up | 4→5 | 158 | 137 | −21 | 190 | 178 | −12 |
+| Mixed | After warm-up | 5→4 | 175 | 182 | +7 | 136 | 197 | +61 |
+| Mixed | After warm-up | 4→3 | 180 | 149 | −31 | 179 | 141 | −38 |
+
+**Single-page checks.** All 24 measured taps and all 8 warm-up taps on `83cbd1b` produced one acceptance, one engine call in the requested direction and one animation completion each. The next frame and the check 150 ms later both showed the expected adjacent page. Both rounds completed with continuous monitoring, zero timeouts and zero replacement taps. Only the 24 measured taps contribute to the latency statistics.
+
+**Local evidence.** Under `.dart_tool/pdfedge_83cbd1b_honor/`, `paired.csv` records both latencies, their difference and the page checks for each measured tap. `warmup.csv` records the eight warm-up checks. The raw events and monitor logs are in `rounds/edge-83-1/` and `rounds/edge-83-2/`. The historical values come from the `B_ms` column of `.dart_tool/pdfedge_phone/paired.csv`, matched by round order, PDF, phase, tap and page transition.
