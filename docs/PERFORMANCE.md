@@ -309,3 +309,18 @@ Each row gives one matched tap per round. All table values for latency and diffe
 **Single-page checks.** All 24 measured taps and all 8 warm-up taps on `83cbd1b` produced one acceptance, one engine call in the requested direction and one animation completion each. The next frame and the check 150 ms later both showed the expected adjacent page. Both rounds completed with continuous monitoring, zero timeouts and zero replacement taps. Only the 24 measured taps contribute to the latency statistics.
 
 **Local evidence.** Under `.dart_tool/pdfedge_83cbd1b_honor/`, `paired.csv` records both latencies, their difference and the page checks for each measured tap. `warmup.csv` records the eight warm-up checks. The raw events and monitor logs are in `rounds/edge-83-1/` and `rounds/edge-83-2/`. The historical values come from the `B_ms` column of `.dart_tool/pdfedge_phone/paired.csv`, matched by round order, PDF, phase, tap and page transition.
+
+## 14) Fit-scale PDF downward swipe to the previous page on HONOR BKQ-N49 (60 Hz)
+
+All four cases passed on the isolated `83cbd1b` profile build. Each case started on the page reached by its upward swipe in section 10. One finger followed the reverse path from (85%, 20%) to (85%, 80%) of the reading area in 12 equal steps scheduled 18 ms apart. After a 60 ms hold, the probe measured the gallery's displacement from its position at pointer down, immediately before dispatching `pointerUp`.
+
+| 13B-4 PDF | Turn mode | Gesture winner | Pre-release displacement (Flutter logical px) | Page changes | Start → settled page | Page 150 ms later | Case export under `.dart_tool/pdfdown_83cbd1b_honor/rounds/` |
+|---|---|---|---:|---:|---|---:|---|
+| Scanned | Tap | Gallery | −398.514 | 1 | 25 → 24 | 24 | `pdf_scan-tap-C/pdf_scan-tap-C-case.json` |
+| Scanned | Swipe | Gallery | −398.514 | 1 | 25 → 24 | 24 | `pdf_scan-mode-C/pdf_scan-mode-C-case.json` |
+| Mixed | Tap | Gallery | −398.514 | 1 | 4 → 3 | 3 | `pdf_mixed-tap-C/pdf_mixed-tap-C-case.json` |
+| Mixed | Swipe | Gallery | −398.514 | 1 | 4 → 3 | 3 | `pdf_mixed-mode-C/pdf_mixed-mode-C-case.json` |
+
+The gallery's `VerticalDragGestureRecognizer` won each swipe and PhotoView's scale recognizer was rejected. Each swipe produced exactly one page-change event. Once scrolling stopped and again 150 ms later, the previous page was centered at fit scale. All four cases completed with continuous monitoring and no replacement swipes.
+
+The per-case checks are in `.dart_tool/pdfdown_83cbd1b_honor/results.json`. Each case export in the table has a `monitor.jsonl` alongside it with the foreground, refresh-rate and heartbeat records.
