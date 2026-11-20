@@ -315,10 +315,7 @@ class _ReaderSelectionBuilder extends TextSelectionGestureDetectorBuilder {
     _dragRoute = null;
     if (route != null) {
       if (identical(owner.routing, route) && route.horizontal) {
-        route.onEnd(DragEndDetails(
-            velocity: details.velocity,
-            globalPosition: details.globalPosition,
-            localPosition: details.localPosition));
+        route.onEnd(DragEndDetails(velocity: details.velocity));
       }
     } else {
       super.onDragSelectionEnd(details);
