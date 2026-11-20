@@ -206,6 +206,8 @@ class MockReaderController extends ChangeNotifier
   @override
   ReadingPosition? get currentPosition => null;
   @override
+  bool get pageReadinessIncludesPaint => false;
+  @override
   Future<bool> waitForPagePresentation(PageTurnRequest request) async => true;
   @override
   Future<void> nextPage({PageTurnRequest? request}) async {}

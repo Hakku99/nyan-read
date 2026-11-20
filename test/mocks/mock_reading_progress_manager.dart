@@ -49,7 +49,9 @@ class MockReadingProgressManager implements ReadingProgressManager {
   void refreshFromEngine() {}
 
   @override
-  Future<void> restoreLastPosition() async {}
+  Future<void> restoreLastPosition({VoidCallback? onResolved}) async {
+    onResolved?.call();
+  }
 
   @override
   Future<void> saveCurrentPosition() async {}
