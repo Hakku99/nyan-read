@@ -40,6 +40,9 @@ class PdfReaderEngine
   // before it has real page numbers.
   bool _isDocumentReady = false;
   bool _isViewportReady = false;
+  bool _initialRestoreResolved = false;
+  bool _initialPageConfirmed = false;
+  int? _initialNavigationTarget;
   int? _pendingPage;
   double? _pendingProgress;
   int _pendingPageOffset = 0;
@@ -56,6 +59,30 @@ class PdfReaderEngine
 
   @override
   ReaderCapabilities get capabilities => _capabilities;
+
+  // Keep the last confirmed page saveable after the viewport has detached.
+  bool get canSaveReadingPosition => _initialPageConfirmed && !_disposed;
+
+  /// The stored position has been read and any restore request has completed.
+  void markInitialRestoreResolved() {
+    _initialRestoreResolved = true;
+    _confirmInitialPage();
+  }
+
+  void _confirmInitialPage() {
+    if (_initialPageConfirmed ||
+        !_initialRestoreResolved ||
+        !_isViewportReady ||
+        (_document?.pagesCount ?? 0) <= 0 ||
+        _pendingNavigation != null) {
+      return;
+    }
+    final target = _initialNavigationTarget;
+    if (target == null || _pdfController.page == target) {
+      _initialPageConfirmed = true;
+      _initialNavigationTarget = null;
+    }
+  }
 
   @override
   Future<void> initialize() async {
@@ -119,6 +146,7 @@ class PdfReaderEngine
     return PdfView(
       controller: _pdfController,
       onDocumentLoaded: (_) => onLoaded(),
+      onPageChanged: (_) => _confirmInitialPage(),
       scrollDirection: Axis.vertical,
       // Phase 2 · P0-6: themed placeholder while the PdfDocument future
       // resolves.  pdfx 2.9.2 exposes placeholders via the `builders` slot;
@@ -268,9 +296,12 @@ class PdfReaderEngine
     final page =
         (_pendingPage ?? ((_pendingProgress! * (count - 1)).round() + 1)) +
             _pendingPageOffset;
+    final target = page.clamp(1, count);
+    if (!_initialPageConfirmed) _initialNavigationTarget = target;
     try {
-      _pdfController.jumpToPage(page.clamp(1, count));
+      _pdfController.jumpToPage(target);
       _finishNavigation();
+      _confirmInitialPage();
     } catch (error, stack) {
       _finishNavigation(error, stack);
     }
@@ -466,6 +497,7 @@ class _PdfReaderViewportState extends State<_PdfReaderViewport> {
       }
       widget.engine._isViewportReady = true;
       widget.engine._applyNavigation();
+      widget.engine._confirmInitialPage();
     });
   }
 

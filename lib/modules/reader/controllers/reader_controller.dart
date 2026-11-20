@@ -63,12 +63,15 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       databaseService: _databaseService,
     );
 
+    final reader = engine;
     progressManager = ReadingProgressManager(
       engine: engine,
       book: book,
       lifecycle: _lifecycle,
       databaseService: _databaseService,
       onProgressUpdated: _safeNotifyListeners,
+      canSavePosition:
+          reader is PdfReaderEngine ? () => reader.canSaveReadingPosition : null,
     );
   }
 
@@ -136,13 +139,18 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       notifyListeners();
       await WidgetsBinding.instance.endOfFrame;
 
-      if (engine is PdfReaderEngine) {
+      final reader = engine;
+      if (reader is PdfReaderEngine) {
         // PDF chapter metadata waits for the document; restore can start now.
         unawaited(_loadPdfChapters());
       } else {
         await metaManager.loadChapters();
       }
-      await progressManager.restoreLastPosition();
+      await progressManager.restoreLastPosition(
+        onResolved:
+            reader is PdfReaderEngine ? reader.markInitialRestoreResolved : null,
+      );
+      if (_isDisposed) return;
       await metaManager.syncCurrentChapterFromPosition(
         progressManager.currentPosition,
       );

@@ -80,13 +80,25 @@ class _PdfHarness {
       opened.complete({'id': 'lifecycle', 'pagesCount': pagesCount});
 }
 
-class _ChapterTestDatabase extends Fake implements DatabaseService {
+class _PdfTestDatabase extends Fake implements DatabaseService {
+  _PdfTestDatabase({this.savedPage, this.savedProgress});
+
   bool positionRead = false;
+  final positionReadGate = Completer<void>();
+  int? savedPage;
+  double? savedProgress;
+  final writtenPages = <int>[];
 
   @override
   Future<Map<String, dynamic>?> getBookPosition(String bookId) async {
     positionRead = true;
-    return null;
+    await positionReadGate.future;
+    final page = savedPage;
+    if (page == null) return null;
+    return {
+      'position_type': 'pdf',
+      'position_payload': ReadingPosition(pageNumber: page).toJson(),
+    };
   }
 
   @override
@@ -98,7 +110,12 @@ class _ChapterTestDatabase extends Fake implements DatabaseService {
   @override
   Future<void> updateBookPosition(
       String bookId, String positionType, String positionPayload,
-      {double? progress}) async {}
+      {double? progress}) async {
+    savedPage =
+        ReadingPosition.fromJson(positionType, positionPayload).pageNumber!;
+    savedProgress = progress;
+    writtenPages.add(savedPage!);
+  }
 }
 
 Future<void> _flushUntil(
@@ -170,8 +187,8 @@ void main() {
     engine.dispose();
   }
 
-  testWidgets('PDF fallback chapters arrive without delaying the position read',
-      (tester) async {
+  Future<ReaderController> openController(
+      WidgetTester tester, _PdfTestDatabase database) async {
     SharedPreferences.setMockInitialValues({});
     final preferences = ReaderPreferencesService();
     await preferences.initialize();
@@ -183,7 +200,6 @@ void main() {
     addTearDown(() async {
       await tester.runAsync(() => source!.parent.delete(recursive: true));
     });
-    final database = _ChapterTestDatabase();
     final controller = ReaderController(
       Book(
         id: 'pdf-toc',
@@ -195,10 +211,31 @@ void main() {
       readerPreferencesService: preferences,
       databaseService: database,
     );
+    controller.init();
+    await _flushUntil(tester,
+        () => harness.openStarted.isCompleted && database.positionRead);
+    return controller;
+  }
+
+  Future<void> attachController(
+      WidgetTester tester, ReaderController controller) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: Builder(builder: controller.engine.buildReader)),
+    ));
+  }
+
+  Future<void> closeController(
+      WidgetTester tester, ReaderController controller) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    await tester.pump(const Duration(milliseconds: 200));
+  }
+
+  testWidgets('PDF fallback chapters arrive without delaying the position read',
+      (tester) async {
+    final database = _PdfTestDatabase()..positionReadGate.complete();
+    final controller = await openController(tester, database);
     try {
-      controller.init();
-      await _flushUntil(tester,
-          () => harness.openStarted.isCompleted && database.positionRead);
       expect(controller.chapters, isEmpty);
 
       // The native document knows its page count before a PDF view is attached.
@@ -213,6 +250,122 @@ void main() {
       controller.dispose();
       if (!harness.opened.isCompleted) harness.finishOpen(pagesCount: 12);
       await tester.pump();
+    }
+  });
+
+  testWidgets('PDF startup save waits for the stored page to be reported',
+      (tester) async {
+    final database = _PdfTestDatabase(savedPage: 24, savedProgress: 24 / 25);
+    final controller = await openController(tester, database);
+    try {
+      harness.finishOpen();
+      await _flushUntil(tester, () => controller.chapters.isNotEmpty);
+      await attachController(tester, controller);
+      await _flushUntil(
+          tester, () => find.byType(PageView).evaluate().isNotEmpty);
+
+      // The first page is visible but the stored position is still being read.
+      expect(controller.currentPosition?.pageNumber, 1);
+      controller.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await tester.pump(const Duration(seconds: 30));
+      expect(database.writtenPages, isEmpty);
+      expect(database.savedPage, 24);
+      expect(database.savedProgress, 24 / 25);
+
+      final pages = tester.widget<PageView>(find.byType(PageView)).controller!;
+      int? pageReportedDuringJump;
+      void pauseDuringJump() {
+        if (pages.page?.round() != 23 || pageReportedDuringJump != null) return;
+        pageReportedDuringJump = controller.currentPosition?.pageNumber;
+        controller.didChangeAppLifecycleState(AppLifecycleState.paused);
+      }
+
+      pages.addListener(pauseDuringJump);
+      database.positionReadGate.complete();
+      await _flushUntil(
+          tester, () => controller.currentPosition?.pageNumber == 24);
+      pages.removeListener(pauseDuringJump);
+      expect(pageReportedDuringJump, 1);
+      expect(database.writtenPages, isEmpty);
+
+      final turn = controller.nextPage();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      await turn;
+      await _flushUntil(
+          tester, () => controller.currentPosition?.pageNumber == 25);
+      await controller.saveBeforeExit();
+      expect(database.writtenPages, [25]);
+      expect(database.savedProgress, 1.0);
+    } finally {
+      if (!database.positionReadGate.isCompleted) {
+        database.positionReadGate.complete();
+      }
+      await closeController(tester, controller);
+    }
+  });
+
+  for (final explicitExit in [true, false]) {
+    testWidgets(
+        'PDF startup save preserves progress on ${explicitExit ? 'exit' : 'disposal'} before the viewport attaches',
+        (tester) async {
+      final database = _PdfTestDatabase(savedPage: 24, savedProgress: 24 / 25)
+        ..positionReadGate.complete();
+      final controller = await openController(tester, database);
+      try {
+        harness.finishOpen();
+        await _flushUntil(tester, () => controller.chapters.isNotEmpty);
+        expect(controller.currentPosition?.pageNumber, 1);
+        if (explicitExit) await controller.saveBeforeExit();
+      } finally {
+        await closeController(tester, controller);
+      }
+      expect(database.writtenPages, isEmpty);
+      expect(database.savedPage, 24);
+      expect(database.savedProgress, 24 / 25);
+    });
+  }
+
+  for (final savedPage in <int?>[null, 1]) {
+    testWidgets(
+        'PDF startup save accepts page one with ${savedPage == null ? 'no saved position' : 'a page-one restore'}',
+        (tester) async {
+      final database = _PdfTestDatabase(savedPage: savedPage)
+        ..positionReadGate.complete();
+      final controller = await openController(tester, database);
+      try {
+        await attachController(tester, controller);
+        harness.finishOpen();
+        await _flushUntil(
+            tester, () => find.byType(PageView).evaluate().isNotEmpty);
+        await tester.pump();
+        await controller.saveBeforeExit();
+        expect(database.writtenPages, [1]);
+        expect(database.savedProgress, 1 / 25);
+      } finally {
+        await closeController(tester, controller);
+      }
+    });
+  }
+
+  testWidgets('PDF startup save preserves progress when PDF opening fails',
+      (tester) async {
+    final database = _PdfTestDatabase(savedPage: 24, savedProgress: 24 / 25)
+      ..positionReadGate.complete();
+    final controller = await openController(tester, database);
+    try {
+      await attachController(tester, controller);
+      harness.failOpen = true;
+      harness.finishOpen();
+      await _flushUntil(tester,
+          () => find.textContaining('Failed to open PDF').evaluate().isNotEmpty);
+      controller.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await controller.saveBeforeExit();
+      expect(database.writtenPages, isEmpty);
+      expect(database.savedPage, 24);
+      expect(database.savedProgress, 24 / 25);
+    } finally {
+      await closeController(tester, controller);
     }
   });
 
