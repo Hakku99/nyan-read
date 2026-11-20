@@ -271,14 +271,16 @@ Across the 122 completed steps, the gesture handler, page-change count and stabl
 
 ## 12) PDF gesture fix closeout on HONOR BKQ-N49 (60 Hz)
 
-Functional acceptance is complete for `83cbd1b` on the two 13B-4 PDFs. **76/76 cases passed cumulatively** on the isolated profile build. In all four fit-scale upward swipes (section 10), the gallery moved +398.514 Flutter logical pixels before release and advanced exactly one page in both turn modes. The scanned PDF settled on page 25 from page 24, and the mixed PDF on page 4 from page 3. All 72 remaining gesture cases matched the `6ec98f9` baseline (section 11).
+On the two 13B-4 PDFs, the isolated `83cbd1b` profile build passed **80/80 gesture cases cumulatively**. The 72 regression cases matched the `6ec98f9` baseline (section 11). Four fit-scale upward swipes (section 10) and four fit-scale downward swipes completed the count.
 
-The edge-tap latency measurements in section 8 cover `3fee977` and `6ec98f9` only. Across 24 matched pairs (48 taps), median `pointerUp → accepted` latency fell from 301.076 ms to 0.176 ms, with a median paired reduction of 300.909 ms. This interval starts immediately before Flutter dispatches the synthetic pointer-up event and ends when the reader accepts the page turn.
+In both tap and swipe modes, the gallery handled all eight vertical swipes. Before release, it moved +398.514 Flutter logical pixels on the upward path and −398.514 on the reverse path. Each swipe changed the page exactly once. Upward swipes advanced the scanned PDF from page 24 to 25 and the mixed PDF from page 3 to 4. Downward swipes returned them to pages 24 and 3 respectively. All eight target pages remained stable at fit scale 150 ms after scrolling stopped. See the [four downward-swipe cases in section 14](#14-fit-scale-pdf-downward-swipe-to-the-previous-page-on-honor-bkq-n49-60-hz).
+
+Section 8 recorded an edge-tap `pointerUp → accepted` p50 of 301.076 ms on `3fee977` and 0.176 ms on `6ec98f9`. In the 24 historical pairs reported in section 13, p50 was 0.167 ms on `83cbd1b` and 0.176 ms on `6ec98f9`. The p50 of the individual differences (new minus baseline) was −0.007 ms, with a range of −0.047 to +0.061 ms. All 24 measured taps and 8 warm-up taps on `83cbd1b` turned exactly one page. These latency samples are counted separately from the 80 gesture cases. See the [paired measurements in section 13](#13-pdf-edge-tap-latency-after-the-gesture-fix-on-honor-bkq-n49-60-hz).
 
 ### Unverified scope
 
-- Edge-tap latency on `83cbd1b` and end-to-end time from physical touch to visible page change. Touchscreen sampling, Android input delivery, animation completion and display presentation fall outside the section 8 interval.
-- Other devices, platforms (including iOS), refresh rates and PDF layouts. Fit-scale swipe acceptance on this handset covers the original 12-step upward trajectory. A downward swipe to the previous page remains unverified.
+- End-to-end time from physical touch to visible page change. The measured interval starts immediately before Flutter dispatches the synthetic pointer-up event and ends when the reader accepts the turn. Touchscreen sampling, Android input delivery, animation completion and display presentation fall outside that interval.
+- Other devices, platforms (including iOS), refresh rates and PDF layouts. The fit-scale vertical swipe checks cover the original 12-step trajectory in both directions. Other starting points, distances and speeds remain unverified.
 - Sustained frame pacing, heat and battery use during extended reading sessions.
 
 ## 13) PDF edge-tap latency after the gesture fix on HONOR BKQ-N49 (60 Hz)
