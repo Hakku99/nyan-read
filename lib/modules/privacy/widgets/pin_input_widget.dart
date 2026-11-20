@@ -45,6 +45,9 @@ class PinInputWidget extends StatefulWidget {
 
   final bool isError;
 
+  /// Controls PIN keys independently of biometric unlock.
+  final bool pinEnabled;
+
   /// Show the fingerprint biometric key in the bottom-left cell (verify mode).
   final bool showBiometric;
 
@@ -64,6 +67,7 @@ class PinInputWidget extends StatefulWidget {
     required this.keyText,
     required this.ghostColor,
     this.isError = false,
+    this.pinEnabled = true,
     this.showBiometric = false,
     this.onBiometricTap,
     this.onError,
@@ -140,8 +144,7 @@ class _PinInputWidgetState extends State<PinInputWidget>
           animation: _shakeAnimation,
           builder: (context, child) {
             final t = _shakeAnimation.value;
-            final dx =
-                _kShakeAmplitude * (1 - t) * math.sin(t * 4 * math.pi);
+            final dx = _kShakeAmplitude * (1 - t) * math.sin(t * 4 * math.pi);
             return Transform.translate(offset: Offset(dx, 0), child: child);
           },
           child: _buildPinDots(),
@@ -264,7 +267,7 @@ class _PinInputWidgetState extends State<PinInputWidget>
         icon: NyanIcons.backspace,
         size: NyanTypography.pinKeyGlyph,
         color: widget.ghostColor,
-        onTap: _onDeletePressed,
+        onTap: widget.pinEnabled ? _onDeletePressed : null,
         semanticLabel: 'Delete',
         width: _kKeySize,
         height: _kKeySize,
@@ -286,7 +289,7 @@ class _PinInputWidgetState extends State<PinInputWidget>
           shape: const CircleBorder(),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => _onNumberPressed(key),
+            onTap: widget.pinEnabled ? () => _onNumberPressed(key) : null,
             customBorder: const CircleBorder(),
             splashColor: widget.keyText.withValues(alpha: 0.08),
             highlightColor: widget.keyText.withValues(alpha: 0.04),
@@ -297,7 +300,7 @@ class _PinInputWidgetState extends State<PinInputWidget>
                   fontFamily: NyanTypography.uiFontFamily,
                   fontSize: NyanTypography.pinKeyDigit,
                   fontWeight: FontWeight.w500,
-                  color: widget.keyText,
+                  color: widget.pinEnabled ? widget.keyText : widget.ghostColor,
                   height: 1,
                 ),
               ),
@@ -312,7 +315,7 @@ class _PinInputWidgetState extends State<PinInputWidget>
     required IconData icon,
     required double size,
     required Color color,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
     required String semanticLabel,
     double width = _kKeySize,
     double height = _kKeySize,
