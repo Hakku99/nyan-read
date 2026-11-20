@@ -57,8 +57,6 @@ class PinService {
   ///
   /// Rate-limited: after [_maxFailedAttempts] consecutive failures every
   /// attempt is rejected until [_lockoutDuration] elapses.
-  // ponytail: lockout surfaces as the generic wrong-PIN shake in the
-  // overlay; add a dedicated "try again in Ns" hint if users get confused.
   Future<bool> verifyPin(String pin) async {
     if (!_isValidPin(pin)) {
       return false;
@@ -75,7 +73,8 @@ class PinService {
     }
 
     final iterationsRaw = await _storage.read(key: _pinIterationsKey);
-    final iterations = iterationsRaw == null ? null : int.tryParse(iterationsRaw);
+    final iterations =
+        iterationsRaw == null ? null : int.tryParse(iterationsRaw);
     final hash = iterations == null
         ? _hashPinLegacy(pin, salt)
         : _hashPinIterated(pin, salt, iterations);
@@ -94,9 +93,22 @@ class PinService {
     return false;
   }
 
-  Future<bool> _isLockedOut() async {
+  /// The persisted retry deadline, if the PIN keypad is currently locked.
+  Future<DateTime?> activeLockoutUntil() async {
+    final until = await _readLockoutUntil();
+    if (until == null || until <= DateTime.now().millisecondsSinceEpoch) {
+      return null;
+    }
+    return DateTime.fromMillisecondsSinceEpoch(until);
+  }
+
+  Future<int?> _readLockoutUntil() async {
     final raw = await _storage.read(key: _lockoutUntilKey);
-    final until = raw == null ? null : int.tryParse(raw);
+    return raw == null ? null : int.tryParse(raw);
+  }
+
+  Future<bool> _isLockedOut() async {
+    final until = await _readLockoutUntil();
     if (until == null) return false;
     if (DateTime.now().millisecondsSinceEpoch >= until) {
       await _storage.delete(key: _lockoutUntilKey);

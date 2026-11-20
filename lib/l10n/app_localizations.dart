@@ -1292,6 +1292,24 @@ abstract class AppLocalizations {
   /// **'PINs don\'t match — try again'**
   String get pinMismatch;
 
+  /// No description provided for @pinIncorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect PIN. Try again.'**
+  String get pinIncorrect;
+
+  /// No description provided for @pinTemporarilyLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN temporarily locked. Try again in {seconds} s.'**
+  String pinTemporarilyLocked(int seconds);
+
+  /// No description provided for @pinVerificationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check your PIN. Try again.'**
+  String get pinVerificationUnavailable;
+
   /// No description provided for @pinForgot.
   ///
   /// In en, this message translates to:

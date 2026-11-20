@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:nyan_read/modules/reader/reader_engine/page_turn_request.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/ui/nyan_icons.dart';
@@ -203,9 +204,15 @@ class MockReaderController extends ChangeNotifier
   @override
   Future<void> init() async {}
   @override
-  Future<void> nextPage() async {}
+  ReadingPosition? get currentPosition => null;
   @override
-  Future<void> previousPage() async {}
+  bool get pageReadinessIncludesPaint => false;
+  @override
+  Future<bool> waitForPagePresentation(PageTurnRequest request) async => true;
+  @override
+  Future<void> nextPage({PageTurnRequest? request}) async {}
+  @override
+  Future<void> previousPage({PageTurnRequest? request}) async {}
   @override
   Future<void> jumpToChapter(int index, ChapterLocator locator) async {}
   @override

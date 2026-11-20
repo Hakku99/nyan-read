@@ -5,6 +5,145 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/modules/reader/widgets/smooth_page_reader.dart';
 
 void main() {
+  for (final duringAnimation in [false, true]) {
+    testWidgets(
+        'disabling during ${duringAnimation ? 'animation' : 'capture'} never dispatches after cancellation',
+        (tester) async {
+      final key = GlobalKey<SmoothPageReaderState>();
+      var calls = 0;
+      Future<void> rebuild(bool enabled) => tester.pumpWidget(MaterialApp(
+            home: SmoothPageReader(
+                key: key,
+                enabled: enabled,
+                onPreviousTap: () => calls++,
+                onNextTap: () => calls++,
+                onCenterTap: () => calls++,
+                child: const ColoredBox(color: Colors.white)),
+          ));
+      await rebuild(true);
+      final state = key.currentState!;
+      final turn = state.playTurn(
+          forward: true,
+          dispatchTurn: () async {
+            calls++;
+          });
+      if (duringAnimation) {
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 30));
+      }
+      // Item 08 dispatches before sliding; cancellation keeps an accepted turn.
+      expect(calls, duringAnimation ? 1 : 0);
+      await rebuild(false);
+      expect(key.currentState, same(state));
+      await tester.pumpAndSettle();
+      await turn;
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+      expect(calls, duringAnimation ? 1 : 0);
+      expect(state.isAnimating, isFalse);
+    });
+  }
+  Future<GlobalKey<SmoothPageReaderState>> mount(WidgetTester tester,
+      {bool empty = false}) async {
+    final key = GlobalKey<SmoothPageReaderState>();
+    await tester.pumpWidget(MaterialApp(
+        home: Center(
+            child: SizedBox(
+      width: empty ? 0 : 200,
+      height: empty ? 0 : 300,
+      child: SmoothPageReader(
+          key: key,
+          onPreviousTap: () {},
+          onNextTap: () {},
+          onCenterTap: () {},
+          child: const ColoredBox(color: Colors.white)),
+    ))));
+    return key;
+  }
+
+  testWidgets('capture reserves the turn before yielding', (tester) async {
+    final key = await mount(tester);
+    var calls = 0;
+    final first = key.currentState!.playTurn(
+        forward: true,
+        dispatchTurn: () async {
+          calls++;
+        });
+    final second = key.currentState!.playTurn(
+        forward: true,
+        dispatchTurn: () async {
+          calls++;
+        });
+    expect(key.currentState!.isAnimating, isTrue);
+    await tester.pumpAndSettle();
+    await Future.wait([first, second]);
+    expect(calls, 1);
+    expect(key.currentState!.isAnimating, isFalse);
+  });
+
+  testWidgets('unavailable snapshot still dispatches exactly once',
+      (tester) async {
+    final key = await mount(tester, empty: true);
+    var calls = 0;
+    final turn = key.currentState!.playTurn(
+        forward: true,
+        dispatchTurn: () async {
+          calls++;
+        });
+    await tester.pumpAndSettle();
+    await turn;
+    expect(calls, 1);
+    expect(key.currentState!.isAnimating, isFalse);
+  });
+
+  testWidgets('disposal during capture completes without dispatch',
+      (tester) async {
+    final key = await mount(tester);
+    var calls = 0;
+    final turn = key.currentState!.playTurn(
+        forward: true,
+        dispatchTurn: () async {
+          calls++;
+        });
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await turn;
+    expect(calls, 0);
+  });
+
+  testWidgets('disposal after navigation keeps exactly one accepted turn',
+      (tester) async {
+    final key = await mount(tester);
+    var calls = 0;
+    final turn = key.currentState!.playTurn(
+        forward: true,
+        dispatchTurn: () async {
+          calls++;
+        });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 30));
+    expect(calls, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await turn;
+    expect(calls, 1);
+  });
+
+  testWidgets('dispatch failures reach caller and release the turn',
+      (tester) async {
+    final key = await mount(tester);
+    final failure = StateError('Navigation failed');
+    final turn = key.currentState!.playTurn(
+        forward: true,
+        dispatchTurn: () async {
+          throw failure;
+        });
+    final observed = expectLater(turn, throwsA(same(failure)));
+    await tester.pumpAndSettle();
+    await observed;
+    expect(key.currentState!.isAnimating, isFalse);
+  });
+
   testWidgets('SmoothPageReader uses 20/60/20 tap zones', (tester) async {
     var prevCount = 0;
     var nextCount = 0;

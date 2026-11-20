@@ -631,6 +631,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pinMismatch => '两次 PIN 不一致，请重试';
 
   @override
+  String get pinIncorrect => 'PIN 码错误，请重试。';
+
+  @override
+  String pinTemporarilyLocked(int seconds) {
+    return 'PIN 码暂时锁定，请在 $seconds 秒后重试。';
+  }
+
+  @override
+  String get pinVerificationUnavailable => '无法验证 PIN 码，请重试。';
+
+  @override
   String get pinForgot => '忘记 PIN？';
 
   @override

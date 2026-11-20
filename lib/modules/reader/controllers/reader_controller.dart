@@ -12,7 +12,10 @@ import '../../../core/theme/nyan_colors.dart';
 import '../../../core/utils/book_source_access.dart';
 import '../../../core/utils/lifecycle_registry.dart';
 import 'brightness_controller.dart';
+import '../reader_engine/epub/epub_reader.dart';
+import '../reader_engine/pdf/pdf_reader.dart';
 import '../reader_engine/reader_engine.dart';
+import '../reader_engine/page_turn_request.dart';
 import '../reader_engine/reader_factory.dart';
 import '../reader_error.dart';
 import 'content_meta_manager.dart';
@@ -60,12 +63,15 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       databaseService: _databaseService,
     );
 
+    final reader = engine;
     progressManager = ReadingProgressManager(
       engine: engine,
       book: book,
       lifecycle: _lifecycle,
       databaseService: _databaseService,
       onProgressUpdated: _safeNotifyListeners,
+      canSavePosition:
+          reader is PdfReaderEngine ? () => reader.canSaveReadingPosition : null,
     );
   }
 
@@ -133,8 +139,18 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       notifyListeners();
       await WidgetsBinding.instance.endOfFrame;
 
-      await metaManager.loadChapters();
-      await progressManager.restoreLastPosition();
+      final reader = engine;
+      if (reader is PdfReaderEngine) {
+        // PDF chapter metadata waits for the document; restore can start now.
+        unawaited(_loadPdfChapters());
+      } else {
+        await metaManager.loadChapters();
+      }
+      await progressManager.restoreLastPosition(
+        onResolved:
+            reader is PdfReaderEngine ? reader.markInitialRestoreResolved : null,
+      );
+      if (_isDisposed) return;
       await metaManager.syncCurrentChapterFromPosition(
         progressManager.currentPosition,
       );
@@ -167,6 +183,12 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _loadPdfChapters() async {
+    await metaManager.loadChapters();
+    if (_isDisposed) return;
+    await metaManager.updateCurrentChapterIndex();
+  }
+
   void retry() {
     _loadBook();
   }
@@ -195,26 +217,48 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     _safeNotifyListeners();
   }
 
-  Future<void> previousPage() async {
-    await _enqueuePageTurn(engine.previousPage);
+  Future<void> previousPage({PageTurnRequest? request}) async {
+    await _enqueuePageTurn(engine.previousPage, request);
   }
 
-  Future<void> nextPage() async {
-    await _enqueuePageTurn(engine.nextPage);
+  Future<void> nextPage({PageTurnRequest? request}) async {
+    await _enqueuePageTurn(engine.nextPage, request);
   }
 
-  Future<void> _enqueuePageTurn(Future<void> Function() turnAction) async {
-    _pageTurnQueue = _pageTurnQueue.then((_) async {
+  ReadingPosition? get currentPosition => engine.getCurrentPosition();
+
+  /// EPUB and PDF readiness wait for paint after their visible images load.
+  bool get pageReadinessIncludesPaint =>
+      engine is EpubReaderEngine || engine is PdfReaderEngine;
+
+  Future<bool> waitForPagePresentation(PageTurnRequest request) async {
+    final reader = engine;
+    if (reader is PagePresentationCapability) {
+      return (reader as PagePresentationCapability)
+          .waitForPagePresentation(request);
+    }
+    await WidgetsBinding.instance.endOfFrame;
+    return !_isDisposed;
+  }
+
+  Future<void> _enqueuePageTurn(
+      Future<void> Function() turnAction, PageTurnRequest? request) async {
+    final operation = _pageTurnQueue.then((_) async {
+      if (_isDisposed || request?.isActive == false) return;
       await turnAction();
+      if (_isDisposed) return;
       await Future<void>.value();
       progressManager.refreshFromEngine();
       await metaManager.syncCurrentChapterFromPosition(
         progressManager.currentPosition,
       );
-    }).catchError((error, stackTrace) {
-      debugPrint('Page turn pipeline error: $error');
     });
-    await _pageTurnQueue;
+    // Recover the queue for subsequent requests, but preserve the failure for
+    // this caller so the reader can show feedback instead of a success animation.
+    _pageTurnQueue = operation.catchError((Object error, StackTrace stack) {
+      debugPrint('Page turn pipeline failed (${error.runtimeType}).');
+    });
+    await operation;
   }
 
   Future<bool> addBookmark() => metaManager.addBookmark();
@@ -329,7 +373,6 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       metaManager.deleteHighlight(highlightId);
   Future<void> openHighlight(Highlight highlight) =>
       metaManager.openHighlight(highlight);
-
 
   Future<void> saveBeforeExit() async {
     await progressManager.prepareForExit();

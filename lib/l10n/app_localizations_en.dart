@@ -660,6 +660,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pinMismatch => 'PINs don\'t match — try again';
 
   @override
+  String get pinIncorrect => 'Incorrect PIN. Try again.';
+
+  @override
+  String pinTemporarilyLocked(int seconds) {
+    return 'PIN temporarily locked. Try again in $seconds s.';
+  }
+
+  @override
+  String get pinVerificationUnavailable =>
+      'Couldn\'t check your PIN. Try again.';
+
+  @override
   String get pinForgot => 'Forgot PIN?';
 
   @override

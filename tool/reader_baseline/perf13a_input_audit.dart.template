@@ -1,0 +1,48 @@
+// Supplemental functional trace, excluded from numerical A/B measurements.
+import 'dart:developer' as dev;
+import 'perf13a_trace.dart';
+
+final class InputAudit {
+  static bool enabled = false;
+  static int sequence = 0;
+  static int active = -1;
+  static void detail(String phase, Map<String, Object?> values) {
+    if (!enabled) return;
+    if (PerfTrace.events.length >= PerfTrace.capacity) { PerfTrace.overflow = true; return; }
+    PerfTrace.events.add({'request': active, 'phase': phase,
+      'us': dev.Timeline.now,
+      for (final entry in values.entries)
+        if (entry.value != null) entry.key: entry.value!});
+  }
+  static void imageLayout(int index, double? height) {
+    if (!enabled) return;
+    if (PerfTrace.events.length >= PerfTrace.capacity) { PerfTrace.overflow = true; return; }
+    PerfTrace.events.add({'request': active, 'phase': 'imageLayout',
+      'us': dev.Timeline.now, 'index': index, 'height': height ?? -1});
+  }
+  static int attempt() {
+    if (!enabled) return -1;
+    final id = sequence++;
+    note(id, 'attempt');
+    return id;
+  }
+  static void note(int id, String phase, [String? reason]) {
+    if (!enabled || id < 0) return;
+    if (PerfTrace.events.length >= PerfTrace.capacity) { PerfTrace.overflow = true; return; }
+    PerfTrace.events.add({'request': id, 'phase': phase, 'us': dev.Timeline.now,
+      if (reason != null) 'reason': reason});
+  }
+  static void accept(int id) {
+    if (!enabled) return;
+    active = id;
+    PerfTrace.request = id;
+    note(id, 'inputAccepted');
+  }
+  static void end(int id) {
+    note(id, 'requestEnded');
+    // The request waiter can close before the presentation's cancellation
+    // finally block. Retain its trace ID until the next accepted input so that
+    // late release marks remain visible in this separate functional trace.
+    if (active == id) active = -1;
+  }
+}

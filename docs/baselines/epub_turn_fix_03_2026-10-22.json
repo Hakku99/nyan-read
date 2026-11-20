@@ -1,0 +1,901 @@
+{
+  "date": "2026-10-22",
+  "task": "03 EPUB viewport turning and same-layout restoration",
+  "branch": "codex/reader-turn-location-fixes",
+  "referenceCommit": "8eef9ed3ec99ec741f707fc477ce04d8e0247865",
+  "committed": false,
+  "productionScope": [
+    "lib/modules/reader/reader_engine/epub/epub_reader.dart"
+  ],
+  "contractsChanged": false,
+  "schemaChanged": false,
+  "sourceAndArtifactSha256": {
+    "lib/modules/reader/reader_engine/epub/epub_reader.dart": "2BAB21F54AA9F5B68623F6A01D7D6D4E126A479031DE28429D22A86B3EBC49FC",
+    "tool/reader_baseline/prepare_epub_pair.ps1": "8A8078F787EECE8529EEF47128BE99628CDF9B2D07A1D884AF72EE1AE9985FD0",
+    "tool/reader_baseline/full_app_epub_restore.dart": "6D7BD5CE9E932C9EBE6847F43CE5ABEFE280CF636FB06B13AD5EA01DF240DF20",
+    "tool/reader_baseline/epub_sample_test.dart": "90B7DA3532D22F65BF7ECD08C36926EDC8A7689F08E58FF6FB9D8CF805178AC1",
+    "test/epub_reader_position_test.dart": "B52CBED285D0ABAAB80CD354295E44BD43EC340671948EC703BC575F81D55A15",
+    "test/epub_reader_font_position_test.dart": "3869AA1A8EF846966376ECE5811F4748ABCF7415424ECF07E3F037E9DA12F93C",
+    ".dart_tool/reader_baseline/epub-paired/profile_epub_pair.dart": "253E935CA82FAEA5ED63ED98F00072FF00DC92B09E69E4E086346B1664CD1B56",
+    ".dart_tool/reader_baseline/epub-paired/reference_epub.dart": "88E50A6971AFD2C6758326E6890109BFD32C35C9C620958C180668DA50222623",
+    ".dart_tool/reader_baseline/epub-paired/profile-final.apk": "7A221F0C80181E0CC40AEB51EDCF766752E7B20C3527EFEAEFA1EC76A4FA691E",
+    ".dart_tool/reader_baseline/epub-paired/release-restore.apk": "655C7AAEB5887B6BC98287C0679701114BE387236F6B5B5B25EEE23ECB714E30"
+  },
+  "sample": {
+    "format": "epub",
+    "bytes": 193460451,
+    "sha256": "486FFF823E05F54E623528CE488B211B6196C6AA751272B74E6565EF133D3915",
+    "paragraphs": 182697,
+    "chapters": 507,
+    "imageSlots": 770,
+    "longestParagraphIndex": 149859,
+    "longestParagraphCodeUnits": 1527,
+    "normalStartIndex": 61007,
+    "originalModified": false,
+    "contentIncluded": false
+  },
+  "tests": {
+    "regression": {
+      "skipped": 4,
+      "skips": "Existing Windows-specific skips",
+      "failed": 0,
+      "passed": 144
+    },
+    "epubExistingDiagnosis": {
+      "failed": 0,
+      "passed": 8
+    },
+    "epubBoundaryAndLifecycle": {
+      "failed": 0,
+      "passed": 30
+    },
+    "epubFontsAndScale": {
+      "failed": 0,
+      "passed": 8
+    },
+    "originalSyntheticDiagnosis": {
+      "failed": 5,
+      "total": 28,
+      "passed": 23
+    },
+    "originalRealTxtControl": {
+      "failed": 0,
+      "total": 6,
+      "passed": 6
+    },
+    "originalCombinedDiagnosis": {
+      "beforePassed": 21,
+      "total": 34,
+      "afterFailed": 5,
+      "afterPassed": 29,
+      "beforeFailed": 13
+    },
+    "realEpub": {
+      "beforePassed": 0,
+      "total": 4,
+      "afterFailed": 0,
+      "afterPassed": 4,
+      "beforeFailed": 4
+    },
+    "analyze": {
+      "existingInfos": [
+        "home_screen.dart:159",
+        "home_screen.dart:167"
+      ],
+      "exitCode": 1,
+      "newIssues": 0
+    },
+    "designTokens": {
+      "reason": "Pre-existing literal colors outside this change",
+      "passed": false,
+      "newColorLiterals": 0
+    }
+  },
+  "device": {
+    "kind": "Android emulator",
+    "avd": "Medium_Phone",
+    "android": "16",
+    "abi": "x86_64",
+    "physicalSize": [
+      1080,
+      2400
+    ],
+    "densityDpi": 420,
+    "dpr": 2.625,
+    "refreshHz": 60,
+    "renderer": "Impeller OpenGLES",
+    "flutter": "3.38.9",
+    "dart": "3.10.8",
+    "geometrySource": "adb wm size and wm density",
+    "initialEnvironmentEventCaveat": "Profile environment event ran before valid surface metrics: 0x0/dpr1. Retained verbatim; use adb geometry above. Scenario budgets use live display refresh rate."
+  },
+  "pairedPerformance": {
+    "build": "profile",
+    "reference": "8eef9ed EPUB engine; import paths rewritten only",
+    "generator": "tool/reader_baseline/prepare_epub_pair.ps1",
+    "modes": [
+      "tap",
+      "swipe",
+      "disabled"
+    ],
+    "rounds": [
+      {
+        "round": 1,
+        "events": [
+          {
+            "event": "environment",
+            "profile": true,
+            "physicalWidth": 0.0,
+            "physicalHeight": 0.0,
+            "dpr": 1.0,
+            "refreshHz": 60.000003814697266
+          },
+          {
+            "event": "scenario",
+            "implementation": "before-03",
+            "format": "epub",
+            "mode": "tap",
+            "source": "external",
+            "interaction": "page-turn",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 35,
+            "frames": 618,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.268,
+              "p95": 27.077,
+              "p99": 34.97,
+              "max": 54.63
+            },
+            "rasterMs": {
+              "p50": 9.969,
+              "p95": 23.473,
+              "p99": 37.329,
+              "max": 50.737
+            },
+            "overBudgetFrames": 166,
+            "completionMs": {
+              "p50": 471.337,
+              "p95": 507.788,
+              "p99": 530.762,
+              "max": 530.762
+            },
+            "rssBeforeBytes": 278671360,
+            "rssAfterBytes": 281952256
+          },
+          {
+            "event": "scenario",
+            "implementation": "fixed-03",
+            "format": "epub",
+            "mode": "tap",
+            "source": "external",
+            "interaction": "page-turn",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 35,
+            "frames": 695,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.012,
+              "p95": 23.583,
+              "p99": 30.402,
+              "max": 44.058
+            },
+            "rasterMs": {
+              "p50": 7.914,
+              "p95": 18.316,
+              "p99": 24.765,
+              "max": 26.911
+            },
+            "overBudgetFrames": 98,
+            "completionMs": {
+              "p50": 460.464,
+              "p95": 476.172,
+              "p99": 477.491,
+              "max": 477.491
+            },
+            "rssBeforeBytes": 262410240,
+            "rssAfterBytes": 264155136
+          },
+          {
+            "event": "scenario",
+            "implementation": "before-03",
+            "format": "epub",
+            "mode": "swipe",
+            "source": "external",
+            "interaction": "page-turn",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 35,
+            "frames": 509,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.693,
+              "p95": 4.178,
+              "p99": 5.799,
+              "max": 7.108
+            },
+            "rasterMs": {
+              "p50": 11.47,
+              "p95": 17.337,
+              "p99": 18.108,
+              "max": 25.844
+            },
+            "overBudgetFrames": 62,
+            "completionMs": {
+              "p50": 281.24,
+              "p95": 283.594,
+              "p99": 284.331,
+              "max": 284.331
+            },
+            "rssBeforeBytes": 267341824,
+            "rssAfterBytes": 271757312
+          },
+          {
+            "event": "scenario",
+            "implementation": "fixed-03",
+            "format": "epub",
+            "mode": "swipe",
+            "source": "external",
+            "interaction": "page-turn",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 35,
+            "frames": 539,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.453,
+              "p95": 4.009,
+              "p99": 5.142,
+              "max": 5.815
+            },
+            "rasterMs": {
+              "p50": 7.666,
+              "p95": 16.794,
+              "p99": 18.311,
+              "max": 29.875
+            },
+            "overBudgetFrames": 33,
+            "completionMs": {
+              "p50": 298.068,
+              "p95": 300.157,
+              "p99": 300.168,
+              "max": 300.168
+            },
+            "rssBeforeBytes": 260046848,
+            "rssAfterBytes": 265879552
+          },
+          {
+            "event": "scenario",
+            "implementation": "before-03",
+            "format": "epub",
+            "mode": "disabled",
+            "source": "external",
+            "interaction": "relative-scroll",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 0,
+            "frames": 600,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.771,
+              "p95": 3.061,
+              "p99": 3.682,
+              "max": 4.259
+            },
+            "rasterMs": {
+              "p50": 7.012,
+              "p95": 15.676,
+              "p99": 17.9,
+              "max": 20.789
+            },
+            "overBudgetFrames": 14,
+            "completionMs": {
+              "p50": 331.115,
+              "p95": 333.857,
+              "p99": 334.818,
+              "max": 334.818
+            },
+            "rssBeforeBytes": 260562944,
+            "rssAfterBytes": 262447104
+          },
+          {
+            "event": "scenario",
+            "implementation": "fixed-03",
+            "format": "epub",
+            "mode": "disabled",
+            "source": "external",
+            "interaction": "relative-scroll",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 0,
+            "frames": 599,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.764,
+              "p95": 2.978,
+              "p99": 3.592,
+              "max": 5.764
+            },
+            "rasterMs": {
+              "p50": 6.949,
+              "p95": 15.687,
+              "p99": 18.117,
+              "max": 20.328
+            },
+            "overBudgetFrames": 13,
+            "completionMs": {
+              "p50": 331.301,
+              "p95": 333.576,
+              "p99": 334.302,
+              "max": 334.302
+            },
+            "rssBeforeBytes": 259788800,
+            "rssAfterBytes": 256978944
+          },
+          {
+            "event": "complete",
+            "failedScenarios": 0
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "events": [
+          {
+            "event": "environment",
+            "profile": true,
+            "physicalWidth": 0.0,
+            "physicalHeight": 0.0,
+            "dpr": 1.0,
+            "refreshHz": 60.000003814697266
+          },
+          {
+            "event": "scenario",
+            "implementation": "before-03",
+            "format": "epub",
+            "mode": "tap",
+            "source": "external",
+            "interaction": "page-turn",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 35,
+            "frames": 575,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.321,
+              "p95": 29.723,
+              "p99": 41.569,
+              "max": 48.647
+            },
+            "rasterMs": {
+              "p50": 9.532,
+              "p95": 23.271,
+              "p99": 36.242,
+              "max": 42.201
+            },
+            "overBudgetFrames": 151,
+            "completionMs": {
+              "p50": 468.025,
+              "p95": 518.486,
+              "p99": 518.617,
+              "max": 518.617
+            },
+            "rssBeforeBytes": 321888256,
+            "rssAfterBytes": 314642432
+          },
+          {
+            "event": "scenario",
+            "implementation": "fixed-03",
+            "format": "epub",
+            "mode": "tap",
+            "source": "external",
+            "interaction": "page-turn",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 35,
+            "frames": 670,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.029,
+              "p95": 22.615,
+              "p99": 30.249,
+              "max": 46.999
+            },
+            "rasterMs": {
+              "p50": 7.826,
+              "p95": 18.185,
+              "p99": 23.219,
+              "max": 27.519
+            },
+            "overBudgetFrames": 90,
+            "completionMs": {
+              "p50": 458.064,
+              "p95": 482.534,
+              "p99": 484.955,
+              "max": 484.955
+            },
+            "rssBeforeBytes": 285249536,
+            "rssAfterBytes": 288813056
+          },
+          {
+            "event": "scenario",
+            "implementation": "before-03",
+            "format": "epub",
+            "mode": "swipe",
+            "source": "external",
+            "interaction": "page-turn",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 35,
+            "frames": 507,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.582,
+              "p95": 4.303,
+              "p99": 5.943,
+              "max": 8.04
+            },
+            "rasterMs": {
+              "p50": 13.92,
+              "p95": 17.457,
+              "p99": 18.518,
+              "max": 28.817
+            },
+            "overBudgetFrames": 58,
+            "completionMs": {
+              "p50": 281.73,
+              "p95": 283.514,
+              "p99": 284.407,
+              "max": 284.407
+            },
+            "rssBeforeBytes": 261566464,
+            "rssAfterBytes": 259661824
+          },
+          {
+            "event": "scenario",
+            "implementation": "fixed-03",
+            "format": "epub",
+            "mode": "swipe",
+            "source": "external",
+            "interaction": "page-turn",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 35,
+            "frames": 538,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.415,
+              "p95": 3.843,
+              "p99": 5.179,
+              "max": 8.577
+            },
+            "rasterMs": {
+              "p50": 7.893,
+              "p95": 17.1,
+              "p99": 18.93,
+              "max": 27.325
+            },
+            "overBudgetFrames": 42,
+            "completionMs": {
+              "p50": 298.005,
+              "p95": 299.468,
+              "p99": 299.813,
+              "max": 299.813
+            },
+            "rssBeforeBytes": 246697984,
+            "rssAfterBytes": 248807424
+          },
+          {
+            "event": "scenario",
+            "implementation": "before-03",
+            "format": "epub",
+            "mode": "disabled",
+            "source": "external",
+            "interaction": "relative-scroll",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 0,
+            "frames": 600,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.846,
+              "p95": 3.046,
+              "p99": 3.68,
+              "max": 5.349
+            },
+            "rasterMs": {
+              "p50": 6.968,
+              "p95": 14.432,
+              "p99": 17.132,
+              "max": 20.131
+            },
+            "overBudgetFrames": 8,
+            "completionMs": {
+              "p50": 331.217,
+              "p95": 333.106,
+              "p99": 334.178,
+              "max": 334.178
+            },
+            "rssBeforeBytes": 246091776,
+            "rssAfterBytes": 254287872
+          },
+          {
+            "event": "scenario",
+            "implementation": "fixed-03",
+            "format": "epub",
+            "mode": "disabled",
+            "source": "external",
+            "interaction": "relative-scroll",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 0,
+            "frames": 599,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.74,
+              "p95": 2.963,
+              "p99": 3.588,
+              "max": 5.046
+            },
+            "rasterMs": {
+              "p50": 6.754,
+              "p95": 8.908,
+              "p99": 16.314,
+              "max": 24.172
+            },
+            "overBudgetFrames": 5,
+            "completionMs": {
+              "p50": 331.109,
+              "p95": 333.617,
+              "p99": 334.31,
+              "max": 334.31
+            },
+            "rssBeforeBytes": 252203008,
+            "rssAfterBytes": 250208256
+          },
+          {
+            "event": "complete",
+            "failedScenarios": 0
+          }
+        ]
+      },
+      {
+        "round": 3,
+        "events": [
+          {
+            "event": "environment",
+            "profile": true,
+            "physicalWidth": 0.0,
+            "physicalHeight": 0.0,
+            "dpr": 1.0,
+            "refreshHz": 60.000003814697266
+          },
+          {
+            "event": "scenario",
+            "implementation": "before-03",
+            "format": "epub",
+            "mode": "tap",
+            "source": "external",
+            "interaction": "page-turn",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 35,
+            "frames": 538,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.277,
+              "p95": 28.635,
+              "p99": 34.339,
+              "max": 51.264
+            },
+            "rasterMs": {
+              "p50": 9.77,
+              "p95": 24.721,
+              "p99": 34.932,
+              "max": 43.382
+            },
+            "overBudgetFrames": 171,
+            "completionMs": {
+              "p50": 467.893,
+              "p95": 491.896,
+              "p99": 497.067,
+              "max": 497.067
+            },
+            "rssBeforeBytes": 298344448,
+            "rssAfterBytes": 299991040
+          },
+          {
+            "event": "scenario",
+            "implementation": "fixed-03",
+            "format": "epub",
+            "mode": "tap",
+            "source": "external",
+            "interaction": "page-turn",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 35,
+            "frames": 647,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.021,
+              "p95": 23.367,
+              "p99": 35.71,
+              "max": 47.115
+            },
+            "rasterMs": {
+              "p50": 7.603,
+              "p95": 17.91,
+              "p99": 22.485,
+              "max": 26.85
+            },
+            "overBudgetFrames": 83,
+            "completionMs": {
+              "p50": 459.795,
+              "p95": 478.419,
+              "p99": 480.262,
+              "max": 480.262
+            },
+            "rssBeforeBytes": 268103680,
+            "rssAfterBytes": 294301696
+          },
+          {
+            "event": "scenario",
+            "implementation": "before-03",
+            "format": "epub",
+            "mode": "swipe",
+            "source": "external",
+            "interaction": "page-turn",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 35,
+            "frames": 508,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.574,
+              "p95": 4.65,
+              "p99": 5.97,
+              "max": 6.884
+            },
+            "rasterMs": {
+              "p50": 12.352,
+              "p95": 17.311,
+              "p99": 18.254,
+              "max": 33.318
+            },
+            "overBudgetFrames": 59,
+            "completionMs": {
+              "p50": 281.297,
+              "p95": 283.974,
+              "p99": 286.719,
+              "max": 286.719
+            },
+            "rssBeforeBytes": 285200384,
+            "rssAfterBytes": 284999680
+          },
+          {
+            "event": "scenario",
+            "implementation": "fixed-03",
+            "format": "epub",
+            "mode": "swipe",
+            "source": "external",
+            "interaction": "page-turn",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 35,
+            "frames": 540,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.493,
+              "p95": 4.208,
+              "p99": 5.427,
+              "max": 6.482
+            },
+            "rasterMs": {
+              "p50": 10.353,
+              "p95": 17.338,
+              "p99": 18.45,
+              "max": 21.56
+            },
+            "overBudgetFrames": 68,
+            "completionMs": {
+              "p50": 297.707,
+              "p95": 300.959,
+              "p99": 301.814,
+              "max": 301.814
+            },
+            "rssBeforeBytes": 266440704,
+            "rssAfterBytes": 278491136
+          },
+          {
+            "event": "scenario",
+            "implementation": "before-03",
+            "format": "epub",
+            "mode": "disabled",
+            "source": "external",
+            "interaction": "relative-scroll",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 0,
+            "frames": 600,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.879,
+              "p95": 3.159,
+              "p99": 3.827,
+              "max": 5.001
+            },
+            "rasterMs": {
+              "p50": 7.008,
+              "p95": 16.12,
+              "p99": 17.648,
+              "max": 23.164
+            },
+            "overBudgetFrames": 20,
+            "completionMs": {
+              "p50": 331.27,
+              "p95": 333.053,
+              "p99": 333.069,
+              "max": 333.069
+            },
+            "rssBeforeBytes": 279261184,
+            "rssAfterBytes": 287707136
+          },
+          {
+            "event": "scenario",
+            "implementation": "fixed-03",
+            "format": "epub",
+            "mode": "disabled",
+            "source": "external",
+            "interaction": "relative-scroll",
+            "warmupTurns": 5,
+            "measuredTurns": 30,
+            "dispatchedTurns": 0,
+            "frames": 600,
+            "budgetMs": 16.666665607028605,
+            "buildMs": {
+              "p50": 1.84,
+              "p95": 2.995,
+              "p99": 3.669,
+              "max": 5.907
+            },
+            "rasterMs": {
+              "p50": 6.959,
+              "p95": 16.311,
+              "p99": 18.904,
+              "max": 25.344
+            },
+            "overBudgetFrames": 23,
+            "completionMs": {
+              "p50": 331.665,
+              "p95": 333.15,
+              "p99": 334.322,
+              "max": 334.322
+            },
+            "rssBeforeBytes": 284831744,
+            "rssAfterBytes": 283586560
+          },
+          {
+            "event": "complete",
+            "failedScenarios": 0
+          }
+        ]
+      }
+    ],
+    "warmupTurns": 5,
+    "measuredTurnsPerScenario": 30,
+    "completedScenarios": 18,
+    "failedScenarios": 0,
+    "order": "before then fixed for each mode; process restarted per round",
+    "limitations": [
+      "Fixed order, three rounds, emulator only; not a randomized study",
+      "Same starting index, but changed turn distance traverses different content",
+      "Over-budget is build or raster >16.67ms, not measured touch latency or true dropped-frame count",
+      "Completion includes intentional animation and frame waits",
+      "RSS is sampled at scenario boundaries, not peak or leak validation",
+      "Third-round fixed swipe and pure scroll had more over-budget frames than reference"
+    ]
+  },
+  "fullAppColdRestore": {
+    "build": "release",
+    "mode": "swipe",
+    "entry": "tool/reader_baseline/full_app_epub_restore.dart",
+    "realControllerAndDatabase": true,
+    "processForceStoppedBetweenLaunches": true,
+    "events": [
+      {
+        "event": "saved",
+        "format": "epub",
+        "target": {
+          "paragraphIndex": 149859,
+          "paragraphLeadingEdge": -1.8400395778364116,
+          "paragraphTrailingEdge": 0.5748680738786279,
+          "enumVersion": 2
+        },
+        "stored": {
+          "paragraphIndex": 149859,
+          "paragraphLeadingEdge": -1.8400395778364116,
+          "paragraphTrailingEdge": 0.5748680738786279,
+          "enumVersion": 2
+        },
+        "chapter": 413
+      },
+      {
+        "event": "restored",
+        "format": "epub",
+        "expected": {
+          "paragraphIndex": 149859,
+          "paragraphLeadingEdge": -1.8400395778364116,
+          "paragraphTrailingEdge": 0.5748680738786279,
+          "enumVersion": 2
+        },
+        "actual": {
+          "paragraphIndex": 149859,
+          "paragraphLeadingEdge": -1.8400395778364116,
+          "paragraphTrailingEdge": 0.5748680738786279,
+          "enumVersion": 2
+        },
+        "errorUpperBoundLogicalPx": 0.0,
+        "chapter": 413,
+        "passed": true
+      }
+    ],
+    "screenshotVisuallyInspected": true
+  },
+  "abortedMeasurements": [
+    {
+      "directory": ".dart_tool/reader_baseline/epub-paired/results",
+      "scenarioErrors": 6
+    },
+    {
+      "directory": ".dart_tool/reader_baseline/epub-paired/results-final",
+      "scenarioErrors": 5
+    }
+  ],
+  "abortedMeasurementCause": "Android installd purged test cache files under storage pressure; ~583MiB free. Final run used app-private files directory and omitted unused synthetic fixtures.",
+  "cleanup": {
+    "deviceSampleRemovedWithApp": true,
+    "emulatorStartedThisTurnStopped": true,
+    "shellIntermediateAndScreenshotRemoved": true,
+    "originalSampleHashReverified": true,
+    "dedicatedTestAppUninstalled": true
+  },
+  "remaining": [
+    {
+      "diagnosisFailures": 2,
+      "id": "04",
+      "issue": "TXT stale turn history after manual scrolling"
+    },
+    {
+      "diagnosisFailures": 2,
+      "id": "05",
+      "issue": "TXT/EPUB mode and layout changes lack precise text anchors"
+    },
+    {
+      "diagnosisFailures": 1,
+      "id": "06",
+      "issue": "PDF restore before readiness"
+    },
+    {
+      "issue": "Shared horizontal content transition and screenshot performance",
+      "id": "08/13"
+    },
+    {
+      "issue": "Image placeholder/final size shifts content",
+      "id": "10"
+    },
+    {
+      "issue": "EPUB progress remains paragraph based",
+      "id": "14"
+    },
+    {
+      "issue": "EPUB image cache has no session capacity limit",
+      "id": "16"
+    },
+    {
+      "issue": "SAF temporary sources use cacheDir/book_sources; production eviction not reproduced",
+      "id": "new-risk"
+    }
+  ]
+}

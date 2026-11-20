@@ -25,6 +25,7 @@ class ReadingProgressManager {
   final Book book;
   final LifecycleRegistry lifecycle;
   final DatabaseService databaseService;
+  final bool Function()? _canSavePosition;
 
   /// Fired only when [currentPosition] changes (paragraph/CFI/page).
   /// Progress-only ticks do NOT call this; they route through
@@ -46,7 +47,8 @@ class ReadingProgressManager {
     required this.lifecycle,
     required this.databaseService,
     required this.onProgressUpdated,
-  });
+    bool Function()? canSavePosition,
+  }) : _canSavePosition = canSavePosition;
 
   ReadingPosition? get currentPosition => _currentPosition;
   double get currentProgress => _progressNotifier.value;
@@ -78,11 +80,13 @@ class ReadingProgressManager {
     );
   }
 
-  Future<void> restoreLastPosition() async {
+  Future<void> restoreLastPosition({VoidCallback? onResolved}) async {
     try {
       debugPrint("DEBUG: restoreLastPosition called for book ${book.id}");
       final positionData = await _db.getBookPosition(book.id);
+      if (_disposed) return;
       if (positionData == null) {
+        onResolved?.call();
         debugPrint("DEBUG: No saved position found in DB");
         return;
       }
@@ -95,6 +99,8 @@ class ReadingProgressManager {
 
       if (position.hasLocation) {
         await engine.goToPosition(position);
+        if (_disposed) return;
+        onResolved?.call();
         await Future<void>.delayed(const Duration(milliseconds: 180));
         refreshFromEngine();
 
@@ -144,6 +150,7 @@ class ReadingProgressManager {
   }
 
   Future<void> saveCurrentPosition() {
+    if (_canSavePosition?.call() == false) return Future<void>.value();
     final pending = _saveInFlight;
     if (pending != null) {
       return pending;
@@ -176,7 +183,11 @@ class ReadingProgressManager {
   /// [saveCurrentPosition] because the in-flight dedup there could hand
   /// back a pre-existing save that is still trying to talk to the engine.
   void scheduleDisposeFallbackSave() {
-    if (!_trackingStarted || _prepareForExitRequested) return;
+    if (!_trackingStarted ||
+        _prepareForExitRequested ||
+        _canSavePosition?.call() == false) {
+      return;
+    }
 
     ReadingPosition? snapshotPosition;
     double snapshotProgress = _progressNotifier.value;

@@ -374,8 +374,7 @@ void main() {
           isNull);
     });
 
-    test('file-streaming variant inflates only the requested entry',
-        () async {
+    test('file-streaming variant inflates only the requested entry', () async {
       final zip = zipWith({
         'OEBPS/Images/fig1.png': [7, 8, 9],
         'OEBPS/Text/ch1.xhtml': [1],
@@ -389,8 +388,11 @@ void main() {
       final file = File('${dir.path}/book.epub');
       await file.writeAsBytes(zip);
 
-      expect(extractEpubImageBytesFromFile(file.path, '../Images/fig1.png'),
+      expect(extractEpubImageBytesFromFile(file.path, 'OEBPS/Images/fig1.png'),
           [7, 8, 9]);
+      expect(extractEpubImageBytesFromFile(file.path, 'fig1.png'), isNull);
+      expect(extractEpubImageBytesFromFile(file.path, 'OEBPS/images/fig1.png'),
+          isNull);
       expect(extractEpubImageBytesFromFile(file.path, 'missing.png'), isNull);
       expect(extractEpubImageBytesFromFile('${dir.path}/nope.epub', 'x.png'),
           isNull);
@@ -472,6 +474,63 @@ void main() {
       return EpubTocEntry(
           title: title, fileName: file, anchor: anchor, children: children);
     }
+
+    test('image paths use the actual chapter directory without moving slots',
+        () async {
+      const a = 'OEBPS/Text/A/ch.xhtml';
+      const b = 'OEBPS/Text/B/ch.xhtml';
+      final package = EpubPackage(
+        archive: archiveWithFiles({
+          'wrapped/$a': _html([
+            '<h2>First</h2>',
+            '<img src="./fig%23one.png?rev=1#view"/>',
+            '<img src="fig%23one.png"/>',
+            '<img src="../Shared/Fig%20Two.png"/>',
+            '<img src="bad%ZZ.png"/>',
+            '<p id="caption">Caption</p>',
+          ]),
+          'wrapped/$b': _html([
+            '<h2>Second</h2>',
+            '<img src="fig%23one.png"/>',
+            '<p>After</p>',
+          ]),
+          'wrapped/OEBPS/Text/A/FIG#ONE.PNG': 'wrong case',
+          'wrapped/OEBPS/Text/A/fig#one.png': 'exact case',
+          'wrapped/OEBPS/Text/Shared/fig Two.png': 'unique folded path',
+          'wrapped/OEBPS/Text/B/fig#one.png': 'second image',
+        }),
+        toc: [entry('One', a, anchor: 'caption'), entry('Two', b)],
+        spinePaths: const [a, b],
+        coverPath: null,
+      );
+
+      final result = await computeEpubParseResultForPackage(package);
+      expect(result.paragraphCount, 9);
+      expect(result.chapterStartIndexes, [5, 6]);
+      expect(result.paragraphKinds, [
+        EpubParagraphKind.heading,
+        EpubParagraphKind.image,
+        EpubParagraphKind.image,
+        EpubParagraphKind.image,
+        EpubParagraphKind.image,
+        EpubParagraphKind.text,
+        EpubParagraphKind.heading,
+        EpubParagraphKind.image,
+        EpubParagraphKind.text,
+      ]);
+      expect(
+          List.generate(result.paragraphCount, (i) => contentAt(result, i)), [
+        'First',
+        'wrapped/OEBPS/Text/A/fig#one.png',
+        'wrapped/OEBPS/Text/A/fig#one.png',
+        'wrapped/OEBPS/Text/Shared/fig Two.png',
+        '',
+        'Caption',
+        'Second',
+        'wrapped/OEBPS/Text/B/fig#one.png',
+        'After',
+      ]);
+    });
 
     test('spine files missing from the TOC are rendered in spine order',
         () async {

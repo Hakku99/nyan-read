@@ -16,6 +16,7 @@ import '../../core/ui/nyan_theme_context.dart';
 import '../bookmark/bookmark_list_page.dart';
 import '../notes/notes_list_page.dart';
 import 'reader_engine/reader_engine.dart';
+import 'reader_engine/page_turn_request.dart';
 import 'reader_error.dart';
 import 'widgets/reader_error_view.dart';
 import 'widgets/highlight_note_dialog.dart';
@@ -34,6 +35,8 @@ import 'widgets/chapter_list_widget.dart';
 import 'widgets/one_paper_dock.dart';
 import 'widgets/reader_brightness_popover.dart';
 import 'widgets/smooth_page_reader.dart';
+import 'widgets/reader_tap_zone.dart';
+import 'widgets/reader_text_gestures.dart';
 import '../../core/services/reading_reminder_service.dart';
 import '../../core/ui/nyan_icons.dart';
 import '../../core/utils/snackbar_utils.dart';
@@ -61,6 +64,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   final GlobalKey<ScaffoldState> readerPageScaffoldKey =
       GlobalKey<ScaffoldState>();
   final GlobalKey _readerBodyKey = GlobalKey();
+  final _textSelections = ReaderTextSelectionRegistry();
   bool _showControls = false;
 
   /// One Paper: which sheet the dock has grown into (`chapters` / `settings`),
@@ -93,6 +97,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   DateTime? _lastTapLogicAt;
   DateTime? _lastPageTurnAt;
   bool _isPageTurning = false;
+  PageTurnRequest? _pageTurnRequest;
   Timer? _pageTurnLockTimer;
   static const Duration _pageTurnLockTimeout = Duration(seconds: 3);
   Timer? _chapterSyncDebounce;
@@ -133,6 +138,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
 
   @override
   void dispose() {
+    _pageTurnRequest?.cancel();
     _readingIntervalTimer?.cancel();
     _countdownTimer?.cancel();
     _restSecondsRemaining.dispose();
@@ -204,6 +210,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
+      _pageTurnRequest?.cancel();
       _readingIntervalTimer?.cancel();
     } else if (state == AppLifecycleState.resumed && !_showRestReminder) {
       _setupReadingTimer();
@@ -378,46 +385,108 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                               // setState (e.g. a user tap),
                                               // so the loading spinner would
                                               // hang until the next tap.
-                                              child: _ControllerSelect<int>(
+                                              child: _ControllerSelect<
+                                                  (
+                                                    int,
+                                                    PageTurnMode,
+                                                    double,
+                                                    double,
+                                                    bool,
+                                                    Color,
+                                                    Color
+                                                  )>(
                                                 listenable: controller,
-                                                selector: () =>
-                                                    controller.renderEpoch,
+                                                // Preferences is a service Provider,
+                                                // not a reactive notifier Provider.
+                                                // Observe only presentation inputs
+                                                // through controller notifications.
+                                                selector: () => (
+                                                  controller.renderEpoch,
+                                                  readerPrefs.pageTurnMode,
+                                                  readerPrefs.fontSize,
+                                                  readerPrefs.lineHeight,
+                                                  readerPrefs.useSerif,
+                                                  controller.backgroundColor,
+                                                  controller.textColor,
+                                                ),
                                                 builder: (context, _, __) =>
-                                                    readerPrefs.pageTurnMode ==
-                                                            PageTurnMode.tap
-                                                        ? SmoothPageReader(
-                                                            key:
-                                                                _smoothPageReaderKey,
-                                                            onPreviousTap: () {
-                                                              _triggerPageTurn(
-                                                                controller,
-                                                                forward: false,
-                                                                at: DateTime
-                                                                    .now(),
-                                                              );
-                                                            },
-                                                            onNextTap: () {
-                                                              _triggerPageTurn(
-                                                                controller,
-                                                                forward: true,
-                                                                at: DateTime
-                                                                    .now(),
-                                                              );
-                                                            },
-                                                            onCenterTap: () {
-                                                              _showReaderControls(
-                                                                context,
-                                                                controller,
-                                                              );
-                                                            },
-                                                            child: controller
-                                                                .engine
-                                                                .buildReader(
-                                                                    context),
-                                                          )
-                                                        : controller.engine
-                                                            .buildReader(
-                                                                context),
+                                                    SmoothPageReader(
+                                                  pdfTapZones:
+                                                      controller.book.format ==
+                                                          'pdf',
+                                                  snapshotIncoming:
+                                                      controller.book.format !=
+                                                          'pdf',
+                                                  layoutIdentity: (
+                                                    readerPrefs.fontSize,
+                                                    readerPrefs.lineHeight,
+                                                    readerPrefs.useSerif,
+                                                    controller.backgroundColor,
+                                                    controller.textColor,
+                                                  ),
+                                                  enabled: readerPrefs
+                                                          .pageTurnMode ==
+                                                      PageTurnMode.tap,
+                                                  key: _smoothPageReaderKey,
+                                                  onPreviousTap: () {
+                                                    _triggerPageTurn(
+                                                      controller,
+                                                      forward: false,
+                                                      at: DateTime.now(),
+                                                    );
+                                                  },
+                                                  onNextTap: () {
+                                                    _triggerPageTurn(
+                                                      controller,
+                                                      forward: true,
+                                                      at: DateTime.now(),
+                                                    );
+                                                  },
+                                                  onCenterTap: () {
+                                                    _showReaderControls(
+                                                      context,
+                                                      controller,
+                                                    );
+                                                  },
+                                                  child: ReaderTextGestures(
+                                                    selections: _textSelections,
+                                                    onCenterInteraction: () =>
+                                                        _pageTurnRequest
+                                                            ?.cancel(),
+                                                    isTurnZone: (position) {
+                                                      final box =
+                                                          _smoothPageReaderKey
+                                                                  .currentContext
+                                                                  ?.findRenderObject()
+                                                              as RenderBox?;
+                                                      if (box == null ||
+                                                          !box.hasSize) {
+                                                        return false;
+                                                      }
+                                                      final x = box
+                                                          .globalToLocal(
+                                                              position)
+                                                          .dx;
+                                                      return ReaderTapZone.at(x,
+                                                              box.size.width) !=
+                                                          ReaderTapZone.center;
+                                                    },
+                                                    horizontal: readerPrefs
+                                                            .pageTurnMode ==
+                                                        PageTurnMode.tap,
+                                                    onStart: (details) =>
+                                                        _handlePanStart(
+                                                            context, details),
+                                                    onUpdate: (details) =>
+                                                        _handlePanUpdate(
+                                                            context, details),
+                                                    onEnd: (details) =>
+                                                        _handlePanEnd(
+                                                            context, details),
+                                                    child: controller.engine
+                                                        .buildReader(context),
+                                                  ),
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -1034,18 +1103,24 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   Future<void> _dispatchPageTurn(
     ReaderController controller, {
     required bool forward,
+    required PageTurnRequest request,
   }) async {
     if (controller.settingsManager.preferences.pageTurnMode ==
         PageTurnMode.tap) {
       final smoothState = _smoothPageReaderKey.currentState;
-      if (smoothState != null && !smoothState.isAnimating) {
+      if (smoothState != null) {
+        final before = controller.currentPosition?.toJson();
         await smoothState.playTurn(
+          request: request,
           forward: forward,
+          waitForReady: () => controller.waitForPagePresentation(request),
+          readyIncludesPaint: controller.pageReadinessIncludesPaint,
+          didMove: () => controller.currentPosition?.toJson() != before,
           dispatchTurn: () async {
             if (forward) {
-              await controller.nextPage();
+              await controller.nextPage(request: request);
             } else {
-              await controller.previousPage();
+              await controller.previousPage(request: request);
             }
           },
         );
@@ -1054,9 +1129,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     }
 
     if (forward) {
-      await controller.nextPage();
+      await controller.nextPage(request: request);
     } else {
-      await controller.previousPage();
+      await controller.previousPage(request: request);
     }
   }
 }
