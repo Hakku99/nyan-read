@@ -538,12 +538,14 @@ File: [`lib/modules/reader/reader_engine/pdf/pdf_reader.dart`](./lib/modules/rea
 Role:
 - open PDF through `pdfx`
 - restore and persist location by page number
-- expose synthetic chapter entries every N pages for minimal navigation
+- expose synthetic chapter entries every ten pages for minimal navigation
 
 Core characteristics:
 - true page-number navigation
 - no text highlights or snippets in the current architecture
 - synthetic TOC only, so `chapterNavigation` is `synthetic`
+- the chapter list waits for the document's page count independently of
+  position restoration and viewport attachment
 
 PDF location restoration during loading (item 06):
 - `initialize()` still returns before document loading finishes. After

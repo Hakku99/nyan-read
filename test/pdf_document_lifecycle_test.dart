@@ -7,8 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:nyan_read/core/models/book.dart';
+import 'package:nyan_read/core/services/database_service.dart';
+import 'package:nyan_read/core/services/reader_preferences_service.dart';
+import 'package:nyan_read/modules/reader/controllers/reader_controller.dart';
 import 'package:nyan_read/modules/reader/reader_engine/pdf/pdf_reader.dart';
 import 'package:nyan_read/modules/reader/reader_engine/reader_engine.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _pdfChannel = MethodChannel('io.scer.pdf_renderer');
 const _sourceChannel = MethodChannel('com.example.nyan_read/book_source');
@@ -72,7 +76,29 @@ class _PdfHarness {
     }
   }
 
-  void finishOpen() => opened.complete({'id': 'lifecycle', 'pagesCount': 25});
+  void finishOpen({int pagesCount = 25}) =>
+      opened.complete({'id': 'lifecycle', 'pagesCount': pagesCount});
+}
+
+class _ChapterTestDatabase extends Fake implements DatabaseService {
+  bool positionRead = false;
+
+  @override
+  Future<Map<String, dynamic>?> getBookPosition(String bookId) async {
+    positionRead = true;
+    return null;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getHighlights(String bookId) async => [];
+
+  @override
+  Future<List<Map<String, dynamic>>> getBookmarks(String bookId) async => [];
+
+  @override
+  Future<void> updateBookPosition(
+      String bookId, String positionType, String positionPayload,
+      {double? progress}) async {}
 }
 
 Future<void> _flushUntil(
@@ -143,6 +169,52 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     engine.dispose();
   }
+
+  testWidgets('PDF fallback chapters arrive without delaying the position read',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = ReaderPreferencesService();
+    await preferences.initialize();
+    addTearDown(preferences.dispose);
+    final source = await tester.runAsync(() async {
+      final directory = await Directory.systemTemp.createTemp('nyan-pdf-toc-');
+      return File('${directory.path}/book.pdf').create();
+    });
+    addTearDown(() async {
+      await tester.runAsync(() => source!.parent.delete(recursive: true));
+    });
+    final database = _ChapterTestDatabase();
+    final controller = ReaderController(
+      Book(
+        id: 'pdf-toc',
+        title: 'PDF chapters',
+        author: '',
+        filePath: source!.path,
+        format: 'pdf',
+      ),
+      readerPreferencesService: preferences,
+      databaseService: database,
+    );
+    try {
+      controller.init();
+      await _flushUntil(tester,
+          () => harness.openStarted.isCompleted && database.positionRead);
+      expect(controller.chapters, isEmpty);
+
+      // The native document knows its page count before a PDF view is attached.
+      harness.finishOpen(pagesCount: 12);
+      await _flushUntil(tester, () => controller.chapters.isNotEmpty);
+      expect(controller.chapters.map((chapter) => chapter.title),
+          ['Page 1', 'Page 11']);
+      expect(controller.chapters.map((chapter) => chapter.locator.pageNumber),
+          [1, 11]);
+      expect(controller.currentChapterIndex, 0);
+    } finally {
+      controller.dispose();
+      if (!harness.opened.isCompleted) harness.finishOpen(pagesCount: 12);
+      await tester.pump();
+    }
+  });
 
   testWidgets('PDF normal exit closes pages before the document exactly once',
       (tester) async {

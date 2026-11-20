@@ -293,11 +293,13 @@ class PdfReaderEngine
 
   @override
   Future<List<ReaderChapter>> getChapters() async {
-    if (!_isInit || !_isDocumentReady) return [];
+    if (!_isInit || _disposed) return const [];
 
     try {
-      final count = _pdfController.pagesCount;
-      if (count == null || count == 0) return [];
+      // The document has a page count before pdfx attaches its viewport.
+      await _documentLoadComplete;
+      final count = _document?.pagesCount;
+      if (_disposed || count == null || count <= 0) return const [];
 
       final chapters = <ReaderChapter>[];
       const pagesPerChapter = 10;
@@ -315,7 +317,7 @@ class PdfReaderEngine
       return chapters;
     } catch (e) {
       debugPrint('Error extracting PDF chapters: $e');
-      return [];
+      return const [];
     }
   }
 

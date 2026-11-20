@@ -136,7 +136,12 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       notifyListeners();
       await WidgetsBinding.instance.endOfFrame;
 
-      await metaManager.loadChapters();
+      if (engine is PdfReaderEngine) {
+        // PDF chapter metadata waits for the document; restore can start now.
+        unawaited(_loadPdfChapters());
+      } else {
+        await metaManager.loadChapters();
+      }
       await progressManager.restoreLastPosition();
       await metaManager.syncCurrentChapterFromPosition(
         progressManager.currentPosition,
@@ -168,6 +173,12 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       _renderEpoch++;
       notifyListeners();
     }
+  }
+
+  Future<void> _loadPdfChapters() async {
+    await metaManager.loadChapters();
+    if (_isDisposed) return;
+    await metaManager.updateCurrentChapterIndex();
   }
 
   void retry() {
