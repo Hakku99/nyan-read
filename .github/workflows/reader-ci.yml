@@ -1,0 +1,38 @@
+name: Reader CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  reader-checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Flutter 3.38.9
+        run: |
+          git clone --depth 1 --branch 3.38.9 https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          printf '%s\n' "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Install locked dependencies
+        id: dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Flutter static analysis
+        run: flutter analyze --no-pub
+
+      - name: PDF startup progress tests
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: flutter test --no-pub test/pdf_document_lifecycle_test.dart --name '^PDF startup save ' --reporter expanded
+
+      - name: Reader text gesture tests
+        if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: flutter test --no-pub test/reader_text_gesture_test.dart --reporter expanded
