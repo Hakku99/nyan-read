@@ -326,3 +326,14 @@ All four cases passed on the isolated `83cbd1b` profile build. Each case started
 The gallery's `VerticalDragGestureRecognizer` won each swipe and PhotoView's scale recognizer was rejected. Each swipe produced exactly one page-change event. Once scrolling stopped and again 150 ms later, the previous page was centered at fit scale. All four cases completed with continuous monitoring and no replacement swipes.
 
 The per-case checks are in `.dart_tool/pdfdown_83cbd1b_honor/results.json`. Each case export in the table has a `monitor.jsonl` alongside it with the foreground, refresh-rate and heartbeat records.
+
+## 15) Physical PDF edge taps on HONOR BKQ-N49 (60 Hz)
+
+On `83cbd1b`, the tester tapped the right edge once and then the left edge once on each 13B-4 PDF in tap-to-turn mode. For all four taps, the tester saw the page start turning without a noticeable pause after lifting their finger. The handset's page log confirmed that each tap turned exactly one page.
+
+| 13B-4 PDF | Right-edge tap | Left-edge tap |
+|---|---|---|
+| Scanned | 24 → 25 | 25 → 24 |
+| Mixed | 3 → 4 | 4 → 3 |
+
+This was a visual check. End-to-end latency was not measured in milliseconds.
