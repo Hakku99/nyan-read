@@ -215,7 +215,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
           ? ReaderErrorType.fileNotFound
           : ReaderErrorType.parseFailed,
       userMessage: isMissing ? BookSourceAccess.unavailableMessage : null,
-      technicalMessage: '$error',
+      technicalMessage: describePdfOpenError(error),
     );
     _renderEpoch++;
     notifyListeners();

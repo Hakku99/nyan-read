@@ -374,6 +374,54 @@ void main() {
     }
   });
 
+  testWidgets(
+      'PDF retry replaces the failed temp copy and opens with the view detached',
+      (tester) async {
+    final directory = await tester.runAsync(
+        () => Directory.systemTemp.createTemp('nyan-pdf-retry-'));
+    final first = File('${directory!.path}/first.pdf');
+    final second = File('${directory.path}/second.pdf');
+    await tester.runAsync(() async {
+      await first.writeAsBytes([1]);
+      await second.writeAsBytes([1]);
+    });
+    addTearDown(() async {
+      await tester.runAsync(() => directory.delete(recursive: true));
+    });
+
+    // Detached: no PdfView yet, so loadDocument would be a no-op.
+    await mount(tester, attach: false, temporaryPath: first.path);
+    harness.failOpen = true;
+    harness.finishOpen();
+    await _flushUntil(tester, () => engine.documentError != null);
+    expect(await tester.runAsync(first.exists), isTrue,
+        reason: 'failed attempt keeps its copy until retry or disposal');
+
+    var copied = false;
+    binding.defaultBinaryMessenger.setMockMethodCallHandler(_sourceChannel,
+        (call) async {
+      copied = true;
+      return second.path;
+    });
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    harness.failOpen = false;
+    await engine.initialize();
+    // The platform check runs after the old copy is deleted; keep the
+    // override until the content-URI copy has been requested.
+    await _flushUntil(tester, () => copied);
+    debugDefaultTargetPlatformOverride = null;
+    await _flushUntil(tester, () async => !(await tester.runAsync(first.exists))!);
+    expect(await tester.runAsync(second.exists), isTrue);
+    await _flushUntil(tester, () => engine.documentError == null);
+
+    // A view attaching after the retry must pick up the new document.
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(body: Builder(builder: engine.buildReader))));
+    await _flushUntil(
+        tester, () => find.byType(PageView).evaluate().isNotEmpty);
+    expect(engine.documentError, isNull);
+  });
+
   testWidgets('PDF open failure on a vanished source is fileNotFound',
       (tester) async {
     final database = _PdfTestDatabase()..positionReadGate.complete();

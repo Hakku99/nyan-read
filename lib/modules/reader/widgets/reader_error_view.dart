@@ -207,7 +207,7 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
           // 1256px-wide phone; narrow screens now drop Retry to a second line.
           Wrap(
             alignment: WrapAlignment.center,
-            spacing: 10,
+            spacing: NyanSpacing.space8,
             runSpacing: NyanSpacing.space8,
             children: [
               NyanPrimaryButton(

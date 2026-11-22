@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:pdfx/pdfx.dart';
 
 import '../../../../core/models/book.dart';
@@ -13,6 +14,12 @@ import '../reader_engine.dart';
 import '../page_turn_request.dart';
 import '../page_presentation.dart';
 import 'pdf_position.dart';
+
+/// Log/report-safe summary of a PDF open failure: type and platform code only.
+/// Platform and file-system messages can embed the source path (§2.2.4).
+String describePdfOpenError(Object error) => error is PlatformException
+    ? 'PlatformException(${error.code})'
+    : error.runtimeType.toString();
 
 class PdfReaderEngine
     implements ReaderEngine, PageMetricsCapability, PagePresentationCapability {
@@ -134,7 +141,7 @@ class PdfReaderEngine
         _isDocumentReady = !_disposed;
       },
       onError: (Object error, StackTrace stack) {
-        debugPrint('PDF document open failed: ${error.runtimeType}');
+        debugPrint('PDF document open failed: ${describePdfOpenError(error)}');
         _documentError = error;
         _finishNavigation(error, stack);
       },
