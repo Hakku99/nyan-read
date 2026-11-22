@@ -81,6 +81,7 @@ class Book {
   String get filePath => sourceLocator;
   bool get isAndroidContentUri =>
       sourceType == BookSourceType.androidContentUri;
+  bool get isAndroidTreeUri => sourceType == BookSourceType.androidTreeUri;
   bool get isFilePathSource => sourceType == BookSourceType.filePath;
 
   Map<String, dynamic> toMap() {

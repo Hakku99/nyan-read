@@ -99,6 +99,11 @@ class BookshelfViewModel extends ChangeNotifier {
   // Undo toast shows for 4s; leave margin so a last-moment tap still wins.
   static const _fileDeleteGraceWindow = Duration(seconds: 8);
 
+  /// Called with the number of source files that could not be deleted once
+  /// the deferred deletion commits. The shelf screen sets this to surface a
+  /// toast; null (screen gone) means the failure stays in the debug log.
+  void Function(int failedCount)? onFileDeletionFailed;
+
   bool get isSelectionMode => _isSelectionMode;
   Set<String> get selectedBookIds => _selectedBookIds;
   int get selectedCount => _selectedBookIds.length;
@@ -294,7 +299,8 @@ class BookshelfViewModel extends ChangeNotifier {
     if (paths.isEmpty) return;
 
     _clearUndoSnapshot();
-    await _deleteSourceFilesBestEffort(paths);
+    final failed = await _deleteSourceFilesBestEffort(paths);
+    if (failed > 0) onFileDeletionFailed?.call(failed);
   }
 
   @override
@@ -321,7 +327,9 @@ class BookshelfViewModel extends ChangeNotifier {
         continue;
       }
 
-      if (book.isAndroidContentUri) {
+      // Library-folder books (android_tree_uri) are SAF documents too; they
+      // were silently skipped here, so "also delete files" left them on disk.
+      if (book.isAndroidContentUri || book.isAndroidTreeUri) {
         if (!locator.toLowerCase().startsWith('content://')) {
           continue;
         }
@@ -352,7 +360,10 @@ class BookshelfViewModel extends ChangeNotifier {
     return pathsToDelete;
   }
 
-  Future<void> _deleteSourceFilesBestEffort(List<String> locators) async {
+  /// Returns how many files could NOT be deleted (already-missing files do
+  /// not count as failures).
+  Future<int> _deleteSourceFilesBestEffort(List<String> locators) async {
+    var failed = 0;
     // content:// URIs must be deleted serially — platform channel is not
     // concurrency-safe across simultaneous calls.
     final contentUris = <String>[];
@@ -377,6 +388,7 @@ class BookshelfViewModel extends ChangeNotifier {
           'Failed to delete content Uri (unsupported provider or no '
           'persistable delete permission): $locator',
         );
+        failed++;
       }
     }
 
@@ -397,9 +409,11 @@ class BookshelfViewModel extends ChangeNotifier {
           debugPrint(
             'Failed to delete source file: $locator\n$e\n$stackTrace',
           );
+          failed++;
         }
       }),
     );
+    return failed;
   }
 
   /// Moves selected books between public and private shelf using a single batch.

@@ -80,6 +80,22 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     _featureManager.addListener(_syncPrivacyHold);
     _tabController.addListener(_syncPrivacyHold);
     _syncPrivacyHold();
+    // Captured so dispose() need not touch `ref`.
+    _shelfVm = _vm..onFileDeletionFailed = _onFileDeletionFailed;
+  }
+
+  late final BookshelfViewModel _shelfVm;
+
+  /// Fires when the deferred "also delete files" step (8s after the delete
+  /// toast) could not remove some sources, e.g. a SAF provider without
+  /// delete support.
+  void _onFileDeletionFailed(int count) {
+    if (!mounted) return;
+    SnackBarUtils.show(
+      context,
+      AppLocalizations.of(context)!.filesNotDeleted(count),
+      tone: NyanSnackTone.error,
+    );
   }
 
   late final FeatureManager _featureManager;
@@ -95,6 +111,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
   @override
   void dispose() {
+    _shelfVm.onFileDeletionFailed = null;
     _featureManager.removeListener(_syncPrivacyHold);
     _tabController.removeListener(_syncPrivacyHold);
     _privacyScreen.release(this);

@@ -1148,6 +1148,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchNoMatchSubtitle => 'Try a different title or author name.';
 
   @override
+  String filesNotDeleted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files could not be deleted. Please remove them manually.',
+      one: '1 file could not be deleted. Please remove it manually.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String errorDeletingBooks(String error) {
     return 'Error deleting books: $error';
   }

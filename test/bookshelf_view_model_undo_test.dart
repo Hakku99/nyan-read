@@ -195,4 +195,47 @@ void main() {
 
     expect(copy.existsSync(), isFalse);
   });
+
+  group('library-folder (android_tree_uri) books', () {
+    const treeUri = 'content://com.android.externalstorage.documents/tree/'
+        'primary%3ABooks/document/primary%3ABooks%2Fa.epub';
+
+    setUp(() async {
+      db.books['b1'] = {
+        ..._bookRow('b1'),
+        'file_path': treeUri,
+        'source_type': 'android_tree_uri',
+        'format': 'epub',
+      };
+      await vm.loadBooks();
+    });
+
+    test('are included in file deletion; failures are reported', () async {
+      // Off Android the platform delete returns false, which stands in for a
+      // provider that refuses. Before the fix the tree book was skipped
+      // entirely, so nothing was attempted and nothing was reported.
+      final failures = <int>[];
+      vm.onFileDeletionFailed = failures.add;
+
+      vm.toggleSelectionMode(active: true, initialBookId: 'b1');
+      await vm.deleteSelectedBooks(true);
+      vm.dispose(); // commits the deferred deletion
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
+      expect(failures, [1]);
+    });
+
+    test('are left alone when the user did not opt into file deletion',
+        () async {
+      final failures = <int>[];
+      vm.onFileDeletionFailed = failures.add;
+
+      vm.toggleSelectionMode(active: true, initialBookId: 'b1');
+      await vm.deleteSelectedBooks(false);
+      vm.dispose();
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
+      expect(failures, isEmpty);
+    });
+  });
 }

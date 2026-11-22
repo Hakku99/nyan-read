@@ -2096,6 +2096,12 @@ abstract class AppLocalizations {
   /// **'Try a different title or author name.'**
   String get searchNoMatchSubtitle;
 
+  /// No description provided for @filesNotDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 file could not be deleted. Please remove it manually.} other{{count} files could not be deleted. Please remove them manually.}}'**
+  String filesNotDeleted(int count);
+
   /// No description provided for @errorDeletingBooks.
   ///
   /// In en, this message translates to:
