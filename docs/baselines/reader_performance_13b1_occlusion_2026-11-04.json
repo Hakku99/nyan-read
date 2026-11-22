@@ -1,0 +1,132 @@
+{
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "reader_performance_13b1_occlusion_2026-11-04.json",
+    "fullSha256": "83ae45fb64a1132b7c66114838025361aa7dbdb8c232015a6b74ced36328cfcf",
+    "fullBytes": 14731
+  },
+  "date": "2026-11-04",
+  "decision": "rejected; pre-turn production source restored",
+  "experiment": "covered-page screen clipping",
+  "pairedTurns": 36,
+  "positionMismatches": [],
+  "errors": [],
+  "warmSlowStages": {
+    "A": {
+      "prepare": 12,
+      "moving": 42,
+      "reveal": 3
+    },
+    "B": {
+      "prepare": 10,
+      "moving": 58,
+      "reveal": 1
+    }
+  },
+  "warmResults": [
+    {
+      "experiment": "full",
+      "scene": "epub_image",
+      "variant": "A",
+      "rounds": 2,
+      "turns": 8,
+      "frames": 248,
+      "slow": 9,
+      "slowPercent": 3.629032258064516,
+      "slowPerTurn": 1.125,
+      "worstRoundSlowPercent": 7.258064516129032,
+      "maxConsecutiveSlow": 1
+    },
+    {
+      "experiment": "full",
+      "scene": "epub_image",
+      "variant": "B",
+      "rounds": 2,
+      "turns": 8,
+      "frames": 247,
+      "slow": 22,
+      "slowPercent": 8.906882591093117,
+      "slowPerTurn": 2.75,
+      "worstRoundSlowPercent": 13.709677419354838,
+      "maxConsecutiveSlow": 3
+    },
+    {
+      "experiment": "full",
+      "scene": "epub_long",
+      "variant": "A",
+      "rounds": 2,
+      "turns": 8,
+      "frames": 247,
+      "slow": 16,
+      "slowPercent": 6.477732793522267,
+      "slowPerTurn": 2.0,
+      "worstRoundSlowPercent": 6.504065040650406,
+      "maxConsecutiveSlow": 2
+    },
+    {
+      "experiment": "full",
+      "scene": "epub_long",
+      "variant": "B",
+      "rounds": 2,
+      "turns": 8,
+      "frames": 247,
+      "slow": 20,
+      "slowPercent": 8.097165991902834,
+      "slowPerTurn": 2.5,
+      "worstRoundSlowPercent": 9.67741935483871,
+      "maxConsecutiveSlow": 2
+    },
+    {
+      "experiment": "full",
+      "scene": "txt_long",
+      "variant": "A",
+      "rounds": 2,
+      "turns": 8,
+      "frames": 240,
+      "slow": 32,
+      "slowPercent": 13.333333333333334,
+      "slowPerTurn": 4.0,
+      "worstRoundSlowPercent": 18.333333333333332,
+      "maxConsecutiveSlow": 3
+    },
+    {
+      "experiment": "full",
+      "scene": "txt_long",
+      "variant": "B",
+      "rounds": 2,
+      "turns": 8,
+      "frames": 239,
+      "slow": 27,
+      "slowPercent": 11.297071129707113,
+      "slowPerTurn": 3.375,
+      "worstRoundSlowPercent": 15.966386554621849,
+      "maxConsecutiveSlow": 2
+    }
+  ],
+  "inputChecks": [
+    {
+      "file": "results\\foreground-occlusion-full-1-A\\foreground-occlusion-full-1-A-epub_image-inputs.json"
+    },
+    {
+      "file": "results\\foreground-occlusion-full-1-A\\foreground-occlusion-full-1-A-epub_long-inputs.json"
+    },
+    {
+      "file": "results\\foreground-occlusion-full-1-A\\foreground-occlusion-full-1-A-txt_long-inputs.json"
+    },
+    {
+      "file": "results\\foreground-occlusion-full-1-B\\foreground-occlusion-full-1-B-epub_image-inputs.json"
+    },
+    {
+      "file": "results\\foreground-occlusion-full-1-B\\foreground-occlusion-full-1-B-epub_long-inputs.json"
+    },
+    {
+      "file": "results\\foreground-occlusion-full-1-B\\foreground-occlusion-full-1-B-txt_long-inputs.json"
+    }
+  ],
+  "candidateTestsPassed": 42,
+  "restoredPipelineTestsPassed": 8,
+  "analyzerTestsPassed": 11,
+  "rawEvidence": ".dart_tool/perf13b1_occlusion",
+  "historicalSystemTrace": ".dart_tool/perf13a/results/foreground-apptrace-heavy-B",
+  "limitations": "<4 items omitted; see local full file>"
+}

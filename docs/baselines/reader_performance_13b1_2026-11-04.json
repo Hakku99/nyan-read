@@ -1,0 +1,52 @@
+{
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "reader_performance_13b1_2026-11-04.json",
+    "fullSha256": "e59eeb10e25d490bceccbfd0647e2b1a246bf0c1ba182e5cbdf91c7843852308",
+    "fullBytes": 104402
+  },
+  "date": "2026-11-04",
+  "decision": {
+    "status": "candidate-rejected-and-reverted",
+    "item13B1Complete": false,
+    "reason": "EPUB long regressed in both orders; TXT long reversed direction; image improvement did not offset regressions.",
+    "productionSourceRestored": true,
+    "longTestRun": false
+  },
+  "baseline": {
+    "base": "dd2c6b142fb8c5af732e8214f737bf34eb3d7f2d",
+    "baselineFiles": {
+      "lib/modules/reader/widgets/smooth_page_reader.dart": "3c20f01965c753ee55e2b6c763ccfa1dc6c9d829455c89f7032313b64dbe377b",
+      "lib/modules/reader/reader_page.dart": "dd7b367d1d18dccfedfcf62f246e732783da2df695c7c309bea2e0132f72e090"
+    }
+  },
+  "sourceManifests": {
+    "A": {
+      "base": "dd2c6b142fb8c5af732e8214f737bf34eb3d7f2d",
+      "variant": "A",
+      "smoothBeforeInstrumentation": "3c20f01965c753ee55e2b6c763ccfa1dc6c9d829455c89f7032313b64dbe377b",
+      "sourceHashes": "<153 entries omitted; see local full file>"
+    },
+    "B": {
+      "base": "dd2c6b142fb8c5af732e8214f737bf34eb3d7f2d",
+      "variant": "B",
+      "smoothBeforeInstrumentation": "f74a6f037a65e1f181de4ffd67540f374b02266d5658cca1a03004614a7de18f",
+      "sourceHashes": "<153 entries omitted; see local full file>"
+    }
+  },
+  "pairedTurns": 84,
+  "positionMismatches": [],
+  "analysisErrors": [],
+  "summary": [
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>"
+  ],
+  "rounds": "<24 items omitted; see local full file>",
+  "candidateTestsPassed": 49,
+  "diagnosticTestsPassed": 11,
+  "limits": "<5 items omitted; see local full file>"
+}

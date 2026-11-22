@@ -130,6 +130,9 @@ G2 input arbitration and joint device evidence are documented in
 [READER_GESTURE_FIX_G1_G2.md](READER_GESTURE_FIX_G1_G2.md). Those historical device
 checks included the item 13 candidate and are not isolated performance evidence.
 
+The unaccepted item 13 candidate and historical measurements are described in
+[READER_TURN_FIX_08_13.md](READER_TURN_FIX_08_13.md) and
+[READER_TURN_REVIEW_13.md](READER_TURN_REVIEW_13.md).
 Item 13A independently compares the pinned G2 commit with the frozen rendering
 candidate. Probes are injected only into a disposable profile project with a
 separate application ID; production has no new timing listener. See
@@ -142,6 +145,17 @@ acceptance; image-layout cancellation also exposes a shared position defect.
 Do not mark item 13 accepted or infer synchronous image-disposal cost from a
 slow reveal frame. The original scope is recorded in
 [READER_PERFORMANCE_13A_PLAN.md](READER_PERFORMANCE_13A_PLAN.md).
+
+The 13B-1 covered-page follow-up reuses the historical system trace and runs a
+separate short AB/BA comparison. Its clipping candidate was rejected and the
+pre-experiment production source restored. See
+[READER_PERFORMANCE_13B1_OCCLUSION.md](READER_PERFORMANCE_13B1_OCCLUSION.md).
+
+The subsequent buffer-chain investigation links queueing, latch, HWC present and
+release by SurfaceView buffer number. A local fix removes a redundant target
+capture frame; short original-file checks confirm one fewer preparation frame
+per turn, but do not establish overall slow-frame acceptance. See
+[READER_PERFORMANCE_13B1_BUFFER_CHAIN.md](READER_PERFORMANCE_13B1_BUFFER_CHAIN.md).
 
 ## 8) PDF edge-tap latency on HONOR BKQ-N49 (60 Hz)
 
