@@ -2,6 +2,7 @@ part of 'reader_page.dart';
 
 extension _ReaderPageGestureHandler on _ReaderPageState {
   void _handleTapDown(BuildContext context, TapDownDetails details) {
+    _textSelections.beginInput();
     _tapDownPosition = details.globalPosition;
     _panStartPosition = details.globalPosition;
     _isPanning = false;
@@ -137,6 +138,9 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
   }
 
   void _handleSwipeLogic(DragEndDetails details) {
+    // A selection in any mounted paragraph owns dragging, including when the
+    // parent recognizer wins on iOS or the pointer starts in paragraph padding.
+    if (_textSelections.hasSelection) return;
     final controller = _boundController;
     final start = _panStartPosition;
     final end = _panLastPosition;
@@ -163,9 +167,8 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
           dx < _ReaderPageState._swipeMinDelta) {
         return;
       }
-      final signedDx = vx >= _ReaderPageState._swipeMinVelocity
-          ? velocity.dx
-          : delta.dx;
+      final signedDx =
+          vx >= _ReaderPageState._swipeMinVelocity ? velocity.dx : delta.dx;
       if (signedDx < 0) {
         _triggerPageTurn(controller, forward: true, at: now);
       } else if (signedDx > 0) {
@@ -196,6 +199,10 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     required bool forward,
     required DateTime at,
   }) {
+    if (_textSelections.hasSelection) {
+      FocusScope.of(context).unfocus();
+      return;
+    }
     if (_lastTapLogicAt != null &&
         at.difference(_lastTapLogicAt!) <
             _ReaderPageState._tapLogicDedupWindow) {
@@ -214,25 +221,43 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     _lastPageTurnAt = at;
     _isPageTurning = true;
 
-    // Safety net: if the async turn path hangs, release the lock after a
-    // fixed timeout so future taps are not permanently silenced.
+    final request = _pageTurnRequest = PageTurnRequest();
     _pageTurnLockTimer?.cancel();
     _pageTurnLockTimer = Timer(_ReaderPageState._pageTurnLockTimeout, () {
-      if (mounted) _isPageTurning = false;
+      // Invalidate late capture/queued navigation before releasing input.
+      request.cancel();
     });
+    // The handler owns completion and user-visible failure feedback.
+    unawaited(_completePageTurn(controller, forward, request));
+  }
 
-    final turnFuture = _dispatchPageTurn(
-      controller,
-      forward: forward,
-    );
-    unawaited(turnFuture.whenComplete(() {
-      _pageTurnLockTimer?.cancel();
-      if (!mounted) return;
-      _isPageTurning = false;
-    }));
+  Future<void> _completePageTurn(ReaderController controller, bool forward,
+      PageTurnRequest request) async {
+    try {
+      await request.wait(
+          _dispatchPageTurn(controller, forward: forward, request: request));
+    } on PageTurnCancelled {
+      // A changed layout, route or deadline supersedes this presentation.
+    } catch (error) {
+      debugPrint('Reader page turn failed (${error.runtimeType}).');
+      if (mounted) {
+        SnackBarUtils.show(
+            context, AppLocalizations.of(context)!.errorUnknownBody,
+            tone: NyanSnackTone.error);
+      }
+    } finally {
+      request.cancel();
+      // A late completion cannot unlock a newer input or cancel its deadline.
+      if (identical(_pageTurnRequest, request)) {
+        _pageTurnLockTimer?.cancel();
+        _pageTurnRequest = null;
+        _isPageTurning = false;
+      }
+    }
   }
 
   void _showReaderControls(BuildContext context, ReaderController controller) {
+    _pageTurnRequest?.cancel();
     unawaited(_showQuickActionsBottomSheet(context, controller));
   }
 

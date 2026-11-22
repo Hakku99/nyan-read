@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'page_turn_request.dart';
 
 import 'package:flutter/material.dart';
 
@@ -9,6 +10,12 @@ class ReadingPosition {
   final int? paragraphIndex;
   final double? paragraphLeadingEdge;
   final double? paragraphTrailingEdge;
+
+  /// UTF-16 offset in the exact rendered paragraph; version 1 anchors a line.
+  final int? textOffset;
+  final double? textViewportOffset;
+  final String? layoutIdentity;
+  final int? anchorVersion;
   final int? pageNumber;
   final String? cfi;
   final int? chapterIndex;
@@ -23,6 +30,10 @@ class ReadingPosition {
     this.paragraphIndex,
     this.paragraphLeadingEdge,
     this.paragraphTrailingEdge,
+    this.textOffset,
+    this.textViewportOffset,
+    this.layoutIdentity,
+    this.anchorVersion,
     this.pageNumber,
     this.cfi,
     this.chapterIndex,
@@ -37,6 +48,19 @@ class ReadingPosition {
           : map['paragraphIndex'] as int?,
       paragraphLeadingEdge: (map['paragraphLeadingEdge'] as num?)?.toDouble(),
       paragraphTrailingEdge: (map['paragraphTrailingEdge'] as num?)?.toDouble(),
+      textOffset: map['textOffset'] is int && (map['textOffset'] as int) >= 0
+          ? map['textOffset'] as int
+          : null,
+      textViewportOffset: map['textViewportOffset'] is num &&
+              (map['textViewportOffset'] as num).isFinite &&
+              (map['textViewportOffset'] as num) >= 0 &&
+              (map['textViewportOffset'] as num) < 1
+          ? (map['textViewportOffset'] as num).toDouble()
+          : null,
+      layoutIdentity: map['layoutIdentity'] is String
+          ? map['layoutIdentity'] as String
+          : null,
+      anchorVersion: map['anchorVersion'] == 1 ? 1 : null,
       pageNumber: type == 'pdf'
           ? (map['pageNumber'] as int? ?? 1)
           : map['pageNumber'] as int?,
@@ -62,6 +86,12 @@ class ReadingPosition {
     if (paragraphTrailingEdge != null) {
       map['paragraphTrailingEdge'] = paragraphTrailingEdge;
     }
+    if (textOffset != null) map['textOffset'] = textOffset;
+    if (textViewportOffset != null) {
+      map['textViewportOffset'] = textViewportOffset;
+    }
+    if (layoutIdentity != null) map['layoutIdentity'] = layoutIdentity;
+    if (anchorVersion != null) map['anchorVersion'] = anchorVersion;
     if (pageNumber != null) {
       map['pageNumber'] = pageNumber;
     }
@@ -101,7 +131,6 @@ class ChapterLocator {
     this.pageNumber,
     this.contentIndex,
   });
-
 }
 
 class ReaderChapter {
@@ -227,12 +256,20 @@ abstract class PageMetricsCapability {
   int getCurrentPageIndex();
 }
 
+/// Optional readiness for formats whose navigation completes before painting.
+/// False means presentation should reveal the normal loader without animating it.
+abstract class PagePresentationCapability {
+  Future<bool> waitForPagePresentation(PageTurnRequest request);
+}
+
 extension ReaderEngineCapabilityAccess on ReaderEngine {
   TextReaderCapability? get textCapability =>
       this is TextReaderCapability ? this as TextReaderCapability : null;
 
   TextExtractionCapability? get textExtractionCapability =>
-      this is TextExtractionCapability ? this as TextExtractionCapability : null;
+      this is TextExtractionCapability
+          ? this as TextExtractionCapability
+          : null;
 
   PageMetricsCapability? get pageMetricsCapability =>
       this is PageMetricsCapability ? this as PageMetricsCapability : null;

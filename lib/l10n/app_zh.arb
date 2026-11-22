@@ -254,6 +254,9 @@
   "pinSubtitleSetup": "设置一个 4 位数字 PIN 码，保护您的隐私书架。",
   "pinSubtitleConfirm": "再次输入 PIN 码以确认。",
   "pinMismatch": "两次 PIN 不一致，请重试",
+  "pinIncorrect": "PIN 码错误，请重试。",
+  "pinTemporarilyLocked": "PIN 码暂时锁定，请在 {seconds} 秒后重试。",
+  "pinVerificationUnavailable": "无法验证 PIN 码，请重试。",
   "pinForgot": "忘记 PIN？",
   "pinStoredDeviceOnly": "仅存储在此设备上",
   "pinBiometricReason": "验证您的身份以打开隐私书架。",
@@ -365,6 +368,15 @@
   "@chapterName": {
     "placeholders": {
       "index": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfPageStart": "第 {page} 页",
+  "@pdfPageStart": {
+    "description": "Fallback table-of-contents entry for a PDF without an outline; the page the group of pages starts on.",
+    "placeholders": {
+      "page": {
         "type": "int"
       }
     }

@@ -1,0 +1,275 @@
+{
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "reader_turn_fixes_01a_02_2026-10-19.json",
+    "fullSha256": "a8e3a7927c9fc0374e45f131d000ad06a48e7f0ceccefa2a6e9531fe66b3bb8e",
+    "fullBytes": 74269
+  },
+  "capturedAt": "2026-10-19T14:06:44.4946708Z",
+  "branch": "codex/reader-turn-location-fixes",
+  "baseRevision": "c41869fab15a49b402a5530e8e37760289a0f122",
+  "productionModified": true,
+  "committed": false,
+  "flutter": "3.38.9",
+  "dart": "3.10.8",
+  "sample": {
+    "bytes": 9190763,
+    "paragraphs": 124894,
+    "longestParagraphIndex": 34455,
+    "longestParagraphCodeUnits": 4122,
+    "sha256": "908BC3552974C31F1ED3C8C25EE83E289773CA44F7C84C84AA1A16A4DC5844A9"
+  },
+  "sourceSha256": {
+    "lib/modules/reader/reader_engine/txt/txt_reader.dart": "B2D9D4E6FE1D1EE9183521912E8675C6BA17946FFC251ED414E4B845004A022B",
+    "lib/modules/reader/widgets/smooth_page_reader.dart": "BF2FD76C689F393F225122A105003E02F484EDC59C32A29E58DC40972BE91626",
+    "tool/reader_baseline/profile_reader.dart": "78B909CBAE37B23084FF5993EAD3BC9437F922E093843E06227EE3ADF715C3A3"
+  },
+  "finalProfileApkSha256": "839EBC56C028E34435CBB1DEE2A688C459F9CAB380F885E115B44E6F9C909DE0",
+  "navigationTests": {
+    "synthetic": {
+      "passed": 15,
+      "failed": 13,
+      "skipped": 0,
+      "cases": "<28 items omitted; see local full file>",
+      "geometry": "<28 items omitted; see local full file>"
+    },
+    "external": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "external/txt/tap long paragraph makes forward progress",
+          "result": "success",
+          "skipped": false
+        },
+        {
+          "name": "external/txt/tap clipped roundtrip is exact",
+          "result": "success",
+          "skipped": false
+        },
+        {
+          "name": "external/txt/tap 30 normal steps move forward",
+          "result": "success",
+          "skipped": false
+        },
+        {
+          "name": "external/txt/swipe long paragraph makes forward progress",
+          "result": "success",
+          "skipped": false
+        },
+        {
+          "name": "external/txt/swipe clipped roundtrip is exact",
+          "result": "success",
+          "skipped": false
+        },
+        {
+          "name": "external/txt/swipe 30 normal steps move forward",
+          "result": "success",
+          "skipped": false
+        }
+      ],
+      "geometry": [
+        {
+          "scenario": "external/tap/long-after",
+          "position": "{\"paragraphIndex\":34455,\"paragraphLeadingEdge\":-0.9203125,\"paragraphTrailingEdge\":10.31875}"
+        },
+        {
+          "scenario": "external/tap/roundtrip-after",
+          "position": "{\"paragraphIndex\":12544,\"paragraphLeadingEdge\":-0.140625,\"paragraphTrailingEdge\":0.171875}"
+        },
+        {
+          "scenario": "external/swipe/long-after",
+          "position": "{\"paragraphIndex\":34455,\"paragraphLeadingEdge\":-0.9203125,\"paragraphTrailingEdge\":10.31875}"
+        },
+        {
+          "scenario": "external/swipe/roundtrip-after",
+          "position": "{\"paragraphIndex\":12544,\"paragraphLeadingEdge\":-0.140625,\"paragraphTrailingEdge\":0.171875}"
+        }
+      ]
+    }
+  },
+  "regression": {
+    "failed": 0,
+    "skipped": 4,
+    "passed": 66,
+    "note": "Existing Windows skips retained; no new skips or weakened assertions."
+  },
+  "item01A": {
+    "profile": [
+      {
+        "event": "environment",
+        "profile": true,
+        "physicalWidth": 1080.0,
+        "physicalHeight": 2400.0,
+        "dpr": 2.625,
+        "refreshHz": 60.000003814697266
+      },
+      {
+        "event": "scenario",
+        "format": "txt",
+        "mode": "tap",
+        "source": "synthetic",
+        "interaction": "page-turn",
+        "warmupTurns": 1,
+        "measuredTurns": 3,
+        "dispatchedTurns": 4,
+        "frames": 75,
+        "budgetMs": 16.666665607028605,
+        "overBudgetFrames": 18,
+        "rssBeforeBytes": 297750528,
+        "rssAfterBytes": 299573248
+      },
+      {
+        "event": "scenario",
+        "format": "epub",
+        "mode": "tap",
+        "source": "synthetic",
+        "interaction": "page-turn",
+        "warmupTurns": 1,
+        "measuredTurns": 3,
+        "dispatchedTurns": 4,
+        "frames": 75,
+        "budgetMs": 16.666665607028605,
+        "overBudgetFrames": 8,
+        "rssBeforeBytes": 303202304,
+        "rssAfterBytes": 286232576
+      },
+      {
+        "event": "scenario",
+        "format": "pdf",
+        "mode": "tap",
+        "source": "synthetic",
+        "interaction": "page-turn",
+        "warmupTurns": 1,
+        "measuredTurns": 3,
+        "dispatchedTurns": 4,
+        "frames": 75,
+        "budgetMs": 16.666665607028605,
+        "overBudgetFrames": 29,
+        "rssBeforeBytes": 323547136,
+        "rssAfterBytes": 336076800
+      },
+      {
+        "event": "complete",
+        "failedScenarios": 0
+      }
+    ],
+    "release": [
+      {
+        "event": "environment",
+        "profile": false,
+        "physicalWidth": 1080.0,
+        "physicalHeight": 2400.0,
+        "dpr": 2.625,
+        "refreshHz": 60.000003814697266
+      },
+      {
+        "event": "scenario",
+        "format": "txt",
+        "mode": "tap",
+        "source": "synthetic",
+        "interaction": "page-turn",
+        "warmupTurns": 1,
+        "measuredTurns": 3,
+        "dispatchedTurns": 4,
+        "frames": 79,
+        "budgetMs": 16.666665607028605,
+        "overBudgetFrames": 23,
+        "rssBeforeBytes": 248418304,
+        "rssAfterBytes": 249794560
+      },
+      {
+        "event": "scenario",
+        "format": "epub",
+        "mode": "tap",
+        "source": "synthetic",
+        "interaction": "page-turn",
+        "warmupTurns": 1,
+        "measuredTurns": 3,
+        "dispatchedTurns": 4,
+        "frames": 81,
+        "budgetMs": 16.666665607028605,
+        "overBudgetFrames": 27,
+        "rssBeforeBytes": 256000000,
+        "rssAfterBytes": 253980672
+      },
+      {
+        "event": "scenario",
+        "format": "pdf",
+        "mode": "tap",
+        "source": "synthetic",
+        "interaction": "page-turn",
+        "warmupTurns": 1,
+        "measuredTurns": 3,
+        "dispatchedTurns": 4,
+        "frames": 75,
+        "budgetMs": 16.666665607028605,
+        "overBudgetFrames": 30,
+        "rssBeforeBytes": 289656832,
+        "rssAfterBytes": 250474496
+      },
+      {
+        "event": "complete",
+        "failedScenarios": 0
+      }
+    ],
+    "debugTestsPassed": 7
+  },
+  "fullAppRestore": {
+    "scope": "Real NyanApp/ReaderPage/ReaderController and Android SQLite, explicit save, route exit, process force-stop and restart.",
+    "save": [
+      {
+        "event": "saved",
+        "chapter": 1
+      }
+    ],
+    "restart": [
+      {
+        "event": "restored",
+        "errorUpperBoundLogicalPx": 0.0,
+        "chapter": 1,
+        "passed": true
+      }
+    ]
+  },
+  "checks": {
+    "repositoryAnalyze": "2 existing async-context infos in home_screen.dart; no new issues",
+    "designTokens": "fails on existing production color literals; none introduced",
+    "diffCheck": "pass"
+  },
+  "profile": {
+    "scope": "Actual engines and SmoothPageReader standalone harness; full app recovery tested separately. No physical device or end-to-end gesture latency claim.",
+    "finalRecordingRounds": 3,
+    "device": "Android 16 x86_64 emulator",
+    "rounds": [
+      {
+        "round": 1
+      },
+      {
+        "round": 2
+      },
+      {
+        "round": 3
+      }
+    ],
+    "renderer": "Impeller OpenGLES"
+  },
+  "pairedControl": {
+    "referenceRevision": "c41869fab15a49b402a5530e8e37760289a0f122",
+    "apkSha256": "02668ADF62D7C91BE9D3FB1F80B9A4BB128FEFAC07C5625052D0E314A222B907",
+    "generator": "tool/reader_baseline/prepare_pair.ps1",
+    "scope": "Same APK, same TXT fixture, reference then fixed, 5 warmup and 30 measured turns each; synthetic swipe, external swipe, external pure scroll. No horizontal screenshot workload. Fixed order is not a randomized experiment.",
+    "rounds": [
+      {
+        "round": 1
+      },
+      {
+        "round": 2
+      },
+      {
+        "round": 3
+      }
+    ]
+  }
+}

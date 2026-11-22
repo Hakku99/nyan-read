@@ -87,11 +87,33 @@ void main() {
     final service = PinService();
     await service.setPin('1234');
 
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < 4; i++) {
       expect(await service.verifyPin('0000'), isFalse);
+      expect(await service.activeLockoutUntil(), isNull);
     }
+    expect(await service.verifyPin('0000'), isFalse);
+    final deadline = await service.activeLockoutUntil();
+    expect(deadline, isNotNull);
+    expect(deadline!.isAfter(DateTime.now()), isTrue);
+    expect(await PinService().activeLockoutUntil(), deadline,
+        reason: 'a newly opened keypad must see the persisted deadline');
     expect(await service.verifyPin('1234'), isFalse,
         reason: 'lockout window must reject the correct PIN too');
+    expect(await service.activeLockoutUntil(), deadline,
+        reason: 'an attempt during lockout must not extend the window');
+  });
+
+  test('an expired retry deadline no longer blocks the correct PIN', () async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final service = PinService();
+    await service.setPin('1234');
+    await const FlutterSecureStorage().write(
+      key: 'privacy_pin_lockout_until',
+      value:
+          '${DateTime.now().subtract(const Duration(seconds: 1)).millisecondsSinceEpoch}',
+    );
+    expect(await service.activeLockoutUntil(), isNull);
+    expect(await service.verifyPin('1234'), isTrue);
   });
 
   test('resetPin clears the iterations marker with the record', () async {

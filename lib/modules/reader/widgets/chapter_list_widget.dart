@@ -14,6 +14,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../../core/ui/components/segmented_tab_control.dart';
 import '../reader_engine/reader_engine.dart';
+import 'reader_chapter_summary.dart';
 
 enum _TocSortOrder { asc, desc }
 
@@ -78,8 +79,7 @@ class _ChapterListWidgetState extends State<ChapterListWidget> {
     for (int i = 0; i < widget.chapters.length; i++) {
       final chapter = widget.chapters[i];
       final chapterIndex = chapter.index ?? i;
-      final rawTitle =
-          chapter.title.isNotEmpty ? chapter.title : loc.chapterName(i + 1);
+      final rawTitle = readerChapterTitle(chapter, i, loc);
       final candidate = _ChapterEntry(
         sourceIndex: i,
         chapterIndex: chapterIndex,

@@ -1,0 +1,875 @@
+{
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "reader_performance_13a_2026-11-04.json",
+    "fullSha256": "e742de015824f76f9fba5a5ec9f3d0f4d27ae20f51541a6e8718070e9f1dc325",
+    "fullBytes": 506204
+  },
+  "schema": 1,
+  "dates": [
+    "2026-10-31",
+    "2026-11-01",
+    "2026-11-04"
+  ],
+  "status": "diagnostic-reported-performance-not-accepted",
+  "provenance": {
+    "base": "ae5a630507add31a0c7a082e60e9bbd50c90a5b0",
+    "patchSha256": "37024e5e6d490213477eccda1729216220c4da7703edce9c20f3ad7d498c734e",
+    "files": {
+      "lib/modules/reader/widgets/smooth_page_reader.dart": "3c20f01965c753ee55e2b6c763ccfa1dc6c9d829455c89f7032313b64dbe377b",
+      "lib/modules/reader/reader_page.dart": "dd7b367d1d18dccfedfcf62f246e732783da2df695c7c309bea2e0132f72e090"
+    }
+  },
+  "environment": {
+    "base": "ae5a630507add31a0c7a082e60e9bbd50c90a5b0",
+    "sdk": {
+      "flutter": "3.38.9",
+      "dart": "3.10.8"
+    },
+    "device": {
+      "emulator": "36.3.10.0",
+      "avd": "Medium_Phone",
+      "gpu": "NVIDIA GeForce RTX 4070 Ti SUPER",
+      "driver": "617.14",
+      "backend": "Impeller OpenGLES"
+    },
+    "apks": {
+      "A": "b75c9f9b131bec161512ade773fdf0120443799884692db9626226433d763f1f",
+      "B": "85246356f121292e51587fcd2e055663a5b6a5295e2e706a1b5fd795596109c7"
+    },
+    "fonts": {
+      "assets/fonts/NotoSansSC-Medium.ttf": "b30853d205f3ecdde938b1488c735ee15a2e870d31331b992fdc53971e23ec4a",
+      "assets/fonts/NotoSansSC-Regular.ttf": "d45f67f0a7c0ca3f256950777ce6a61cc7ce5f9696d02900cbbaac25f8aa7d16",
+      "assets/fonts/NotoSansSC-SemiBold.ttf": "b5eb7510dff58e0626c72c0861d83a3ed2be1d03047cf90a623682b8667bc5ff",
+      "assets/fonts/SourceHanSerifSC-Regular.otf": "729b846118965dae82c56336e4fa873d1211133a886fbdfa550d7099f04b7019",
+      "assets/fonts/SourceHanSerifSC-SemiBold.otf": "ee38992db171c966599df1ef3223806748fa86d97c6dd51dec43b5b856df4d8c",
+      "assets/fonts/subset/NotoSansSC-Medium.ttf": "0ba9a4635ef956ff76afac4182c792f70d4cb90ed6afc793e607fe93bbb21cf8",
+      "assets/fonts/subset/NotoSansSC-Regular.ttf": "cd006ad695c8682e4f41f024d33d27509481c7065d9db65358bee3fb91b90f31",
+      "assets/fonts/subset/NotoSansSC-SemiBold.ttf": "35c440baf1e1aa8a38f5bee4f63b3c411b4e7bb0ea8e59cadc7c208c8fc1895f"
+    }
+  },
+  "samples": {
+    "txt": "908bc3552974c31f1ed3c8c25ee83e289773ca44f7c84c84aa1a16a4dc5844a9",
+    "epub": "486fff823e05f54e623528ce488b211b6196c6aa751272b74e6565ef133d3915"
+  },
+  "foregroundPairedTurns": 616,
+  "positionMismatches": [],
+  "analysisErrors": [],
+  "summary": [
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>",
+    "<18 entries omitted; see local full file>"
+  ],
+  "rounds": "<176 items omitted; see local full file>",
+  "phases": {
+    "matrix-A": {
+      "frames": {
+        "captureOld": 288,
+        "coverOld": 288,
+        "navigate": 240,
+        "ready": 499,
+        "readyFrame": 288,
+        "motionFirst": 864,
+        "motionMiddle": 4894,
+        "motionLast": 575,
+        "revealOrAfter": 288
+      },
+      "slow": {
+        "coverOld": 12,
+        "ready": 58,
+        "readyFrame": 32,
+        "motionMiddle": 686,
+        "motionLast": 75,
+        "motionFirst": 99,
+        "revealOrAfter": 35,
+        "navigate": 24
+      },
+      "slowUI": 0,
+      "slowRaster": 1021
+    },
+    "matrix-B": {
+      "frames": {
+        "captureOld": 288,
+        "coverOld": 288,
+        "navigate": 240,
+        "ready": 498,
+        "readyFrame": 288,
+        "captureNew": 243,
+        "motionFirst": 864,
+        "motionMiddle": 4895,
+        "motionLast": 576,
+        "revealOrAfter": 288
+      },
+      "slow": {
+        "captureNew": 34,
+        "motionFirst": 28,
+        "motionMiddle": 123,
+        "revealOrAfter": 7,
+        "ready": 58,
+        "readyFrame": 35,
+        "navigate": 15,
+        "motionLast": 14,
+        "coverOld": 12
+      },
+      "slowUI": 0,
+      "slowRaster": 326
+    },
+    "full-A": {
+      "frames": {
+        "captureOld": 240,
+        "coverOld": 240,
+        "navigate": 240,
+        "ready": 384,
+        "readyFrame": 240,
+        "motionFirst": 716,
+        "motionMiddle": 4065,
+        "motionLast": 478,
+        "revealOrAfter": 480
+      },
+      "slow": {
+        "navigate": 49,
+        "motionFirst": 117,
+        "motionMiddle": 751,
+        "motionLast": 96,
+        "revealOrAfter": 91,
+        "ready": 86,
+        "readyFrame": 44,
+        "coverOld": 15
+      },
+      "slowUI": 0,
+      "slowRaster": 1249
+    },
+    "full-B": {
+      "frames": {
+        "captureOld": 240,
+        "coverOld": 240,
+        "navigate": 240,
+        "ready": 384,
+        "readyFrame": 240,
+        "captureNew": 241,
+        "motionFirst": 719,
+        "motionMiddle": 4068,
+        "motionLast": 479,
+        "revealOrAfter": 480
+      },
+      "slow": {
+        "motionFirst": 40,
+        "motionMiddle": 181,
+        "motionLast": 23,
+        "revealOrAfter": 30,
+        "navigate": 31,
+        "ready": 60,
+        "captureNew": 28,
+        "readyFrame": 32,
+        "coverOld": 15
+      },
+      "slowUI": 0,
+      "slowRaster": 440
+    }
+  },
+  "stageDurationMs": "<22 entries omitted; see local full file>",
+  "stress": {},
+  "partialStress": [
+    {
+      "run": "foreground-endurance-stress-B",
+      "scene": "epub_long",
+      "status": "incomplete-observations-only",
+      "blocks": 33,
+      "turns": 396,
+      "seconds": 323.937746,
+      "overflow": false,
+      "roundTripMismatches": 0,
+      "trajectoryMismatches": 0,
+      "rssFirst": 317743104,
+      "rssLast": 321560576,
+      "rssMaxSample": 326840320,
+      "maxImageReferences": 2,
+      "maxSnapshotPixels": 4911840,
+      "unclearedAfterRelease": 0,
+      "maxImageCacheBytes": 6293408
+    },
+    {
+      "run": "foreground-endurance-stress-B",
+      "scene": "txt_long",
+      "status": "incomplete-observations-only",
+      "blocks": 63,
+      "turns": 756,
+      "seconds": 606.003452,
+      "overflow": false,
+      "roundTripMismatches": 0,
+      "trajectoryMismatches": 0,
+      "rssFirst": 322945024,
+      "rssLast": 316764160,
+      "rssMaxSample": 328318976,
+      "maxImageReferences": 2,
+      "maxSnapshotPixels": 4911840,
+      "unclearedAfterRelease": 0,
+      "maxImageCacheBytes": 6293408
+    },
+    {
+      "run": "foreground-resumed-20261104-stress-B",
+      "scene": "txt_long",
+      "status": "incomplete-observations-only",
+      "blocks": 9,
+      "turns": 108,
+      "seconds": 85.998821,
+      "overflow": false,
+      "roundTripMismatches": 0,
+      "trajectoryMismatches": 0,
+      "rssFirst": 192421888,
+      "rssLast": 201588736,
+      "rssMaxSample": 202469376,
+      "maxImageReferences": 2,
+      "maxSnapshotPixels": 4911840,
+      "unclearedAfterRelease": 0,
+      "maxImageCacheBytes": 6293408
+    }
+  ],
+  "resourceValidation": {
+    "status": "incomplete-stopped-at-user-request",
+    "date": "2026-11-04",
+    "reason": "User requested no further long testing. Original run interrupted; resumed run stopped and exported. Neither run has a completion marker.",
+    "acceptancePassed": false,
+    "combineRunsIntoContinuousDuration": false
+  },
+  "inputAudits": [
+    {
+      "source": "foreground-audit-input-A\\foreground-audit-input-A-epub_image-inputAudit.json",
+      "scene": "epub_image",
+      "passed": false,
+      "overflow": false,
+      "inputs": null
+    },
+    {
+      "source": "foreground-audit-input-A\\foreground-audit-input-A-epub_long-inputAudit.json",
+      "scene": "epub_long",
+      "passed": true,
+      "overflow": false
+    },
+    {
+      "source": "foreground-audit-input-A\\foreground-audit-input-A-epub_normal-inputAudit.json",
+      "scene": "epub_normal",
+      "passed": true,
+      "overflow": false
+    },
+    {
+      "source": "foreground-audit-input-A\\foreground-audit-input-A-txt_long-inputAudit.json",
+      "scene": "txt_long",
+      "passed": true,
+      "overflow": false
+    },
+    {
+      "source": "foreground-audit-input-A\\foreground-audit-input-A-txt_normal-inputAudit.json",
+      "scene": "txt_normal",
+      "passed": true,
+      "overflow": false
+    },
+    {
+      "source": "foreground-audit-input-B\\foreground-audit-input-B-epub_image-inputAudit.json",
+      "scene": "epub_image",
+      "passed": false,
+      "overflow": false,
+      "inputs": null
+    },
+    {
+      "source": "foreground-audit-input-B\\foreground-audit-input-B-epub_long-inputAudit.json",
+      "scene": "epub_long",
+      "passed": true,
+      "overflow": false
+    },
+    {
+      "source": "foreground-audit-input-B\\foreground-audit-input-B-epub_normal-inputAudit.json",
+      "scene": "epub_normal",
+      "passed": true,
+      "overflow": false
+    },
+    {
+      "source": "foreground-audit-input-B\\foreground-audit-input-B-txt_long-inputAudit.json",
+      "scene": "txt_long",
+      "passed": true,
+      "overflow": false
+    },
+    {
+      "source": "foreground-audit-input-B\\foreground-audit-input-B-txt_normal-inputAudit.json",
+      "scene": "txt_normal",
+      "passed": true,
+      "overflow": false
+    },
+    {
+      "source": "foreground-imagecheck-input-A\\foreground-imagecheck-input-A-epub_image-inputAudit.json",
+      "scene": "epub_image",
+      "passed": false,
+      "overflow": false,
+      "inputs": null
+    },
+    {
+      "source": "foreground-imagecheck-input-B\\foreground-imagecheck-input-B-epub_image-inputAudit.json",
+      "scene": "epub_image",
+      "passed": false,
+      "overflow": false,
+      "inputs": null
+    }
+  ],
+  "heavySystemCorrelation": {
+    "A": {
+      "first": {
+        "slowFrames": 34,
+        "swapOverHalfOfRaster": 31,
+        "bufferWaitOverHalfOfRaster": 30,
+        "sleepOverHalfOfRaster": 30,
+        "topFrames": [
+          {
+            "frame": "782",
+            "scene": "epub_long",
+            "temperature": "first",
+            "stage": "motionMiddle",
+            "raster_ms": "25.754000",
+            "swap_ms": "25.206075",
+            "buffer_wait_ms": "24.759577",
+            "running_ms": "1.142822",
+            "sleeping_ms": "23.913399",
+            "runnable_ms": "0.697779"
+          },
+          {
+            "frame": "63",
+            "scene": "txt_long",
+            "temperature": "first",
+            "stage": "navigate",
+            "raster_ms": "21.111000",
+            "swap_ms": "4.310643",
+            "buffer_wait_ms": "0",
+            "running_ms": "20.474519",
+            "sleeping_ms": "0",
+            "runnable_ms": "0.636481"
+          },
+          {
+            "frame": "779",
+            "scene": "epub_long",
+            "temperature": "first",
+            "stage": "motionMiddle",
+            "raster_ms": "19.481000",
+            "swap_ms": "18.630770",
+            "buffer_wait_ms": "18.236334",
+            "running_ms": "1.329279",
+            "sleeping_ms": "18.023242",
+            "runnable_ms": "0.128479"
+          },
+          {
+            "frame": "790",
+            "scene": "epub_long",
+            "temperature": "first",
+            "stage": "ready",
+            "raster_ms": "19.362000",
+            "swap_ms": "18.335545",
+            "buffer_wait_ms": "17.456443",
+            "running_ms": "2.064639",
+            "sleeping_ms": "17.086063",
+            "runnable_ms": "0.211298"
+          },
+          {
+            "frame": "81",
+            "scene": "txt_long",
+            "temperature": "first",
+            "stage": "motionMiddle",
+            "raster_ms": "19.308000",
+            "swap_ms": "18.810404",
+            "buffer_wait_ms": "18.305190",
+            "running_ms": "1.055646",
+            "sleeping_ms": "18.074192",
+            "runnable_ms": "0.178162"
+          },
+          {
+            "frame": "796",
+            "scene": "epub_long",
+            "temperature": "first",
+            "stage": "motionMiddle",
+            "raster_ms": "19.301000",
+            "swap_ms": "18.737646",
+            "buffer_wait_ms": "17.809491",
+            "running_ms": "1.577739",
+            "sleeping_ms": "17.662952",
+            "runnable_ms": "0.060309"
+          },
+          {
+            "frame": "799",
+            "scene": "epub_long",
+            "temperature": "first",
+            "stage": "motionMiddle",
+            "raster_ms": "18.417000",
+            "swap_ms": "17.891460",
+            "buffer_wait_ms": "17.481905",
+            "running_ms": "1.054553",
+            "sleeping_ms": "17.327658",
+            "runnable_ms": "0.034789"
+          },
+          {
+            "frame": "86",
+            "scene": "txt_long",
+            "temperature": "first",
+            "stage": "motionLast",
+            "raster_ms": "18.300000",
+            "swap_ms": "17.725364",
+            "buffer_wait_ms": "16.311080",
+            "running_ms": "2.039856",
+            "sleeping_ms": "16.135830",
+            "runnable_ms": "0.124314"
+          },
+          {
+            "frame": "807",
+            "scene": "epub_long",
+            "temperature": "first",
+            "stage": "motionMiddle",
+            "raster_ms": "18.238000",
+            "swap_ms": "17.624115",
+            "buffer_wait_ms": "17.131068",
+            "running_ms": "1.174642",
+            "sleeping_ms": "16.993023",
+            "runnable_ms": "0.070335"
+          },
+          {
+            "frame": "73",
+            "scene": "txt_long",
+            "temperature": "first",
+            "stage": "motionMiddle",
+            "raster_ms": "18.206000",
+            "swap_ms": "12.028861",
+            "buffer_wait_ms": "11.494705",
+            "running_ms": "6.715408",
+            "sleeping_ms": "10.778173",
+            "runnable_ms": "0.712419"
+          }
+        ]
+      },
+      "warm": {
+        "slowFrames": 213,
+        "swapOverHalfOfRaster": 197,
+        "bufferWaitOverHalfOfRaster": 191,
+        "sleepOverHalfOfRaster": 191,
+        "topFrames": [
+          {
+            "frame": "473",
+            "scene": "txt_long",
+            "temperature": "warm",
+            "stage": "navigate",
+            "raster_ms": "33.199000",
+            "swap_ms": "2.234752",
+            "buffer_wait_ms": "0",
+            "running_ms": "32.546064",
+            "sleeping_ms": "0.055272",
+            "runnable_ms": "0.597664"
+          },
+          {
+            "frame": "948",
+            "scene": "epub_long",
+            "temperature": "warm",
+            "stage": "motionMiddle",
+            "raster_ms": "32.169000",
+            "swap_ms": "31.715210",
+            "buffer_wait_ms": "31.131441",
+            "running_ms": "1.305827",
+            "sleeping_ms": "30.180473",
+            "runnable_ms": "0.682700"
+          },
+          {
+            "frame": "298",
+            "scene": "txt_long",
+            "temperature": "warm",
+            "stage": "navigate",
+            "raster_ms": "30.776000",
+            "swap_ms": "2.970984",
+            "buffer_wait_ms": "0",
+            "running_ms": "28.678917",
+            "sleeping_ms": "0",
+            "runnable_ms": "2.097083"
+          },
+          {
+            "frame": "1936",
+            "scene": "epub_image",
+            "temperature": "warm",
+            "stage": "navigate",
+            "raster_ms": "29.460000",
+            "swap_ms": "28.436663",
+            "buffer_wait_ms": "25.574936",
+            "running_ms": "3.266145",
+            "sleeping_ms": "25.415554",
+            "runnable_ms": "0.778301"
+          },
+          {
+            "frame": "210",
+            "scene": "txt_long",
+            "temperature": "warm",
+            "stage": "navigate",
+            "raster_ms": "28.798000",
+            "swap_ms": "3.876564",
+            "buffer_wait_ms": "0",
+            "running_ms": "28.461589",
+            "sleeping_ms": "0.041075",
+            "runnable_ms": "0.295336"
+          },
+          {
+            "frame": "486",
+            "scene": "txt_long",
+            "temperature": "warm",
+            "stage": "motionMiddle",
+            "raster_ms": "28.480000",
+            "swap_ms": "27.817453",
+            "buffer_wait_ms": "27.275114",
+            "running_ms": "1.274822",
+            "sleeping_ms": "26.963599",
+            "runnable_ms": "0.241579"
+          },
+          {
+            "frame": "947",
+            "scene": "epub_long",
+            "temperature": "warm",
+            "stage": "motionMiddle",
+            "raster_ms": "26.526000",
+            "swap_ms": "25.465321",
+            "buffer_wait_ms": "24.375916",
+            "running_ms": "2.136407",
+            "sleeping_ms": "24.224074",
+            "runnable_ms": "0.165519"
+          },
+          {
+            "frame": "211",
+            "scene": "txt_long",
+            "temperature": "warm",
+            "stage": "ready",
+            "raster_ms": "25.544000",
+            "swap_ms": "24.924541",
+            "buffer_wait_ms": "24.471227",
+            "running_ms": "1.153187",
+            "sleeping_ms": "24.334030",
+            "runnable_ms": "0.056783"
+          },
+          {
+            "frame": "952",
+            "scene": "epub_long",
+            "temperature": "warm",
+            "stage": "motionMiddle",
+            "raster_ms": "24.955000",
+            "swap_ms": "23.933637",
+            "buffer_wait_ms": "23.393040",
+            "running_ms": "1.560250",
+            "sleeping_ms": "23.068934",
+            "runnable_ms": "0.325816"
+          },
+          {
+            "frame": "916",
+            "scene": "epub_long",
+            "temperature": "warm",
+            "stage": "motionMiddle",
+            "raster_ms": "23.904000",
+            "swap_ms": "18.609628",
+            "buffer_wait_ms": "17.928975",
+            "running_ms": "5.993653",
+            "sleeping_ms": "17.788055",
+            "runnable_ms": "0.122292"
+          }
+        ]
+      }
+    },
+    "B": {
+      "first": {
+        "slowFrames": 19,
+        "swapOverHalfOfRaster": 16,
+        "bufferWaitOverHalfOfRaster": 16,
+        "sleepOverHalfOfRaster": 16,
+        "topFrames": [
+          {
+            "frame": "65",
+            "scene": "txt_long",
+            "temperature": "first",
+            "stage": "navigate",
+            "raster_ms": "32.422000",
+            "swap_ms": "0.645379",
+            "buffer_wait_ms": "0",
+            "running_ms": "24.944861",
+            "sleeping_ms": "0",
+            "runnable_ms": "7.477139"
+          },
+          {
+            "frame": "75",
+            "scene": "txt_long",
+            "temperature": "first",
+            "stage": "motionMiddle",
+            "raster_ms": "20.358000",
+            "swap_ms": "20.079648",
+            "buffer_wait_ms": "18.549869",
+            "running_ms": "1.858948",
+            "sleeping_ms": "18.024903",
+            "runnable_ms": "0.474149"
+          },
+          {
+            "frame": "1518",
+            "scene": "epub_image",
+            "temperature": "first",
+            "stage": "navigate",
+            "raster_ms": "20.034000",
+            "swap_ms": "17.434579",
+            "buffer_wait_ms": "16.425404",
+            "running_ms": "3.611170",
+            "sleeping_ms": "16.331017",
+            "runnable_ms": "0.091813"
+          },
+          {
+            "frame": "71",
+            "scene": "txt_long",
+            "temperature": "first",
+            "stage": "motionFirst",
+            "raster_ms": "19.349000",
+            "swap_ms": "19.098327",
+            "buffer_wait_ms": "17.160430",
+            "running_ms": "2.246354",
+            "sleeping_ms": "16.980781",
+            "runnable_ms": "0.121865"
+          },
+          {
+            "frame": "68",
+            "scene": "txt_long",
+            "temperature": "first",
+            "stage": "readyFrame",
+            "raster_ms": "18.343000",
+            "swap_ms": "17.820242",
+            "buffer_wait_ms": "16.128583",
+            "running_ms": "2.276050",
+            "sleeping_ms": "15.953761",
+            "runnable_ms": "0.113189"
+          },
+          {
+            "frame": "87",
+            "scene": "txt_long",
+            "temperature": "first",
+            "stage": "motionMiddle",
+            "raster_ms": "18.043000",
+            "swap_ms": "17.440607",
+            "buffer_wait_ms": "16.692570",
+            "running_ms": "1.389844",
+            "sleeping_ms": "16.262394",
+            "runnable_ms": "0.390762"
+          },
+          {
+            "frame": "74",
+            "scene": "txt_long",
+            "temperature": "first",
+            "stage": "motionMiddle",
+            "raster_ms": "17.662000",
+            "swap_ms": "17.246543",
+            "buffer_wait_ms": "16.586229",
+            "running_ms": "1.115149",
+            "sleeping_ms": "16.406516",
+            "runnable_ms": "0.140335"
+          },
+          {
+            "frame": "89",
+            "scene": "txt_long",
+            "temperature": "first",
+            "stage": "motionMiddle",
+            "raster_ms": "17.631000",
+            "swap_ms": "17.122363",
+            "buffer_wait_ms": "16.333698",
+            "running_ms": "1.024037",
+            "sleeping_ms": "15.962996",
+            "runnable_ms": "0.643967"
+          },
+          {
+            "frame": "81",
+            "scene": "txt_long",
+            "temperature": "first",
+            "stage": "motionMiddle",
+            "raster_ms": "17.480000",
+            "swap_ms": "17.187810",
+            "buffer_wait_ms": "16.901938",
+            "running_ms": "0.731837",
+            "sleeping_ms": "16.504893",
+            "runnable_ms": "0.243270"
+          },
+          {
+            "frame": "85",
+            "scene": "txt_long",
+            "temperature": "first",
+            "stage": "motionMiddle",
+            "raster_ms": "17.425000",
+            "swap_ms": "17.029809",
+            "buffer_wait_ms": "16.684590",
+            "running_ms": "1.010357",
+            "sleeping_ms": "16.036315",
+            "runnable_ms": "0.378328"
+          }
+        ]
+      },
+      "warm": {
+        "slowFrames": 77,
+        "swapOverHalfOfRaster": 73,
+        "bufferWaitOverHalfOfRaster": 69,
+        "sleepOverHalfOfRaster": 69,
+        "topFrames": [
+          {
+            "frame": "2063",
+            "scene": "epub_image",
+            "temperature": "warm",
+            "stage": "motionMiddle",
+            "raster_ms": "32.922000",
+            "swap_ms": "32.479843",
+            "buffer_wait_ms": "32.000713",
+            "running_ms": "1.044249",
+            "sleeping_ms": "31.762097",
+            "runnable_ms": "0.115654"
+          },
+          {
+            "frame": "2015",
+            "scene": "epub_image",
+            "temperature": "warm",
+            "stage": "navigate",
+            "raster_ms": "32.144000",
+            "swap_ms": "31.607849",
+            "buffer_wait_ms": "22.315187",
+            "running_ms": "9.820283",
+            "sleeping_ms": "21.895267",
+            "runnable_ms": "0.428450"
+          },
+          {
+            "frame": "2060",
+            "scene": "epub_image",
+            "temperature": "warm",
+            "stage": "motionMiddle",
+            "raster_ms": "32.010000",
+            "swap_ms": "31.586976",
+            "buffer_wait_ms": "30.772422",
+            "running_ms": "1.219812",
+            "sleeping_ms": "30.600146",
+            "runnable_ms": "0.190042"
+          },
+          {
+            "frame": "927",
+            "scene": "epub_long",
+            "temperature": "warm",
+            "stage": "ready",
+            "raster_ms": "27.645000",
+            "swap_ms": "26.831814",
+            "buffer_wait_ms": "26.334331",
+            "running_ms": "1.529454",
+            "sleeping_ms": "25.903630",
+            "runnable_ms": "0.211916"
+          },
+          {
+            "frame": "914",
+            "scene": "epub_long",
+            "temperature": "warm",
+            "stage": "motionMiddle",
+            "raster_ms": "25.765000",
+            "swap_ms": "25.268937",
+            "buffer_wait_ms": "18.626892",
+            "running_ms": "7.009206",
+            "sleeping_ms": "18.452218",
+            "runnable_ms": "0.303576"
+          },
+          {
+            "frame": "309",
+            "scene": "txt_long",
+            "temperature": "warm",
+            "stage": "ready",
+            "raster_ms": "23.819000",
+            "swap_ms": "23.003607",
+            "buffer_wait_ms": "22.334703",
+            "running_ms": "1.554985",
+            "sleeping_ms": "22.074776",
+            "runnable_ms": "0.189239"
+          },
+          {
+            "frame": "932",
+            "scene": "epub_long",
+            "temperature": "warm",
+            "stage": "motionFirst",
+            "raster_ms": "23.218000",
+            "swap_ms": "22.680521",
+            "buffer_wait_ms": "22.331796",
+            "running_ms": "0.850371",
+            "sleeping_ms": "22.206493",
+            "runnable_ms": "0.161136"
+          },
+          {
+            "frame": "2208",
+            "scene": "epub_image",
+            "temperature": "warm",
+            "stage": "motionFirst",
+            "raster_ms": "22.816000",
+            "swap_ms": "21.214072",
+            "buffer_wait_ms": "20.075518",
+            "running_ms": "1.736905",
+            "sleeping_ms": "19.533171",
+            "runnable_ms": "1.545924"
+          },
+          {
+            "frame": "989",
+            "scene": "epub_long",
+            "temperature": "warm",
+            "stage": "ready",
+            "raster_ms": "22.648000",
+            "swap_ms": "22.097976",
+            "buffer_wait_ms": "21.697686",
+            "running_ms": "1.147839",
+            "sleeping_ms": "20.678539",
+            "runnable_ms": "0.821622"
+          },
+          {
+            "frame": "403",
+            "scene": "txt_long",
+            "temperature": "warm",
+            "stage": "motionFirst",
+            "raster_ms": "22.216000",
+            "swap_ms": "21.601057",
+            "buffer_wait_ms": "21.011550",
+            "running_ms": "1.256346",
+            "sleeping_ms": "20.835135",
+            "runnable_ms": "0.124519"
+          }
+        ]
+      }
+    }
+  },
+  "checks": {
+    "exitCodes": {
+      "analyze": 1,
+      "tokens": 1,
+      "core": 0,
+      "samples": 0
+    },
+    "corePassed": 184,
+    "coreSkippedWindows": 4,
+    "samplePassed": 12,
+    "diagnosticUnitPassed": 10,
+    "existingStaticInfos": 2,
+    "existingDesignTokenViolations": true
+  },
+  "archive": {
+    "relativePath": ".dart_tool/perf13a/reader_13a_evidence.zip",
+    "bytes": 64947709,
+    "sha256": "dafb6277c06a358b2c3deea9d588a5a5b2424437192fb5d2579cc9840615ac31",
+    "entries": 891
+  },
+  "limits": "<7 items omitted; see local full file>"
+}

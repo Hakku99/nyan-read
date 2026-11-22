@@ -57,6 +57,10 @@ dependencies:
   phosphor_flutter: ^2.1.0
   flutter_svg: ^2.0.0
 
+# Keep pdfx and the reader on the same PhotoView gesture implementation.
+dependency_overrides:
+  photo_view:
+    path: third_party/photo_view
 
 dev_dependencies:
   flutter_test:

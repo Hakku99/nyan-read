@@ -1,0 +1,167 @@
+{
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "epub_turn_fix_03_2026-10-22.json",
+    "fullSha256": "6a7cdf041952726e1a4606e9bda588f6db38e5b7c6aa663875489bb91e3ee87a",
+    "fullBytes": 27620
+  },
+  "date": "2026-10-22",
+  "task": "03 EPUB viewport turning and same-layout restoration",
+  "branch": "codex/reader-turn-location-fixes",
+  "referenceCommit": "8eef9ed3ec99ec741f707fc477ce04d8e0247865",
+  "committed": false,
+  "productionScope": [
+    "lib/modules/reader/reader_engine/epub/epub_reader.dart"
+  ],
+  "contractsChanged": false,
+  "schemaChanged": false,
+  "sourceAndArtifactSha256": {
+    "lib/modules/reader/reader_engine/epub/epub_reader.dart": "2BAB21F54AA9F5B68623F6A01D7D6D4E126A479031DE28429D22A86B3EBC49FC",
+    "tool/reader_baseline/prepare_epub_pair.ps1": "8A8078F787EECE8529EEF47128BE99628CDF9B2D07A1D884AF72EE1AE9985FD0",
+    "tool/reader_baseline/full_app_epub_restore.dart": "6D7BD5CE9E932C9EBE6847F43CE5ABEFE280CF636FB06B13AD5EA01DF240DF20",
+    "tool/reader_baseline/epub_sample_test.dart": "90B7DA3532D22F65BF7ECD08C36926EDC8A7689F08E58FF6FB9D8CF805178AC1",
+    "test/epub_reader_position_test.dart": "B52CBED285D0ABAAB80CD354295E44BD43EC340671948EC703BC575F81D55A15",
+    "test/epub_reader_font_position_test.dart": "3869AA1A8EF846966376ECE5811F4748ABCF7415424ECF07E3F037E9DA12F93C",
+    ".dart_tool/reader_baseline/epub-paired/profile_epub_pair.dart": "253E935CA82FAEA5ED63ED98F00072FF00DC92B09E69E4E086346B1664CD1B56",
+    ".dart_tool/reader_baseline/epub-paired/reference_epub.dart": "88E50A6971AFD2C6758326E6890109BFD32C35C9C620958C180668DA50222623",
+    ".dart_tool/reader_baseline/epub-paired/profile-final.apk": "7A221F0C80181E0CC40AEB51EDCF766752E7B20C3527EFEAEFA1EC76A4FA691E",
+    ".dart_tool/reader_baseline/epub-paired/release-restore.apk": "655C7AAEB5887B6BC98287C0679701114BE387236F6B5B5B25EEE23ECB714E30"
+  },
+  "sample": "<11 entries omitted; see local full file>",
+  "tests": {
+    "regression": {
+      "skipped": 4,
+      "skips": "Existing Windows-specific skips",
+      "failed": 0,
+      "passed": 144
+    },
+    "epubExistingDiagnosis": {
+      "failed": 0,
+      "passed": 8
+    },
+    "epubBoundaryAndLifecycle": {
+      "failed": 0,
+      "passed": 30
+    },
+    "epubFontsAndScale": {
+      "failed": 0,
+      "passed": 8
+    },
+    "originalSyntheticDiagnosis": {
+      "failed": 5,
+      "total": 28,
+      "passed": 23
+    },
+    "originalRealTxtControl": {
+      "failed": 0,
+      "total": 6,
+      "passed": 6
+    },
+    "originalCombinedDiagnosis": {
+      "beforePassed": 21,
+      "total": 34,
+      "afterFailed": 5,
+      "afterPassed": 29,
+      "beforeFailed": 13
+    },
+    "realEpub": {
+      "beforePassed": 0,
+      "total": 4,
+      "afterFailed": 0,
+      "afterPassed": 4,
+      "beforeFailed": 4
+    },
+    "analyze": {
+      "existingInfos": [
+        "home_screen.dart:159",
+        "home_screen.dart:167"
+      ],
+      "exitCode": 1,
+      "newIssues": 0
+    },
+    "designTokens": {
+      "reason": "Pre-existing literal colors outside this change",
+      "passed": false,
+      "newColorLiterals": 0
+    }
+  },
+  "device": "<13 entries omitted; see local full file>",
+  "pairedPerformance": "<11 entries omitted; see local full file>",
+  "fullAppColdRestore": {
+    "build": "release",
+    "mode": "swipe",
+    "entry": "tool/reader_baseline/full_app_epub_restore.dart",
+    "realControllerAndDatabase": true,
+    "processForceStoppedBetweenLaunches": true,
+    "events": [
+      {
+        "event": "saved",
+        "format": "epub",
+        "chapter": 413
+      },
+      {
+        "event": "restored",
+        "format": "epub",
+        "errorUpperBoundLogicalPx": 0.0,
+        "chapter": 413,
+        "passed": true
+      }
+    ],
+    "screenshotVisuallyInspected": true
+  },
+  "abortedMeasurements": [
+    {
+      "directory": ".dart_tool/reader_baseline/epub-paired/results",
+      "scenarioErrors": 6
+    },
+    {
+      "directory": ".dart_tool/reader_baseline/epub-paired/results-final",
+      "scenarioErrors": 5
+    }
+  ],
+  "abortedMeasurementCause": "Android installd purged test cache files under storage pressure; ~583MiB free. Final run used app-private files directory and omitted unused synthetic fixtures.",
+  "cleanup": {
+    "deviceSampleRemovedWithApp": true,
+    "emulatorStartedThisTurnStopped": true,
+    "shellIntermediateAndScreenshotRemoved": true,
+    "originalSampleHashReverified": true,
+    "dedicatedTestAppUninstalled": true
+  },
+  "remaining": [
+    {
+      "diagnosisFailures": 2,
+      "id": "04",
+      "issue": "TXT stale turn history after manual scrolling"
+    },
+    {
+      "diagnosisFailures": 2,
+      "id": "05",
+      "issue": "TXT/EPUB mode and layout changes lack precise text anchors"
+    },
+    {
+      "diagnosisFailures": 1,
+      "id": "06",
+      "issue": "PDF restore before readiness"
+    },
+    {
+      "issue": "Shared horizontal content transition and screenshot performance",
+      "id": "08/13"
+    },
+    {
+      "issue": "Image placeholder/final size shifts content",
+      "id": "10"
+    },
+    {
+      "issue": "EPUB progress remains paragraph based",
+      "id": "14"
+    },
+    {
+      "issue": "EPUB image cache has no session capacity limit",
+      "id": "16"
+    },
+    {
+      "issue": "SAF temporary sources use cacheDir/book_sources; production eviction not reproduced",
+      "id": "new-risk"
+    }
+  ]
+}

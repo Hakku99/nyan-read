@@ -1,0 +1,80 @@
+{
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "reader_gestures_g1_g2_2026-10-23.json",
+    "fullSha256": "2d633ca691f805290b90134d4698ef50d86e1963fa4b13a2af1e9ab41a39ae71",
+    "fullBytes": 7223
+  },
+  "task": "G1/G2 text drag and tap-selection arbitration",
+  "date": "2026-10-23",
+  "branch": "codex/reader-turn-location-fixes",
+  "referenceCommit": "90bfdf9",
+  "committed": false,
+  "environment": {
+    "device": "Medium_Phone Android emulator",
+    "android": "16",
+    "physicalSize": [
+      1080,
+      2400
+    ],
+    "buildMode": "release",
+    "flutter": "3.38.9"
+  },
+  "coreTestsPassed": 184,
+  "gestureTestsIncluded": 36,
+  "existingWindowsSkips": 4,
+  "sampleReflowTestsPassed": 12,
+  "analyzer": "Two existing home_screen.dart infos only",
+  "designTokenGate": "Existing violations remain; no new business literal colors",
+  "samples": [
+    {
+      "format": "txt",
+      "bytes": 9190763,
+      "sha256": "908bc3552974c31f1ed3c8c25ee83e289773ca44f7c84c84aa1a16a4dc5844a9"
+    },
+    {
+      "format": "epub",
+      "bytes": 193460451,
+      "sha256": "486fff823e05f54e623528ce488b211b6196c6aa751272b74e6565ef133d3915"
+    }
+  ],
+  "saveEvents": "<13 items omitted; see local full file>",
+  "restoreEvents": [
+    {
+      "event": "restored",
+      "format": "txt",
+      "passed": true,
+      "lineY": 14.476190476190482,
+      "chapter": 332
+    },
+    {
+      "event": "restored",
+      "format": "epub",
+      "passed": true,
+      "lineY": 12.190476190476147,
+      "chapter": 413
+    },
+    {
+      "event": "complete",
+      "passed": true
+    }
+  ],
+  "nativeLongPressSelection": {
+    "txt": true,
+    "epub": true,
+    "method": "Android input hold 650ms at text side, selection actions visible, dismiss before forward/back native swipe",
+    "runner": "tool/reader_baseline/run_gesture_acceptance.ps1"
+  },
+  "sourceSha256": {
+    "lib/modules/reader/reader_page.dart": "dd7b367d1d18dccfedfcf62f246e732783da2df695c7c309bea2e0132f72e090",
+    "lib/modules/reader/reader_page_gesture_handler.dart": "a79a8b910ac703cd788c2c19a298b103ee092cc1709174467144edf939cc309d",
+    "lib/modules/reader/widgets/highlightable_text.dart": "6a9c03b9cdf8f343cde2bc0ac8d34ed7f874fe285a54f98f7dabd166c2794df2",
+    "lib/modules/reader/widgets/reader_selectable_text.dart": "7cda88abe341db0d0225fb0c00edd963fdf8dff2f478fbbf2ecf8462d19250f8",
+    "lib/modules/reader/widgets/reader_text_gestures.dart": "b1b272b1009c69fb48e92d9a4795abac1668b502bc057bd46acb60909c25757d",
+    "lib/modules/reader/widgets/smooth_page_reader.dart": "3c20f01965c753ee55e2b6c763ccfa1dc6c9d829455c89f7032313b64dbe377b",
+    "tool/reader_baseline/full_app_turn_restore.dart": "b3d2d3fb5d5529b73f796f544ec7d3e5635e519873440d25e4c450b150effffd",
+    "tool/reader_baseline/turn_input_probe.dart": "8a01845438eb45daf58acbc5659ed27a90535fb2411b4db137e315ade6c56fe6"
+  },
+  "apkSha256": "71d0bcae9799469091829dd9597a8acc5a38e05a475d04e11f2a777b1f5e7ca9",
+  "limitations": "<5 items omitted; see local full file>"
+}

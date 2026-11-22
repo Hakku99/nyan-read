@@ -1,0 +1,301 @@
+{
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "reader_turn_fix_08_13_2026-10-23.json",
+    "fullSha256": "1dd70e258d49520971fbf1a8747e12842b3cd36dbfd2b94459d7d8d55e576748",
+    "fullBytes": 292876
+  },
+  "date": "2026-10-23",
+  "task": "08/13 horizontal turn presentation",
+  "referenceCommit": "3878caf",
+  "branch": "codex/reader-turn-location-fixes",
+  "committed": false,
+  "environment": {
+    "event": "environment",
+    "profile": true,
+    "physicalWidth": 1080.0,
+    "physicalHeight": 2400.0,
+    "dpr": 2.625,
+    "refreshHz": 60.000003814697266
+  },
+  "graphics": "NVIDIA RTX 4070 Ti SUPER hardware OpenGLES / Impeller; Android 16 x86_64",
+  "protocol": "3 rounds AB, BA, AB; same APK; 12 measured turns per scene, 6 forward then 6 backward; frame budget at 60 Hz; median of per-round P95 values, not pooled P95",
+  "summary": [
+    {
+      "format": "txt",
+      "scene": "normal",
+      "before": {
+        "frames": 862,
+        "overBudgetPercent": 10.672853828306264,
+        "allRoundsWithinBudget": false,
+        "buildMsP95Median": 1.322,
+        "buildMsP95Range": [
+          1.205,
+          1.493
+        ],
+        "rasterMsP95Median": 17.325,
+        "rasterMsP95Range": [
+          17.043,
+          17.565
+        ],
+        "completionMsP95Median": 399.258,
+        "completionMsP95Range": [
+          399.132,
+          400.186
+        ],
+        "rssBoundaryMiBRange": [
+          229.8203125,
+          272.25
+        ]
+      },
+      "fixed": "<13 entries omitted; see local full file>"
+    },
+    {
+      "format": "txt",
+      "scene": "long",
+      "before": {
+        "frames": 862,
+        "overBudgetPercent": 13.57308584686775,
+        "allRoundsWithinBudget": false,
+        "buildMsP95Median": 0.75,
+        "buildMsP95Range": [
+          0.709,
+          0.858
+        ],
+        "rasterMsP95Median": 17.601,
+        "rasterMsP95Range": [
+          17.321,
+          18.205
+        ],
+        "completionMsP95Median": 400.494,
+        "completionMsP95Range": [
+          399.831,
+          402.267
+        ],
+        "rssBoundaryMiBRange": [
+          226.11328125,
+          250.2265625
+        ]
+      },
+      "fixed": "<13 entries omitted; see local full file>"
+    },
+    {
+      "format": "epub",
+      "scene": "normal",
+      "before": {
+        "frames": 859,
+        "overBudgetPercent": 13.969732246798603,
+        "allRoundsWithinBudget": false,
+        "buildMsP95Median": 1.21,
+        "buildMsP95Range": [
+          1.085,
+          1.388
+        ],
+        "rasterMsP95Median": 17.587,
+        "rasterMsP95Range": [
+          17.434,
+          17.654
+        ],
+        "completionMsP95Median": 400.191,
+        "completionMsP95Range": [
+          399.651,
+          400.362
+        ],
+        "rssBoundaryMiBRange": [
+          234.76953125,
+          242.7265625
+        ]
+      },
+      "fixed": "<13 entries omitted; see local full file>"
+    },
+    {
+      "format": "epub",
+      "scene": "long",
+      "before": {
+        "frames": 863,
+        "overBudgetPercent": 7.068366164542295,
+        "allRoundsWithinBudget": false,
+        "buildMsP95Median": 1.006,
+        "buildMsP95Range": [
+          0.948,
+          1.191
+        ],
+        "rasterMsP95Median": 16.81,
+        "rasterMsP95Range": [
+          16.226,
+          17.486
+        ],
+        "completionMsP95Median": 399.499,
+        "completionMsP95Range": [
+          398.312,
+          400.422
+        ],
+        "rssBoundaryMiBRange": [
+          231.984375,
+          238.55859375
+        ]
+      },
+      "fixed": "<13 entries omitted; see local full file>"
+    },
+    {
+      "format": "epub",
+      "scene": "image",
+      "before": {
+        "frames": 862,
+        "overBudgetPercent": 3.3642691415313224,
+        "allRoundsWithinBudget": false,
+        "buildMsP95Median": 2.37,
+        "buildMsP95Range": [
+          2.337,
+          2.922
+        ],
+        "rasterMsP95Median": 6.07,
+        "rasterMsP95Range": [
+          5.782,
+          17.502
+        ],
+        "completionMsP95Median": 399.497,
+        "completionMsP95Range": [
+          399.029,
+          401.726
+        ],
+        "rssBoundaryMiBRange": [
+          199.73046875,
+          239.98828125
+        ]
+      },
+      "fixed": "<13 entries omitted; see local full file>"
+    },
+    {
+      "format": "pdf",
+      "scene": "normal",
+      "before": {
+        "frames": 864,
+        "overBudgetPercent": 0.9259259259259259,
+        "allRoundsWithinBudget": true,
+        "buildMsP95Median": 0.686,
+        "buildMsP95Range": [
+          0.656,
+          0.818
+        ],
+        "rasterMsP95Median": 6.317,
+        "rasterMsP95Range": [
+          5.553,
+          16.151
+        ],
+        "completionMsP95Median": 399.824,
+        "completionMsP95Range": [
+          399.554,
+          400.469
+        ],
+        "rssBoundaryMiBRange": [
+          208.92578125,
+          244.859375
+        ]
+      },
+      "fixed": "<13 entries omitted; see local full file>"
+    }
+  ],
+  "trajectoryComparisons": "<18 items omitted; see local full file>",
+  "functional": {
+    "coreTestsPassed": 148,
+    "existingWindowsSkips": 4,
+    "sampleReflowTestsPassed": 12,
+    "pdfDiagnosticPassed": 1,
+    "pdfEarlyRestoreFailed": 1,
+    "fullAppRelease": {
+      "save": [
+        {
+          "event": "viewport-mismatch"
+        },
+        {
+          "event": "viewport-mismatch"
+        },
+        {
+          "event": "inputs",
+          "format": "txt",
+          "bodyHorizontalSwipe": false,
+          "bodyRapidRoundTrip": false,
+          "selectedTextFieldsAfterBodyBurst": 1,
+          "tapRoundTrip": true,
+          "rapidThreeTapsOneTurn": true,
+          "horizontalSwipe": true,
+          "modeCancellation": true,
+          "overlayCancellation": true
+        },
+        {
+          "event": "saved",
+          "format": "txt",
+          "passed": true,
+          "lineY": 14.476190476190368
+        },
+        {
+          "event": "viewport-mismatch"
+        },
+        {
+          "event": "viewport-mismatch"
+        },
+        {
+          "event": "inputs",
+          "format": "epub",
+          "bodyHorizontalSwipe": false,
+          "bodyRapidRoundTrip": false,
+          "selectedTextFieldsAfterBodyBurst": 1,
+          "tapRoundTrip": true,
+          "rapidThreeTapsOneTurn": true,
+          "horizontalSwipe": true,
+          "modeCancellation": true,
+          "overlayCancellation": true
+        },
+        {
+          "event": "saved",
+          "format": "epub",
+          "passed": true,
+          "lineY": 12.190476190476147
+        },
+        {
+          "event": "complete",
+          "passed": true
+        }
+      ],
+      "restore": [
+        {
+          "event": "restored",
+          "format": "txt",
+          "passed": true,
+          "lineY": 14.476190476190482,
+          "chapter": 332
+        },
+        {
+          "event": "restored",
+          "format": "epub",
+          "passed": true,
+          "lineY": 12.190476190476147,
+          "chapter": 413
+        },
+        {
+          "event": "complete",
+          "passed": true
+        }
+      ]
+    }
+  },
+  "sourceSha256": {
+    "lib/modules/reader/controllers/reader_controller.dart": "8198c01c6e11445647a6d0d16a58bfa3569053c67f8e23f8d2dd620526d134a2",
+    "lib/modules/reader/reader_engine/epub/epub_reader.dart": "0050fca607127537388cdb88c7772cd9ac56a2e239d8b29a17912ca44f5fbbb6",
+    "lib/modules/reader/reader_engine/page_presentation.dart": "311e6b3bf9f4d3d5d46f4d8c3c6b6e7a86b50c146e70dc37b6c09de8ff292084",
+    "lib/modules/reader/reader_engine/page_turn_request.dart": "3aab4e011cd21193e5be6cc9ac835b1d65370e88378a17ffecab37c551af0891",
+    "lib/modules/reader/reader_engine/pdf/pdf_reader.dart": "3337ee421f44c5b3bfde5ae653b2811c5f78383aafc83ae4866a32376c131999",
+    "lib/modules/reader/reader_engine/reader_engine.dart": "946450cdef62671f2c240c7a35d66abd63a22b2f22a3952d44a7066900234820",
+    "lib/modules/reader/reader_page.dart": "cfc116cfeedd245dd8883eae81f5d0410b896e09ac748c2f47d18c07f10ac63c",
+    "lib/modules/reader/reader_page_gesture_handler.dart": "6def7147d75cd9f70a5f86290d760c1a624a4c23a0278fc850fa718d3031e576",
+    "lib/modules/reader/widgets/smooth_page_reader.dart": "3c20f01965c753ee55e2b6c763ccfa1dc6c9d829455c89f7032313b64dbe377b"
+  },
+  "artifactSha256": {
+    "acceptance-profile.apk": "20768e09f7bd9ebac890b4fa13d0fd4f0a74fd8efc30f735f6fab994540e5b33",
+    "full-app-acceptance.apk": "7370412ebd781172c56fe076686d461e39bc19bd152442e994c0851abc6ec80b",
+    "profile_pair.dart": "e0bac40357dc6b1a70d26fb26229b2661e5bf729b40382072e30c7a6487badf8"
+  },
+  "scenarios": "<36 items omitted; see local full file>",
+  "measurementLimitations": "<4 items omitted; see local full file>"
+}

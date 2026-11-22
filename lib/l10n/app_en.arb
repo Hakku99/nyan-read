@@ -254,6 +254,14 @@
   "pinSubtitleSetup": "Choose a 4-digit code to keep your private shelf for your eyes only.",
   "pinSubtitleConfirm": "Re-enter the code once more to confirm.",
   "pinMismatch": "PINs don't match — try again",
+  "pinIncorrect": "Incorrect PIN. Try again.",
+  "pinTemporarilyLocked": "PIN temporarily locked. Try again in {seconds} s.",
+  "@pinTemporarilyLocked": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "pinVerificationUnavailable": "Couldn't check your PIN. Try again.",
   "pinForgot": "Forgot PIN?",
   "pinStoredDeviceOnly": "Stored on this device only",
   "pinBiometricReason": "Verify your identity to open your private shelf.",
@@ -382,6 +390,15 @@
   "@chapterName": {
     "placeholders": {
       "index": {
+        "type": "int"
+      }
+    }
+  },
+  "pdfPageStart": "Page {page}",
+  "@pdfPageStart": {
+    "description": "Fallback table-of-contents entry for a PDF without an outline; the page the group of pages starts on.",
+    "placeholders": {
+      "page": {
         "type": "int"
       }
     }

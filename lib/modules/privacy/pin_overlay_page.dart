@@ -15,6 +15,8 @@ import 'widgets/pin_input_widget.dart';
 
 enum PinOverlayMode { setup, verify, change }
 
+enum _PinInputError { mismatch, unavailable }
+
 /// Full-screen PIN takeover (U16). Light branch uses resolved NyanTheme tokens;
 /// dark branch uses bespoke ink literals (`#1D211E` / `#E8E1D5`) matching the
 /// handoff mock — see AGENTS.md §4.2.1 for the documented exception.
@@ -47,9 +49,12 @@ class PinOverlayPage extends StatefulWidget {
 
 class _PinOverlayPageState extends State<PinOverlayPage> {
   late final PinService _pinService = widget.pinService;
-  bool _isError = false;
+  _PinInputError? _inputError;
   String? _firstPin;
   bool _biometricAvailable = false;
+  bool _isVerifying = false;
+  int _lockoutSeconds = 0;
+  Timer? _lockoutTimer;
 
   // Cancelled in dispose and on every new error to prevent stale callbacks.
   Timer? _errorResetTimer;
@@ -61,6 +66,10 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.mode == PinOverlayMode.verify) {
+      // The verification overlay can open during a persisted lockout.
+      unawaited(_restoreLockoutHint());
+    }
     if (widget.biometricService != null &&
         widget.mode == PinOverlayMode.verify) {
       widget.biometricService!.isAvailable().then((available) {
@@ -72,6 +81,7 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
   @override
   void dispose() {
     _errorResetTimer?.cancel();
+    _lockoutTimer?.cancel();
     super.dispose();
   }
 
@@ -109,7 +119,7 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
     if (_firstPin == null) {
       setState(() {
         _firstPin = pin;
-        _isError = false;
+        _inputError = null;
         _widgetGeneration++;
       });
     } else {
@@ -125,25 +135,78 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
   }
 
   Future<void> _handleVerify(String pin) async {
-    final isValid = await _pinService.verifyPin(pin);
-    if (isValid) {
-      _errorResetTimer?.cancel();
-      widget.onSuccess?.call();
-      if (mounted) Navigator.of(context).pop(true);
-    } else {
-      _showErrorThenReset();
+    if (_isVerifying || _lockoutSeconds > 0) return;
+    _isVerifying = true;
+    try {
+      final isValid = await _pinService.verifyPin(pin);
+      if (!mounted) return;
+      if (isValid) {
+        _errorResetTimer?.cancel();
+        widget.onSuccess?.call();
+        if (mounted) Navigator.of(context).pop(true);
+        return;
+      }
+      final until = await _pinService.activeLockoutUntil();
+      if (!mounted) return;
+      if (until == null || !_showLockout(until)) _showErrorThenReset();
+    } catch (error) {
+      debugPrint('PIN verification failed (${error.runtimeType}).');
+      if (mounted) _showErrorThenReset(_PinInputError.unavailable);
+    } finally {
+      _isVerifying = false;
     }
+  }
+
+  Future<void> _restoreLockoutHint() async {
+    try {
+      final until = await _pinService.activeLockoutUntil();
+      if (mounted && until != null) _showLockout(until);
+    } catch (error) {
+      debugPrint('PIN lockout status unavailable (${error.runtimeType}).');
+      if (mounted && !_isVerifying) {
+        _showErrorThenReset(_PinInputError.unavailable);
+      }
+    }
+  }
+
+  bool _showLockout(DateTime until) {
+    // Use the stored deadline so delayed ticks or backgrounding do not extend
+    // the countdown. Round up so the keypad is never enabled early.
+    int secondsLeft() {
+      final remaining = until.difference(DateTime.now());
+      if (remaining <= Duration.zero) return 0;
+      return (remaining.inMicroseconds + Duration.microsecondsPerSecond - 1) ~/
+          Duration.microsecondsPerSecond;
+    }
+
+    final seconds = secondsLeft();
+    if (seconds == 0) return false;
+    _errorResetTimer?.cancel();
+    _lockoutTimer?.cancel();
+    setState(() {
+      _lockoutSeconds = seconds;
+      _inputError = null;
+      _widgetGeneration++;
+    });
+    _lockoutTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final remaining = secondsLeft();
+      if (remaining == 0) timer.cancel();
+      if (_lockoutSeconds != remaining) {
+        setState(() => _lockoutSeconds = remaining);
+      }
+    });
+    return true;
   }
 
   /// Shows the error for ~2 s, then resets. Does NOT bump the generation
   /// immediately so PinInputWidget can play its shake animation first.
-  void _showErrorThenReset() {
-    setState(() => _isError = true);
+  void _showErrorThenReset([_PinInputError error = _PinInputError.mismatch]) {
+    setState(() => _inputError = error);
     _errorResetTimer?.cancel();
     _errorResetTimer = Timer(const Duration(milliseconds: 2000), () {
       if (!mounted) return;
       setState(() {
-        _isError = false;
+        _inputError = null;
         _firstPin = null;
         _widgetGeneration++;
       });
@@ -156,8 +219,8 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
 
   Future<void> _handleBiometric() async {
     final loc = AppLocalizations.of(context)!;
-    final success = await widget.biometricService!
-        .authenticate(loc.pinBiometricReason);
+    final success =
+        await widget.biometricService!.authenticate(loc.pinBiometricReason);
     if (success && mounted) {
       widget.onSuccess?.call();
       Navigator.of(context).pop(true);
@@ -178,17 +241,28 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
     final dotFill = nyan.primary; // primary (matcha/sage) fills dots
     final dotRing = fg.withValues(alpha: 0.26);
     final dotError = nyan.errorPrimaryTextColor;
-    final keyBg =
-        isDark ? NyanColors.pinOverlayInk.withValues(alpha: 0.09) : nyan.surface;
+    final keyBg = isDark
+        ? NyanColors.pinOverlayInk.withValues(alpha: 0.09)
+        : nyan.surface;
     final keyShadow = isDark ? const <BoxShadow>[] : NyanShadows.subtle(nyan);
     final keyText = fg;
     final ghostColor = isDark
         ? NyanColors.pinOverlayInk.withValues(alpha: 0.52)
         : nyan.textMuted;
 
+    final isLocked = _lockoutSeconds > 0;
+    final notice = isLocked
+        ? loc.pinTemporarilyLocked(_lockoutSeconds)
+        : switch (_inputError) {
+            null => null,
+            _PinInputError.unavailable => loc.pinVerificationUnavailable,
+            _PinInputError.mismatch => widget.mode == PinOverlayMode.verify
+                ? loc.pinIncorrect
+                : loc.pinMismatch,
+          };
     // Spacing around subtitle: shrinks when error hint takes space.
-    final subtitleBottom = _isError ? 22.0 : 38.0;
-    final padAboveKeypad = _isError ? 28.0 : 42.0;
+    final subtitleBottom = notice != null ? 22.0 : 38.0;
+    final padAboveKeypad = notice != null ? 28.0 : 42.0;
 
     return Scaffold(
       backgroundColor: bg,
@@ -234,8 +308,7 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
                       decoration: BoxDecoration(
                         // color-mix(in srgb, primary 11%, surface) — opaque blend, not alpha
                         color: Color.lerp(nyan.surface, nyan.primary, 0.11)!,
-                        borderRadius:
-                            BorderRadius.circular(NyanRadius.card),
+                        borderRadius: BorderRadius.circular(NyanRadius.card),
                         boxShadow: NyanShadows.lightCard(nyan),
                         border: Border.all(
                           color: nyan.primary.withValues(alpha: 0.26),
@@ -297,16 +370,16 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
                       keyShadow: keyShadow,
                       keyText: keyText,
                       ghostColor: ghostColor,
-                      isError: _isError,
+                      isError: _inputError != null,
+                      pinEnabled: !isLocked,
                       showBiometric: _biometricAvailable &&
                           widget.mode == PinOverlayMode.verify,
                       onBiometricTap: _handleBiometric,
                       onError: _onWidgetErrorAnimationDone,
                     ),
 
-                    // Error hint — visible for the full 2 s timer window.
-                    if (_isError) ...[
-                      const SizedBox(height: 16),
+                    if (notice != null) ...[
+                      const SizedBox(height: NyanSpacing.space16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -315,14 +388,16 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
                             size: 15,
                             color: dotError,
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            loc.pinMismatch,
-                            style: TextStyle(
-                              fontFamily: NyanTypography.uiFontFamily,
-                              fontSize: NyanTypography.meta,
-                              fontWeight: FontWeight.w500,
-                              color: dotError,
+                          const SizedBox(width: NyanSpacing.space8),
+                          Flexible(
+                            child: Text(
+                              notice,
+                              style: TextStyle(
+                                fontFamily: NyanTypography.uiFontFamily,
+                                fontSize: NyanTypography.meta,
+                                fontWeight: FontWeight.w500,
+                                color: dotError,
+                              ),
                             ),
                           ),
                         ],
@@ -375,8 +450,7 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
     );
   }
 
-  Widget _buildFooter(
-      AppLocalizations loc, NyanTheme nyan, bool isDark) {
+  Widget _buildFooter(AppLocalizations loc, NyanTheme nyan, bool isDark) {
     if (widget.mode == PinOverlayMode.verify) {
       return TextButton(
         onPressed: () {

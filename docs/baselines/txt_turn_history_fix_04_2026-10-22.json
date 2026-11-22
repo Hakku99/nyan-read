@@ -1,0 +1,167 @@
+{
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "txt_turn_history_fix_04_2026-10-22.json",
+    "fullSha256": "9c88783ed2682088c7448f695df29820f04cf5552d7c269349bdff7d8bdfa8b6",
+    "fullBytes": 27386
+  },
+  "date": "2026-10-22",
+  "branch": "codex/reader-turn-location-fixes",
+  "task": "04 TXT stale turn-history invalidation",
+  "committed": false,
+  "referenceCommit": "27e79a8c4bd01ae5f2dde5512e3c18e1608a5ffc",
+  "sourceAndArtifactSha256": {
+    "lib/modules/reader/reader_engine/txt/txt_reader.dart": "1E1D75BB56F09D8E8D73CC950377CB1CC15152149C7697D1766159F3836F4DE0",
+    "test/txt_reader_history_test.dart": "444BB9AB6E6509C49646A372333197720000B651E6FA22F2764DA7B14598761E",
+    "test/txt_reader_pagination_invalidation_test.dart": "918391CE7B85C84E905AB7E19B64F0256B1223B2258E8238DF30879EBAEAB0ED",
+    "tool/reader_baseline/txt_history_sample_test.dart": "C688D92A1D44416E98239C978F81248BB6981B8E05D39BE4DA2ABD964FA49C0C",
+    "tool/reader_baseline/prepare_txt_history_pair.ps1": "63C942F39C737E2163574993A9ED6829F2295B3C14F7499D01B108534C3998AB",
+    "tool/reader_baseline/full_app_txt_history_restore.dart": "FDCC6ECD683F8FE64D67011DF361F93FFD90A14D5EC7AA62E8FD77E6112267A5",
+    ".dart_tool/reader_baseline/txt-history-paired/profile_pair.dart": "0CDDD22D0C6A00629FBDBF43C418F57A6CD0D2F3FA529799D3B6743FFB07D021",
+    ".dart_tool/reader_baseline/txt-history-paired/reference_txt.dart": "5AD9FB4C4F4CFC4B9A66FF305D27EEE1B1F51E65C90AE47C969294623BBCC28C",
+    ".dart_tool/reader_baseline/txt-history-paired/profile.apk": "DEB4D6E2095315C448F5FA3B6FAC6176897A2A0D7A14774656BE77B4679A8F27",
+    ".dart_tool/reader_baseline/txt-history-paired/release.apk": "1DBB4F39C0DE4E48C8EDC9196EEE0A57FB3248E9D2AD01559A7B7CAA3511C07C"
+  },
+  "scope": {
+    "turnFuture": "Completes after target layout so completed history is authoritative",
+    "publicSignaturesChanged": false,
+    "schemaChanged": false,
+    "productionFile": "lib/modules/reader/reader_engine/txt/txt_reader.dart",
+    "positionJsonChanged": false
+  },
+  "sample": {
+    "sha256": "908BC3552974C31F1ED3C8C25EE83E289773CA44F7C84C84AA1A16A4DC5844A9",
+    "contentIncluded": false,
+    "longestParagraphIndex": 34455,
+    "paragraphs": 124894,
+    "bytes": 9190763,
+    "normalStartIndex": 12544,
+    "longestCodeUnits": 4122
+  },
+  "tests": {
+    "originalHistoryDiagnosis": {
+      "afterPassed": 2,
+      "beforeDistanceViewports": 3.3484375,
+      "beforeFailed": 2
+    },
+    "historyRegression": {
+      "passed": 28,
+      "failed": 0
+    },
+    "combinedRegression": {
+      "passed": 172,
+      "skipped": 4,
+      "failed": 0,
+      "skips": "Existing Windows skips unchanged"
+    },
+    "realTxtHistory": {
+      "passed": 12,
+      "cases": "2 modes x 2 regions x 3 input paths",
+      "failed": 0
+    },
+    "originalSyntheticDiagnosis": {
+      "passed": 25,
+      "failed": 3,
+      "total": 28
+    },
+    "originalRealTxtControl": {
+      "passed": 6,
+      "failed": 0
+    },
+    "originalCombinedDiagnosis": {
+      "passed": 31,
+      "failed": 3,
+      "total": 34
+    },
+    "analyze": {
+      "existingInfos": [
+        "home_screen.dart:159",
+        "home_screen.dart:167"
+      ],
+      "newIssues": 0
+    },
+    "designTokens": {
+      "passed": false,
+      "reason": "Pre-existing literal colors; none introduced"
+    },
+    "testPumpChange": "Existing pagination tests now use perform to advance frames while awaiting turns; assertions and skips unchanged"
+  },
+  "device": {
+    "dart": "3.10.8",
+    "flutter": "3.38.9",
+    "physicalSize": [
+      1080,
+      2400
+    ],
+    "avd": "Medium_Phone",
+    "renderer": "Impeller OpenGLES",
+    "android": "16",
+    "kind": "emulator",
+    "dpr": 2.625,
+    "abi": "x86_64",
+    "refreshHz": 60
+  },
+  "pairedPerformance": {
+    "warmupTurns": 5,
+    "mode": "profile",
+    "rounds": [
+      {
+        "round": 1
+      },
+      {
+        "round": 2
+      },
+      {
+        "round": 3
+      }
+    ],
+    "failedScenarios": 0,
+    "limitations": "<5 items omitted; see local full file>",
+    "order": "old then new for tap, swipe, disabled; process restarted between rounds",
+    "measuredTurnsPerScenario": 30,
+    "completedScenarios": 18
+  },
+  "fullApp": {
+    "mode": "swipe",
+    "previousViaRealController": true,
+    "screenshotInspected": true,
+    "actualAdbTouchscreenDrags": true,
+    "events": [
+      {
+        "event": "ready-for-drag",
+        "waitSeconds": 25
+      },
+      {
+        "event": "manual-history",
+        "passed": true,
+        "movementBeforePreviousViewports": 1.8521036391710282,
+        "previousDistanceViewports": 1.0253957783641159,
+        "allowedDistanceViewports": 1.0277044854881265
+      },
+      {
+        "event": "saved",
+        "format": "txt",
+        "chapter": 130
+      },
+      {
+        "event": "restored",
+        "format": "txt",
+        "errorUpperBoundLogicalPx": 0.0,
+        "chapter": 130,
+        "passed": true
+      }
+    ],
+    "build": "release",
+    "actualSQLite": true,
+    "processRestart": true
+  },
+  "diagnosticCaveats": "<4 items omitted; see local full file>",
+  "remaining": "<7 items omitted; see local full file>",
+  "cleanup": {
+    "shellIntermediateAndScreenshotRemoved": true,
+    "deviceSampleRemovedWithApp": true,
+    "dedicatedTestAppUninstalled": true,
+    "emulatorStartedThisTurnStopped": true,
+    "originalSampleHashReverified": true
+  }
+}

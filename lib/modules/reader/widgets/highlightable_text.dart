@@ -7,9 +7,13 @@ import '../../../core/models/highlight.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:async';
 import 'text_selection_menu.dart';
+import 'reader_selectable_text.dart';
+import 'reader_text_gestures.dart';
+import '../reader_engine/text_layout_anchor.dart';
 
 /// Text widget that renders highlights and supports selection
 class HighlightableText extends StatefulWidget {
+  final TextLayoutAnchors? layoutAnchors;
   final String text;
   final int paragraphIndex;
   final List<Highlight> highlights;
@@ -26,6 +30,7 @@ class HighlightableText extends StatefulWidget {
 
   const HighlightableText({
     super.key,
+    this.layoutAnchors,
     required this.text,
     required this.paragraphIndex,
     required this.highlights,
@@ -51,7 +56,8 @@ class _HighlightableTextState extends State<HighlightableText> {
   final Map<String, TapGestureRecognizer> _recognizerPool = {};
 
   Timer? _tapTimer;
-  final GlobalKey _listenerKey = GlobalKey(debugLabel: 'highlightable_listener');
+  final GlobalKey _listenerKey =
+      GlobalKey(debugLabel: 'highlightable_listener');
 
   // Memoised TextSpan.  Rebuilt only when one of the following changes:
   // paragraph index, the text itself, the text style object, or the
@@ -68,7 +74,21 @@ class _HighlightableTextState extends State<HighlightableText> {
   static const double _scrollThreshold = 10.0; // Pixels to consider it a scroll
 
   @override
+  void initState() {
+    super.initState();
+    widget.layoutAnchors?.attach(widget.paragraphIndex, context, widget.text);
+  }
+
+  @override
+  void didUpdateWidget(HighlightableText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    oldWidget.layoutAnchors?.detach(oldWidget.paragraphIndex, context);
+    widget.layoutAnchors?.attach(widget.paragraphIndex, context, widget.text);
+  }
+
+  @override
   void dispose() {
+    widget.layoutAnchors?.detach(widget.paragraphIndex, context);
     _tapTimer?.cancel();
     for (final recognizer in _recognizerPool.values) {
       recognizer.dispose();
@@ -79,12 +99,21 @@ class _HighlightableTextState extends State<HighlightableText> {
 
   @override
   Widget build(BuildContext context) {
+    final routing = ReaderTextGestures.of(context);
+    final horizontal = routing?.horizontal == true;
     return Container(
       color: widget.backgroundColor,
       padding: widget.padding,
       child: Listener(
         key: _listenerKey,
         onPointerDown: (event) {
+          routing?.selections?.beginInput();
+          // Interrupt presentation immediately; opening controls still waits for
+          // double-tap disambiguation in the selection builder.
+          if (horizontal &&
+              routing?.isTurnZone?.call(event.position) == false) {
+            routing?.onCenterInteraction?.call();
+          }
           _pointerDownPosition = event.position;
           _isScrolling = false;
         },
@@ -98,6 +127,9 @@ class _HighlightableTextState extends State<HighlightableText> {
           }
         },
         onPointerUp: (event) {
+          // Horizontal mode dispatches from the winning selection recognizer,
+          // so links/highlights and multi-taps cannot race a raw-pointer timer.
+          if (horizontal) return;
           // Only trigger tap if not scrolling and no text selected
           if (_isScrolling) {
             _isScrolling = false;
@@ -129,8 +161,9 @@ class _HighlightableTextState extends State<HighlightableText> {
           _isScrolling = false;
           _pointerDownPosition = null;
         },
-        child: SelectableText.rich(
-          _buildTextSpan(),
+        child: ReaderSelectableText(
+          span: _buildTextSpan(),
+          onTap: widget.onTap,
           style: widget.style,
           onSelectionChanged: (selection, cause) {
             _currentSelection = selection;
@@ -222,8 +255,8 @@ class _HighlightableTextState extends State<HighlightableText> {
         survivingIds.add(highlight.id);
 
         spans.add(TextSpan(
-          text: widget.text
-              .substring(highlight.startOffset, highlight.endOffset),
+          text:
+              widget.text.substring(highlight.startOffset, highlight.endOffset),
           style: widget.style.copyWith(
             backgroundColor: highlightColor.withValues(alpha: 0.4),
           ),
@@ -340,7 +373,8 @@ class _HighlightableTextState extends State<HighlightableText> {
         onCopy: () {
           if (selectedText.isNotEmpty) {
             final loc = AppLocalizations.of(context)!;
-            SnackBarUtils.show(context, loc.copiedToClipboard, tone: NyanSnackTone.success);
+            SnackBarUtils.show(context, loc.copiedToClipboard,
+                tone: NyanSnackTone.success);
           }
           editableTextState.hideToolbar();
         },
@@ -368,7 +402,8 @@ class _HighlightableTextState extends State<HighlightableText> {
       await Clipboard.setData(ClipboardData(text: url.toString()));
       if (mounted) {
         final loc = AppLocalizations.of(context)!;
-        SnackBarUtils.show(context, loc.couldNotOpenBrowserSearchCopied, tone: NyanSnackTone.error);
+        SnackBarUtils.show(context, loc.couldNotOpenBrowserSearchCopied,
+            tone: NyanSnackTone.error);
       }
     }
   }

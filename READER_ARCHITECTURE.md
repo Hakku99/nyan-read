@@ -128,10 +128,10 @@ Methods:
 - `getParagraphText(int paragraphIndex)`
 
 Implemented by:
-- TXT only
+- TXT and EPUB
 
 Why:
-- These APIs are meaningful for paragraph-based text rendering, but not for the current EPUB/PDF implementations.
+- These APIs are meaningful for paragraph-based text rendering, which TXT and EPUB share; PDF has no paragraph model.
 
 ### `TextExtractionCapability`
 
@@ -179,18 +179,63 @@ Unified position model used for save/restore and current-location tracking.
 
 Fields:
 - `paragraphIndex` (+ optional `paragraphLeadingEdge` / `paragraphTrailingEdge` viewport refinement)
+- Optional `textOffset` (UTF-16 in the exact displayed paragraph),
+  `textViewportOffset` (normalized reading-line top), `layoutIdentity`, and
+  `anchorVersion` (1). Added by item 05 for TXT/EPUB reflow restoration.
 - `pageNumber`
 - `cfi` (legacy EPUB field — read for backward compatibility, no longer written)
 - `chapterIndex`
 
 Usage:
-- TXT uses `paragraphIndex` + viewport edges
+- TXT uses `paragraphIndex` + viewport edges + optional text anchor; the runtime
+  snapshot remains a `TxtReadingPosition` for existing consumers.
 - PDF uses `pageNumber`
 - EPUB uses `paragraphIndex` + viewport edges (2026-07 self-hosted renderer;
   pre-rework rows also carried a `cfi`, which restore ignores in favor of the
   dual-written `paragraphIndex`)
 
 `ReadingProgressManager` serializes and restores this model through `DatabaseService`.
+
+TXT/EPUB mode and reflow restoration (05, 2026-10-22):
+
+- `ReaderPage` keeps `SmoothPageReader` mounted in every mode; `enabled` only
+  controls horizontal tap handling. A mode change cancels an undispatched old
+  capture/animation. A stable keyed live-reader slot also prevents animation
+  start/end from remounting the engine body. Mode-only changes preserve the live
+  scrollable and paint. The live body has its own repaint boundary so translating
+  it does not repeatedly paint paragraph text. Snapshot resolution and transition
+  timing are unchanged.
+- Engines own the last committed viewport snapshot and the accepted restore.
+  Text widgets register only mounted geometry handles in `TextLayoutAnchors`;
+  no second controller/widget position owner or whole-book layout pass is added.
+- Anchors use the actual `RenderEditable` line/caret geometry, including the
+  actual font, heading style, padding and text scaling. Capturing the last
+  committed frame avoids sampling already-rescaled text with old viewport edges.
+  Build-phase progress reads never query render geometry, and detached text
+  handles are ignored; measurement belongs to commands/committed-frame callbacks.
+- Layout identity includes format, platform, locale/direction, viewport size,
+  typography and scaled body/heading sizes. Matching layouts retain exact edges;
+  changed layouts restore the original character on the first reading line.
+  The accepted character survives repeated reflows until navigation/scrolling
+  changes the reading location. Boundary correction must finish before the
+  restored pixels are committed. When a short book fits entirely in the new
+  viewport, the still-visible retained paragraph remains the logical position
+  (including progress/chapter selection), even below the top of the viewport.
+  Scrolling or a new drag releases that exception. A partially visible final
+  text line is a valid fallback when no fully visible line remains in its row.
+- Reflow targets stay authoritative for saves until layout commits. A paint-only
+  gate suppresses intermediate paragraph-start frames; new drags can supersede
+  restoration. This can briefly hide text during reflow and is not an animation
+  optimization. Stale serials cannot overwrite newer navigation or layout.
+- The JSON change is additive; unknown/invalid optional anchor fields fall back
+  safely. Old records without text offsets keep legacy edge/paragraph recovery;
+  their exact former text cannot be reconstructed after reflow. Existing JSON
+  columns need no schema migration. Older builds ignore the new keys and may
+  discard the precision when saving again. Fonts/rendering changes require
+  reviewing the layout/anchor version before reusing historical geometry.
+- Paragraph enumeration, highlights, chapter locators, progress percentages and
+  PDF positioning remain unchanged. Clipped EPUB image slots use the existing
+  edge fields to recover their row-relative position after reflow (item 10).
 
 ### `ChapterLocator`
 
@@ -257,6 +302,141 @@ Core characteristics:
 - highlight rendering and anchor healing are supported
 - pagination is layout-sensitive and cached by layout key
 
+The TXT page estimate uses the selected font family and the effective size
+from `TextScaler.scale(fontSize)` as part of the layout key. The estimator
+measures a sample at one text style, so the scaled size identifies its input
+even for nonlinear scaling. Viewport and typography changes both request an
+estimate. The engine records the requested key before checking in-flight work
+and publishes results only for that key. Returning from A to B to A can reuse
+A's pending estimate, while a late B result cannot replace it. The estimate
+feeds the page bar. Navigation and restore use viewport anchors separately.
+
+Navigation and restore (01A/02, 2026-10-19):
+- Single visible paragraphs at least one viewport high advance by 0.92 of the
+  actual content viewport, including across their trailing edge. Ordinary
+  paragraph selection retains its existing viewport-distance policy.
+- TXT uses the public Flutter `ScrollPosition` obtained from scroll metrics for
+  pixel motion. It does not pass negative alignment to `ItemScrollController`
+  or import dependency internals. Adjacent turns avoid the positioned list's
+  two-list `scrollTo` transition.
+- Restore synchronously establishes an index anchor and applies its saved
+  leading-edge pixel offset before the next paint. Pre-attachment targets stay
+  in the engine and are applied once metrics become available; the initial
+  uncorrected layout is hidden. `getCurrentPosition()` reports the accepted
+  target until that layout commits, protecting concurrent saves.
+- A mounted restore Future completes after the target frame; a pre-attachment
+  request returns once accepted so initialization can proceed to mount the view.
+- Navigation generations prevent superseded restore completion from replacing
+  a newer target. Layout changes cancel old driven motion; teardown detaches
+  the public scroll position. Same-layout backward history keeps pixel anchors.
+- `ReadingPosition` JSON, paragraph enumeration, database schema, progress and
+  page-count estimation are unchanged. Old index-only positions still work.
+  Item 05 subsequently adds optional character anchors and stable mode switching.
+
+TXT turn-history validity (04, 2026-10-22):
+- Up to 48 completed forward turns retain both start and end viewport anchors.
+  Previous reuses an anchor only when its endpoint matches the current paragraph,
+  edges, scroll offset and viewport epoch within two logical pixels.
+- User drag/scroll notifications invalidate history immediately; endpoint checks
+  also reject unannounced external movement. Explicit navigation, font/size/mode
+  changes, teardown and a replacement scroll position invalidate old records.
+- A turn Future completes after the resulting frame so history records actual
+  layout. Canceled, superseded, incomplete and no-op turns create no records.
+  Even a boundary no-op supersedes an earlier animation and stops its motion.
+- The unused forward stack is removed. Distance selection and the 300 ms vertical
+  animation remain unchanged; the current engine position remains authoritative.
+- No public signatures, position JSON, persistence schema, paragraph enumeration
+  or page-count estimation change. Clearing history on a layout change does not
+  itself provide cross-layout anchoring; item 05 adds that separately.
+
+The shared `SmoothPageReader` waits for paint using `endOfFrame`, reserves a
+turn before asynchronous snapshot capture, and falls back to one direct turn
+when capture is unavailable. It no longer reads `debugNeedsPaint` in production.
+Capture/animation disposal and dispatch failures release the turn reservation.
+Item 08 replaces the midpoint switch with a preparation phase: the outgoing
+snapshot covers the live reader, navigation runs once, and the 360 ms slide
+starts only after target presentation is ready. The engine remains the sole
+owner of position; cancelling presentation never rolls back accepted navigation.
+The target snapshot uses a painted frame. In item 13C, the controller opts
+EPUB into reusing the final frame awaited by its readiness callback after the
+visible image checks. If Flutter already has another frame scheduled, the turn
+waits for that paint before capturing. Readiness without the EPUB paint opt-in
+still waits for a frame after the callback. The private `frameReady` capture
+path reads the selected frame directly, since another `endOfFrame` from idle
+would schedule an extra covered frame. Outgoing capture waits for paint as well.
+EPUB widget tests compare the reused text and illustration pixels with the
+settled target. The turn pipeline also covers delayed image paint, cancellation
+and timeout. These tests verify frame order and pixels. Device latency remains
+unmeasured for this change.
+
+`PageTurnRequest` invalidates capture, queued navigation and image waits on
+layout/mode changes, overlay opening, backgrounding, disposal or the UI deadline.
+`ReaderController.nextPage/previousPage` accept an optional request; existing
+callers remain source-compatible. Queue failures now reach their caller while a
+separate recovery future keeps the queue usable. `currentPosition` delegates to
+the engine, and `waitForPagePresentation` is the UI-facing readiness entry point.
+No `ReaderEngine` navigation signature, position JSON or database schema changes.
+The reader body's narrow selector includes mode and typography/color inputs as
+well as `renderEpoch`: the preferences service provider alone does not subscribe
+to its notifier. A programmatic preference change must update the gesture surface
+and cancel old presentation even without an unrelated parent rebuild.
+
+The additive optional `PagePresentationCapability` exposes
+`waitForPagePresentation(PageTurnRequest)`. PDF waits on the existing public
+`PdfPageImageProvider` for the target page; EPUB waits on mounted visible image
+blocks and their existing decode cache. TXT uses its completed navigation layout
+plus a committed frame. Image listeners are removed on completion/cancellation;
+the capability owns neither a second position nor a second image cache.
+
+Capture has a 350 ms deadline and navigation/readiness each have a 1500 ms
+deadline, bounded by the reader's overall 3 s request. A late GPU capture is
+disposed and cannot dispatch navigation; only one capture can remain pending.
+Unavailable captures fall back to one direct navigation. A target-image timeout
+reveals the reader's normal loading state instead of animating an unready page.
+Navigation errors reach the existing localized error feedback.
+
+The live body stays mounted throughout preparation and animation. Item 08 uses
+one outgoing snapshot over the live target; item 13's rendering optimizations
+remain separate, unaccepted work. See `docs/READER_HISTORY.md` for the isolated
+verification scope and known body-gesture limitations.
+
+Item 13A instrumentation is confined to a disposable diagnostic project; it
+does not add a production listener or change reader contracts. Independent
+comparison against the G2 commit and frame/system evidence are documented in
+`docs/READER_HISTORY.md`. Full-app worst-round performance is
+still outside the budget. Image-size notifications can invalidate EPUB turn
+history and restoration during cancellation in both historical comparison
+variants. The separate EPUB image lifecycle fix introduced stable image
+dimensions across list remounts, including bitmap eviction. Item 16 below
+bounds retained encoded bytes while preserving that geometry. See
+`docs/READER_HISTORY.md` for the earlier verification.
+
+The following item 13 rendering changes remain experimental and have not passed
+overall performance acceptance.
+The live body remains mounted in one repaint boundary; only that body is captured.
+Snapshots retain device pixel resolution and use bilinear translation sampling.
+TXT/EPUB also capture the ready target once and suppress live painting using
+static opacity 0 during the slide (layout and state stay mounted). Both images
+are disposed when presentation ends. The additional RGBA target is limited to
+16 MiB; larger viewports or unavailable target captures retain live painting.
+PDF already paints an image and uses only the outgoing capture. The legacy
+hardcoded black edge gradient is removed. No screenshot downsampling,
+animation-duration reduction, full-book layout cache or new dependency is added.
+
+
+G1 routes ordinary horizontal touch drags from the text selection recognizer
+into the reader's existing navigation callbacks. `ReaderSelectableText` uses
+public `EditableText` / `TextSelectionGestureDetectorBuilder` APIs, retaining
+native long-press selection, handles and vertical scrolling. `ReaderTextGestures`
+provides UI routing only; position and paragraph layout ownership do not change.
+See `docs/READER_HISTORY.md`.
+G2 moves horizontal taps into the winning text recognizer: side-zone touch
+multi-taps navigate without selecting words; center single taps wait for the
+double-tap window while center pointer-down immediately cancels presentation.
+Mounted selection ownership and input epochs suppress navigation during selection
+and invalidate delayed controls after a newer input. No reading position is
+stored in this UI registry. See `docs/READER_HISTORY.md`.
+
 Implements optional capabilities:
 - `TextReaderCapability`
 - `TextExtractionCapability`
@@ -290,6 +470,63 @@ Core characteristics:
   `TextReaderCapability`), like TXT
 - page metrics are intentionally not exposed
 
+Paragraph progress (14): each paragraph or image slot has equal weight.
+The engine divides the anchor index plus the fraction of that slot above the
+viewport by the slot count. During restore it uses the accepted target and its
+edges when available. Missing edges contribute zero fractional progress, and a
+detached viewport retains the last estimate. The value reaches 1.0 when the
+scrollable viewport reaches its end with the final slot's trailing edge visible.
+Incomplete estimates are capped at 99.49% so whole-percent labels cannot round
+up to completion. Progress seeks still map to a whole paragraph using the
+legacy normalized seek formula. Saved position anchors remain the source of
+exact restore locations.
+
+Navigation and restore (03, 2026-10-22):
+- Adjacent EPUB turns move 0.92 of the actual content viewport, clamped at
+  document boundaries. Counting visible paragraphs is no longer used: a
+  partially visible paragraph may still contain many unread screens.
+- Pixel movement uses the public Flutter ScrollPosition. Tap mode jumps under
+  the existing horizontal wrapper; vertical mode retains its 250 ms curve.
+- Up to 48 completed turn anchors support reverse traversal, including a
+  shortened boundary turn. Anchors are invalidated by gestures, explicit
+  navigation, layout/image size changes, or mismatched viewport geometry.
+- Index navigation and saved leading-edge offsets are applied synchronously
+  before the target paint. The engine retains a pre-mount restore and reports
+  that accepted target until its layout completes; Book metadata also retains
+  the full position. Generations reject stale async completions.
+- Chapter, bookmark and progress seeks share this immediate restore path;
+  vertical progress seeks no longer use the positioned list's two-list
+  animated transition. Adjacent vertical turns remain animated.
+- Image slots store the full ZIP path resolved from the actual chapter
+  directory. Exact path spelling wins, with a unique case-insensitive full
+  path as a fallback. Missing or ambiguous resources keep their image slots
+  and show the load error. This preserves paragraph and chapter indexes.
+  The streaming extractor opens that exact entry in an isolate.
+- EPUB image retention (16) shares one in-flight extraction and first decode
+  per resolved ZIP path. Mounted blocks and presentation waits pin their
+  data. The idle encoded-byte LRU retains up to 32 images and 16 MiB per
+  engine, dropping the matching completed Flutter cache entry on eviction
+  without clearing live tracking. Flutter still owns decoded images and
+  their live listeners.
+  First-decoded dimensions outlive byte eviction within the session so known
+  slots keep the same geometry on the first remounted frame and while reloading
+  or showing an error. A first-time size change still invalidates turn history.
+  Closing the engine detaches decode waits and discards late results.
+- Cold and reflowed image restores (10) apply the saved clipped fraction to
+  the laid-out row, including its paragraph gap. A cold placeholder provides
+  provisional geometry until the target image reports its decoded size. A
+  visible target remains the logical anchor if a book boundary clamps the
+  restore. An actual scroll or newer navigation supersedes that anchor.
+- After the target frame paints, EPUB readiness checks the visible image
+  blocks again and waits for any newly visible block or pending restoration.
+  Stable pages use the same ready frame. Cancellation or the existing
+  preparation timeout during readiness reveals the accepted navigation.
+- No public method signatures, position JSON fields, enumeration version,
+  paragraph ordering, database schema or dependencies change. Item 05 adds
+  cross-layout text anchoring. Item 08 adds shared target readiness and
+  cancellation, described above and in `docs/READER_HISTORY.md`;
+  item 13 remains separate.
+
 Implements optional capabilities:
 - `TextReaderCapability`
 - `TextExtractionCapability`
@@ -301,12 +538,61 @@ File: [`lib/modules/reader/reader_engine/pdf/pdf_reader.dart`](./lib/modules/rea
 Role:
 - open PDF through `pdfx`
 - restore and persist location by page number
-- expose synthetic chapter entries every N pages for minimal navigation
+- expose synthetic chapter entries every ten pages for minimal navigation
 
 Core characteristics:
 - true page-number navigation
 - no text highlights or snippets in the current architecture
 - synthetic TOC only, so `chapterNavigation` is `synthetic`
+- the chapter list waits for the document's page count independently of
+  position restoration and viewport attachment
+
+PDF location restoration during loading (item 06):
+- `initialize()` still returns before document loading finishes. After
+  initialization, the engine retains one latest pending page/progress target;
+  chapter jumps and early page turns participate in the same navigation order.
+  This is a requested target, not a second owner of the current position.
+- Document resolution alone is insufficient: pdfx 2.9.2 reports document success
+  before its PageView attaches. A private viewport widget releases navigation
+  after the loaded view's frame, using public pdfx APIs and no fixed delay.
+  Unmounted callbacks cannot mark a detached viewport ready; remounting also
+  checks an already-loaded document.
+- Page targets are clamped to the document's page range. A pending progress
+  target resolves against the loaded page count, including any subsequent early
+  next/previous steps. Newer requests supersede older requests rather than
+  replaying an old restore over a later user action.
+- Navigation futures wait until the target is handed to the mounted page
+  controller. Superseded requests and disposal release waiters without replay;
+  document-open errors reject pending/future navigation, while PdfView displays
+  its existing error state. Completion does not imply decoded page pixels;
+  `waitForPagePresentation` remains the separate presentation readiness gate.
+- Public method signatures and database persistence are unchanged. Targeted
+  regressions are in `test/pdf_page_presentation_test.dart`; these channel-based
+  tests establish lifecycle/order behavior, not native rendering performance.
+
+PDF native resource ownership:
+- The engine owns the opened `PdfDocument`. In pinned pdfx 2.9.2,
+  `PdfController.dispose()` releases only the page controller, so engine disposal
+  separately schedules document closure exactly once, including late opens.
+- Every page-image future submitted through the page builder is observed until
+  completion. pdfx resolves it only after its `finally` closes the native page;
+  cleanup drains all such futures, including queued requests, before closing
+  the document. Waiting only for the renderer would race native page closure.
+- A non-failing load-settlement signal separates cleanup from the original
+  document-open error. The existing loader/navigation paths report that error;
+  disposal does not re-await a rejected document future or close a missing
+  document.
+- Temporary source deletion follows successful document closure (or failed-open
+  settlement when no document exists). Close failure is reported through
+  `FlutterError.reportError` and leaves the temporary source intact. Cleanup is
+  asynchronous because the public `dispose()` contract remains synchronous;
+  it adds no fixed delay and does not block the UI.
+- `test/pdf_document_lifecycle_test.dart` covers normal/repeated disposal, late
+  loading, in-flight rendering, page closure, queued requests, failed open,
+  temporary-file ordering and close failure. Rendering dimensions, page cache
+  policy and position restoration are unchanged. Item 13B-4's performance
+  variation and complex-PDF coverage remain open; resource cleanup is not a
+  demonstrated fix for the historical slow frames.
 
 Implements optional capabilities:
 - `PageMetricsCapability`

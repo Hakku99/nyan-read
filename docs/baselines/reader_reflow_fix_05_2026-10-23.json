@@ -1,0 +1,314 @@
+{
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "reader_reflow_fix_05_2026-10-23.json",
+    "fullSha256": "f3e969ec032ad571002ae250c78a9516eb74dad4e62b6fb51ae8503383a33d60",
+    "fullBytes": 34152
+  },
+  "date": "2026-10-23",
+  "task": "05 TXT/EPUB mode and reflow anchoring",
+  "branch": "codex/reader-turn-location-fixes",
+  "referenceCommit": "0404233a6e2f5fab87c2bf6e7cee9b42d61ddf76",
+  "committed": false,
+  "sourceAndArtifactSha256": "<18 entries omitted; see local full file>",
+  "sampleHashes": {
+    "txt": "908BC3552974C31F1ED3C8C25EE83E289773CA44F7C84C84AA1A16A4DC5844A9",
+    "epub": "486FFF823E05F54E623528CE488B211B6196C6AA751272B74E6565EF133D3915"
+  },
+  "tests": {
+    "coreRegression": {
+      "passed": 140,
+      "failed": 0
+    },
+    "expandedReaderChecks": {
+      "passed": 59,
+      "skipped": 4,
+      "existingFailures": 5,
+      "failureDetails": [
+        "2 slider style assertions disagree with unchanged implementation",
+        "3 progress card tests omit NyanTheme and produce follow-on overflow"
+      ]
+    },
+    "realBookReflow": {
+      "passed": 12,
+      "failed": 0
+    },
+    "originalDiagnostic": {
+      "passed": 27,
+      "failed": 1,
+      "remaining": "PDF early restore (06)"
+    },
+    "staticAnalysis": "Only 2 existing home_screen.dart infos",
+    "designTokens": "Existing literal colors, including unchanged animation gradient; no new literals"
+  },
+  "fullApp": {
+    "save": [
+      {
+        "event": "saved",
+        "format": "txt",
+        "passed": true,
+        "lineY": 14.476190476190368
+      },
+      {
+        "event": "saved",
+        "format": "epub",
+        "passed": true,
+        "lineY": 12.190476190476147
+      },
+      {
+        "event": "complete",
+        "passed": true
+      }
+    ],
+    "restore": [
+      {
+        "event": "restored",
+        "format": "txt",
+        "passed": true,
+        "lineY": 14.476190476190482,
+        "chapter": 332
+      },
+      {
+        "event": "restored",
+        "format": "epub",
+        "passed": true,
+        "lineY": 12.190476190476147,
+        "chapter": 413
+      },
+      {
+        "event": "complete",
+        "passed": true
+      }
+    ]
+  },
+  "performance": {
+    "environment": "Android 16 x86_64 emulator, 1080x2400, DPR 2.625, 60Hz; host NVIDIA RTX 4070 Ti SUPER GLES; Flutter 3.38.9 Dart 3.10.8; profile builds",
+    "finalSourceRounds": 1,
+    "summary": [
+      {
+        "format": "txt",
+        "operation": "turn",
+        "mode": "swipe",
+        "before-05": {
+          "overBudgetPercent": 15.5,
+          "completionP95Ms": 374.92,
+          "buildP95Ms": 5.14,
+          "rasterP95Ms": 26.1,
+          "rssBeforeMiB": 299.66,
+          "rssAfterMiB": 277.55
+        },
+        "fixed-05": {
+          "overBudgetPercent": 15.15,
+          "completionP95Ms": 379.11,
+          "buildP95Ms": 4.58,
+          "rasterP95Ms": 26.38,
+          "rssBeforeMiB": 294.51,
+          "rssAfterMiB": 297.73
+        }
+      },
+      {
+        "format": "txt",
+        "operation": "turn",
+        "mode": "tap",
+        "before-05": {
+          "overBudgetPercent": 32.34,
+          "completionP95Ms": 511.83,
+          "buildP95Ms": 44.23,
+          "rasterP95Ms": 29.26,
+          "rssBeforeMiB": 296.47,
+          "rssAfterMiB": 298.27
+        },
+        "fixed-05": {
+          "overBudgetPercent": 33.16,
+          "completionP95Ms": 446.3,
+          "buildP95Ms": 10.5,
+          "rasterP95Ms": 31.67,
+          "rssBeforeMiB": 301.73,
+          "rssAfterMiB": 299.24
+        }
+      },
+      {
+        "format": "txt",
+        "operation": "turn",
+        "mode": "disabled",
+        "before-05": {
+          "overBudgetPercent": 1.0,
+          "completionP95Ms": 333.31,
+          "buildP95Ms": 2.11,
+          "rasterP95Ms": 6.16,
+          "rssBeforeMiB": 302.48,
+          "rssAfterMiB": 299.43
+        },
+        "fixed-05": {
+          "overBudgetPercent": 0.0,
+          "completionP95Ms": 333.17,
+          "buildP95Ms": 1.91,
+          "rasterP95Ms": 5.48,
+          "rssBeforeMiB": 305.66,
+          "rssAfterMiB": 305.96
+        }
+      },
+      {
+        "format": "txt",
+        "operation": "mode",
+        "mode": "swipe",
+        "before-05": {
+          "overBudgetPercent": 0.0,
+          "completionP95Ms": 52.66,
+          "buildP95Ms": 7.58,
+          "rasterP95Ms": 4.18,
+          "rssBeforeMiB": 300.12,
+          "rssAfterMiB": 291.75
+        },
+        "fixed-05": {
+          "overBudgetPercent": 0.0,
+          "completionP95Ms": 49.1,
+          "buildP95Ms": 2.24,
+          "rasterP95Ms": 4.83,
+          "rssBeforeMiB": 282.94,
+          "rssAfterMiB": 277.95
+        }
+      },
+      {
+        "format": "txt",
+        "operation": "typography",
+        "mode": "swipe",
+        "before-05": {
+          "overBudgetPercent": 0.0,
+          "completionP95Ms": 49.9,
+          "buildP95Ms": 3.97,
+          "rasterP95Ms": 5.56,
+          "rssBeforeMiB": 299.57,
+          "rssAfterMiB": 296.09
+        },
+        "fixed-05": {
+          "overBudgetPercent": 0.0,
+          "completionP95Ms": 66.35,
+          "buildP95Ms": 3.81,
+          "rasterP95Ms": 4.85,
+          "rssBeforeMiB": 291.16,
+          "rssAfterMiB": 289.51
+        }
+      },
+      {
+        "format": "epub",
+        "operation": "turn",
+        "mode": "swipe",
+        "before-05": {
+          "overBudgetPercent": 1.86,
+          "completionP95Ms": 300.48,
+          "buildP95Ms": 2.66,
+          "rasterP95Ms": 14.52,
+          "rssBeforeMiB": 274.4,
+          "rssAfterMiB": 272.77
+        },
+        "fixed-05": {
+          "overBudgetPercent": 0.93,
+          "completionP95Ms": 299.96,
+          "buildP95Ms": 2.57,
+          "rasterP95Ms": 5.72,
+          "rssBeforeMiB": 252.41,
+          "rssAfterMiB": 255.94
+        }
+      },
+      {
+        "format": "epub",
+        "operation": "turn",
+        "mode": "tap",
+        "before-05": {
+          "overBudgetPercent": 1.84,
+          "completionP95Ms": 420.7,
+          "buildP95Ms": 11.56,
+          "rasterP95Ms": 13.31,
+          "rssBeforeMiB": 229.89,
+          "rssAfterMiB": 248.27
+        },
+        "fixed-05": {
+          "overBudgetPercent": 14.78,
+          "completionP95Ms": 400.32,
+          "buildP95Ms": 1.07,
+          "rasterP95Ms": 17.4,
+          "rssBeforeMiB": 220.93,
+          "rssAfterMiB": 218.55
+        }
+      },
+      {
+        "format": "epub",
+        "operation": "turn",
+        "mode": "disabled",
+        "before-05": {
+          "overBudgetPercent": 0.83,
+          "completionP95Ms": 333.69,
+          "buildP95Ms": 2.0,
+          "rasterP95Ms": 5.79,
+          "rssBeforeMiB": 212.7,
+          "rssAfterMiB": 222.83
+        },
+        "fixed-05": {
+          "overBudgetPercent": 0.83,
+          "completionP95Ms": 333.11,
+          "buildP95Ms": 1.84,
+          "rasterP95Ms": 5.43,
+          "rssBeforeMiB": 221.17,
+          "rssAfterMiB": 222.14
+        }
+      },
+      {
+        "format": "epub",
+        "operation": "mode",
+        "mode": "swipe",
+        "before-05": {
+          "overBudgetPercent": 0.0,
+          "completionP95Ms": 52.18,
+          "buildP95Ms": 8.93,
+          "rasterP95Ms": 4.3,
+          "rssBeforeMiB": 211.85,
+          "rssAfterMiB": 212.23
+        },
+        "fixed-05": {
+          "overBudgetPercent": 0.0,
+          "completionP95Ms": 49.67,
+          "buildP95Ms": 3.51,
+          "rasterP95Ms": 5.38,
+          "rssBeforeMiB": 218.61,
+          "rssAfterMiB": 207.12
+        }
+      },
+      {
+        "format": "epub",
+        "operation": "typography",
+        "mode": "swipe",
+        "before-05": {
+          "overBudgetPercent": 0.0,
+          "completionP95Ms": 52.45,
+          "buildP95Ms": 7.27,
+          "rasterP95Ms": 4.35,
+          "rssBeforeMiB": 201.62,
+          "rssAfterMiB": 212.18
+        },
+        "fixed-05": {
+          "overBudgetPercent": 0.62,
+          "completionP95Ms": 86.8,
+          "buildP95Ms": 9.56,
+          "rasterP95Ms": 4.0,
+          "rssBeforeMiB": 219.58,
+          "rssAfterMiB": 223.36
+        }
+      }
+    ],
+    "events": "<22 items omitted; see local full file>",
+    "protocol": "Same APK, original 04 engines and original 04 animation container vs fixed. Fixed old/new order. 5 warmup and 30 measured operations per scene; one final-source process run; 20 scenes per round. Transition latency observes two committed frames plus pending restore completion, not touch-to-photon. RS...",
+    "priorThreeRoundRecord": "reader_reflow_fix_05_2026-10-22.json",
+    "softwareRenderer": "Separate intermediate SwiftShader diagnostics; excluded from hardware figures",
+    "limitations": "<6 items omitted; see local full file>",
+    "verdict": "Position checks pass; animation smoothness budget remains unmet; not release performance certification"
+  },
+  "intermediateFindings": "<7 items omitted; see local full file>",
+  "limitations": "<6 items omitted; see local full file>",
+  "cleanup": {
+    "dedicatedTestAppUninstalled": true,
+    "ownedEmulatorStopped": true,
+    "originalSampleHashesUnchanged": true,
+    "sourceAndApkHashesRechecked": true
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "epub_image_position_fix_2026-11-04.json",
+    "fullSha256": "ea6e90666dac8053ec5eb04fc53fd10d410809c6d4af57501a9f9c3d9cb54c9a",
+    "fullBytes": 9850
+  },
+  "date": "2026-11-04",
+  "base": "fbe18f1",
+  "shortRuns": [
+    {
+      "run": "foreground-imagefix-input-2-B",
+      "passed": true,
+      "imageLayoutNotifications": 0,
+      "layoutInvalidations": 2,
+      "accepted": 11,
+      "ignored": 4,
+      "ended": 11,
+      "maxPositionErrorPx": 0.0,
+      "warmRoundTrip": true,
+      "performanceExcluded": true,
+      "performanceExclusionReason": "Overlapping sample validation cannot be ruled out",
+      "pendingReadbackAtCancellation": 1,
+      "snapshotReferencesAfterRelease": 0,
+      "laterCaptureCompleted": true
+    },
+    {
+      "run": "foreground-imagefix-input-3-B",
+      "passed": true,
+      "imageLayoutNotifications": 0,
+      "layoutInvalidations": 2,
+      "accepted": 11,
+      "ignored": 4,
+      "ended": 11,
+      "maxPositionErrorPx": 0.0,
+      "warmRoundTrip": true,
+      "performanceExcluded": false,
+      "performanceExclusionReason": null,
+      "pendingReadbackAtCancellation": 1,
+      "snapshotReferencesAfterRelease": 0,
+      "laterCaptureCompleted": true
+    },
+    {
+      "run": "foreground-imagefix-input-4-B",
+      "passed": true,
+      "imageLayoutNotifications": 0,
+      "layoutInvalidations": 2,
+      "accepted": 11,
+      "ignored": 4,
+      "ended": 11,
+      "maxPositionErrorPx": 0.0,
+      "warmRoundTrip": true,
+      "performanceExcluded": false,
+      "performanceExclusionReason": null,
+      "pendingReadbackAtCancellation": 1,
+      "snapshotReferencesAfterRelease": 0,
+      "laterCaptureCompleted": true
+    }
+  ],
+  "unitPassed": 48,
+  "samplePassed": 3,
+  "longTestRun": false,
+  "startupInvalidRun": "foreground-imagefix-input-1-B",
+  "sourceSha256": "10bf05f3788e2a96a2dea7229afd68b75cd73499a6269894338f4dca8608b2cd",
+  "staticAnalysis": "passed (3 changed Dart files)",
+  "sampleSha256": {
+    "epub": "486fff823e05f54e623528ce488b211b6196c6aa751272b74e6565ef133d3915",
+    "txt": "908bc3552974c31f1ed3c8c25ee83e289773ca44f7c84c84aa1a16a4dc5844a9"
+  }
+}

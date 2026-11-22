@@ -1,7 +1,7 @@
 # 设计蓝图：书库文件夹（目录树授权）+ 书籍管理
 
 > 状态：**Phase A gate 已通过（2026-07-18 模拟器会话，见 §10）**，原生四方法已实现并实测
-> 对应审查问题：`CODEBASE_ANALYSIS.md` §6 #3（persistable URI 配额）
+> 对应审查问题：2026-07 全库审查报告 §6 #3（persistable URI 配额；报告已移出仓库，见 git 历史）
 > 动工前提：schema 变更（Phase C）触发 §3.5-3 三段式；上架前补一次真机 sanity pass（OEM 皮肤 + 真 SD 卡 + 性能面）
 
 ---

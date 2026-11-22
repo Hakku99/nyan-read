@@ -1,0 +1,279 @@
+{
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "reader_performance_13b1_buffer_chain_2026-11-04.json",
+    "fullSha256": "71c6c13b2a93b2f6e773677e640abba99fee643006dd8042a998da9363ac6ee4",
+    "fullBytes": 40959
+  },
+  "date": "2026-11-04",
+  "decision": "retain duplicate preparation-frame fix; overall 13B-1 remains incomplete",
+  "pairedTurns": 12,
+  "positionMismatches": [],
+  "errors": [],
+  "perTurnPreparationFrames": [
+    {
+      "scene": "epub_image",
+      "temperature": "first",
+      "turn": 0,
+      "beforePreparationFrames": 7,
+      "afterPreparationFrames": 6
+    },
+    {
+      "scene": "epub_image",
+      "temperature": "first",
+      "turn": 1,
+      "beforePreparationFrames": 7,
+      "afterPreparationFrames": 6
+    },
+    {
+      "scene": "epub_image",
+      "temperature": "warm",
+      "turn": 0,
+      "beforePreparationFrames": 7,
+      "afterPreparationFrames": 6
+    },
+    {
+      "scene": "epub_image",
+      "temperature": "warm",
+      "turn": 1,
+      "beforePreparationFrames": 7,
+      "afterPreparationFrames": 6
+    },
+    {
+      "scene": "epub_image",
+      "temperature": "warm",
+      "turn": 2,
+      "beforePreparationFrames": 7,
+      "afterPreparationFrames": 6
+    },
+    {
+      "scene": "epub_image",
+      "temperature": "warm",
+      "turn": 3,
+      "beforePreparationFrames": 7,
+      "afterPreparationFrames": 6
+    },
+    {
+      "scene": "txt_long",
+      "temperature": "first",
+      "turn": 0,
+      "beforePreparationFrames": 6,
+      "afterPreparationFrames": 5
+    },
+    {
+      "scene": "txt_long",
+      "temperature": "first",
+      "turn": 1,
+      "beforePreparationFrames": 6,
+      "afterPreparationFrames": 5
+    },
+    {
+      "scene": "txt_long",
+      "temperature": "warm",
+      "turn": 0,
+      "beforePreparationFrames": 6,
+      "afterPreparationFrames": 5
+    },
+    {
+      "scene": "txt_long",
+      "temperature": "warm",
+      "turn": 1,
+      "beforePreparationFrames": 6,
+      "afterPreparationFrames": 5
+    },
+    {
+      "scene": "txt_long",
+      "temperature": "warm",
+      "turn": 2,
+      "beforePreparationFrames": 6,
+      "afterPreparationFrames": 5
+    },
+    {
+      "scene": "txt_long",
+      "temperature": "warm",
+      "turn": 3,
+      "beforePreparationFrames": 6,
+      "afterPreparationFrames": 5
+    }
+  ],
+  "inputChecks": [
+    {
+      "file": "results\\foreground-buffer-full-1-A\\foreground-buffer-full-1-A-epub_image-inputs.json"
+    },
+    {
+      "file": "results\\foreground-buffer-full-1-A\\foreground-buffer-full-1-A-txt_long-inputs.json"
+    },
+    {
+      "file": "results\\foreground-buffer-full-1-B\\foreground-buffer-full-1-B-epub_image-inputs.json"
+    },
+    {
+      "file": "results\\foreground-buffer-full-1-B\\foreground-buffer-full-1-B-txt_long-inputs.json"
+    }
+  ],
+  "shortRuns": [
+    {
+      "scene": "epub_image",
+      "temperature": "first",
+      "turns": 2,
+      "frames": 62,
+      "slow": 8,
+      "slowPercent": 12.903225806451612,
+      "meanSlowPerTurn": 4,
+      "maxConsecutiveSlow": 2,
+      "clockMatchedPaintMarks": 48,
+      "crossStageSlow": 2,
+      "rssBefore": 326795264,
+      "rssAfter": 329383936,
+      "cacheBytes": 79663856,
+      "source": "foreground-buffer-full-1-A\\foreground-buffer-full-1-A-epub_image-first.json"
+    },
+    {
+      "scene": "epub_image",
+      "temperature": "warm",
+      "turns": 4,
+      "frames": 124,
+      "slow": 11,
+      "slowPercent": 8.870967741935484,
+      "meanSlowPerTurn": 2.75,
+      "maxConsecutiveSlow": 3,
+      "clockMatchedPaintMarks": 96,
+      "crossStageSlow": 5,
+      "rssBefore": 306724864,
+      "rssAfter": 300433408,
+      "cacheBytes": 79663856,
+      "source": "foreground-buffer-full-1-A\\foreground-buffer-full-1-A-epub_image-warm.json"
+    },
+    {
+      "scene": "txt_long",
+      "temperature": "first",
+      "turns": 2,
+      "frames": 59,
+      "slow": 12,
+      "slowPercent": 20.338983050847457,
+      "meanSlowPerTurn": 6,
+      "maxConsecutiveSlow": 3,
+      "clockMatchedPaintMarks": 47,
+      "crossStageSlow": 3,
+      "rssBefore": 325799936,
+      "rssAfter": 330211328,
+      "cacheBytes": 6293408,
+      "source": "foreground-buffer-full-1-A\\foreground-buffer-full-1-A-txt_long-first.json"
+    },
+    {
+      "scene": "txt_long",
+      "temperature": "warm",
+      "turns": 4,
+      "frames": 120,
+      "slow": 11,
+      "slowPercent": 9.166666666666666,
+      "meanSlowPerTurn": 2.75,
+      "maxConsecutiveSlow": 2,
+      "clockMatchedPaintMarks": 96,
+      "crossStageSlow": 4,
+      "rssBefore": 315793408,
+      "rssAfter": 324141056,
+      "cacheBytes": 6293408,
+      "source": "foreground-buffer-full-1-A\\foreground-buffer-full-1-A-txt_long-warm.json"
+    },
+    {
+      "scene": "epub_image",
+      "temperature": "first",
+      "turns": 2,
+      "frames": 60,
+      "slow": 14,
+      "slowPercent": 23.333333333333332,
+      "meanSlowPerTurn": 7,
+      "maxConsecutiveSlow": 2,
+      "clockMatchedPaintMarks": 48,
+      "crossStageSlow": 3,
+      "rssBefore": 296898560,
+      "rssAfter": 276226048,
+      "cacheBytes": 79663856,
+      "source": "foreground-buffer-full-1-B\\foreground-buffer-full-1-B-epub_image-first.json"
+    },
+    {
+      "scene": "epub_image",
+      "temperature": "warm",
+      "turns": 4,
+      "frames": 119,
+      "slow": 12,
+      "slowPercent": 10.084033613445378,
+      "meanSlowPerTurn": 3,
+      "maxConsecutiveSlow": 3,
+      "clockMatchedPaintMarks": 95,
+      "crossStageSlow": 5,
+      "rssBefore": 275324928,
+      "rssAfter": 274403328,
+      "cacheBytes": 79663856,
+      "source": "foreground-buffer-full-1-B\\foreground-buffer-full-1-B-epub_image-warm.json"
+    },
+    {
+      "scene": "txt_long",
+      "temperature": "first",
+      "turns": 2,
+      "frames": 58,
+      "slow": 2,
+      "slowPercent": 3.4482758620689653,
+      "meanSlowPerTurn": 1,
+      "maxConsecutiveSlow": 2,
+      "clockMatchedPaintMarks": 48,
+      "crossStageSlow": 2,
+      "rssBefore": 325435392,
+      "rssAfter": 329719808,
+      "cacheBytes": 6293408,
+      "source": "foreground-buffer-full-1-B\\foreground-buffer-full-1-B-txt_long-first.json"
+    },
+    {
+      "scene": "txt_long",
+      "temperature": "warm",
+      "turns": 4,
+      "frames": 116,
+      "slow": 2,
+      "slowPercent": 1.7241379310344827,
+      "meanSlowPerTurn": 0.5,
+      "maxConsecutiveSlow": 1,
+      "clockMatchedPaintMarks": 96,
+      "crossStageSlow": 2,
+      "rssBefore": 313651200,
+      "rssAfter": 322011136,
+      "cacheBytes": 6293408,
+      "source": "foreground-buffer-full-1-B\\foreground-buffer-full-1-B-txt_long-warm.json"
+    }
+  ],
+  "historicalTraceChains": {
+    "A": {
+      "groups": {
+        "epub_image/slow=False": "<12 entries omitted; see local full file>",
+        "epub_image/slow=True": "<12 entries omitted; see local full file>",
+        "epub_long/slow=False": "<12 entries omitted; see local full file>",
+        "epub_long/slow=True": "<12 entries omitted; see local full file>",
+        "txt_long/slow=False": "<12 entries omitted; see local full file>",
+        "txt_long/slow=True": "<12 entries omitted; see local full file>"
+      },
+      "linkedWarmSlowWaits": 202,
+      "successorQueuedOverBudget": 180,
+      "presentOverBudget": 4,
+      "maxReleaseCallbackLagMs": 1.271918
+    },
+    "B": {
+      "groups": {
+        "epub_image/slow=False": "<12 entries omitted; see local full file>",
+        "epub_image/slow=True": "<12 entries omitted; see local full file>",
+        "epub_long/slow=False": "<12 entries omitted; see local full file>",
+        "epub_long/slow=True": "<12 entries omitted; see local full file>",
+        "txt_long/slow=False": "<12 entries omitted; see local full file>",
+        "txt_long/slow=True": "<12 entries omitted; see local full file>"
+      },
+      "linkedWarmSlowWaits": 75,
+      "successorQueuedOverBudget": 54,
+      "presentOverBudget": 6,
+      "maxReleaseCallbackLagMs": 0.953442
+    }
+  },
+  "productionSourceSha256": "58aed5da34e7ff8ecadaeae97c71116d307ab710334b4300e25e490b3c53dcf1",
+  "apkAssetEquality": true,
+  "functionalTestsPassed": 42,
+  "analysisTestsPassed": 17,
+  "scope": "one AB pair, original TXT long and EPUB image; no long test or new heavy capture",
+  "rawEvidence": ".dart_tool/perf13b1_buffers"
+}

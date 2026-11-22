@@ -1,0 +1,56 @@
+{
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "reader_navigation_2026-10-19.json",
+    "fullSha256": "20f01ca912c583ad5e61300553f035c9946d858e92fecc856e73bdfc4454b5eb",
+    "fullBytes": 11192
+  },
+  "date": "2026-10-19",
+  "productionRevision": "c41869fab15a49b402a5530e8e37760289a0f122",
+  "productionModified": false,
+  "flutter": "3.38.9",
+  "dart": "3.10.8",
+  "apkSha256": "ECF76CFA57C102DBF7117EBF66FAFE7C33F4AC6AD3F3A0A5B26A28A7D7EC70ED",
+  "sample": {
+    "bytes": 9190763,
+    "paragraphs": 124894,
+    "longestParagraphIndex": 34455,
+    "longestParagraphCodeUnits": 4122,
+    "sha256": "908BC3552974C31F1ED3C8C25EE83E289773CA44F7C84C84AA1A16A4DC5844A9"
+  },
+  "realTxtTestFont": {
+    "family": "Noto Sans SC",
+    "asset": "assets/fonts/subset/NotoSansSC-Regular.ttf",
+    "sha256": "CD006AD695C8682E4F41F024D33D27509481C7065D9DB65358BEE3FB91B90F31"
+  },
+  "navigationTests": {
+    "synthetic": {
+      "passed": 7,
+      "failed": 21,
+      "skipped": 0
+    },
+    "external": {
+      "passed": 2,
+      "failed": 4,
+      "skipped": 0
+    }
+  },
+  "existingRegression": {
+    "passed": 13,
+    "failed": 0,
+    "skipped": 4
+  },
+  "checks": {
+    "newToolsAnalyze": "pass",
+    "repositoryAnalyze": "2 existing async-context infos",
+    "designTokens": "fails on existing production color literals"
+  },
+  "profile": {
+    "device": "Android 16 x86_64 emulator",
+    "renderer": "Impeller OpenGLES",
+    "finalRecordingRounds": 1,
+    "scope": "Actual engines and SmoothPageReader; standalone harness, no app controllers or database",
+    "events": "<13 items omitted; see local full file>"
+  },
+  "limitations": "<6 items omitted; see local full file>"
+}

@@ -1,0 +1,586 @@
+{
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "reader_reflow_fix_05_2026-10-22.json",
+    "fullSha256": "e8442b222938b21c376111e1ebfd46a5a903e4e45880d557285b1649b5ef7c70",
+    "fullBytes": 85237
+  },
+  "date": "2026-10-22",
+  "task": "05 TXT/EPUB mode and reflow anchoring",
+  "branch": "codex/reader-turn-location-fixes",
+  "referenceCommit": "0404233a6e2f5fab87c2bf6e7cee9b42d61ddf76",
+  "committed": false,
+  "sourceAndArtifactSha256": "<21 entries omitted; see local full file>",
+  "tests": {
+    "relatedRegression": {
+      "passed": 211,
+      "skipped": 4,
+      "failed": 0
+    },
+    "newRealBookMatrix": {
+      "passed": 12,
+      "failed": 0
+    },
+    "originalDiagnosis": {
+      "syntheticPassed": 27,
+      "syntheticFailed": 1,
+      "realTxtPassed": 6,
+      "remainingFailure": "PDF pre-attach restore (06)"
+    },
+    "staticAnalysis": "Two pre-existing home_screen.dart infos; no new diagnostics",
+    "designTokens": "Existing literal-color failures; no newly added literals"
+  },
+  "sampleHashes": {
+    "txt": "908BC3552974C31F1ED3C8C25EE83E289773CA44F7C84C84AA1A16A4DC5844A9",
+    "epub": "486FFF823E05F54E623528CE488B211B6196C6AA751272B74E6565EF133D3915"
+  },
+  "fullApp": {
+    "save": [
+      {
+        "event": "saved",
+        "format": "txt",
+        "passed": true,
+        "lineY": 14.476190476190368
+      },
+      {
+        "event": "saved",
+        "format": "epub",
+        "passed": true,
+        "lineY": 12.190476190476147
+      },
+      {
+        "event": "complete",
+        "passed": true
+      }
+    ],
+    "restore": [
+      {
+        "event": "restored",
+        "format": "txt",
+        "passed": true,
+        "lineY": 14.476190476190482,
+        "chapter": 332
+      },
+      {
+        "event": "restored",
+        "format": "epub",
+        "passed": true,
+        "lineY": 12.190476190476147,
+        "chapter": 413
+      },
+      {
+        "event": "complete",
+        "passed": true
+      }
+    ]
+  },
+  "performance": {
+    "summary": [
+      {
+        "format": "txt",
+        "operation": "turn",
+        "mode": "swipe",
+        "before-05": {
+          "overBudgetPercentRange": [
+            11.482,
+            15.886
+          ],
+          "completionP95MsRange": [
+            375.018,
+            378.184
+          ],
+          "buildP95MsRange": [
+            4.685,
+            5.773
+          ],
+          "rasterP95MsRange": [
+            23.314,
+            25.819
+          ],
+          "rssBoundaryMiBRange": [
+            292.512,
+            300.398
+          ]
+        },
+        "fixed-05": {
+          "overBudgetPercentRange": [
+            12.766,
+            16.667
+          ],
+          "completionP95MsRange": [
+            374.755,
+            386.982
+          ],
+          "buildP95MsRange": [
+            5.106,
+            5.887
+          ],
+          "rasterP95MsRange": [
+            23.363,
+            25.944
+          ],
+          "rssBoundaryMiBRange": [
+            287.898,
+            302.957
+          ]
+        }
+      },
+      {
+        "format": "txt",
+        "operation": "turn",
+        "mode": "tap",
+        "before-05": {
+          "overBudgetPercentRange": [
+            33.184,
+            38.626
+          ],
+          "completionP95MsRange": [
+            525.831,
+            533.668
+          ],
+          "buildP95MsRange": [
+            39.541,
+            46.939
+          ],
+          "rasterP95MsRange": [
+            33.855,
+            38.488
+          ],
+          "rssBoundaryMiBRange": [
+            295.723,
+            306.504
+          ]
+        },
+        "fixed-05": {
+          "overBudgetPercentRange": [
+            30.172,
+            38.545
+          ],
+          "completionP95MsRange": [
+            438.31,
+            450.654
+          ],
+          "buildP95MsRange": [
+            5.727,
+            7.648
+          ],
+          "rasterP95MsRange": [
+            31.548,
+            32.751
+          ],
+          "rssBoundaryMiBRange": [
+            295.652,
+            302.289
+          ]
+        }
+      },
+      {
+        "format": "txt",
+        "operation": "turn",
+        "mode": "disabled",
+        "before-05": {
+          "overBudgetPercentRange": [
+            11.349,
+            12.195
+          ],
+          "completionP95MsRange": [
+            362.437,
+            375.675
+          ],
+          "buildP95MsRange": [
+            4.014,
+            4.424
+          ],
+          "rasterP95MsRange": [
+            23.286,
+            25.364
+          ],
+          "rssBoundaryMiBRange": [
+            294.895,
+            308.434
+          ]
+        },
+        "fixed-05": {
+          "overBudgetPercentRange": [
+            12.553,
+            15.612
+          ],
+          "completionP95MsRange": [
+            361.215,
+            362.634
+          ],
+          "buildP95MsRange": [
+            4.053,
+            4.587
+          ],
+          "rasterP95MsRange": [
+            23.679,
+            24.804
+          ],
+          "rssBoundaryMiBRange": [
+            288.004,
+            306.301
+          ]
+        }
+      },
+      {
+        "format": "txt",
+        "operation": "mode",
+        "mode": "swipe",
+        "before-05": {
+          "overBudgetPercentRange": [
+            8.163,
+            13.084
+          ],
+          "completionP95MsRange": [
+            139.219,
+            162.913
+          ],
+          "buildP95MsRange": [
+            18.799,
+            19.732
+          ],
+          "rasterP95MsRange": [
+            5.489,
+            12.463
+          ],
+          "rssBoundaryMiBRange": [
+            291.785,
+            309.98
+          ]
+        },
+        "fixed-05": {
+          "overBudgetPercentRange": [
+            11.111,
+            14.444
+          ],
+          "completionP95MsRange": [
+            94.068,
+            96.998
+          ],
+          "buildP95MsRange": [
+            4.79,
+            6.936
+          ],
+          "rasterP95MsRange": [
+            24.003,
+            26.4
+          ],
+          "rssBoundaryMiBRange": [
+            281.621,
+            308.582
+          ]
+        }
+      },
+      {
+        "format": "txt",
+        "operation": "typography",
+        "mode": "swipe",
+        "before-05": {
+          "overBudgetPercentRange": [
+            5.556,
+            8.889
+          ],
+          "completionP95MsRange": [
+            97.089,
+            102.045
+          ],
+          "buildP95MsRange": [
+            7.357,
+            8.192
+          ],
+          "rasterP95MsRange": [
+            22.098,
+            25.93
+          ],
+          "rssBoundaryMiBRange": [
+            294.719,
+            324.391
+          ]
+        },
+        "fixed-05": {
+          "overBudgetPercentRange": [
+            0.0,
+            5.785
+          ],
+          "completionP95MsRange": [
+            112.55,
+            156.254
+          ],
+          "buildP95MsRange": [
+            7.914,
+            9.568
+          ],
+          "rasterP95MsRange": [
+            10.96,
+            19.407
+          ],
+          "rssBoundaryMiBRange": [
+            309.402,
+            318.992
+          ]
+        }
+      },
+      {
+        "format": "epub",
+        "operation": "turn",
+        "mode": "swipe",
+        "before-05": {
+          "overBudgetPercentRange": [
+            18.66,
+            21.374
+          ],
+          "completionP95MsRange": [
+            327.929,
+            338.513
+          ],
+          "buildP95MsRange": [
+            5.577,
+            6.17
+          ],
+          "rasterP95MsRange": [
+            27.387,
+            28.099
+          ],
+          "rssBoundaryMiBRange": [
+            290.074,
+            322.148
+          ]
+        },
+        "fixed-05": {
+          "overBudgetPercentRange": [
+            17.588,
+            20.097
+          ],
+          "completionP95MsRange": [
+            332.773,
+            341.927
+          ],
+          "buildP95MsRange": [
+            5.089,
+            6.212
+          ],
+          "rasterP95MsRange": [
+            25.897,
+            27.909
+          ],
+          "rssBoundaryMiBRange": [
+            219.52,
+            278.176
+          ]
+        }
+      },
+      {
+        "format": "epub",
+        "operation": "turn",
+        "mode": "tap",
+        "before-05": {
+          "overBudgetPercentRange": [
+            15.884,
+            18.605
+          ],
+          "completionP95MsRange": [
+            500.693,
+            590.651
+          ],
+          "buildP95MsRange": [
+            39.824,
+            42.965
+          ],
+          "rasterP95MsRange": [
+            16.512,
+            18.459
+          ],
+          "rssBoundaryMiBRange": [
+            213.18,
+            284.156
+          ]
+        },
+        "fixed-05": {
+          "overBudgetPercentRange": [
+            40.502,
+            44.015
+          ],
+          "completionP95MsRange": [
+            440.013,
+            444.058
+          ],
+          "buildP95MsRange": [
+            7.194,
+            8.173
+          ],
+          "rasterP95MsRange": [
+            33.073,
+            36.016
+          ],
+          "rssBoundaryMiBRange": [
+            212.77,
+            281.707
+          ]
+        }
+      },
+      {
+        "format": "epub",
+        "operation": "turn",
+        "mode": "disabled",
+        "before-05": {
+          "overBudgetPercentRange": [
+            13.983,
+            16.193
+          ],
+          "completionP95MsRange": [
+            357.996,
+            372.342
+          ],
+          "buildP95MsRange": [
+            3.88,
+            4.234
+          ],
+          "rasterP95MsRange": [
+            24.985,
+            26.828
+          ],
+          "rssBoundaryMiBRange": [
+            214.391,
+            280.223
+          ]
+        },
+        "fixed-05": {
+          "overBudgetPercentRange": [
+            12.556,
+            13.987
+          ],
+          "completionP95MsRange": [
+            359.072,
+            362.743
+          ],
+          "buildP95MsRange": [
+            3.842,
+            4.27
+          ],
+          "rasterP95MsRange": [
+            23.656,
+            24.795
+          ],
+          "rssBoundaryMiBRange": [
+            214.156,
+            268.504
+          ]
+        }
+      },
+      {
+        "format": "epub",
+        "operation": "mode",
+        "mode": "swipe",
+        "before-05": {
+          "overBudgetPercentRange": [
+            15.323,
+            16.923
+          ],
+          "completionP95MsRange": [
+            161.547,
+            188.412
+          ],
+          "buildP95MsRange": [
+            26.367,
+            27.375
+          ],
+          "rasterP95MsRange": [
+            11.319,
+            14.37
+          ],
+          "rssBoundaryMiBRange": [
+            210.254,
+            254.273
+          ]
+        },
+        "fixed-05": {
+          "overBudgetPercentRange": [
+            6.667,
+            12.222
+          ],
+          "completionP95MsRange": [
+            97.814,
+            111.974
+          ],
+          "buildP95MsRange": [
+            7.823,
+            10.526
+          ],
+          "rasterP95MsRange": [
+            16.718,
+            25.367
+          ],
+          "rssBoundaryMiBRange": [
+            210.098,
+            256.605
+          ]
+        }
+      },
+      {
+        "format": "epub",
+        "operation": "typography",
+        "mode": "swipe",
+        "before-05": {
+          "overBudgetPercentRange": [
+            10.204,
+            11.215
+          ],
+          "completionP95MsRange": [
+            110.909,
+            162.438
+          ],
+          "buildP95MsRange": [
+            18.119,
+            19.378
+          ],
+          "rasterP95MsRange": [
+            10.732,
+            16.458
+          ],
+          "rssBoundaryMiBRange": [
+            215.789,
+            253.344
+          ]
+        },
+        "fixed-05": {
+          "overBudgetPercentRange": [
+            15.862,
+            21.769
+          ],
+          "completionP95MsRange": [
+            225.563,
+            272.308
+          ],
+          "buildP95MsRange": [
+            22.433,
+            27.354
+          ],
+          "rasterP95MsRange": [
+            5.235,
+            9.933
+          ],
+          "rssBoundaryMiBRange": [
+            212.98,
+            258.633
+          ]
+        }
+      }
+    ],
+    "rounds": [
+      {
+        "round": 1
+      },
+      {
+        "round": 2
+      },
+      {
+        "round": 3
+      }
+    ],
+    "protocol": "Same APK, original 04 engines and original 04 animation container vs fixed. Fixed old/new order. 5 warmup and 30 measured operations per scene; three process restarts; 20 scenes per round. Transition latency observes two committed frames plus pending restore completion, not touch-to-photon. RSS is s..."
+  },
+  "excludedIntermediateRuns": "<5 items omitted; see local full file>",
+  "limitations": "<5 items omitted; see local full file>",
+  "artifactStage": "Three hardware rounds before final short-book boundary correction; not final-source certification"
+}
