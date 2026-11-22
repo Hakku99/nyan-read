@@ -15,6 +15,9 @@ class BookshelfViewModel extends ChangeNotifier {
 
   BookshelfViewModel(this._db, this._prefs) {
     loadBooks();
+    // Fire-and-forget: finishing a previous session's interrupted file
+    // deletion must not delay the first shelf load.
+    unawaited(_recoverInterruptedFileDeletions());
   }
 
   // --- Core State ---
@@ -98,6 +101,11 @@ class BookshelfViewModel extends ChangeNotifier {
 
   // Undo toast shows for 4s; leave margin so a last-moment tap still wins.
   static const _fileDeleteGraceWindow = Duration(seconds: 8);
+
+  /// Called with the number of source files that could not be deleted once
+  /// the deferred deletion commits. The shelf screen sets this to surface a
+  /// toast; null (screen gone) means the failure stays in the debug log.
+  void Function(int failedCount)? onFileDeletionFailed;
 
   bool get isSelectionMode => _isSelectionMode;
   Set<String> get selectedBookIds => _selectedBookIds;
@@ -227,6 +235,7 @@ class BookshelfViewModel extends ChangeNotifier {
 
       if (pathsToDelete.isNotEmpty) {
         _pendingFileDeletions = pathsToDelete;
+        await _persistPendingDeletions(pathsToDelete);
         _pendingFileDeleteTimer = Timer(_fileDeleteGraceWindow, () {
           // Fire-and-forget: the timer callback cannot await, and a failed
           // deferred deletion only leaves an orphan file behind.
@@ -256,12 +265,17 @@ class BookshelfViewModel extends ChangeNotifier {
     _pendingFileDeleteTimer = null;
     _pendingFileDeletions = const [];
 
+    // Take and clear the snapshot BEFORE the first await: a second Undo tap
+    // (or a new delete batch) during the prefs write must not see it.
     final books = List<Map<String, dynamic>>.from(_lastDeletedBookMaps);
     final bookmarks =
         List<Map<String, dynamic>>.from(_lastDeletedBookmarkMaps);
     final highlights =
         List<Map<String, dynamic>>.from(_lastDeletedHighlightMaps);
     _clearUndoSnapshot();
+
+    // Before the restore, so a kill mid-restore cannot replay the deletion.
+    await _persistPendingDeletions(const []);
 
     try {
       await _db.restoreDeletedBooksBatch(
@@ -294,7 +308,43 @@ class BookshelfViewModel extends ChangeNotifier {
     if (paths.isEmpty) return;
 
     _clearUndoSnapshot();
-    await _deleteSourceFilesBestEffort(paths);
+    final failed = await _deleteSourceFilesBestEffort(paths);
+    // Forgotten only after the attempt: a kill mid-deletion replays the
+    // (safe, idempotent) list on next launch instead of losing it.
+    await _forgetPersistedDeletions(paths);
+    if (failed > 0) onFileDeletionFailed?.call(failed);
+  }
+
+  /// Drops only [done] from the persisted list. A blanket clear would also
+  /// wipe a newer batch persisted while this one's files were being deleted
+  /// (the timer commit and a fresh delete can overlap).
+  Future<void> _forgetPersistedDeletions(List<String> done) =>
+      _persistPendingDeletions([
+        for (final p in _prefs.pendingFileDeletions)
+          if (!done.contains(p)) p,
+      ]);
+
+  /// Best-effort: if persisting fails we fall back to the in-memory-only
+  /// behavior (files can be orphaned by a kill) rather than failing a delete
+  /// whose DB rows are already gone.
+  Future<void> _persistPendingDeletions(List<String> locators) async {
+    try {
+      await _prefs.setPendingFileDeletions(locators);
+    } catch (e) {
+      debugPrint('Failed to persist pending file deletions: $e');
+    }
+  }
+
+  /// Finishes deletions left over from a session that died inside the undo
+  /// grace window. Undo is impossible after a restart, so deleting is the
+  /// only consistent outcome.
+  Future<void> _recoverInterruptedFileDeletions() async {
+    final stale = _prefs.pendingFileDeletions;
+    if (stale.isEmpty) return;
+    // Forget only after the attempt, like the normal commit path: dying
+    // again mid-recovery must not drop the list with the files still on disk.
+    await _deleteSourceFilesBestEffort(stale);
+    await _forgetPersistedDeletions(stale);
   }
 
   @override
@@ -321,7 +371,9 @@ class BookshelfViewModel extends ChangeNotifier {
         continue;
       }
 
-      if (book.isAndroidContentUri) {
+      // Library-folder books (android_tree_uri) are SAF documents too; they
+      // were silently skipped here, so "also delete files" left them on disk.
+      if (book.isAndroidContentUri || book.isAndroidTreeUri) {
         if (!locator.toLowerCase().startsWith('content://')) {
           continue;
         }
@@ -352,7 +404,10 @@ class BookshelfViewModel extends ChangeNotifier {
     return pathsToDelete;
   }
 
-  Future<void> _deleteSourceFilesBestEffort(List<String> locators) async {
+  /// Returns how many files could NOT be deleted (already-missing files do
+  /// not count as failures).
+  Future<int> _deleteSourceFilesBestEffort(List<String> locators) async {
+    var failed = 0;
     // content:// URIs must be deleted serially — platform channel is not
     // concurrency-safe across simultaneous calls.
     final contentUris = <String>[];
@@ -377,6 +432,7 @@ class BookshelfViewModel extends ChangeNotifier {
           'Failed to delete content Uri (unsupported provider or no '
           'persistable delete permission): $locator',
         );
+        failed++;
       }
     }
 
@@ -397,9 +453,11 @@ class BookshelfViewModel extends ChangeNotifier {
           debugPrint(
             'Failed to delete source file: $locator\n$e\n$stackTrace',
           );
+          failed++;
         }
       }),
     );
+    return failed;
   }
 
   /// Moves selected books between public and private shelf using a single batch.

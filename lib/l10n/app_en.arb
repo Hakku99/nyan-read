@@ -589,6 +589,14 @@
     }
   },
   "searchNoMatchSubtitle": "Try a different title or author name.",
+  "filesNotDeleted": "{count, plural, one{1 file could not be deleted. Please remove it manually.} other{{count} files could not be deleted. Please remove them manually.}}",
+  "@filesNotDeleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "errorDeletingBooks": "Error deleting books: {error}",
   "@errorDeletingBooks": {
     "placeholders": {

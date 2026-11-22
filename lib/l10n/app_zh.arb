@@ -567,6 +567,14 @@
     }
   },
   "searchNoMatchSubtitle": "换个书名或作者名试试。",
+  "filesNotDeleted": "有 {count} 个文件无法删除，请手动删除",
+  "@filesNotDeleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "errorDeletingBooks": "删除书籍失败：{error}",
   "@errorDeletingBooks": {
     "placeholders": {

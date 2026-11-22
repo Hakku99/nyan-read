@@ -1100,6 +1100,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get searchNoMatchSubtitle => '换个书名或作者名试试。';
 
   @override
+  String filesNotDeleted(int count) {
+    return '有 $count 个文件无法删除，请手动删除';
+  }
+
+  @override
   String errorDeletingBooks(String error) {
     return '删除书籍失败：$error';
   }
