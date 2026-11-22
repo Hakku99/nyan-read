@@ -98,7 +98,8 @@ class ReadingProgressManager {
         return;
       }
 
-      final type = positionData['position_type'] as String;
+      // fromJson compares the type case-sensitively; legacy rows are uppercase.
+      final type = (positionData['position_type'] as String).toLowerCase();
       final payload = positionData['position_payload'] as String;
       debugPrint("DEBUG: RESTORING position: type=$type, payload=$payload");
 

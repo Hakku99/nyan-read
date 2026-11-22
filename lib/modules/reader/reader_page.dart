@@ -269,8 +269,22 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
           return const Scaffold(
               body: Center(child: CircularProgressIndicator()));
         }
-        if (!snapshot.hasData || snapshot.data == null) {
-          return const Scaffold(body: Center(child: Text("Book not found.")));
+        if (snapshot.hasError || snapshot.data == null) {
+          // Reuse the shared error page: localized, with a way back. A DB
+          // failure is not "file missing", so it gets the generic error.
+          if (snapshot.hasError) {
+            debugPrint('[ReaderPage] Failed to load book row: ${snapshot.error}');
+          }
+          return Scaffold(
+            body: ReaderErrorView(
+              errorState: ReaderErrorState(
+                type: snapshot.hasError
+                    ? ReaderErrorType.unknown
+                    : ReaderErrorType.fileNotFound,
+              ),
+              onBack: () => Navigator.pop(context),
+            ),
+          );
         }
 
         final book = Book.fromMap(snapshot.data!);

@@ -26,6 +26,33 @@ void main() {
     expect(roundTrip.titleSortKey, 'abcd');
   });
 
+  test('Book.fromMap lowercases a legacy uppercase format', () {
+    final map = Book(
+      id: 'book-2',
+      title: 'Title',
+      author: 'Author',
+      sourceLocator: '/tmp/A.PDF',
+      format: 'PDF',
+    ).toMap();
+
+    expect(Book.fromMap(map).format, 'pdf');
+  });
+
+  test('Book.fromMap lowercases a legacy last_position_type', () {
+    final map = Book(
+      id: 'book-3',
+      title: 'Title',
+      author: 'Author',
+      sourceLocator: '/tmp/a.epub',
+      format: 'epub',
+      lastPositionType: 'EPUB',
+    ).toMap();
+
+    expect(Book.fromMap(map).lastPositionType, 'epub');
+    map['last_position_type'] = null;
+    expect(Book.fromMap(map).lastPositionType, isNull);
+  });
+
   test('BookSourceType normalizes known values and falls back to filePath',
       () {
     expect(BookSourceType.normalize('file_path'), BookSourceType.filePath);
