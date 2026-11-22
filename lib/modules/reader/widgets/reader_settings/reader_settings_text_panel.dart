@@ -69,8 +69,11 @@ class ReaderSettingsTextPanel extends StatelessWidget {
             children: [
               _StepButton(
                 icon: NyanIcons.remove,
+                // round(): sizes saved by the old continuous slider (18.37)
+                // would otherwise stay fractional under the stepper.
                 onTap: () => onSetFontSize(
-                  (fs - 1).clamp(kReaderFontSizeMin, kReaderFontSizeMax),
+                  (fs.roundToDouble() - 1)
+                      .clamp(kReaderFontSizeMin, kReaderFontSizeMax),
                 ),
               ),
               const SizedBox(width: NyanSpacing.space12),
@@ -79,6 +82,9 @@ class ReaderSettingsTextPanel extends StatelessWidget {
                   value: fs,
                   min: kReaderFontSizeMin,
                   max: kReaderFontSizeMax,
+                  // Whole-point steps: a continuous slider re-flows the whole
+                  // book on every drag frame and persists values like 18.37.
+                  divisions: (kReaderFontSizeMax - kReaderFontSizeMin).round(),
                   onChanged: onSetFontSize,
                   activeColor: nyan.primaryDeep,
                   // Default textPrimary@12% track (divider@24% was too faint
@@ -90,7 +96,8 @@ class ReaderSettingsTextPanel extends StatelessWidget {
               _StepButton(
                 icon: NyanIcons.add,
                 onTap: () => onSetFontSize(
-                  (fs + 1).clamp(kReaderFontSizeMin, kReaderFontSizeMax),
+                  (fs.roundToDouble() + 1)
+                      .clamp(kReaderFontSizeMin, kReaderFontSizeMax),
                 ),
               ),
               const SizedBox(width: NyanSpacing.space8),

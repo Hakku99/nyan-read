@@ -1113,7 +1113,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
         ),
       ),
     );
-    if (result != null && !mounted) return;
+    if (!mounted) return;
+    // NotesListPage edits the DB directly, so the reader's in-memory list is
+    // stale on return — reload even when the user just backed out, otherwise
+    // deleted highlights linger and saving a stale one overwrites a new note.
+    await controller.loadHighlights();
+    if (!mounted) return;
     if (result != null) {
       // Typed jump via the controller — this used to hand-build a JSON
       // payload and smuggle it through the bookmark-restore channel.

@@ -233,6 +233,8 @@ class _ReaderSettingsSliderState extends State<ReaderSettingsSlider> {
       data: SliderTheme.of(context).copyWith(
         // Spec NyanSlider: track height 6px.
         trackHeight: 6,
+        // Divisions only snap the value; the design spec has no tick dots.
+        tickMarkShape: SliderTickMarkShape.noTickMark,
         thumbShape: _NyanRingThumbShape(
           surfaceColor: nyan.surface,
           ringColor: effectiveActiveColor,
