@@ -1,6 +1,7 @@
 /// Shelf status-filter derivation (docs/DESIGN_LIBRARY_FOLDERS.md §5.1):
 /// reading/unread key off last_read_at — the same signal the sort clause
 /// uses for "keep unread books at the end".
+/// Also covers the continue-reading hero pick, which keys off the same field.
 library;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -65,5 +66,15 @@ void main() {
     expect(BookshelfViewModel.resolveContinueReadingBook([b('x', 0, null)])!.id,
         'x');
     expect(BookshelfViewModel.resolveContinueReadingBook([]), isNull);
+  });
+
+  test('continue reading: null lastReadAt loses to a real timestamp', () {
+    final books = [b('restored', 0.4, null), b('recent', 0.1, 50)];
+    expect(BookshelfViewModel.resolveContinueReadingBook(books)!.id, 'recent');
+  });
+
+  test('continue reading: ties keep the shelf order', () {
+    final books = [b('first', 0.2, 10), b('second', 0.3, 10)];
+    expect(BookshelfViewModel.resolveContinueReadingBook(books)!.id, 'first');
   });
 }

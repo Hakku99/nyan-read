@@ -1,7 +1,8 @@
-/// Setting a font size must lay the book out once, not twice: the manager
+/// Changing a reading setting must lay the book out once, not twice: the manager
 /// only persists and lets the preferences listener drive the engine.
 library;
 
+import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/services/reader_preferences_service.dart';
 import 'package:nyan_read/core/utils/lifecycle_registry.dart';
@@ -22,26 +23,47 @@ class _CountingEngine implements ReaderEngine {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('setFontSize reconfigures the engine once and notifies once', () async {
-    SharedPreferences.setMockInitialValues({});
-    final prefs = ReaderPreferencesService();
-    await prefs.initialize();
-    final engine = _CountingEngine();
-    var notified = 0;
-    final manager = ReaderSettingsManager(
-      engine: engine,
-      lifecycle: LifecycleRegistry(),
-      onSettingsChanged: () => notified++,
-      preferences: prefs,
-    );
-    engine.configs.clear(); // drop the constructor's initial config
+  final setters = <String,
+      ({
+    void Function(ReaderSettingsManager) apply,
+    bool Function(ReaderConfig) changed,
+  })>{
+    'setFontSize': (
+      apply: (m) => m.setFontSize(22),
+      changed: (c) => c.fontSize == 22,
+    ),
+    'setLineHeight': (
+      apply: (m) => m.setLineHeight(1.8),
+      changed: (c) => c.lineHeight == 1.8,
+    ),
+    'setBackground': (
+      apply: (m) => m.setBackground(const Color(0xFF1E1E1E)),
+      changed: (c) => c.backgroundColor == const Color(0xFF1E1E1E),
+    ),
+  };
 
-    manager.setFontSize(22);
+  for (final entry in setters.entries) {
+    test('${entry.key} reconfigures the engine once and notifies once',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = ReaderPreferencesService();
+      await prefs.initialize();
+      final engine = _CountingEngine();
+      var notified = 0;
+      final manager = ReaderSettingsManager(
+        engine: engine,
+        lifecycle: LifecycleRegistry(),
+        onSettingsChanged: () => notified++,
+        preferences: prefs,
+      );
+      engine.configs.clear(); // drop the constructor's initial config
 
-    expect(engine.configs, hasLength(1));
-    expect(engine.configs.single.fontSize, 22);
-    expect(notified, 1);
-    expect(manager.fontSize, 22);
-    await manager.dispose();
-  });
+      entry.value.apply(manager);
+
+      expect(engine.configs, hasLength(1));
+      expect(entry.value.changed(engine.configs.single), isTrue);
+      expect(notified, 1);
+      await manager.dispose();
+    });
+  }
 }

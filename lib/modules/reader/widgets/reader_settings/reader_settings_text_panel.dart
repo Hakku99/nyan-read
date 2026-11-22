@@ -69,8 +69,11 @@ class ReaderSettingsTextPanel extends StatelessWidget {
             children: [
               _StepButton(
                 icon: NyanIcons.remove,
+                // round(): sizes saved by the old continuous slider (18.37)
+                // would otherwise stay fractional under the stepper.
                 onTap: () => onSetFontSize(
-                  (fs - 1).clamp(kReaderFontSizeMin, kReaderFontSizeMax),
+                  (fs.roundToDouble() - 1)
+                      .clamp(kReaderFontSizeMin, kReaderFontSizeMax),
                 ),
               ),
               const SizedBox(width: NyanSpacing.space12),
@@ -93,7 +96,8 @@ class ReaderSettingsTextPanel extends StatelessWidget {
               _StepButton(
                 icon: NyanIcons.add,
                 onTap: () => onSetFontSize(
-                  (fs + 1).clamp(kReaderFontSizeMin, kReaderFontSizeMax),
+                  (fs.roundToDouble() + 1)
+                      .clamp(kReaderFontSizeMin, kReaderFontSizeMax),
                 ),
               ),
               const SizedBox(width: NyanSpacing.space8),

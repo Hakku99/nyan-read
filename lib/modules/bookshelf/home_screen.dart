@@ -925,15 +925,14 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     required FeatureManager featureManager,
     required bool showPrivacyTab,
     required List<Book> activeBooks,
-    required List<Book> fullBooks,
     required bool showHeaderSections,
     required bool isSelectionMode,
   }) {
     final loc = AppLocalizations.of(context)!;
     // Hero picks from the UNFILTERED list: "continue reading" must surface
     // the actual current book even while the Unread filter is active.
-    final continueReadingBook =
-        BookshelfViewModel.resolveContinueReadingBook(fullBooks);
+    final continueReadingBook = _vm.continueReadingBookFor(
+        isPrivate: showPrivacyTab && _tabController.index == 1);
     final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
     const useCompactContinueReading = false;
 
@@ -1081,9 +1080,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                           activeBooks: showPrivacyTab && selectedTabIndex == 1
                               ? vm.visiblePrivateBooks
                               : vm.visiblePublicBooks,
-                          fullBooks: showPrivacyTab && selectedTabIndex == 1
-                              ? vm.privateBooks
-                              : vm.publicBooks,
                           showHeaderSections: !isSelectionMode,
                           isSelectionMode: isSelectionMode,
                         ),

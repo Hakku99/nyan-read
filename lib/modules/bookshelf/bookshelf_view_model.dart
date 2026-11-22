@@ -43,6 +43,14 @@ class BookshelfViewModel extends ChangeNotifier {
   List<Book> get visiblePublicBooks => _visiblePublicBooks;
   List<Book> get visiblePrivateBooks => _visiblePrivateBooks;
 
+  // Hero-card picks, cached for the same reason: the lists only change in
+  // loadBooks(), so build() must not rescan them.
+  Book? _continueReadingPublic;
+  Book? _continueReadingPrivate;
+
+  Book? continueReadingBookFor({required bool isPrivate}) =>
+      isPrivate ? _continueReadingPrivate : _continueReadingPublic;
+
   ShelfStatusFilter statusFilterFor({required bool isPrivate}) =>
       _prefs.statusFilterFor(isPrivate: isPrivate);
 
@@ -60,6 +68,8 @@ class BookshelfViewModel extends ChangeNotifier {
         _publicBooks, _prefs.statusFilterFor(isPrivate: false));
     _visiblePrivateBooks = filterBooksByStatus(
         _privateBooks, _prefs.statusFilterFor(isPrivate: true));
+    _continueReadingPublic = resolveContinueReadingBook(_publicBooks);
+    _continueReadingPrivate = resolveContinueReadingBook(_privateBooks);
   }
 
   /// `reading` vs `unread` keys off last_read_at — the same signal the sort
@@ -78,8 +88,9 @@ class BookshelfViewModel extends ChangeNotifier {
   }
 
   /// The in-progress book opened most recently, independent of the shelf's
-  /// sort order. Falls back to the first book so the hero never disappears
-  /// on a shelf with nothing in progress.
+  /// sort order. A null `lastReadAt` counts as "never opened" and loses to any
+  /// timestamp; ties keep the shelf's sort order. Falls back to the first book
+  /// so the hero never disappears on a shelf with nothing in progress.
   static Book? resolveContinueReadingBook(List<Book> books) {
     Book? best;
     for (final book in books) {
