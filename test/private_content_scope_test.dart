@@ -224,4 +224,34 @@ void main() {
     expect(node.hasFocus, isFalse);
   });
 
+  testWidgets('going to background drops text focus before any lock',
+      (tester) async {
+    final node = FocusNode();
+    addTearDown(node.dispose);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        featureManagerRpProvider.overrideWithValue(fm),
+        privacyScreenRpProvider.overrideWithValue(screen),
+      ],
+      child: MaterialApp(
+        home: Scaffold(
+          body: PrivateContentScope(
+            isPrivate: true,
+            child: TextField(focusNode: node, autofocus: true),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(node.hasFocus, isTrue);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(node.hasFocus, isTrue,
+        reason: 'inactive alone must not steal focus');
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    await tester.pump();
+    expect(node.hasFocus, isFalse);
+  });
 }

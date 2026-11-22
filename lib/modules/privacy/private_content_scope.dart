@@ -40,7 +40,8 @@ class PrivateContentScope extends ConsumerStatefulWidget {
       _PrivateContentScopeState();
 }
 
-class _PrivateContentScopeState extends ConsumerState<PrivateContentScope> {
+class _PrivateContentScopeState extends ConsumerState<PrivateContentScope>
+    with WidgetsBindingObserver {
   // Bounds the wait for a screen stacked above us; a hung exit there must not
   // leave private content open here.
   static const Duration _aboveExitTimeout = Duration(seconds: 3);
@@ -59,6 +60,7 @@ class _PrivateContentScopeState extends ConsumerState<PrivateContentScope> {
     _screen = ref.read(privacyScreenRpProvider);
     _wasUnlocked = _featureManager.isPrivateShelfUnlocked;
     _featureManager.addListener(_onFeatureChanged);
+    WidgetsBinding.instance.addObserver(this);
     if (widget.isPrivate) _screen.acquire(this);
   }
 
@@ -80,7 +82,21 @@ class _PrivateContentScopeState extends ConsumerState<PrivateContentScope> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Android restores the IME for the focused field the instant the app
+    // returns, before Dart sees the lock. Dropping focus on the way out means
+    // nothing is left to restore. `inactive` is skipped on purpose: it also
+    // fires for the notification shade and would steal focus needlessly.
+    if (widget.isPrivate &&
+        (state == AppLifecycleState.hidden ||
+            state == AppLifecycleState.paused)) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _featureManager.removeListener(_onFeatureChanged);
     _screen.release(this);
     super.dispose();
