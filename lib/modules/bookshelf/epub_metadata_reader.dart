@@ -84,9 +84,10 @@ EpubMetadata? _readInIsolate(String path) {
 /// [transientFilePath] is the picker's cached copy when there is one.
 /// Content/tree URIs without it (library-folder import) are materialized to a
 /// temp file that is deleted before returning.
-// ponytail: folder import copies each EPUB a second time here (the
-// fingerprint step already reads it through its own temp copy); share one
-// copy if large-library import time ever matters.
+// ponytail: folder import still copies each EPUB once here (the fingerprint
+// step now samples head/tail without copying). Reading just the zip
+// directory + OPF in place would need a range-reading zip reader; add it if
+// large EPUB libraries import too slowly.
 Future<EpubMetadata?> readEpubMetadataForImport({
   required String sourceType,
   required String sourceLocator,

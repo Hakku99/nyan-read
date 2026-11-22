@@ -1,14 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 
 import '../models/book.dart';
 import '../services/database_service.dart';
 import 'book_source_access.dart';
+import 'book_source_platform.dart';
 
 class BookImportDedupIndex {
   final Set<String> signatures;
@@ -103,12 +104,26 @@ class BookImportFingerprint {
         return compute(File(sourceLocator), locatorHint: locatorHint);
       }
 
+      // content/tree URI: ask the provider for just size + head + tail and
+      // hash those with the same _buildSignature as every other branch, so the
+      // signature equals the one the whole-file branch below produces. Null
+      // (stale APK, no random access, bad reply) falls through to it.
+      final sample = await BookSourcePlatform.sampleUri(
+        sourceLocator,
+        sampleBytes: _sampleBytes,
+      );
+      if (sample != null) {
+        return _buildSignature(
+            locatorHint, sample.size, sample.head, sample.tail);
+      }
+
       final bytes = await BookSourceAccess.readBytesFor(
         sourceType: sourceType,
         sourceLocator: sourceLocator,
       );
       return computeBytes(bytes, locatorHint: locatorHint);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('fingerprint failed: ${e.runtimeType}');
       return null;
     }
   }
