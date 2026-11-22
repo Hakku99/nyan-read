@@ -26,9 +26,28 @@ class BookAnnotationsController {
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
+  /// Rows in display order, each carrying a 1-based `index` for its
+  /// "Bookmark #N" label.
+  ///
+  /// The label follows creation order, not display order: display order
+  /// depends on reading position, so numbering by it would rename every
+  /// existing bookmark whenever a new one lands earlier in the book or on a
+  /// newer day.
   Future<List<Map<String, dynamic>>> loadBookmarks(String bookId) async {
     final rows = await _db.getBookmarks(bookId);
-    return sortBookmarksForDisplay(rows);
+    final sorted = sortBookmarksForDisplay(rows);
+
+    // The rows are the same Map instances in both lists, so numbering the
+    // creation-ordered copy numbers the display-ordered list too.
+    final byCreation = [...sorted]..sort((a, b) {
+        final byCreated = _createdAt(a).compareTo(_createdAt(b));
+        if (byCreated != 0) return byCreated;
+        return '${a['id']}'.compareTo('${b['id']}');
+      });
+    for (var i = 0; i < byCreation.length; i++) {
+      byCreation[i]['index'] = i + 1;
+    }
+    return sorted;
   }
 
   Future<void> updateHighlight(String id, {String? note, String? colorCode}) =>
@@ -56,7 +75,7 @@ List<Map<String, dynamic>> sortBookmarksForDisplay(
         row: Map<String, dynamic>.from(row),
         day: _dayKey(row['created_at']),
         pos: _positionKey(row),
-        created: row['created_at'] is int ? row['created_at'] as int : 0,
+        created: _createdAt(row),
       ),
   ];
 
@@ -85,6 +104,9 @@ List<Map<String, dynamic>> sortBookmarksForDisplay(
 
   return [for (final k in keyed) k.row];
 }
+
+int _createdAt(Map<String, dynamic> row) =>
+    row['created_at'] is int ? row['created_at'] as int : 0;
 
 /// Local-calendar day as yyyymmdd, matching the page's date headers.
 int _dayKey(Object? createdAt) {

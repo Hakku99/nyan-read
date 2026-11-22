@@ -62,15 +62,11 @@ class _BookmarkListPageState extends ConsumerState<BookmarkListPage> {
       _loadFailed = false;
     });
     try {
-      // Rows come back already copied and in display order.
+      // Rows come back copied, in display order, with `index` already set.
       final bookmarks =
           await ref.read(bookAnnotationsRpProvider).loadBookmarks(widget.bookId);
       if (!mounted) {
         return;
-      }
-
-      for (int i = 0; i < bookmarks.length; i++) {
-        bookmarks[i]['index'] = i + 1;
       }
 
       setState(() {
@@ -130,7 +126,11 @@ class _BookmarkListPageState extends ConsumerState<BookmarkListPage> {
               // "{n} saved" meta — not the book title (you're already in the
               // book's context when arriving here).
               title: loc.bookmarks,
-              subtitle: loc.bookmarksSavedCount(_bookmarks.length),
+              // No count while the read has failed: "0 saved" would say the
+              // bookmarks are gone, which is exactly what the error state
+              // must not imply.
+              subtitle:
+                  _loadFailed ? null : loc.bookmarksSavedCount(_bookmarks.length),
               titleStyle: theme.textTheme.titleLarge?.copyWith(
                 fontSize: NyanTypography.section,
                 fontWeight: FontWeight.w600,

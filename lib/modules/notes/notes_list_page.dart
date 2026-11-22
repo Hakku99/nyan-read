@@ -180,7 +180,11 @@ class _NotesListPageState extends ConsumerState<NotesListPage> {
           child: Column(
             children: [
               NyanPageHeader(
-                title: loc.notesAndHighlightsTitle(_highlights.length),
+                // Count-less title while the read has failed: "(0)" would say
+                // the notes are gone, which the error state must not imply.
+                title: _loadFailed
+                    ? loc.highlightsAndNotes
+                    : loc.notesAndHighlightsTitle(_highlights.length),
                 subtitle: _loc.notesBookSubtitle(widget.bookTitle),
                 titleStyle: theme.textTheme.titleLarge?.copyWith(
                   fontSize: NyanTypography.section,

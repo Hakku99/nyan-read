@@ -105,6 +105,32 @@ void main() {
       await expectLater(controller.loadBookmarks('b'), throwsStateError);
     });
 
+    test('labels follow creation order and survive a new bookmark', () async {
+      final old = _bm('old', createdAt: _at(20), position: const ReadingPosition(paragraphIndex: 90));
+      final mid = _bm('mid', createdAt: _at(22, 9), position: const ReadingPosition(paragraphIndex: 4));
+      final late = _bm('late', createdAt: _at(22, 18), position: const ReadingPosition(paragraphIndex: 50));
+      final db = _FakeDb()..bookmarks = [old, mid, late];
+      final controller = BookAnnotationsController(db);
+
+      final first = await controller.loadBookmarks('b');
+      expect(_ids(first), ['mid', 'late', 'old']); // day desc, position asc
+      expect({for (final r in first) r['id']: r['index']},
+          {'old': 1, 'mid': 2, 'late': 3});
+
+      // A newer day, earlier in the book: lands first on screen but must not
+      // renumber the bookmarks the user already knows.
+      db.bookmarks = [
+        old,
+        mid,
+        late,
+        _bm('new', createdAt: _at(23), position: const ReadingPosition(paragraphIndex: 1)),
+      ];
+      final second = await controller.loadBookmarks('b');
+      expect(_ids(second).first, 'new');
+      expect({for (final r in second) r['id']: r['index']},
+          {'old': 1, 'mid': 2, 'late': 3, 'new': 4});
+    });
+
     test('loadBookmarks returns display order', () async {
       final db = _FakeDb()
         ..bookmarks = [
