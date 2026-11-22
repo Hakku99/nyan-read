@@ -470,6 +470,14 @@ class MainActivity : FlutterFragmentActivity() {
             if (size < 0) {
                 throw IllegalStateException("Unknown size for Uri: $uriString")
             }
+            // The whole-file path hashes the stream length, so a provider whose
+            // descriptor size disagrees with its advertised size (stale cloud
+            // metadata, still syncing) would yield a different signature with
+            // no error. Disagreement => let Dart take the copy path.
+            val declared = declaredSize(uri)
+            if (declared != null && declared != size) {
+                throw IllegalStateException("Size mismatch for Uri: $uriString")
+            }
             java.io.FileInputStream(it.fileDescriptor).channel.use { channel ->
                 fun readAt(position: Long, length: Int): ByteArray {
                     val buffer = java.nio.ByteBuffer.allocate(length)
@@ -490,6 +498,21 @@ class MainActivity : FlutterFragmentActivity() {
                     if (size > n) readAt(size - n, n) else ByteArray(0)
                 return mapOf("size" to size, "head" to head, "tail" to tail)
             }
+        }
+    }
+
+    /// OpenableColumns.SIZE for [uri], or null when the provider does not
+    /// report one (or reports an unknown size).
+    private fun declaredSize(uri: Uri): Long? {
+        return try {
+            contentResolver.query(
+                uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null
+            )?.use { cursor ->
+                if (!cursor.moveToFirst() || cursor.isNull(0)) null
+                else cursor.getLong(0).takeIf { it >= 0 }
+            }
+        } catch (_: Exception) {
+            null
         }
     }
 

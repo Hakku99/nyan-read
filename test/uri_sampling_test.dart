@@ -68,7 +68,9 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
     try {
       await tempDir.delete(recursive: true);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('tearDown: temp dir cleanup failed: $e');
+    }
   });
 
   // Boundaries around the head/tail split: empty, tiny, == n, n + 1, 2n, big.
@@ -133,14 +135,20 @@ void main() {
               return r;
             }));
 
+    // Head is correct in both cases so only the tail-length guard can reject.
     test(
         'reply with a tail where none is expected',
         () => expectFallback((_) {
-              final small = _bytes(1000);
-              final r = _reply(small);
+              final r = _reply(_bytes(1000));
               r['tail'] = Uint8List(5);
-              // size says 1000 B but the answer claims a different layout.
-              r['size'] = data.length;
+              return r;
+            }));
+
+    test(
+        'reply with a short tail',
+        () => expectFallback((_) {
+              final r = _reply(data);
+              r['tail'] = Uint8List(10);
               return r;
             }));
 
