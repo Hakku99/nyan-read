@@ -1,4 +1,10 @@
 {
+  "_summary": {
+    "note": "Condensed copy. The full evidence file is local-only and not in git.",
+    "fullFile": "reader_gestures_g1_g2_2026-10-23.json",
+    "fullSha256": "2d633ca691f805290b90134d4698ef50d86e1963fa4b13a2af1e9ab41a39ae71",
+    "fullBytes": 7223
+  },
   "task": "G1/G2 text drag and tap-selection arbitration",
   "date": "2026-10-23",
   "branch": "codex/reader-turn-location-fixes",
@@ -32,135 +38,12 @@
       "sha256": "486fff823e05f54e623528ce488b211b6196c6aa751272b74e6565ef133d3915"
     }
   ],
-  "saveEvents": [
-    {
-      "event": "inputs",
-      "format": "txt",
-      "scene": "normal",
-      "bodyHorizontalSwipe": true,
-      "bodyRapidRoundTrip": true,
-      "selectedTextFieldsAfterBodyBurst": 0,
-      "tapRoundTrip": true,
-      "rapidThreeTapsOneTurn": true,
-      "horizontalSwipe": true,
-      "modeCancellation": true,
-      "overlayCancellation": true
-    },
-    {
-      "event": "inputs",
-      "format": "txt",
-      "scene": "long",
-      "bodyHorizontalSwipe": true,
-      "bodyRapidRoundTrip": true,
-      "selectedTextFieldsAfterBodyBurst": 0,
-      "tapRoundTrip": true,
-      "rapidThreeTapsOneTurn": true,
-      "horizontalSwipe": true,
-      "modeCancellation": true,
-      "overlayCancellation": true
-    },
-    {
-      "event": "native-ready",
-      "format": "txt"
-    },
-    {
-      "event": "native-forward",
-      "format": "txt"
-    },
-    {
-      "event": "native-complete",
-      "format": "txt",
-      "passed": true
-    },
-    {
-      "event": "saved",
-      "format": "txt",
-      "passed": true,
-      "position": {
-        "paragraphIndex": 34455,
-        "paragraphLeadingEdge": -1.9081464379947228,
-        "paragraphTrailingEdge": 12.912598944591029,
-        "textOffset": 554,
-        "textViewportOffset": 0.01676561125769529,
-        "layoutIdentity": "[1,\"txt\",\"android\",\"en\",\"ltr\",411.42857142857144,866.2857142857143,24.0,1.8,true,24.0,31.200000000000003]",
-        "anchorVersion": 1
-      },
-      "lineY": 14.476190476190368
-    },
-    {
-      "event": "inputs",
-      "format": "epub",
-      "scene": "normal",
-      "bodyHorizontalSwipe": true,
-      "bodyRapidRoundTrip": true,
-      "selectedTextFieldsAfterBodyBurst": 0,
-      "tapRoundTrip": true,
-      "rapidThreeTapsOneTurn": true,
-      "horizontalSwipe": true,
-      "modeCancellation": true,
-      "overlayCancellation": true
-    },
-    {
-      "event": "inputs",
-      "format": "epub",
-      "scene": "long",
-      "bodyHorizontalSwipe": true,
-      "bodyRapidRoundTrip": true,
-      "selectedTextFieldsAfterBodyBurst": 0,
-      "tapRoundTrip": true,
-      "rapidThreeTapsOneTurn": true,
-      "horizontalSwipe": true,
-      "modeCancellation": true,
-      "overlayCancellation": true
-    },
-    {
-      "event": "native-ready",
-      "format": "epub"
-    },
-    {
-      "event": "native-forward",
-      "format": "epub"
-    },
-    {
-      "event": "native-complete",
-      "format": "epub",
-      "passed": true
-    },
-    {
-      "event": "saved",
-      "format": "epub",
-      "passed": true,
-      "position": {
-        "paragraphIndex": 149859,
-        "paragraphLeadingEdge": -2.0662928759894457,
-        "paragraphTrailingEdge": 3.2483509234828496,
-        "textOffset": 600,
-        "textViewportOffset": 0.014127088830255256,
-        "layoutIdentity": "[1,\"epub\",\"android\",\"en\",\"ltr\",411.42857142857144,866.2857142857143,24.0,1.8,true,24.0,31.200000000000003]",
-        "anchorVersion": 1,
-        "enumVersion": 2
-      },
-      "lineY": 12.190476190476147
-    },
-    {
-      "event": "complete",
-      "passed": true
-    }
-  ],
+  "saveEvents": "<13 items omitted; see local full file>",
   "restoreEvents": [
     {
       "event": "restored",
       "format": "txt",
       "passed": true,
-      "position": {
-        "paragraphIndex": 34455,
-        "paragraphLeadingEdge": -0.9200197889182058,
-        "paragraphTrailingEdge": 6.076517150395778,
-        "textOffset": 554,
-        "textViewportOffset": 0.016160949868074273,
-        "layoutIdentity": "[1,\"txt\",\"android\",\"en\",\"ltr\",411.42857142857144,866.2857142857143,18.0,1.5,false,18.0,23.400000000000002]",
-        "anchorVersion": 1
-      },
       "lineY": 14.476190476190482,
       "chapter": 332
     },
@@ -168,16 +51,6 @@
       "event": "restored",
       "format": "epub",
       "passed": true,
-      "position": {
-        "paragraphIndex": 149859,
-        "paragraphLeadingEdge": -0.9200197889182058,
-        "paragraphTrailingEdge": 1.4948878627968336,
-        "textOffset": 600,
-        "textViewportOffset": 0.013962181178539729,
-        "layoutIdentity": "[1,\"epub\",\"android\",\"en\",\"ltr\",411.42857142857144,866.2857142857143,18.0,1.5,false,18.0,23.400000000000002]",
-        "anchorVersion": 1,
-        "enumVersion": 2
-      },
       "lineY": 12.190476190476147,
       "chapter": 413
     },
@@ -203,11 +76,5 @@
     "tool/reader_baseline/turn_input_probe.dart": "8a01845438eb45daf58acbc5659ed27a90535fb2411b4db137e315ade6c56fe6"
   },
   "apkSha256": "71d0bcae9799469091829dd9597a8acc5a38e05a475d04e11f2a777b1f5e7ca9",
-  "limitations": [
-    "No new performance acceptance for item 13.",
-    "Native interactions use an emulator, not physical devices.",
-    "iOS and Windows gesture coverage uses widget test platform variants.",
-    "System-edge back arbitration and high-refresh/long-session resource tests remain outstanding.",
-    "G1/G2 changes are uncommitted alongside the retained item 13 candidate."
-  ]
+  "limitations": "<5 items omitted; see local full file>"
 }
