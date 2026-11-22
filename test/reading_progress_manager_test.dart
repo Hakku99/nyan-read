@@ -8,6 +8,8 @@
 ///   - never throw or call dispose'd engine methods
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
@@ -53,8 +55,12 @@ class _FakeEngine extends ReaderEngine {
     return 0.42;
   }
 
+  bool throwOnGoTo = false;
+
   @override
-  Future<void> goToPosition(ReadingPosition position) async {}
+  Future<void> goToPosition(ReadingPosition position) async {
+    if (throwOnGoTo) throw StateError('goToPosition failed');
+  }
 
   @override
   void setConfig(ReaderConfig config) {}
@@ -87,11 +93,14 @@ class _FakeEngine extends ReaderEngine {
 class _SpyDatabaseService extends DatabaseService {
   final List<Map<String, dynamic>> positionUpdates = [];
   bool throwOnGetPosition = false;
+  Map<String, dynamic>? storedPosition;
+  Completer<void>? readGate;
 
   @override
   Future<Map<String, dynamic>?> getBookPosition(String bookId) async {
+    await readGate?.future;
     if (throwOnGetPosition) throw StateError('db read failed');
-    return null; // no saved position
+    return storedPosition; // null = no saved position
   }
 
   @override
@@ -234,9 +243,50 @@ void main() {
       final m = fresh();
       await m.saveCurrentPosition();
       await m.prepareForExit();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(spyDb.positionUpdates, isEmpty);
+    });
+
+    test('dispose fallback is gated on its own', () async {
+      final m = fresh();
       m.scheduleDisposeFallbackSave();
       await Future<void>.delayed(const Duration(milliseconds: 20));
       expect(spyDb.positionUpdates, isEmpty);
+    });
+
+    test('gated prepareForExit does not suppress the later fallback save',
+        () async {
+      final m = fresh();
+      await m.prepareForExit(); // skipped by the gate
+      await m.restoreLastPosition();
+      m.scheduleDisposeFallbackSave();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(spyDb.positionUpdates, hasLength(1));
+    });
+
+    test('saves are skipped while restore is in flight, written after',
+        () async {
+      spyDb.readGate = Completer<void>();
+      final m = fresh();
+      final restore = m.restoreLastPosition();
+      await m.saveCurrentPosition();
+      expect(spyDb.positionUpdates, isEmpty);
+      spyDb.readGate!.complete();
+      await restore;
+      await m.saveCurrentPosition();
+      expect(spyDb.positionUpdates, hasLength(1));
+    });
+
+    test('saves go through after goToPosition throws', () async {
+      spyDb.storedPosition = {
+        'position_type': 'txt',
+        'position_payload': '{"paragraphIndex": 7}',
+      };
+      engine.throwOnGoTo = true;
+      final m = fresh();
+      await m.restoreLastPosition();
+      await m.saveCurrentPosition();
+      expect(spyDb.positionUpdates, hasLength(1));
     });
 
     test('saves go through after restore resolves', () async {

@@ -178,6 +178,9 @@ class ReadingProgressManager {
   Future<void> saveForLifecyclePause() => saveCurrentPosition();
 
   Future<void> prepareForExit() {
+    // Latch only when a save can really happen; otherwise a gated exit would
+    // also suppress the dispose fallback for a reader that stays open.
+    if (!_canSave) return Future<void>.value();
     _prepareForExitRequested = true;
     return saveCurrentPosition();
   }
