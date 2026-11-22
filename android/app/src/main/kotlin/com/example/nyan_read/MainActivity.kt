@@ -116,6 +116,18 @@ class MainActivity : FlutterFragmentActivity() {
                         copyUriToTempFile(uriString, call.argument<String>("extension"))
                     }
 
+                    // Import fingerprinting needs only the size plus the first
+                    // and last `sampleBytes`; reading just those avoids
+                    // copying (or loading) the whole book.
+                    "sampleUri" -> respond {
+                        require(!uriString.isNullOrBlank()) { "uri is required" }
+                        val sampleBytes = call.argument<Int>("sampleBytes")
+                        require(sampleBytes != null && sampleBytes > 0) {
+                            "sampleBytes is required"
+                        }
+                        sampleUri(uriString, sampleBytes)
+                    }
+
                     "deletePersistedUriDocument" -> respond {
                         require(!uriString.isNullOrBlank()) { "uri is required" }
                         deletePersistedUriDocument(uriString)
@@ -441,6 +453,44 @@ class MainActivity : FlutterFragmentActivity() {
         } ?: throw IllegalStateException("Unable to open Uri: $uriString")
 
         return tempFile.absolutePath
+    }
+
+    /// Reads through the file descriptor's channel (positional reads), NOT a
+    /// path: scoped storage forbids reopening the underlying path. Returns
+    /// size, the first min(size, n) bytes, and the last n bytes when size > n
+    /// (empty otherwise) — the exact layout BookImportFingerprint hashes.
+    /// Throws for providers without a known size or without random access
+    /// (pipes, some cloud providers) so Dart falls back to the copy path.
+    private fun sampleUri(uriString: String, n: Int): Map<String, Any> {
+        val uri = Uri.parse(uriString)
+        val pfd = contentResolver.openFileDescriptor(uri, "r")
+            ?: throw IllegalStateException("Unable to open Uri: $uriString")
+        pfd.use {
+            val size = it.statSize
+            if (size < 0) {
+                throw IllegalStateException("Unknown size for Uri: $uriString")
+            }
+            java.io.FileInputStream(it.fileDescriptor).channel.use { channel ->
+                fun readAt(position: Long, length: Int): ByteArray {
+                    val buffer = java.nio.ByteBuffer.allocate(length)
+                    var at = position
+                    while (buffer.hasRemaining()) {
+                        val read = channel.read(buffer, at)
+                        if (read < 0) {
+                            throw IllegalStateException("Short read for Uri: $uriString")
+                        }
+                        at += read
+                    }
+                    return buffer.array()
+                }
+
+                val headLength = minOf(size, n.toLong()).toInt()
+                val head = readAt(0L, headLength)
+                val tail =
+                    if (size > n) readAt(size - n, n) else ByteArray(0)
+                return mapOf("size" to size, "head" to head, "tail" to tail)
+            }
+        }
     }
 
     private fun sanitizeExtension(extension: String?): String {

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -84,6 +86,43 @@ class BookSourcePlatform {
       throw StateError('Failed to materialize temp file for Uri: $uri');
     }
     return tempPath;
+  }
+
+  /// Reads only the size plus the first and last [sampleBytes] of a
+  /// `content://` document (no whole-book copy): `head` is the first
+  /// min(size, sampleBytes) bytes, `tail` the last [sampleBytes] when
+  /// size > sampleBytes and empty otherwise.
+  ///
+  /// Returns null whenever that is not possible — non-Android, stale APK
+  /// without the handler, provider without a known size or random access, or a
+  /// reply whose lengths do not match the contract — and the caller must use
+  /// its whole-file path instead.
+  static Future<({int size, Uint8List head, Uint8List tail})?> sampleUri(
+    String uri, {
+    required int sampleBytes,
+  }) async {
+    if (!_isAndroid) return null;
+    try {
+      final reply = await _channel.invokeMapMethod<String, Object?>(
+        'sampleUri',
+        {'uri': uri, 'sampleBytes': sampleBytes},
+      );
+      if (reply == null) return null;
+      final size = (reply['size'] as num).toInt();
+      final head = reply['head'] as Uint8List;
+      final tail = reply['tail'] as Uint8List;
+      // Guard against a provider that answered with the wrong amount of
+      // data: a bad sample would silently produce a different signature.
+      if (head.length != math.min(size, sampleBytes) ||
+          tail.length != (size > sampleBytes ? sampleBytes : 0)) {
+        return null;
+      }
+      return (size: size, head: head, tail: tail);
+    } catch (e) {
+      // MissingPluginException (stale APK) and provider errors both land here.
+      debugPrint('sampleUri fell back to full read: ${e.runtimeType}');
+      return null;
+    }
   }
 
   // ── Library folders (docs/DESIGN_LIBRARY_FOLDERS.md) ────────────────────
