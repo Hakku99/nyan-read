@@ -397,19 +397,19 @@ Navigation errors reach the existing localized error feedback.
 
 The live body stays mounted throughout preparation and animation. Item 08 uses
 one outgoing snapshot over the live target; item 13's rendering optimizations
-remain separate, unaccepted work. See `docs/READER_TURN_FIX_08.md` for the isolated
+remain separate, unaccepted work. See `docs/READER_HISTORY.md` for the isolated
 verification scope and known body-gesture limitations.
 
 Item 13A instrumentation is confined to a disposable diagnostic project; it
 does not add a production listener or change reader contracts. Independent
 comparison against the G2 commit and frame/system evidence are documented in
-`docs/READER_PERFORMANCE_13A_RESULTS.md`. Full-app worst-round performance is
+`docs/READER_HISTORY.md`. Full-app worst-round performance is
 still outside the budget. Image-size notifications can invalidate EPUB turn
 history and restoration during cancellation in both historical comparison
 variants. The separate EPUB image lifecycle fix introduced stable image
 dimensions across list remounts, including bitmap eviction. Item 16 below
 bounds retained encoded bytes while preserving that geometry. See
-`docs/READER_EPUB_IMAGE_POSITION_FIX.md` for the earlier verification.
+`docs/READER_HISTORY.md` for the earlier verification.
 
 The following item 13 rendering changes remain experimental and have not passed
 overall performance acceptance.
@@ -429,13 +429,13 @@ into the reader's existing navigation callbacks. `ReaderSelectableText` uses
 public `EditableText` / `TextSelectionGestureDetectorBuilder` APIs, retaining
 native long-press selection, handles and vertical scrolling. `ReaderTextGestures`
 provides UI routing only; position and paragraph layout ownership do not change.
-See `docs/READER_GESTURE_FIX_G1.md`.
+See `docs/READER_HISTORY.md`.
 G2 moves horizontal taps into the winning text recognizer: side-zone touch
 multi-taps navigate without selecting words; center single taps wait for the
 double-tap window while center pointer-down immediately cancels presentation.
 Mounted selection ownership and input epochs suppress navigation during selection
 and invalidate delayed controls after a newer input. No reading position is
-stored in this UI registry. See `docs/READER_GESTURE_FIX_G1_G2.md`.
+stored in this UI registry. See `docs/READER_HISTORY.md`.
 
 Implements optional capabilities:
 - `TextReaderCapability`
@@ -524,7 +524,7 @@ Navigation and restore (03, 2026-10-22):
 - No public method signatures, position JSON fields, enumeration version,
   paragraph ordering, database schema or dependencies change. Item 05 adds
   cross-layout text anchoring. Item 08 adds shared target readiness and
-  cancellation, described above and in `docs/READER_TURN_FIX_08.md`;
+  cancellation, described above and in `docs/READER_HISTORY.md`;
   item 13 remains separate.
 
 Implements optional capabilities:

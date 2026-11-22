@@ -2,22 +2,11 @@
 
 This document turns the architecture/performance constraints from `AGENTS.md` into repeatable engineering checks.
 
-The reader navigation diagnostic baseline and its explicit coverage limits are
-recorded in [READER_NAVIGATION_BASELINE.md](READER_NAVIGATION_BASELINE.md).
-It is an opt-in failing regression suite until the corresponding defects are
-fixed; do not treat its current results as a release certification.
-The 01A/02 implementation, remaining failures, and repeated emulator measurements
-are recorded in [READER_TURN_FIXES_01A_02.md](READER_TURN_FIXES_01A_02.md).
-The EPUB viewport navigation fix and authorized large-book validation are
-recorded in [EPUB_TURN_FIX_03.md](EPUB_TURN_FIX_03.md).
-The TXT turn-history invalidation fix and mixed-input validation are recorded in
-[TXT_TURN_HISTORY_FIX_04.md](TXT_TURN_HISTORY_FIX_04.md).
-Mode/reflow anchoring, cold recovery and paired before/after measurements are
-recorded in [READER_REFLOW_FIX_05.md](READER_REFLOW_FIX_05.md). Compare both the
-engine and the animation container; invalid intermediate runs and truncated
-Android logs are excluded from final measurements.
-Horizontal turn preparation, cancellation and image readiness are documented in
-[READER_TURN_FIX_08.md](READER_TURN_FIX_08.md). Item 13 performance acceptance remains pending.
+The history of the reader turn and position fixes (items 01A–08, gestures G1/G2, the
+experimental item 13 rendering work and the 13B-1 candidates) is summarized in
+[READER_HISTORY.md](READER_HISTORY.md). Item 13 performance acceptance remains pending.
+Diagnostic baselines were opt-in failing regression suites until the corresponding defects
+were fixed; do not treat their historical results as a release certification.
 
 ## 1) Non-negotiable rules
 
@@ -124,19 +113,18 @@ Reject changes that introduce:
 - Broad widget tree listening where leaf listenable binding exists
 
 G1 text-drag routing and its independent validation are documented in
-[READER_GESTURE_FIX_G1.md](READER_GESTURE_FIX_G1.md).
+[READER_HISTORY.md](READER_HISTORY.md).
 
 G2 input arbitration and joint device evidence are documented in
-[READER_GESTURE_FIX_G1_G2.md](READER_GESTURE_FIX_G1_G2.md). Those historical device
+[READER_HISTORY.md](READER_HISTORY.md). Those historical device
 checks included the item 13 candidate and are not isolated performance evidence.
 
 The unaccepted item 13 candidate and historical measurements are described in
-[READER_TURN_FIX_08_13.md](READER_TURN_FIX_08_13.md) and
-[READER_TURN_REVIEW_13.md](READER_TURN_REVIEW_13.md).
+[READER_HISTORY.md](READER_HISTORY.md).
 Item 13A independently compares the pinned G2 commit with the frozen rendering
 candidate. Probes are injected only into a disposable profile project with a
 separate application ID; production has no new timing listener. See
-[READER_PERFORMANCE_13A_RESULTS.md](READER_PERFORMANCE_13A_RESULTS.md) and the
+[READER_HISTORY.md](READER_HISTORY.md) and the
 [reproduction guide](../tool/reader_baseline/README_13A.md).
 Keep full-app, engine/container, overhead controls and heavy traces separate.
 Foreground-window conditions materially affect emulator raster timings.
@@ -144,18 +132,18 @@ The candidate improves aggregate text-page results but still fails worst-round
 acceptance; image-layout cancellation also exposes a shared position defect.
 Do not mark item 13 accepted or infer synchronous image-disposal cost from a
 slow reveal frame. The original scope is recorded in
-[READER_PERFORMANCE_13A_PLAN.md](READER_PERFORMANCE_13A_PLAN.md).
+[READER_HISTORY.md](READER_HISTORY.md).
 
 The 13B-1 covered-page follow-up reuses the historical system trace and runs a
 separate short AB/BA comparison. Its clipping candidate was rejected and the
 pre-experiment production source restored. See
-[READER_PERFORMANCE_13B1_OCCLUSION.md](READER_PERFORMANCE_13B1_OCCLUSION.md).
+[READER_HISTORY.md](READER_HISTORY.md).
 
 The subsequent buffer-chain investigation links queueing, latch, HWC present and
 release by SurfaceView buffer number. A local fix removes a redundant target
 capture frame; short original-file checks confirm one fewer preparation frame
 per turn, but do not establish overall slow-frame acceptance. See
-[READER_PERFORMANCE_13B1_BUFFER_CHAIN.md](READER_PERFORMANCE_13B1_BUFFER_CHAIN.md).
+[READER_HISTORY.md](READER_HISTORY.md).
 
 ## 8) PDF edge-tap latency on HONOR BKQ-N49 (60 Hz)
 
