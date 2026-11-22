@@ -175,8 +175,27 @@ class SmoothPageReaderState extends State<SmoothPageReader>
       }
       turn.checkActive();
       phase.reset();
-      await turn
-          .wait(Future<void>.sync(dispatchTurn).timeout(widget.prepareTimeout));
+      // Future.timeout would throw into the caller while the accepted
+      // navigation still completes ("error shown, page moved"). A slow dispatch
+      // is only a skipped animation; the queue still finishes the turn.
+      // Errors thrown by dispatchTurn itself, including its own
+      // TimeoutException, still propagate.
+      // ponytail: a truly hung engine gives no feedback here, same as before.
+      final dispatched = Future<void>.sync(dispatchTurn);
+      final deadline = Completer<bool>();
+      final deadlineTimer =
+          Timer(widget.prepareTimeout, () => deadline.complete(true));
+      final bool slowDispatch;
+      try {
+        slowDispatch = await turn.wait(Future.any<bool>(
+            [dispatched.then((_) => false), deadline.future]));
+      } finally {
+        deadlineTimer.cancel();
+      }
+      if (slowDispatch) {
+        debugPrint('Page turn dispatch exceeded the prepare timeout.');
+        return;
+      }
       metrics['navigationMs'] = phase.elapsedMicroseconds / 1000;
       turn.checkActive();
       if (_outgoingImage == null || didMove?.call() == false) return;
