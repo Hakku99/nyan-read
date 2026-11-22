@@ -203,8 +203,12 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
           const SizedBox(height: 26),
 
           // ── Action buttons ──────────────────────────────────────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          // Wrap, not Row: two intrinsic-width buttons overflowed by 19px on a
+          // 1256px-wide phone; narrow screens now drop Retry to a second line.
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 10,
+            runSpacing: NyanSpacing.space8,
             children: [
               NyanPrimaryButton(
                 label: loc.backToBookshelf,
@@ -212,15 +216,13 @@ class _ReaderErrorViewState extends State<ReaderErrorView> {
                 icon: const Icon(NyanIcons.back),
                 variant: NyanPrimaryButtonVariant.ghost,
               ),
-              if (meta.showRetry && widget.onRetry != null) ...[
-                const SizedBox(width: 10),
+              if (meta.showRetry && widget.onRetry != null)
                 NyanPrimaryButton(
                   label: loc.retry,
                   onPressed: widget.onRetry,
                   icon: const Icon(NyanIcons.refresh),
                   variant: NyanPrimaryButtonVariant.primary,
                 ),
-              ],
             ],
           ),
 
