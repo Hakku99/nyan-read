@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../core/models/highlight.dart';
-import '../../core/services/database_service.dart';
-import '../../core/services/service_locator.dart';
 import '../../core/theme/nyan_colors.dart';
 import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_spacing.dart';
@@ -13,9 +12,11 @@ import '../../core/ui/components/components.dart';
 import '../../core/ui/nyan_theme_context.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../reader/widgets/highlight_note_dialog.dart';
+import 'annotations_load_error.dart';
+import 'book_annotations_provider.dart';
 
 /// Page to view all highlights and notes for a book
-class NotesListPage extends StatefulWidget {
+class NotesListPage extends ConsumerStatefulWidget {
   final String bookId;
   final String bookTitle;
   final Function(int paragraphIndex)? onJumpToHighlight;
@@ -28,12 +29,13 @@ class NotesListPage extends StatefulWidget {
   });
 
   @override
-  State<NotesListPage> createState() => _NotesListPageState();
+  ConsumerState<NotesListPage> createState() => _NotesListPageState();
 }
 
-class _NotesListPageState extends State<NotesListPage> {
+class _NotesListPageState extends ConsumerState<NotesListPage> {
   List<Highlight> _highlights = [];
   bool _isLoading = true;
+  bool _loadFailed = false;
 
   AppLocalizations get _loc => AppLocalizations.of(context)!;
 
@@ -64,25 +66,28 @@ class _NotesListPageState extends State<NotesListPage> {
   }
 
   Future<void> _loadHighlights() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _loadFailed = false;
+    });
     try {
-      final data = await getIt<DatabaseService>().getHighlights(widget.bookId);
+      final highlights =
+          await ref.read(bookAnnotationsRpProvider).loadHighlights(widget.bookId);
       if (!mounted) {
         return;
       }
-
-      final highlights = data
-          .map((m) => Highlight.fromMap(m))
-          .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
       setState(() {
         _highlights = highlights;
         _isLoading = false;
       });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[NotesListPage] Failed to load highlights: $e');
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _loadFailed = true;
+        });
       }
     }
   }
@@ -99,7 +104,7 @@ class _NotesListPageState extends State<NotesListPage> {
     });
 
     try {
-      await getIt<DatabaseService>().deleteHighlight(highlight.id);
+      await ref.read(bookAnnotationsRpProvider).deleteHighlight(highlight.id);
     } catch (e) {
       if (!mounted) {
         return;
@@ -121,9 +126,26 @@ class _NotesListPageState extends State<NotesListPage> {
       context,
       highlight: highlight,
       onSave: (note, colorCode) async {
-        await getIt<DatabaseService>()
-            .updateHighlight(highlight.id, note: note, colorCode: colorCode);
-        _loadHighlights();
+        // The dialog does not await onSave, so a throw here would be an
+        // unhandled async error and the user would never learn the save failed.
+        try {
+          await ref.read(bookAnnotationsRpProvider).updateHighlight(
+                highlight.id,
+                note: note,
+                colorCode: colorCode,
+              );
+        } catch (e) {
+          debugPrint('[NotesListPage] Failed to save note: $e');
+          if (mounted) {
+            SnackBarUtils.show(
+              context,
+              _loc.failedToSaveNote(e.toString()),
+              tone: NyanSnackTone.error,
+            );
+          }
+          return;
+        }
+        if (mounted) await _loadHighlights();
       },
       onDelete: () => _deleteHighlight(highlight),
     );
@@ -203,6 +225,13 @@ class _NotesListPageState extends State<NotesListPage> {
     if (_isLoading) {
       return Center(
         child: CircularProgressIndicator(color: nyanTheme.primary),
+      );
+    }
+
+    if (_loadFailed) {
+      return AnnotationsLoadError(
+        title: _loc.failedToLoadHighlights,
+        onRetry: _loadHighlights,
       );
     }
 

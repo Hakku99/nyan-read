@@ -1838,6 +1838,36 @@ abstract class AppLocalizations {
   /// **'No highlights yet'**
   String get noHighlightsYet;
 
+  /// No description provided for @highlightsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 highlight} other{{count} highlights}}'**
+  String highlightsCount(int count);
+
+  /// No description provided for @failedToLoadBookmarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load bookmarks'**
+  String get failedToLoadBookmarks;
+
+  /// No description provided for @failedToLoadHighlights.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load highlights'**
+  String get failedToLoadHighlights;
+
+  /// No description provided for @failedToLoadHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading from storage failed. Please try again.'**
+  String get failedToLoadHint;
+
+  /// No description provided for @failedToSaveNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save note: {error}'**
+  String failedToSaveNote(String error);
+
   /// No description provided for @longPressToCreateHighlight.
   ///
   /// In en, this message translates to:

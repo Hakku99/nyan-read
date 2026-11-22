@@ -936,6 +936,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noHighlightsYet => '暂无高亮';
 
   @override
+  String highlightsCount(int count) {
+    return '$count 条高亮';
+  }
+
+  @override
+  String get failedToLoadBookmarks => '无法加载书签';
+
+  @override
+  String get failedToLoadHighlights => '无法加载高亮';
+
+  @override
+  String get failedToLoadHint => '读取本地数据失败，请重试。';
+
+  @override
+  String failedToSaveNote(String error) {
+    return '保存笔记失败：$error';
+  }
+
+  @override
   String get longPressToCreateHighlight => '长按文本创建高亮';
 
   @override

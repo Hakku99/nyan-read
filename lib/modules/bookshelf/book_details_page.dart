@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
@@ -24,6 +25,8 @@ import '../../core/utils/book_source_access.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../l10n/app_localizations.dart';
 import 'epub_cover_extractor.dart';
+import '../notes/book_annotations_provider.dart';
+import '../notes/notes_list_page.dart';
 import '../privacy/private_content_scope.dart';
 
 /// Rhythm between page sections — matches [SettingsPage] list gaps.
@@ -373,14 +376,7 @@ class BookDetailsPage extends StatelessWidget {
                       ),
                       NyanRowGroup(
                         children: [
-                          NyanListRow(
-                            leadingIcon: NyanIcons.bookmark,
-                            title: loc.highlightsAndNotes,
-                            subtitle: loc.noHighlightsYet,
-                            showChevron: true,
-                            // TODO(#highlight-detail): navigate to per-book highlights list.
-                            onTap: null,
-                          ),
+                          _HighlightsNotesRow(book: book),
                         ],
                       ),
                     ],
@@ -396,6 +392,84 @@ class BookDetailsPage extends StatelessWidget {
 }
 
 // ── Private layout widgets ──────────────────────────────────────────────────
+
+/// "Highlights & Notes" entry: live count as subtitle, opens the per-book
+/// list. No reader is running here, so the list has no jump-to-text action
+/// (its `onJumpToHighlight` stays null) — viewing, editing and deleting only.
+class _HighlightsNotesRow extends ConsumerStatefulWidget {
+  const _HighlightsNotesRow({required this.book});
+
+  final Book book;
+
+  @override
+  ConsumerState<_HighlightsNotesRow> createState() =>
+      _HighlightsNotesRowState();
+}
+
+class _HighlightsNotesRowState extends ConsumerState<_HighlightsNotesRow> {
+  late Future<int> _count;
+
+  @override
+  void initState() {
+    super.initState();
+    _count = _loadCount();
+  }
+
+  Future<int> _loadCount() async {
+    try {
+      final highlights = await ref
+          .read(bookAnnotationsRpProvider)
+          .loadHighlights(widget.book.id);
+      return highlights.length;
+    } catch (e) {
+      debugPrint('[BookDetailsPage] Failed to count highlights: $e');
+      rethrow; // FutureBuilder shows the failure instead of "No highlights".
+    }
+  }
+
+  Future<void> _open() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => NotesListPage(
+          bookId: widget.book.id,
+          bookTitle: widget.book.title,
+        ),
+      ),
+    );
+    // The user may have deleted highlights on the list page.
+    if (!mounted) return;
+    // Block body on purpose: an arrow would return the Future to setState,
+    // which asserts and skips the rebuild.
+    setState(() {
+      _count = _loadCount();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return FutureBuilder<int>(
+      future: _count,
+      builder: (context, snapshot) {
+        final count = snapshot.data;
+        final subtitle = snapshot.hasError
+            ? loc.failedToLoadHighlights
+            : count == null
+                ? null
+                : count == 0
+                    ? loc.noHighlightsYet
+                    : loc.highlightsCount(count);
+        return NyanListRow(
+          leadingIcon: NyanIcons.bookmark,
+          title: loc.highlightsAndNotes,
+          subtitle: subtitle,
+          showChevron: true,
+          onTap: _open,
+        );
+      },
+    );
+  }
+}
 
 /// Label–value row for the Overview section.
 ///
