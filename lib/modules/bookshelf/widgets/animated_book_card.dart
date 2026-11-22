@@ -96,8 +96,12 @@ class _AnimatedBookCardListState extends State<AnimatedBookCardList>
 
   bool _isSourceAvailable() {
     if (widget.book.sourceLocator.isEmpty) return false;
-    // Android content URIs are always available if they're in the database
-    if (widget.book.isAndroidContentUri) return true;
+    // Android content URIs are always available if they're in the database.
+    // Library-folder (tree) URIs too — without this they fell through to
+    // File('content://...').existsSync() and always showed the warning icon.
+    if (widget.book.isAndroidContentUri || widget.book.isAndroidTreeUri) {
+      return true;
+    }
     try {
       return File(widget.book.sourceLocator).existsSync();
     } catch (_) {
