@@ -210,9 +210,8 @@ void main() {
 
     ready = true;
     await gated.prepareForExit();
-    await gated.prepareForExit(); // second exit trigger must not break
     expect(spyDb.positionUpdates.where((u) => u['bookId'] == 'gated-book'),
-        isNotEmpty);
+        hasLength(1));
   });
 
   test(

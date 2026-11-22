@@ -73,7 +73,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   bool _exiting = false;
 
   /// Resolved from the book row; drives FLAG_SECURE and lock-triggered exit.
-  bool _isPrivateBook = false;
+  /// Starts true so the reader fails closed until the row says otherwise
+  /// (also when the lookup fails).
+  bool _isPrivateBook = true;
 
   /// One Paper: which sheet the dock has grown into (`chapters` / `settings`),
   /// or `null` when collapsed to a resting dock. `bookmarks` never sets this —
@@ -127,6 +129,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     final databaseService = ref.read(databaseServiceRpProvider);
     final readerPreferencesService = ref.read(readerPreferencesRpProvider);
     _bookFuture = databaseService.getBookById(widget.bookId);
+    // Not awaited: initState is sync; this only refines _isPrivateBook once
+    // the row is known, and failures keep the fail-closed default.
     unawaited(_bookFuture.then((row) {
       if (!mounted || row == null) return;
       final isPrivate = row['is_private'] == 1;
@@ -245,8 +249,13 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   Future<void> _exitForLock() async {
     final controller = _boundController;
     if (controller == null) {
-      // Still loading: nothing to save yet.
-      if (mounted) Navigator.of(context).pop();
+      // Still loading: nothing to save yet. Same re-entry/active-route guard
+      // as _exitReader so a concurrent back press cannot cause a second pop.
+      if (_exiting || !mounted) return;
+      _exiting = true;
+      if (ModalRoute.of(context)?.isActive ?? false) {
+        Navigator.of(context).pop();
+      }
       return;
     }
     await _exitReader(context, controller);

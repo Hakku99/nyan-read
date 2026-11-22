@@ -87,4 +87,20 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(searchWaitDone, isTrue);
   });
+
+  test('a failed native push is retried on the next transition', () async {
+    final service = build();
+    failWith = PlatformException(code: 'boom');
+    final a = Object();
+    service.acquire(a);
+    await Future<void>.delayed(Duration.zero);
+    expect(calls, isEmpty);
+
+    failWith = null;
+    service.release(a);
+    final b = Object();
+    service.acquire(b); // empty -> non-empty again must resend true
+    await Future<void>.delayed(Duration.zero);
+    expect(calls, contains(true));
+  });
 }

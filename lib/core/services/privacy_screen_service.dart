@@ -78,6 +78,8 @@ class PrivacyScreenService {
       await _channel.invokeMethod<void>('setSecure', {'secure': secure});
     } catch (e) {
       debugPrint('PrivacyScreenService.setSecure($secure) failed: $e');
+      // Native did not take the change: forget it so the next sync resends.
+      if (_nativeSecure == secure) _nativeSecure = !secure;
     }
   }
 }

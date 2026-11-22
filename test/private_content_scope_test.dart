@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nyan_read/core/services/feature_manager.dart';
 import 'package:nyan_read/core/services/privacy_screen_service.dart';
 import 'package:nyan_read/core/services/riverpod_providers.dart';
@@ -71,14 +74,20 @@ void main() {
   testWidgets('onLocked runs once, after overlays above are popped',
       (tester) async {
     var calls = 0;
+    String? topRouteAtCall;
     late GlobalKey<NavigatorState> nav;
     nav = await openScope(tester, isPrivate: true, onLocked: () async {
       calls++;
-      // Overlay must already be gone; this page is the current route.
-      expect(find.text('overlay'), findsNothing);
+      // expect() is not allowed inside a pumpAndSettle callback, so record
+      // the top route here and assert after settling.
+      nav.currentState!.popUntil((r) {
+        topRouteAtCall = r.settings.name;
+        return true;
+      });
       nav.currentState!.pop();
     });
     nav.currentState!.push(MaterialPageRoute<void>(
+      settings: const RouteSettings(name: 'overlay'),
       builder: (_) => const Text('overlay'),
     ));
     await tester.pumpAndSettle();
@@ -89,6 +98,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(calls, 1);
+    expect(topRouteAtCall, isNot('overlay'),
+        reason: 'overlays above must be popped before onLocked runs');
     expect(find.text('overlay'), findsNothing);
     expect(find.text('private-page'), findsNothing);
     expect(find.text('home'), findsOneWidget);
@@ -129,5 +140,57 @@ void main() {
     expect(fm.isPrivateShelfUnlocked, isFalse);
     expect(fm.autoLockAfterBackground(const Duration(hours: 1)), isFalse,
         reason: 'already locked: nothing to do');
+  });
+
+  testWidgets('route already popping: onLocked is skipped (no double pop)',
+      (tester) async {
+    var calls = 0;
+    late GlobalKey<NavigatorState> nav;
+    nav = await openScope(tester, isPrivate: true, onLocked: () async {
+      calls++;
+      nav.currentState!.pop();
+    });
+
+    nav.currentState!.pop(); // back press lands first
+    fm.lockPrivateShelf(); // lock lands before the pop animation ends
+    await tester.pumpAndSettle();
+
+    expect(calls, 0);
+    expect(find.text('home'), findsOneWidget);
+  });
+
+  testWidgets('works on go_router page routes with an overlay above',
+      (tester) async {
+    final router = GoRouter(routes: [
+      GoRoute(path: '/', builder: (_, __) => const Text('home')),
+      GoRoute(
+        path: '/private',
+        builder: (_, __) => PrivateContentScope(
+          isPrivate: true,
+          child: const Text('private-page'),
+        ),
+      ),
+      GoRoute(path: '/overlay', builder: (_, __) => const Text('overlay')),
+    ]);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        featureManagerRpProvider.overrideWithValue(fm),
+        privacyScreenRpProvider.overrideWithValue(screen),
+      ],
+      child: MaterialApp.router(routerConfig: router),
+    ));
+    unawaited(router.push('/private'));
+    await tester.pumpAndSettle();
+    unawaited(router.push('/overlay'));
+    await tester.pumpAndSettle();
+    expect(find.text('overlay'), findsOneWidget);
+
+    fm.lockPrivateShelf();
+    await tester.pumpAndSettle();
+
+    expect(find.text('overlay'), findsNothing);
+    expect(find.text('private-page'), findsNothing);
+    expect(find.text('home'), findsOneWidget);
+    expect(screen.hasHolders, isFalse);
   });
 }

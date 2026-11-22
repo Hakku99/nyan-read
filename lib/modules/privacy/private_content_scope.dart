@@ -106,7 +106,10 @@ class _PrivateContentScopeState extends ConsumerState<PrivateContentScope> {
           .untilNewerReleased(this)
           .timeout(_aboveExitTimeout, onTimeout: () {});
       if (!mounted || nav == null) return;
-      if (route != null && route.isActive) {
+      // The route is already on its way out (e.g. a back press landed first):
+      // a second pop here would take the page below it with it.
+      if (route != null && !route.isActive) return;
+      if (route != null) {
         nav.popUntil((r) => identical(r, route));
       }
       final custom = widget.onLocked;
@@ -115,8 +118,8 @@ class _PrivateContentScopeState extends ConsumerState<PrivateContentScope> {
       } else if (route != null && route.isActive) {
         nav.pop();
       }
-    } catch (e) {
-      debugPrint('PrivateContentScope lock exit failed: $e');
+    } catch (e, st) {
+      debugPrint('PrivateContentScope lock exit failed: $e\n$st');
       if (route != null && route.isActive) nav?.pop();
     }
     _showLockedToast();
