@@ -43,7 +43,15 @@ class EpubPackage {
     required this.toc,
     required this.coverPath,
     this.spinePaths = const [],
+    this.title,
+    this.author,
   });
+
+  /// OPF `dc:title` (first non-empty), whitespace-collapsed; null if absent.
+  final String? title;
+
+  /// OPF `dc:creator` entries joined with ", "; null if absent.
+  final String? author;
 
   final Archive archive;
   final List<EpubTocEntry> toc;
@@ -183,11 +191,31 @@ EpubPackage parseEpubPackageFromArchive(Archive archive) {
     }
   }
 
+  // 6. Metadata: dc:title / dc:creator. namespace '*' matches the local name,
+  //    since the elements carry a `dc:` prefix.
+  String? clean(XmlElement e) {
+    final text = e.innerText.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return text.isEmpty ? null : text;
+  }
+
+  final title = opf
+      .findAllElements('title', namespace: '*')
+      .map(clean)
+      .whereType<String>()
+      .firstOrNull;
+  final creators = opf
+      .findAllElements('creator', namespace: '*')
+      .map(clean)
+      .whereType<String>()
+      .toList();
+
   return EpubPackage(
     archive: archive,
     toc: toc,
     coverPath: coverPath,
     spinePaths: spinePaths,
+    title: title,
+    author: creators.isEmpty ? null : creators.join(', '),
   );
 }
 
