@@ -15,6 +15,28 @@ typedef EpubMetadata = ({String? title, String? author});
 // Keeps a pathological OPF from putting a novel into the title column.
 const int _kMaxFieldLength = 200;
 
+// Titles that converters write when they have none; the filename is better.
+const Set<String> _kPlaceholderTitles = {
+  'untitled',
+  'unknown',
+  'unnamed',
+  'no title',
+  'title',
+  'book',
+  'document',
+  '未命名',
+  '无标题',
+  '無標題',
+  '未知',
+};
+final RegExp _kUuidLike = RegExp(
+    r'^(urn:uuid:)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$');
+
+bool _isPlaceholderTitle(String title) {
+  final t = title.trim().toLowerCase();
+  return _kPlaceholderTitles.contains(t) || _kUuidLike.hasMatch(t);
+}
+
 /// Reads OPF metadata from the EPUB at [path] in a worker isolate; null on any
 /// error. Streams the zip from disk, so memory stays at the OPF/nav size.
 Future<EpubMetadata?> readEpubMetadataFromFile(String path) =>
@@ -24,12 +46,16 @@ EpubMetadata? _readInIsolate(String path) {
   InputFileStream? input;
   try {
     input = InputFileStream(path);
-    final package = parseEpubPackageFromArchive(ZipDecoder().decodeStream(input));
-    String? cap(String? s) =>
-        s != null && s.length > _kMaxFieldLength
-            ? s.substring(0, _kMaxFieldLength)
-            : s;
-    return (title: cap(package.title), author: cap(package.author));
+    final package =
+        parseEpubPackageFromArchive(ZipDecoder().decodeStream(input));
+    String? cap(String? s) => s != null && s.length > _kMaxFieldLength
+        ? s.substring(0, _kMaxFieldLength)
+        : s;
+    final title = package.title;
+    return (
+      title: title != null && _isPlaceholderTitle(title) ? null : cap(title),
+      author: cap(package.author),
+    );
   } catch (e) {
     debugPrint('Epub metadata read: ${e.runtimeType}');
     return null;

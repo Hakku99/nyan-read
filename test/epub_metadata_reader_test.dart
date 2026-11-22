@@ -20,7 +20,8 @@ const String _container = '<?xml version="1.0"?>'
 // prefixed elements, not just unprefixed ones.
 String _opf(String metadataBody) => '<?xml version="1.0"?>'
     '<package xmlns="http://www.idpf.org/2007/opf" version="3.0">'
-    '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">$metadataBody</metadata>'
+    '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/" '
+    'xmlns:opf="http://www.idpf.org/2007/opf">$metadataBody</metadata>'
     '<manifest><item id="ch1" href="ch1.xhtml" media-type="application/xhtml+xml"/></manifest>'
     '<spine><itemref idref="ch1"/></spine></package>';
 
@@ -78,9 +79,62 @@ void main() {
     expect(meta?.author, isNull);
   });
 
-  test('overlong fields are capped', () async {
+  for (final placeholder in [
+    'Untitled',
+    ' UNKNOWN ',
+    '未命名',
+    'urn:uuid:123e4567-e89b-12d3-a456-426614174000',
+  ]) {
+    test('placeholder title "$placeholder" is ignored, author kept', () async {
+      final file = await _writeEpub(tempDir,
+          '<dc:title>$placeholder</dc:title><dc:creator>Real Author</dc:creator>');
+      final meta = await readEpubMetadataFromFile(file.path);
+      expect(meta?.title, isNull);
+      expect(meta?.author, 'Real Author');
+    });
+  }
+
+  test('EPUB3 main title wins over a subtitle listed first', () async {
     final file = await _writeEpub(
-        tempDir, '<dc:title>${'x' * 500}</dc:title>');
+        tempDir,
+        '<dc:title id="sub">A Subtitle</dc:title>'
+        '<dc:title id="main">The Real Title</dc:title>'
+        '<meta refines="#sub" property="title-type">subtitle</meta>'
+        '<meta refines="#main" property="title-type">main</meta>');
+    expect(
+        (await readEpubMetadataFromFile(file.path))?.title, 'The Real Title');
+  });
+
+  test('untitled-type entries beat typed non-main ones', () async {
+    final file = await _writeEpub(
+        tempDir,
+        '<dc:title id="series">The Series</dc:title>'
+        '<dc:title>Plain Title</dc:title>'
+        '<meta refines="#series" property="title-type">collection</meta>');
+    expect((await readEpubMetadataFromFile(file.path))?.title, 'Plain Title');
+  });
+
+  test('non-author creators are dropped (EPUB2 opf:role and EPUB3 refines)',
+      () async {
+    final file = await _writeEpub(
+        tempDir,
+        '<dc:creator opf:role="ill">Painter</dc:creator>'
+        '<dc:creator id="tr">Translator</dc:creator>'
+        '<meta refines="#tr" property="role">trl</meta>'
+        '<dc:creator opf:role="aut">Real Author</dc:creator>'
+        '<dc:creator>Roleless Co-author</dc:creator>');
+    expect((await readEpubMetadataFromFile(file.path))?.author,
+        'Real Author, Roleless Co-author');
+  });
+
+  test('creators fall back to everyone when none is an author', () async {
+    final file = await _writeEpub(
+        tempDir, '<dc:creator opf:role="edt">The Editor</dc:creator>');
+    expect((await readEpubMetadataFromFile(file.path))?.author, 'The Editor');
+  });
+
+  test('overlong fields are capped', () async {
+    final file = await _writeEpub(tempDir, '<dc:title>${'x' * 500}</dc:title>');
     expect((await readEpubMetadataFromFile(file.path))?.title, hasLength(200));
   });
 
