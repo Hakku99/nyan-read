@@ -25,6 +25,8 @@ class BookshelfPreferencesService {
   static const String _keyPrivateStatusFilter =
       'bookshelf_status_filter_private';
   static const String _keyHeroCollapsed = 'bookshelf_hero_collapsed';
+  static const String _keyPendingFileDeletions =
+      'bookshelf_pending_file_deletions';
   static const int _maxRecentSearches = 5;
 
   // Default values
@@ -52,6 +54,22 @@ class BookshelfPreferencesService {
   bool get isAscending => _isAscending;
   bool get deleteFilesOnRemove => _deleteFilesOnRemove;
   List<String> get recentSearches => List.unmodifiable(_recentSearches);
+
+  /// Source files whose deletion is still inside the undo grace window.
+  ///
+  /// Persisted (a transient work queue, not user data) so a process kill
+  /// within the window cannot orphan the files: the next launch finishes the
+  /// job. Empty when nothing is pending.
+  List<String> get pendingFileDeletions => List.unmodifiable(
+      _prefs?.getStringList(_keyPendingFileDeletions) ?? const []);
+
+  Future<void> setPendingFileDeletions(List<String> locators) async {
+    if (locators.isEmpty) {
+      await _prefs?.remove(_keyPendingFileDeletions);
+    } else {
+      await _prefs?.setStringList(_keyPendingFileDeletions, locators);
+    }
+  }
 
   /// Initialize the service and load saved preferences
   Future<void> initialize() async {

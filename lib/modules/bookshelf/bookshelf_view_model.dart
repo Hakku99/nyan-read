@@ -15,6 +15,9 @@ class BookshelfViewModel extends ChangeNotifier {
 
   BookshelfViewModel(this._db, this._prefs) {
     loadBooks();
+    // Fire-and-forget: finishing a previous session's interrupted file
+    // deletion must not delay the first shelf load.
+    unawaited(_recoverInterruptedFileDeletions());
   }
 
   // --- Core State ---
@@ -232,6 +235,7 @@ class BookshelfViewModel extends ChangeNotifier {
 
       if (pathsToDelete.isNotEmpty) {
         _pendingFileDeletions = pathsToDelete;
+        await _persistPendingDeletions(pathsToDelete);
         _pendingFileDeleteTimer = Timer(_fileDeleteGraceWindow, () {
           // Fire-and-forget: the timer callback cannot await, and a failed
           // deferred deletion only leaves an orphan file behind.
@@ -260,6 +264,7 @@ class BookshelfViewModel extends ChangeNotifier {
     _pendingFileDeleteTimer?.cancel();
     _pendingFileDeleteTimer = null;
     _pendingFileDeletions = const [];
+    await _persistPendingDeletions(const []);
 
     final books = List<Map<String, dynamic>>.from(_lastDeletedBookMaps);
     final bookmarks =
@@ -300,7 +305,31 @@ class BookshelfViewModel extends ChangeNotifier {
 
     _clearUndoSnapshot();
     final failed = await _deleteSourceFilesBestEffort(paths);
+    // Cleared only after the attempt: a kill mid-deletion replays the (safe,
+    // idempotent) list on next launch instead of losing it.
+    await _persistPendingDeletions(const []);
     if (failed > 0) onFileDeletionFailed?.call(failed);
+  }
+
+  /// Best-effort: if persisting fails we fall back to the in-memory-only
+  /// behavior (files can be orphaned by a kill) rather than failing a delete
+  /// whose DB rows are already gone.
+  Future<void> _persistPendingDeletions(List<String> locators) async {
+    try {
+      await _prefs.setPendingFileDeletions(locators);
+    } catch (e) {
+      debugPrint('Failed to persist pending file deletions: $e');
+    }
+  }
+
+  /// Finishes deletions left over from a session that died inside the undo
+  /// grace window. Undo is impossible after a restart, so deleting is the
+  /// only consistent outcome.
+  Future<void> _recoverInterruptedFileDeletions() async {
+    final stale = _prefs.pendingFileDeletions;
+    if (stale.isEmpty) return;
+    await _persistPendingDeletions(const []);
+    await _deleteSourceFilesBestEffort(stale);
   }
 
   @override
