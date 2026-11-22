@@ -80,6 +80,13 @@ class ReadingProgressManager {
     );
   }
 
+  /// Saving is allowed only after [restoreLastPosition] settles; before that
+  /// the engine still reports its start position and a save would overwrite
+  /// the stored one.  Engines that supply their own gate (PDF) keep it.
+  bool _restoreResolved = false;
+
+  bool get _canSave => _canSavePosition?.call() ?? _restoreResolved;
+
   Future<void> restoreLastPosition({VoidCallback? onResolved}) async {
     try {
       debugPrint("DEBUG: restoreLastPosition called for book ${book.id}");
@@ -122,6 +129,9 @@ class ReadingProgressManager {
       }
     } catch (e) {
       debugPrint('Error restoring position: $e');
+    } finally {
+      // Also on failure: a broken restore must not block saving forever.
+      _restoreResolved = true;
     }
   }
 
@@ -150,7 +160,7 @@ class ReadingProgressManager {
   }
 
   Future<void> saveCurrentPosition() {
-    if (_canSavePosition?.call() == false) return Future<void>.value();
+    if (!_canSave) return Future<void>.value();
     final pending = _saveInFlight;
     if (pending != null) {
       return pending;
@@ -183,9 +193,7 @@ class ReadingProgressManager {
   /// [saveCurrentPosition] because the in-flight dedup there could hand
   /// back a pre-existing save that is still trying to talk to the engine.
   void scheduleDisposeFallbackSave() {
-    if (!_trackingStarted ||
-        _prepareForExitRequested ||
-        _canSavePosition?.call() == false) {
+    if (!_trackingStarted || _prepareForExitRequested || !_canSave) {
       return;
     }
 

@@ -86,6 +86,13 @@ class _FakeEngine extends ReaderEngine {
 /// Records every updateBookPosition call so we can assert on them later.
 class _SpyDatabaseService extends DatabaseService {
   final List<Map<String, dynamic>> positionUpdates = [];
+  bool throwOnGetPosition = false;
+
+  @override
+  Future<Map<String, dynamic>?> getBookPosition(String bookId) async {
+    if (throwOnGetPosition) throw StateError('db read failed');
+    return null; // no saved position
+  }
 
   @override
   Future<void> updateBookPosition(
@@ -144,6 +151,8 @@ void main() {
 
     // Must start tracking so scheduleDisposeFallbackSave is not a no-op.
     manager.startTracking();
+    // Saves are gated until restore resolves (no saved position here).
+    await manager.restoreLastPosition();
   });
 
   tearDown(() async {
@@ -208,6 +217,53 @@ void main() {
 
     expect(spyDb.positionUpdates, isEmpty,
         reason: 'No save when reading was never started');
+  });
+
+  group('restore gate (TXT/EPUB)', () {
+    ReadingProgressManager fresh({bool Function()? canSave}) =>
+        ReadingProgressManager(
+          engine: engine,
+          book: _book('gate-book'),
+          lifecycle: lifecycle,
+          databaseService: spyDb,
+          onProgressUpdated: () {},
+          canSavePosition: canSave,
+        )..startTracking();
+
+    test('saves are skipped until restore resolves', () async {
+      final m = fresh();
+      await m.saveCurrentPosition();
+      await m.prepareForExit();
+      m.scheduleDisposeFallbackSave();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(spyDb.positionUpdates, isEmpty);
+    });
+
+    test('saves go through after restore resolves', () async {
+      final m = fresh();
+      await m.restoreLastPosition();
+      await m.saveCurrentPosition();
+      expect(spyDb.positionUpdates, hasLength(1));
+    });
+
+    test('saves go through after restore throws', () async {
+      spyDb.throwOnGetPosition = true;
+      final m = fresh();
+      await m.restoreLastPosition();
+      await m.saveCurrentPosition();
+      expect(spyDb.positionUpdates, hasLength(1));
+    });
+
+    test('custom canSavePosition (PDF) overrides the restore flag', () async {
+      var allowed = false;
+      final m = fresh(canSave: () => allowed);
+      await m.restoreLastPosition();
+      await m.saveCurrentPosition();
+      expect(spyDb.positionUpdates, isEmpty);
+      allowed = true;
+      await m.saveCurrentPosition();
+      expect(spyDb.positionUpdates, hasLength(1));
+    });
   });
 
   test('no crash or exception when engine is already disposed before snapshot',
