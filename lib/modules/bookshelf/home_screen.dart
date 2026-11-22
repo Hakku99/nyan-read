@@ -705,7 +705,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     // Full-screen PIN takeover (U16) — set→confirm. PrivacyLockService stores a
     // 4-digit hashed PIN, so the numeric keypad is the canonical entry surface.
     final created =
-        await ref.read(privacyLockServiceRpProvider).showPinSetup(context);
+        await ref.read(privacyLockServiceRpProvider).showPinSetupGuarded(context);
     if (created == true && mounted) {
       _unlockPrivateShelfAfterRouteSettles();
     }

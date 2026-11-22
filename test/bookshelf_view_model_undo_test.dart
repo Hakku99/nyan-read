@@ -366,6 +366,15 @@ void main() {
       expect(vm.selectedBookIds, {'b1'});
     });
 
+    test('hasAnyPrivateBooks reads the DB, tracks erase', () async {
+      expect(await vm.hasAnyPrivateBooks(), isTrue);
+      db.books['p3'] = {..._bookRow('p3'), 'is_private': 1}; // VM list is stale
+      await vm.eraseAllPrivateBooks();
+      expect(await vm.hasAnyPrivateBooks(), isFalse);
+      db.books['p4'] = {..._bookRow('p4'), 'is_private': 1}; // e.g. restored
+      expect(await vm.hasAnyPrivateBooks(), isTrue);
+    });
+
     test('is not undoable: no snapshot of the private shelf survives',
         () async {
       await vm.eraseAllPrivateBooks();

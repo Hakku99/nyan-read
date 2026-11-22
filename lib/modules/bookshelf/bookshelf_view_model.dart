@@ -291,6 +291,12 @@ class BookshelfViewModel extends ChangeNotifier {
     }
   }
 
+  /// Fresh DB check (not the cached list) for "does a private book exist?".
+  /// Gates PIN-less first-time setup: private rows that survive without a PIN
+  /// (restored backup, self-heal) must not be handed to whoever taps first.
+  Future<bool> hasAnyPrivateBooks() async =>
+      (await _db.getBooks(isPrivate: true)).isNotEmpty;
+
   /// Forgot-PIN "erase": removes EVERY private book with its bookmarks and
   /// highlights. Deliberately independent of the selection state (the user may
   /// have public books selected) and of undo — a restorable snapshot of the

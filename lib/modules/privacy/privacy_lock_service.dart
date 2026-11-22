@@ -71,6 +71,26 @@ class PrivacyLockService {
     return result ?? false;
   }
 
+  /// First-time PIN setup that refuses to hand over existing private books.
+  ///
+  /// With no PIN, plain [showPinSetup] unlocks the shelf for whoever sets one.
+  /// That is fine for an empty shelf, but private rows can outlive the PIN
+  /// (backup restore, DB self-heal after a forgot-PIN erase), so when any
+  /// exist the user must prove ownership via the forgot-PIN flow instead.
+  /// Fails closed: if the check itself errors, assume books exist.
+  Future<bool> showPinSetupGuarded(BuildContext context) async {
+    bool hasBooks;
+    try {
+      hasBooks = await _shelf().hasAnyPrivateBooks();
+    } catch (e) {
+      debugPrint('[PrivacyLockService] private book check failed: $e');
+      hasBooks = true;
+    }
+    if (!context.mounted) return false;
+    if (!hasBooks) return showPinSetup(context);
+    return await runForgotPinFlow(context) == ForgotPinOutcome.pinReset;
+  }
+
   /// Show PIN verification overlay
   Future<bool> showPinVerify(BuildContext context) async {
     final result = await Navigator.of(context).push<bool>(
