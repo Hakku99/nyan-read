@@ -11,6 +11,7 @@ import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../../core/services/database_service.dart';
 import '../../core/services/feature_manager.dart';
+import '../../core/services/privacy_screen_service.dart';
 import '../../core/services/riverpod_providers.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
 import '../../core/models/book.dart';
@@ -73,10 +74,30 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     _prefs = ref.read(bookshelfPreferencesRpProvider);
     _isHeroCollapsed = _prefs.heroCollapsed;
     _tabController = TabController(length: 2, vsync: this);
+    // Private-tab screens are secure (FLAG_SECURE); public tab stays capturable.
+    _featureManager = ref.read(featureManagerRpProvider);
+    _privacyScreen = ref.read(privacyScreenRpProvider);
+    _featureManager.addListener(_syncPrivacyHold);
+    _tabController.addListener(_syncPrivacyHold);
+    _syncPrivacyHold();
+  }
+
+  late final FeatureManager _featureManager;
+  late final PrivacyScreenService _privacyScreen;
+
+  void _syncPrivacyHold() {
+    if (_featureManager.isPrivateShelfUnlocked && _tabController.index == 1) {
+      _privacyScreen.acquire(this);
+    } else {
+      _privacyScreen.release(this);
+    }
   }
 
   @override
   void dispose() {
+    _featureManager.removeListener(_syncPrivacyHold);
+    _tabController.removeListener(_syncPrivacyHold);
+    _privacyScreen.release(this);
     _tabController.dispose();
     super.dispose();
   }

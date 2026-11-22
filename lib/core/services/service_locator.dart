@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'biometric_service.dart';
 import 'database_service.dart';
 import 'pin_service.dart';
+import 'privacy_screen_service.dart';
 import 'feature_manager.dart';
 import 'reader_preferences_service.dart';
 import 'bookshelf_preferences_service.dart';
@@ -110,6 +111,7 @@ Future<void> setupServiceLocator() async {
 
   getIt.registerSingleton<BiometricService>(BiometricService());
   getIt.registerSingleton<PinService>(PinService());
+  getIt.registerSingleton<PrivacyScreenService>(PrivacyScreenService());
   // PrivacyLockService is deliberately NOT registered here: it pushes
   // Presentation overlays, so core must not import it (§3.2 layer matrix,
   // review #12). Its provider lives in modules/privacy with the class.

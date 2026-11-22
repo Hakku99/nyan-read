@@ -42,6 +42,7 @@ import '../../core/ui/nyan_icons.dart';
 import '../../core/utils/snackbar_utils.dart';
 import 'widgets/rest_reminder_overlay.dart';
 import '../settings/settings_page.dart';
+import '../privacy/private_content_scope.dart';
 export 'controllers/reader_controller.dart';
 
 part 'reader_page_overlay.dart';
@@ -66,6 +67,13 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   final GlobalKey _readerBodyKey = GlobalKey();
   final _textSelections = ReaderTextSelectionRegistry();
   bool _showControls = false;
+
+  /// Guards the exit sequence (back key, top bar, private-shelf lock) so two
+  /// triggers never save twice or pop two routes.
+  bool _exiting = false;
+
+  /// Resolved from the book row; drives FLAG_SECURE and lock-triggered exit.
+  bool _isPrivateBook = false;
 
   /// One Paper: which sheet the dock has grown into (`chapters` / `settings`),
   /// or `null` when collapsed to a resting dock. `bookmarks` never sets this —
@@ -119,6 +127,13 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     final databaseService = ref.read(databaseServiceRpProvider);
     final readerPreferencesService = ref.read(readerPreferencesRpProvider);
     _bookFuture = databaseService.getBookById(widget.bookId);
+    unawaited(_bookFuture.then((row) {
+      if (!mounted || row == null) return;
+      final isPrivate = row['is_private'] == 1;
+      if (isPrivate != _isPrivateBook) setState(() => _isPrivateBook = isPrivate);
+    }).catchError((Object e) {
+      debugPrint('Reader: could not resolve book privacy: $e');
+    }));
     final brightnessRepository = BrightnessRepository(readerPreferencesService);
     final brightnessOrchestrator = BrightnessOrchestrator(
       repository: brightnessRepository,
@@ -219,6 +234,25 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
 
   @override
   Widget build(BuildContext context) {
+    // Wrapper kept separate so the (large) reader tree below is untouched.
+    return PrivateContentScope(
+      isPrivate: _isPrivateBook,
+      onLocked: _exitForLock,
+      child: Builder(builder: _buildReader),
+    );
+  }
+
+  Future<void> _exitForLock() async {
+    final controller = _boundController;
+    if (controller == null) {
+      // Still loading: nothing to save yet.
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+    await _exitReader(context, controller);
+  }
+
+  Widget _buildReader(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>?>(
       future: _bookFuture,
       builder: (context, snapshot) {
@@ -274,12 +308,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
               canPop: false,
               onPopInvokedWithResult: (didPop, result) async {
                 if (didPop) return;
-                // Save progress before navigating away
-                await controller.saveBeforeExit();
-                await _brightnessController.shutdown();
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                }
+                await _exitReader(context, controller);
               },
               // Minimal subscription (P0-2, restored after the Riverpod
               // migration regressed it to a whole-page rebuild): this outer
@@ -1005,8 +1034,24 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     ReaderController controller,
   ) async {
     _setControlsVisible(false);
-    await controller.saveBeforeExit();
-    await _brightnessController.shutdown();
+    await _exitReader(context, controller);
+  }
+
+  /// Single exit sequence: save progress, shut down brightness, pop. Shared
+  /// by hardware back, the top-bar back button and the private-shelf lock.
+  Future<void> _exitReader(
+    BuildContext context,
+    ReaderController controller,
+  ) async {
+    if (_exiting) return;
+    _exiting = true;
+    try {
+      await controller.saveBeforeExit();
+      await _brightnessController.shutdown();
+    } catch (e) {
+      // Still leave the page: a failed flush must not trap the reader open.
+      debugPrint('Reader exit save failed: $e');
+    }
     if (context.mounted) Navigator.of(context).pop();
   }
 

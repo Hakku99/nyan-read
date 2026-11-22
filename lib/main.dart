@@ -11,6 +11,7 @@ import 'core/services/signature_backfill_service.dart';
 import 'core/services/service_locator.dart';
 import 'core/router/app_router.dart';
 import 'core/ui/nyan_app_keys.dart';
+import 'modules/privacy/privacy_screen_cover.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -90,12 +91,8 @@ class _NyanAppState extends ConsumerState<NyanApp> with WidgetsBindingObserver {
     } else if (state == AppLifecycleState.resumed) {
       if (_pausedAt != null) {
         final diff = DateTime.now().difference(_pausedAt!);
-        if (diff.inMinutes >= 3) {
-          final fm = ref.read(featureManagerRpProvider);
-          if (fm.isPrivateShelfUnlocked) {
-            fm.lockPrivateShelf();
-            debugPrint("Auto-locked Private Shelf after 3 mins background.");
-          }
+        if (ref.read(featureManagerRpProvider).autoLockAfterBackground(diff)) {
+          debugPrint("Auto-locked Private Shelf after 3 mins background.");
         }
         _pausedAt = null;
       }
@@ -119,6 +116,8 @@ class _NyanAppState extends ConsumerState<NyanApp> with WidgetsBindingObserver {
           darkTheme: themeManager.darkTheme,
           themeMode: themeManager.themeMode,
           routerConfig: appRouter,
+          builder: (context, child) =>
+              PrivacyScreenCover(child: child ?? const SizedBox.shrink()),
           debugShowCheckedModeBanner: false,
         );
       },
