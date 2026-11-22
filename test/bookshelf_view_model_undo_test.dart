@@ -7,6 +7,7 @@ library;
 
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/services/bookshelf_preferences_service.dart';
 import 'package:nyan_read/core/services/database_service.dart';
@@ -165,6 +166,17 @@ void main() {
     expect(db.books.keys, isNot(contains('b1')));
   });
 
+  test('a double-tapped undo restores the batch exactly once', () async {
+    vm.toggleSelectionMode(active: true, initialBookId: 'b1');
+    await vm.deleteSelectedBooks(true);
+
+    // Both calls start before either finishes its prefs write.
+    await Future.wait([vm.undoLastDelete(), vm.undoLastDelete()]);
+
+    expect(db.restoreCalls, 1);
+    expect(db.books.keys, contains('b1'));
+  });
+
   test('undo with empty snapshot is a no-op', () async {
     await vm.undoLastDelete();
     expect(db.restoreCalls, 0);
@@ -265,32 +277,76 @@ void main() {
       await vm.loadBooks();
     });
 
-    test('are included in file deletion; failures are reported', () async {
-      // Off Android the platform delete returns false, which stands in for a
-      // provider that refuses. Before the fix the tree book was skipped
-      // entirely, so nothing was attempted and nothing was reported.
-      final failures = <int>[];
-      vm.onFileDeletionFailed = failures.add;
+    const channel = MethodChannel('com.example.nyan_read/book_source');
+    late List<String> deletedUris;
+    late bool providerAccepts;
 
-      vm.toggleSelectionMode(active: true, initialBookId: 'b1');
-      await vm.deleteSelectedBooks(true);
-      vm.dispose(); // commits the deferred deletion
-      await Future<void>.delayed(const Duration(milliseconds: 200));
-
-      expect(failures, [1]);
+    setUp(() {
+      deletedUris = [];
+      providerAccepts = true;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'deletePersistedUriDocument') {
+          deletedUris.add((call.arguments as Map)['uri'] as String);
+          return providerAccepts;
+        }
+        return null;
+      });
+      addTearDown(() => TestDefaultBinaryMessengerBinding
+          .instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null));
     });
 
-    test('are left alone when the user did not opt into file deletion',
+    Future<void> deleteBook({required bool deleteFiles}) async {
+      vm.toggleSelectionMode(active: true, initialBookId: 'b1');
+      await vm.deleteSelectedBooks(deleteFiles);
+      vm.dispose(); // commits the deferred deletion
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    }
+
+    test('are handed to the platform delete when the user opted in',
         () async {
       final failures = <int>[];
       vm.onFileDeletionFailed = failures.add;
 
-      vm.toggleSelectionMode(active: true, initialBookId: 'b1');
-      await vm.deleteSelectedBooks(false);
-      vm.dispose();
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+      await deleteBook(deleteFiles: true);
 
+      // Before the fix the tree book was skipped: nothing was attempted.
+      expect(deletedUris, [treeUri]);
       expect(failures, isEmpty);
     });
+
+    test('a refusing provider is reported as a failed deletion', () async {
+      providerAccepts = false;
+      final failures = <int>[];
+      vm.onFileDeletionFailed = failures.add;
+
+      await deleteBook(deleteFiles: true);
+
+      expect(deletedUris, [treeUri]);
+      expect(failures, [1]);
+    });
+
+    test('are never touched when the user did not opt in', () async {
+      final failures = <int>[];
+      vm.onFileDeletionFailed = failures.add;
+
+      await deleteBook(deleteFiles: false);
+
+      expect(deletedUris, isEmpty);
+      expect(failures, isEmpty);
+    });
+  });
+
+  test('malformed pending-deletions value is discarded, not thrown', () async {
+    await pumpVm({'bookshelf_pending_file_deletions': 'not-a-list'});
+
+    expect(prefs.pendingFileDeletions, isEmpty);
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      (await SharedPreferences.getInstance())
+          .containsKey('bookshelf_pending_file_deletions'),
+      isFalse,
+    );
   });
 }

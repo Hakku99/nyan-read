@@ -111,7 +111,11 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
   @override
   void dispose() {
-    _shelfVm.onFileDeletionFailed = null;
+    // Only if still ours: a newer shelf screen may have registered its own
+    // handler on the app-lifetime view model before this one is disposed.
+    if (_shelfVm.onFileDeletionFailed == _onFileDeletionFailed) {
+      _shelfVm.onFileDeletionFailed = null;
+    }
     _featureManager.removeListener(_syncPrivacyHold);
     _tabController.removeListener(_syncPrivacyHold);
     _privacyScreen.release(this);

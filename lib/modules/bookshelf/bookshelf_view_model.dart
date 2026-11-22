@@ -264,14 +264,18 @@ class BookshelfViewModel extends ChangeNotifier {
     _pendingFileDeleteTimer?.cancel();
     _pendingFileDeleteTimer = null;
     _pendingFileDeletions = const [];
-    await _persistPendingDeletions(const []);
 
+    // Take and clear the snapshot BEFORE the first await: a second Undo tap
+    // (or a new delete batch) during the prefs write must not see it.
     final books = List<Map<String, dynamic>>.from(_lastDeletedBookMaps);
     final bookmarks =
         List<Map<String, dynamic>>.from(_lastDeletedBookmarkMaps);
     final highlights =
         List<Map<String, dynamic>>.from(_lastDeletedHighlightMaps);
     _clearUndoSnapshot();
+
+    // Before the restore, so a kill mid-restore cannot replay the deletion.
+    await _persistPendingDeletions(const []);
 
     try {
       await _db.restoreDeletedBooksBatch(
@@ -305,11 +309,20 @@ class BookshelfViewModel extends ChangeNotifier {
 
     _clearUndoSnapshot();
     final failed = await _deleteSourceFilesBestEffort(paths);
-    // Cleared only after the attempt: a kill mid-deletion replays the (safe,
-    // idempotent) list on next launch instead of losing it.
-    await _persistPendingDeletions(const []);
+    // Forgotten only after the attempt: a kill mid-deletion replays the
+    // (safe, idempotent) list on next launch instead of losing it.
+    await _forgetPersistedDeletions(paths);
     if (failed > 0) onFileDeletionFailed?.call(failed);
   }
+
+  /// Drops only [done] from the persisted list. A blanket clear would also
+  /// wipe a newer batch persisted while this one's files were being deleted
+  /// (the timer commit and a fresh delete can overlap).
+  Future<void> _forgetPersistedDeletions(List<String> done) =>
+      _persistPendingDeletions([
+        for (final p in _prefs.pendingFileDeletions)
+          if (!done.contains(p)) p,
+      ]);
 
   /// Best-effort: if persisting fails we fall back to the in-memory-only
   /// behavior (files can be orphaned by a kill) rather than failing a delete
@@ -328,8 +341,10 @@ class BookshelfViewModel extends ChangeNotifier {
   Future<void> _recoverInterruptedFileDeletions() async {
     final stale = _prefs.pendingFileDeletions;
     if (stale.isEmpty) return;
-    await _persistPendingDeletions(const []);
+    // Forget only after the attempt, like the normal commit path: dying
+    // again mid-recovery must not drop the list with the files still on disk.
     await _deleteSourceFilesBestEffort(stale);
+    await _forgetPersistedDeletions(stale);
   }
 
   @override

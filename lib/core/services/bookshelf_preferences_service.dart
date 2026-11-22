@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum ViewMode { grid, list }
@@ -60,8 +63,17 @@ class BookshelfPreferencesService {
   /// Persisted (a transient work queue, not user data) so a process kill
   /// within the window cannot orphan the files: the next launch finishes the
   /// job. Empty when nothing is pending.
-  List<String> get pendingFileDeletions => List.unmodifiable(
-      _prefs?.getStringList(_keyPendingFileDeletions) ?? const []);
+  List<String> get pendingFileDeletions {
+    try {
+      return List.unmodifiable(
+          _prefs?.getStringList(_keyPendingFileDeletions) ?? const []);
+    } catch (e) {
+      // Wrong stored type: drop it so it cannot throw on every launch.
+      debugPrint('Discarding malformed pending file deletions: $e');
+      unawaited(_prefs?.remove(_keyPendingFileDeletions));
+      return const [];
+    }
+  }
 
   Future<void> setPendingFileDeletions(List<String> locators) async {
     if (locators.isEmpty) {
