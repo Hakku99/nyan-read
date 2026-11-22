@@ -8,6 +8,7 @@ import '../../../../core/models/book.dart';
 import '../../../../core/services/reader_preferences_service.dart';
 import '../../../../core/theme/theme_presets.dart';
 import '../../../../core/utils/book_source_access.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../reader_engine.dart';
 import '../page_turn_request.dart';
 import '../page_presentation.dart';
@@ -84,9 +85,30 @@ class PdfReaderEngine
     }
   }
 
+  /// Settles (never throws) once the open attempt finishes; check
+  /// [documentError] afterwards. Lets the controller surface an open failure
+  /// without [initialize] having to block on a multi-MB parse.
+  Future<void>? get documentLoadComplete => _documentLoadComplete;
+
+  /// The error of the latest open attempt, or null while opening / on success.
+  Object? get documentError => _documentError;
+
   @override
   Future<void> initialize() async {
-    if (_isInit || _disposed) return;
+    if (_disposed) return;
+    if (_isInit) {
+      // Only a failed open may be re-run (reader error page "Retry").
+      if (_documentError == null) return;
+      _documentError = null;
+      final documentFuture = _preparePdfDocument();
+      // Reuse the mounted PdfView's controller: disposing it here would pull
+      // the controller out from under the still-attached view. Setting
+      // `document` also covers a view that attaches after this call.
+      _pdfController.document = documentFuture;
+      _trackDocument(documentFuture);
+      unawaited(_pdfController.loadDocument(documentFuture));
+      return;
+    }
 
     // Phase 2 · P0-6: compose the whole "resolve source + open PDF" pipeline
     // into a single Future handed to PdfController so [initialize] itself
@@ -97,18 +119,22 @@ class PdfReaderEngine
     final documentFuture = _preparePdfDocument();
     _pdfController = PdfController(document: documentFuture);
     _isInit = true;
+    _trackDocument(documentFuture);
+  }
 
-    // The future is also consumed by PdfController internally, but we track
-    // its resolution ourselves so that getProgress / getCurrentPosition /
-    // getPageCount can bail out cleanly until the document is real.  Errors
-    // are surfaced the next time a caller interacts with the controller.
+  // The future is also consumed by PdfController internally, but we track
+  // its resolution ourselves so that getProgress / getCurrentPosition /
+  // getPageCount can bail out cleanly until the document is real.  The error
+  // is exposed via [documentError] for ReaderController to show the shared
+  // error page.
+  void _trackDocument(Future<PdfDocument> documentFuture) {
     _documentLoadComplete = documentFuture.then<void>(
       (document) {
         _document = document;
         _isDocumentReady = !_disposed;
       },
       onError: (Object error, StackTrace stack) {
-        debugPrint('PDF document open failed: $error');
+        debugPrint('PDF document open failed: ${error.runtimeType}');
         _documentError = error;
         _finishNavigation(error, stack);
       },
@@ -116,6 +142,12 @@ class PdfReaderEngine
   }
 
   Future<PdfDocument> _preparePdfDocument() async {
+    // A retry replaces the failed attempt's temporary copy; drop the old one.
+    final previousTemp = _temporaryPdfPath;
+    if (previousTemp != null) {
+      _temporaryPdfPath = null;
+      await _deleteTemporaryPdf(previousTemp);
+    }
     final source = await BookSourceAccess.preparePdfCompatibleSource(book);
     _temporaryPdfPath = source.isTemporary ? source.path : null;
     return PdfDocument.openFile(source.path);
@@ -216,13 +248,15 @@ class PdfReaderEngine
     return _isDocumentReady && _pdfController.page == page;
   }
 
+  // Fallback only: ReaderController overlays ReaderErrorView on open failure,
+  // so this stays hidden underneath and must not echo the raw platform error.
   Widget _buildErrorPlaceholder(BuildContext context, Exception error) {
     final nyan = resolveNyanTheme(Theme.of(context));
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Text(
-          'Failed to open PDF: $error',
+          AppLocalizations.of(context)?.errorParseFailedBody ?? '',
           textAlign: TextAlign.center,
           style: TextStyle(color: nyan.textSecondary, fontSize: 13),
         ),

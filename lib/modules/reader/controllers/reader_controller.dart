@@ -143,6 +143,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       if (reader is PdfReaderEngine) {
         // PDF chapter metadata waits for the document; restore can start now.
         unawaited(_loadPdfChapters());
+        unawaited(_watchPdfOpen(reader));
       } else {
         await metaManager.loadChapters();
       }
@@ -181,6 +182,25 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       _renderEpoch++;
       notifyListeners();
     }
+  }
+
+  // PdfReaderEngine.initialize() returns before the document is open, so an
+  // open failure (corrupt / encrypted PDF, revoked SAF grant) never reaches
+  // _loadBook's catch on a first open without a saved position.
+  Future<void> _watchPdfOpen(PdfReaderEngine reader) async {
+    await reader.documentLoadComplete;
+    final error = reader.documentError;
+    if (_isDisposed || error == null || _errorState != null) return;
+    final isMissing = error is FileSystemException;
+    _errorState = ReaderErrorState(
+      type: isMissing
+          ? ReaderErrorType.fileNotFound
+          : ReaderErrorType.parseFailed,
+      userMessage: isMissing ? BookSourceAccess.unavailableMessage : null,
+      technicalMessage: '$error',
+    );
+    _renderEpoch++;
+    notifyListeners();
   }
 
   Future<void> _loadPdfChapters() async {

@@ -12,6 +12,7 @@ import 'package:nyan_read/core/services/reader_preferences_service.dart';
 import 'package:nyan_read/modules/reader/controllers/reader_controller.dart';
 import 'package:nyan_read/modules/reader/reader_engine/pdf/pdf_reader.dart';
 import 'package:nyan_read/modules/reader/reader_engine/reader_engine.dart';
+import 'package:nyan_read/modules/reader/reader_error.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _pdfChannel = MethodChannel('io.scer.pdf_renderer');
@@ -38,7 +39,8 @@ class _PdfHarness {
   Future<Object?> handle(MethodCall call) async {
     switch (call.method) {
       case 'open.document.file':
-        openStarted.complete();
+        // Retry reopens the document, so this can fire more than once.
+        if (!openStarted.isCompleted) openStarted.complete();
         final result = await opened.future;
         if (failOpen) throw PlatformException(code: 'open_failed');
         return result;
@@ -359,13 +361,38 @@ void main() {
       await attachController(tester, controller);
       harness.failOpen = true;
       harness.finishOpen();
-      await _flushUntil(tester,
-          () => find.textContaining('Failed to open PDF').evaluate().isNotEmpty);
+      await _flushUntil(tester, () => controller.errorState != null);
       controller.didChangeAppLifecycleState(AppLifecycleState.paused);
       await controller.saveBeforeExit();
       expect(database.writtenPages, isEmpty);
       expect(database.savedPage, 24);
       expect(database.savedProgress, 24 / 25);
+    } finally {
+      await closeController(tester, controller);
+    }
+  });
+
+  testWidgets(
+      'PDF open failure reaches the shared error page and Retry reopens it',
+      (tester) async {
+    // No saved position: nothing navigates, so only the open watcher can
+    // surface the failure.
+    final database = _PdfTestDatabase()..positionReadGate.complete();
+    final controller = await openController(tester, database);
+    try {
+      await attachController(tester, controller);
+      harness.failOpen = true;
+      harness.finishOpen();
+      await _flushUntil(tester, () => controller.errorState != null);
+      expect(controller.errorState!.type, ReaderErrorType.parseFailed);
+      expect(controller.errorState!.technicalMessage, isNotEmpty);
+
+      harness.failOpen = false;
+      controller.retry();
+      await _flushUntil(
+          tester, () => find.byType(PageView).evaluate().isNotEmpty);
+      await _flushUntil(tester, () => controller.chapters.isNotEmpty);
+      expect(controller.errorState, isNull);
     } finally {
       await closeController(tester, controller);
     }
