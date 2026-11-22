@@ -410,12 +410,13 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               transientFilePath: transientFilePath,
             )
           : null;
-      final title = meta?.title ?? path.basenameWithoutExtension(fileName);
+      final resolved = resolveImportedTitleAuthor(fileName, meta);
+      final title = resolved.title;
 
       final book = Book(
         id: const Uuid().v4(),
         title: title,
-        author: meta?.author ?? 'Unknown',
+        author: resolved.author,
         sourceLocator: importSource.sourceLocator,
         sourceType: importSource.sourceType,
         format: path.extension(fileName).replaceAll('.', ''),

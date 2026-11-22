@@ -4,9 +4,10 @@ library;
 
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/models/book.dart';
 import 'package:nyan_read/modules/bookshelf/epub_metadata_reader.dart';
@@ -131,6 +132,89 @@ void main() {
     final file = await _writeEpub(
         tempDir, '<dc:creator opf:role="edt">The Editor</dc:creator>');
     expect((await readEpubMetadataFromFile(file.path))?.author, 'The Editor');
+  });
+
+  test('cap never splits a surrogate pair', () async {
+    // 199 ASCII + one emoji (2 UTF-16 units) straddles a unit-based cut.
+    final title = '${'x' * 199}😀tail';
+    final file = await _writeEpub(tempDir, '<dc:title>$title</dc:title>');
+    final capped = (await readEpubMetadataFromFile(file.path))!.title!;
+    expect(capped.runes.length, 200);
+    expect(capped.endsWith('😀'), isTrue);
+  });
+
+  test('resolveImportedTitleAuthor prefers OPF values, else filename/Unknown',
+      () {
+    expect(
+        resolveImportedTitleAuthor(
+            '[Z-Lib] junk (1).epub', (title: 'Real', author: 'Ada')),
+        (title: 'Real', author: 'Ada'));
+    expect(resolveImportedTitleAuthor('Dune.epub', null),
+        (title: 'Dune', author: 'Unknown'));
+    // Partial metadata: each field falls back independently.
+    expect(resolveImportedTitleAuthor('Dune.epub', (title: null, author: 'F')),
+        (title: 'Dune', author: 'F'));
+    expect(
+        resolveImportedTitleAuthor('Dune.epub', (title: 'Dune!', author: null)),
+        (title: 'Dune!', author: 'Unknown'));
+  });
+
+  group('library-folder temp copy', () {
+    const channel = MethodChannel('com.example.nyan_read/book_source');
+    final binding = TestWidgetsFlutterBinding.ensureInitialized();
+
+    tearDown(() {
+      binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    test('is materialized for a tree URI, read, then deleted', () async {
+      final temp = await _writeEpub(tempDir, '<dc:title>From Tree</dc:title>',
+          name: 'materialized.epub');
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      String? requestedExtension;
+      binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
+          (call) async {
+        expect(call.method, 'copyUriToTempFile');
+        requestedExtension = (call.arguments as Map)['extension'] as String;
+        return temp.path;
+      });
+
+      final meta = await readEpubMetadataForImport(
+        sourceType: BookSourceType.androidTreeUri,
+        sourceLocator: 'content://tree/doc',
+      );
+
+      expect(meta?.title, 'From Tree');
+      expect(requestedExtension, '.epub');
+      expect(temp.existsSync(), isFalse, reason: 'temp copy must be deleted');
+    });
+
+    test('is deleted even when the copy is not a readable EPUB', () async {
+      final temp = File('${tempDir.path}/bad.epub')..writeAsStringSync('nope');
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async => temp.path);
+
+      final meta = await readEpubMetadataForImport(
+        sourceType: BookSourceType.androidTreeUri,
+        sourceLocator: 'content://tree/doc',
+      );
+
+      expect(meta, isNull);
+      expect(temp.existsSync(), isFalse);
+    });
+
+    test('a picker copy is never deleted by the wrapper', () async {
+      final copy = await _writeEpub(tempDir, '<dc:title>Keep</dc:title>',
+          name: 'picker.epub');
+      await readEpubMetadataForImport(
+        sourceType: BookSourceType.androidContentUri,
+        sourceLocator: 'content://x',
+        transientFilePath: copy.path,
+      );
+      expect(copy.existsSync(), isTrue);
+    });
   });
 
   test('overlong fields are capped', () async {

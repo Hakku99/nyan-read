@@ -4,6 +4,7 @@ import 'dart:isolate';
 // archive_io adds InputFileStream (random-access zip reads from disk).
 import 'package:archive/archive_io.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
 
 import '../../core/models/book.dart';
 import '../../core/utils/book_source_platform.dart';
@@ -37,6 +38,17 @@ bool _isPlaceholderTitle(String title) {
   return _kPlaceholderTitles.contains(t) || _kUuidLike.hasMatch(t);
 }
 
+/// Title/author stored for an imported book: OPF values when present, else the
+/// filename without extension and the 'Unknown' author placeholder.
+({String title, String author}) resolveImportedTitleAuthor(
+  String fileName,
+  EpubMetadata? meta,
+) =>
+    (
+      title: meta?.title ?? p.basenameWithoutExtension(fileName),
+      author: meta?.author ?? 'Unknown',
+    );
+
 /// Reads OPF metadata from the EPUB at [path] in a worker isolate; null on any
 /// error. Streams the zip from disk, so memory stays at the OPF/nav size.
 Future<EpubMetadata?> readEpubMetadataFromFile(String path) =>
@@ -48,8 +60,10 @@ EpubMetadata? _readInIsolate(String path) {
     input = InputFileStream(path);
     final package =
         parseEpubPackageFromArchive(ZipDecoder().decodeStream(input));
-    String? cap(String? s) => s != null && s.length > _kMaxFieldLength
-        ? s.substring(0, _kMaxFieldLength)
+    // Cut on code points, not UTF-16 units: substring could split a surrogate
+    // pair (emoji, CJK Extension B) and leave a lone surrogate in the title.
+    String? cap(String? s) => s != null && s.runes.length > _kMaxFieldLength
+        ? String.fromCharCodes(s.runes.take(_kMaxFieldLength))
         : s;
     final title = package.title;
     return (
