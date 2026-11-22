@@ -128,10 +128,10 @@ Methods:
 - `getParagraphText(int paragraphIndex)`
 
 Implemented by:
-- TXT only
+- TXT and EPUB
 
 Why:
-- These APIs are meaningful for paragraph-based text rendering, but not for the current EPUB/PDF implementations.
+- These APIs are meaningful for paragraph-based text rendering, which TXT and EPUB share; PDF has no paragraph model.
 
 ### `TextExtractionCapability`
 

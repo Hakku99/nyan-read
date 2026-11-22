@@ -1,6 +1,6 @@
 # Nyan Read — Application Architecture Map
 
-> This document is the **top-level map of the app as it is actually built** (last verified 2026-07-07).
+> This document is the **top-level map of the app as it is actually built** (last verified 2026-11-22).
 > It intentionally stays short: rules and constraints live in [`AGENTS.md`](AGENTS.md),
 > the reader subsystem is documented in [`READER_ARCHITECTURE.md`](READER_ARCHITECTURE.md),
 > and performance gates live in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
@@ -18,7 +18,7 @@ Presentation  →  Controller  →  Engine  →  Service  →  Platform / Infra
 - **Controller** — `ReaderController` + managers, `BookshelfViewModel`. Owns orchestration and state.
 - **Engine** — `ReaderEngine` contract + TXT / EPUB / PDF implementations (see `READER_ARCHITECTURE.md`).
 - **Service** — `lib/core/services/`. All persistence and platform-facing logic.
-- **Infra** — `sqflite`, `path_provider`, `pdfx`, `epub_view`, etc.
+- **Infra** — `sqflite`, `path_provider`, `pdfx` (with the vendored `third_party/photo_view`), the self-hosted EPUB parser, etc.
 
 ## 2. Module Map (`lib/modules/`)
 
@@ -41,7 +41,7 @@ Presentation  →  Controller  →  Engine  →  Service  →  Platform / Infra
 | `SignatureBackfillService` | Backfills `content_signature` for legacy rows after startup |
 | `ReaderPreferencesService` | Reader UI prefs via SharedPreferences, 300ms debounced writes |
 | `BookshelfPreferencesService` | Shelf sort/view prefs |
-| `PinService` / `BiometricService` | Privacy shelf auth — salted PIN hash in `flutter_secure_storage`; **there is no file encryption** — private books are gated by `books.is_private` + auth wall, files stay plain on disk |
+| `PinService` / `BiometricService` | Privacy shelf auth — salted PIN hash and the 30 s retry-lockout deadline in `flutter_secure_storage`; **there is no file encryption** — private books are gated by `books.is_private` + auth wall, files stay plain on disk |
 | `FeatureManager` | Feature flags (`ChangeNotifier`, get_it-registered — not a static singleton) |
 | `LanguageManager` / `MascotManager` / `ReadingReminderService` | Locale, mascot, rest-reminder timers |
 

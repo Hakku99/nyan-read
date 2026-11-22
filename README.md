@@ -31,7 +31,7 @@
 
 ### Prerequisites
 
-- [Flutter SDK](https://flutter.dev/docs/get-started/install) `>=3.19`
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) `>=3.27`
 - Android Studio or VS Code with the Flutter extension
 - An Android or iOS device / emulator
 
