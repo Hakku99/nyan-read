@@ -44,6 +44,18 @@ class FeatureManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// How long the app may sit in the background before the private shelf
+  /// re-locks on return.
+  static const Duration autoLockAfter = Duration(minutes: 3);
+
+  /// Called on resume with the time spent in the background. Returns true
+  /// when it locked the shelf.
+  bool autoLockAfterBackground(Duration away) {
+    if (!_isPrivateShelfUnlocked || away < autoLockAfter) return false;
+    lockPrivateShelf();
+    return true;
+  }
+
   void lockPrivateShelf() {
     _isPrivateShelfUnlocked = false;
     notifyListeners();

@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.DocumentsContract
+import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -17,6 +18,7 @@ import java.util.concurrent.Executors
 class MainActivity : FlutterActivity() {
     companion object {
         private const val CHANNEL = "com.example.nyan_read/book_source"
+        private const val PRIVACY_CHANNEL = "com.example.nyan_read/privacy"
         // readUriBytes loads the whole file into a ByteArray; guard against
         // OOM on unusually large files (>100 MB). Callers that need to handle
         // larger files should use copyUriToTempFile + stream-read instead.
@@ -52,6 +54,23 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        // FLAG_SECURE toggle for private-shelf screens: blanks screenshots,
+        // screen recording and the recents thumbnail. Visibility gate only.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PRIVACY_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "setSecure" -> {
+                        if (call.argument<Boolean>("secure") == true) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        }
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->

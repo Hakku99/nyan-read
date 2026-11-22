@@ -7,6 +7,7 @@ import 'language_manager.dart';
 import 'database_service.dart';
 import 'bookshelf_preferences_service.dart';
 import 'pin_service.dart';
+import 'privacy_screen_service.dart';
 import 'reader_preferences_service.dart';
 import 'reading_reminder_service.dart';
 import 'service_locator.dart';
@@ -19,6 +20,10 @@ import '../theme/theme_manager.dart';
 /// - allow new screens/modules to opt into Riverpod incrementally
 final featureManagerRpProvider = Provider<FeatureManager>((ref) {
   return getIt<FeatureManager>();
+});
+
+final privacyScreenRpProvider = Provider<PrivacyScreenService>((ref) {
+  return getIt<PrivacyScreenService>();
 });
 
 final themeManagerRpProvider = Provider<ThemeManager>((ref) {

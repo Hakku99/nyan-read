@@ -16,6 +16,7 @@ import '../../core/ui/nyan_icons.dart';
 import '../../core/ui/nyan_theme_context.dart';
 import '../../l10n/app_localizations.dart';
 import 'bookshelf_view_model_provider.dart';
+import '../privacy/private_content_scope.dart';
 
 // ponytail: search is pure in-memory filter; no new DB query or provider.
 
@@ -119,6 +120,13 @@ class _BookSearchPageState extends ConsumerState<BookSearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    return PrivateContentScope(
+      isPrivate: widget.isPrivate,
+      child: Builder(builder: _buildPage),
+    );
+  }
+
+  Widget _buildPage(BuildContext context) {
     final nyan = context.nyanTheme;
     final loc = AppLocalizations.of(context)!;
     final isDark = nyan.brightness == Brightness.dark;

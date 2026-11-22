@@ -24,6 +24,7 @@ import '../../core/utils/book_source_access.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../l10n/app_localizations.dart';
 import 'epub_cover_extractor.dart';
+import '../privacy/private_content_scope.dart';
 
 /// Rhythm between page sections — matches [SettingsPage] list gaps.
 
@@ -142,6 +143,13 @@ class BookDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return PrivateContentScope(
+      isPrivate: book.isPrivate,
+      child: Builder(builder: _buildPage),
+    );
+  }
+
+  Widget _buildPage(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final nyanTheme = context.nyanTheme;
     final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');

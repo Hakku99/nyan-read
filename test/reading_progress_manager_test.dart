@@ -208,6 +208,31 @@ void main() {
   });
 
   test(
+      'prepareForExit (lock-triggered exit) skips the write while canSavePosition '
+      'is false and suppresses the dispose fallback, so a PDF start-up never '
+      'overwrites the saved position', () async {
+    var ready = false;
+    final gated = ReadingProgressManager(
+      engine: engine,
+      book: _book('gated-book'),
+      lifecycle: lifecycle,
+      databaseService: spyDb,
+      onProgressUpdated: () {},
+      canSavePosition: () => ready,
+    )..startTracking();
+
+    await gated.prepareForExit();
+    gated.scheduleDisposeFallbackSave();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(spyDb.positionUpdates, isEmpty);
+
+    ready = true;
+    await gated.prepareForExit();
+    expect(spyDb.positionUpdates.where((u) => u['bookId'] == 'gated-book'),
+        hasLength(1));
+  });
+
+  test(
       'scheduleDisposeFallbackSave does nothing when tracking was never started',
       () async {
     // Create a fresh manager that never called startTracking.
