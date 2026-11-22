@@ -63,25 +63,20 @@ class ReaderSettingsManager {
     ));
   }
 
+  // The three setters below only persist: preferences.notifyListeners fires
+  // _handlePreferencesChanged synchronously, which updates the engine config
+  // and calls onSettingsChanged. Doing it here too re-laid out the book twice
+  // per drag frame.
   void setFontSize(double size) {
-    _fontSize = size;
-    _updateEngineConfig();
-    preferences.setFontSize(size);
-    onSettingsChanged();
+    unawaited(preferences.setFontSize(size));
   }
 
   void setLineHeight(double height) {
-    _lineHeight = height;
-    _updateEngineConfig();
-    preferences.setLineHeight(height);
-    onSettingsChanged();
+    unawaited(preferences.setLineHeight(height));
   }
 
   void setBackground(Color color) {
-    _backgroundColor = color;
-    _updateEngineConfig();
-    preferences.setBackgroundColor(color);
-    onSettingsChanged();
+    unawaited(preferences.setBackgroundColor(color));
   }
 
   void setPageTurnMode(PageTurnMode mode) {

@@ -77,6 +77,20 @@ class BookshelfViewModel extends ChangeNotifier {
     }
   }
 
+  /// The in-progress book opened most recently, independent of the shelf's
+  /// sort order. Falls back to the first book so the hero never disappears
+  /// on a shelf with nothing in progress.
+  static Book? resolveContinueReadingBook(List<Book> books) {
+    Book? best;
+    for (final book in books) {
+      if (book.currentProgress <= 0 || book.currentProgress >= 1) continue;
+      if (best == null || (book.lastReadAt ?? 0) > (best.lastReadAt ?? 0)) {
+        best = book;
+      }
+    }
+    return best ?? (books.isEmpty ? null : books.first);
+  }
+
   // --- Interaction State ---
   bool _isSelectionMode = false;
   final Set<String> _selectedBookIds = {};

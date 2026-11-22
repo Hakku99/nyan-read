@@ -79,6 +79,9 @@ class ReaderSettingsTextPanel extends StatelessWidget {
                   value: fs,
                   min: kReaderFontSizeMin,
                   max: kReaderFontSizeMax,
+                  // Whole-point steps: a continuous slider re-flows the whole
+                  // book on every drag frame and persists values like 18.37.
+                  divisions: (kReaderFontSizeMax - kReaderFontSizeMin).round(),
                   onChanged: onSetFontSize,
                   activeColor: nyan.primaryDeep,
                   // Default textPrimary@12% track (divider@24% was too faint

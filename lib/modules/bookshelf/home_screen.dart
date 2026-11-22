@@ -719,18 +719,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     }
   }
 
-  Book? _resolveContinueReadingBook(List<Book> books) {
-    for (final book in books) {
-      if (book.currentProgress > 0 && book.currentProgress < 1) {
-        return book;
-      }
-    }
-    if (books.isEmpty) {
-      return null;
-    }
-    return books.first;
-  }
-
   PreferredSizeWidget? _buildSelectionAppBar(
     BuildContext context,
     bool showPrivacyTab,
@@ -944,7 +932,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     final loc = AppLocalizations.of(context)!;
     // Hero picks from the UNFILTERED list: "continue reading" must surface
     // the actual current book even while the Unread filter is active.
-    final continueReadingBook = _resolveContinueReadingBook(fullBooks);
+    final continueReadingBook =
+        BookshelfViewModel.resolveContinueReadingBook(fullBooks);
     final selectedTabIndex = showPrivacyTab ? _tabController.index : 0;
     const useCompactContinueReading = false;
 
