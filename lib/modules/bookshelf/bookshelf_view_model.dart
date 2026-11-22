@@ -291,6 +291,54 @@ class BookshelfViewModel extends ChangeNotifier {
     }
   }
 
+  /// Forgot-PIN "erase": removes EVERY private book with its bookmarks and
+  /// highlights. Deliberately independent of the selection state (the user may
+  /// have public books selected) and of undo — a restorable snapshot of the
+  /// private shelf would defeat the point of erasing it, so any snapshot held
+  /// in memory is dropped too.
+  ///
+  /// Only app-private sandbox copies are reclaimed; user-owned source files
+  /// stay put, matching the default "also delete files" = off of a normal
+  /// delete. Returns the number of books removed.
+  ///
+  /// Reads the private rows straight from the DB (not [_privateBooks]) and
+  /// verifies none survive: the caller clears the PIN right after, and a PIN-
+  /// less shelf that still holds books would be open to whoever taps unlock
+  /// next. Throws if anything remains, so the PIN is left untouched.
+  Future<int> eraseAllPrivateBooks() async {
+    await _commitPendingFileDeletions();
+    _clearUndoSnapshot();
+
+    final books = (await _db.getBooks(isPrivate: true))
+        .map(Book.fromMap)
+        .toList(growable: false);
+    if (books.isEmpty) return 0;
+
+    final ids = books.map((b) => b.id).toList(growable: false);
+    final pathsToDelete = _collectDeletableSourcePaths(books
+        .where((b) => b.storageType == BookStorageType.appPrivateCopy)
+        .toList());
+
+    await _db.deleteBooksWithAssociatedData(ids);
+    _selectedBookIds.removeAll(ids);
+    if ((await _db.getBooks(isPrivate: true)).isNotEmpty) {
+      await loadBooks();
+      throw StateError('Private books survived erase');
+    }
+
+    if (pathsToDelete.isNotEmpty) {
+      // Persist first so a kill mid-deletion replays on next launch, then
+      // delete right away: there is no undo window to wait out.
+      await _persistPendingDeletions(pathsToDelete);
+      final failed = await _deleteSourceFilesBestEffort(pathsToDelete);
+      await _forgetPersistedDeletions(pathsToDelete);
+      if (failed > 0) onFileDeletionFailed?.call(failed);
+    }
+
+    await loadBooks();
+    return ids.length;
+  }
+
   void _clearUndoSnapshot() {
     _lastDeletedBookMaps = [];
     _lastDeletedBookmarkMaps = [];

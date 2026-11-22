@@ -11,11 +11,12 @@ import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/services/pin_service.dart';
+import 'forgot_pin_sheet.dart';
 import 'widgets/pin_input_widget.dart';
 
 enum PinOverlayMode { setup, verify, change }
 
-enum _PinInputError { mismatch, unavailable }
+enum _PinInputError { mismatch, unavailable, biometricUnavailable }
 
 /// Full-screen PIN takeover (U16). Light branch uses resolved NyanTheme tokens;
 /// dark branch uses bespoke ink literals (`#1D211E` / `#E8E1D5`) matching the
@@ -34,6 +35,10 @@ class PinOverlayPage extends StatefulWidget {
   /// fingerprint button is never shown outside of verify mode.
   final BiometricService? biometricService;
 
+  /// Recovery flow behind "Forgot PIN?" (verify mode only). Null hides the
+  /// button — better than a button that does nothing.
+  final Future<ForgotPinOutcome> Function(BuildContext context)? onForgotPin;
+
   const PinOverlayPage({
     super.key,
     required this.mode,
@@ -41,6 +46,7 @@ class PinOverlayPage extends StatefulWidget {
     this.onSuccess,
     this.onCancel,
     this.biometricService,
+    this.onForgotPin,
   });
 
   @override
@@ -219,11 +225,32 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
 
   Future<void> _handleBiometric() async {
     final loc = AppLocalizations.of(context)!;
-    final success =
+    final result =
         await widget.biometricService!.authenticate(loc.pinBiometricReason);
-    if (success && mounted) {
-      widget.onSuccess?.call();
-      Navigator.of(context).pop(true);
+    if (!mounted) return;
+    switch (result) {
+      case BiometricResult.success:
+        widget.onSuccess?.call();
+        Navigator.of(context).pop(true);
+      case BiometricResult.error:
+        // A failing OS prompt must not look like a dead button.
+        _showErrorThenReset(_PinInputError.biometricUnavailable);
+      case BiometricResult.cancelled:
+        break;
+    }
+  }
+
+  Future<void> _handleForgotPin() async {
+    final outcome = await widget.onForgotPin!(context);
+    if (!mounted) return;
+    switch (outcome) {
+      case ForgotPinOutcome.pinReset:
+        widget.onSuccess?.call();
+        Navigator.of(context).pop(true);
+      case ForgotPinOutcome.erased:
+        Navigator.of(context).pop(false);
+      case ForgotPinOutcome.cancelled:
+        break;
     }
   }
 
@@ -256,6 +283,7 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
         : switch (_inputError) {
             null => null,
             _PinInputError.unavailable => loc.pinVerificationUnavailable,
+            _PinInputError.biometricUnavailable => loc.pinDeviceAuthUnavailable,
             _PinInputError.mismatch => widget.mode == PinOverlayMode.verify
                 ? loc.pinIncorrect
                 : loc.pinMismatch,
@@ -451,11 +479,9 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
   }
 
   Widget _buildFooter(AppLocalizations loc, NyanTheme nyan, bool isDark) {
-    if (widget.mode == PinOverlayMode.verify) {
+    if (widget.mode == PinOverlayMode.verify && widget.onForgotPin != null) {
       return TextButton(
-        onPressed: () {
-          // TODO(#pin-forgot): implement forgot-PIN recovery flow
-        },
+        onPressed: _handleForgotPin,
         style: TextButton.styleFrom(
           padding: EdgeInsets.zero,
           minimumSize: const Size(44, 44),

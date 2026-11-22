@@ -23,6 +23,9 @@ class _FakeDb extends DatabaseService {
 
   int restoreCalls = 0;
 
+  /// Simulates a delete that silently leaves rows behind.
+  bool refuseDelete = false;
+
   @override
   Future<List<Map<String, dynamic>>> getBooks({
     bool isPrivate = false,
@@ -44,6 +47,7 @@ class _FakeDb extends DatabaseService {
 
   @override
   Future<void> deleteBooksWithAssociatedData(List<String> bookIds) async {
+    if (refuseDelete) return;
     for (final id in bookIds) {
       books.remove(id);
       bookmarksByBook.remove(id);
@@ -335,6 +339,55 @@ void main() {
 
       expect(deletedUris, isEmpty);
       expect(failures, isEmpty);
+    });
+  });
+
+  group('eraseAllPrivateBooks (forgot-PIN erase)', () {
+    setUp(() async {
+      db.books['p1'] = {..._bookRow('p1'), 'is_private': 1};
+      db.books['p2'] = {..._bookRow('p2'), 'is_private': 1};
+      db.bookmarksByBook['p1'] = [
+        {'id': 'bm9', 'book_id': 'p1', 'page_index': 0},
+      ];
+      await vm.loadBooks();
+    });
+
+    test('removes every private book and its notes, public shelf untouched',
+        () async {
+      // A public book is mid-selection: erase must not depend on or consume it.
+      vm.toggleSelectionMode(active: true, initialBookId: 'b1');
+
+      final removed = await vm.eraseAllPrivateBooks();
+
+      expect(removed, 2);
+      expect(db.books.keys, ['b1']);
+      expect(db.bookmarksByBook.containsKey('p1'), isFalse);
+      expect(vm.privateBooks, isEmpty);
+      expect(vm.selectedBookIds, {'b1'});
+    });
+
+    test('is not undoable: no snapshot of the private shelf survives',
+        () async {
+      await vm.eraseAllPrivateBooks();
+      await vm.undoLastDelete();
+
+      expect(db.restoreCalls, 0);
+      expect(db.books.keys, ['b1']);
+    });
+
+    test('works from the DB even when the VM list is stale', () async {
+      db.books['p3'] = {..._bookRow('p3'), 'is_private': 1}; // VM never saw it
+
+      await vm.eraseAllPrivateBooks();
+
+      expect(db.books.values.where((b) => b['is_private'] == 1), isEmpty);
+    });
+
+    test('throws when private rows survive, so the PIN stays intact', () async {
+      db.refuseDelete = true;
+
+      await expectLater(vm.eraseAllPrivateBooks(), throwsStateError);
+      expect(db.books.keys, containsAll(['p1', 'p2']));
     });
   });
 

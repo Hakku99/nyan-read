@@ -51,6 +51,9 @@ class PinService {
     // are legacy (timestamp salt + single SHA-256 round) and get verified —
     // then upgraded — through the legacy path in [verifyPin].
     await _storage.write(key: _pinIterationsKey, value: '$_hashIterations');
+    // A freshly (re)set PIN starts with a clean slate: after forgot-PIN
+    // recovery a stale 30 s lockout would otherwise block the new PIN.
+    await _clearFailureState();
   }
 
   /// Verify if the provided PIN matches the stored PIN.
@@ -149,11 +152,15 @@ class PinService {
   }
 
   /// Reset the PIN (clears stored PIN)
-  /// WARNING: This should only be called after additional verification
+  /// WARNING: only safe once no private book remains (erase-shelf path).
+  /// With a PIN-less private shelf the next person to tap "unlock" would set
+  /// their own PIN and see everything — the owner-verified recovery path
+  /// overwrites via [setPin] instead.
   Future<void> resetPin() async {
     await _storage.delete(key: _pinKey);
     await _storage.delete(key: _pinSaltKey);
     await _storage.delete(key: _pinIterationsKey);
+    await _clearFailureState();
   }
 
   /// Check if a PIN string is valid (4 digits)

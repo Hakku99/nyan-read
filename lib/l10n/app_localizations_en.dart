@@ -682,6 +682,55 @@ class AppLocalizationsEn extends AppLocalizations {
       'Verify your identity to open your private shelf.';
 
   @override
+  String get pinForgotDeviceReason =>
+      'Verify it\'s you to reset your private shelf PIN.';
+
+  @override
+  String get pinDeviceAuthUnavailable =>
+      'Device verification isn\'t available right now.';
+
+  @override
+  String get pinForgotSheetTitle => 'Forgot your PIN?';
+
+  @override
+  String get pinForgotSheetBody =>
+      'Choose how to get back into your private shelf.';
+
+  @override
+  String get pinForgotVerifyTitle => 'Verify with device lock';
+
+  @override
+  String get pinForgotVerifySubtitle =>
+      'Use your fingerprint, face or screen lock, then set a new PIN. Your private books are kept.';
+
+  @override
+  String get pinForgotEraseTitle => 'Erase private shelf';
+
+  @override
+  String get pinForgotEraseSubtitle =>
+      'Delete every private book and start over with a new PIN.';
+
+  @override
+  String get pinEraseConfirmTitle => 'Erase your private shelf?';
+
+  @override
+  String get pinEraseConfirmBody =>
+      'Every private book is deleted along with its reading progress, bookmarks and highlights. This can\'t be undone. Your public shelf is not affected.';
+
+  @override
+  String get pinEraseConfirmAction => 'Erase';
+
+  @override
+  String get pinEraseDone => 'Private shelf erased';
+
+  @override
+  String get pinEraseDoneDesc => 'You can set a new PIN next time you open it.';
+
+  @override
+  String get pinEraseFailed =>
+      'Couldn\'t erase the private shelf. Your PIN is unchanged.';
+
+  @override
   String get fontSize => 'Font Size';
 
   @override

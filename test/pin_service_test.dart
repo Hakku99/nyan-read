@@ -116,6 +116,38 @@ void main() {
     expect(await service.verifyPin('1234'), isTrue);
   });
 
+  test('forgot-PIN recovery: setPin overwrites the PIN and clears lockout',
+      () async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final service = PinService();
+    await service.setPin('1234');
+    for (var i = 0; i < 5; i++) {
+      await service.verifyPin('0000');
+    }
+    expect(await service.activeLockoutUntil(), isNotNull);
+
+    // Owner proved identity via device lock → overlay writes a new PIN.
+    await service.setPin('5678');
+
+    expect(await service.activeLockoutUntil(), isNull,
+        reason: 'a stale lockout must not block the freshly set PIN');
+    expect(await service.verifyPin('1234'), isFalse);
+    expect(await service.verifyPin('5678'), isTrue);
+  });
+
+  test('resetPin (erase path) also clears lockout state', () async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final service = PinService();
+    await service.setPin('1234');
+    for (var i = 0; i < 5; i++) {
+      await service.verifyPin('0000');
+    }
+    await service.resetPin();
+
+    expect(await service.hasPinSet(), isFalse);
+    expect(await service.activeLockoutUntil(), isNull);
+  });
+
   test('resetPin clears the iterations marker with the record', () async {
     FlutterSecureStorage.setMockInitialValues({});
     const storage = FlutterSecureStorage();
