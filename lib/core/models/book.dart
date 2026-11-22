@@ -112,12 +112,15 @@ class Book {
       author: map['author'] ?? 'Unknown',
       sourceLocator: map['file_path'],
       sourceType: BookSourceType.normalize(map['source_type'] as String?),
-      format: map['format'],
+      // Lowercased on read so rows imported as 'PDF' before the import path
+      // normalised the extension still match the 'pdf' checks in the reader.
+      format: (map['format'] as String).toLowerCase(),
       titleSortKey: map['title_sort_key'] as String?,
       isPrivate: map['is_private'] == 1,
       totalPages: map['total_pages'] ?? 0,
       currentProgress: map['current_progress'] ?? 0.0,
-      lastPositionType: map['last_position_type'],
+      // Same reason as `format`: legacy rows stored the type in uppercase.
+      lastPositionType: (map['last_position_type'] as String?)?.toLowerCase(),
       lastPositionPayload: map['last_position_payload'],
       lastReadAt: map['last_read_at'] as int?,
       addedAt: map['added_at'] as int?,

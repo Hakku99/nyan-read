@@ -56,10 +56,12 @@ class _FakeEngine extends ReaderEngine {
   }
 
   bool throwOnGoTo = false;
+  final goToCalls = <ReadingPosition>[];
 
   @override
   Future<void> goToPosition(ReadingPosition position) async {
     if (throwOnGoTo) throw StateError('goToPosition failed');
+    goToCalls.add(position);
   }
 
   @override
@@ -300,6 +302,17 @@ void main() {
       await restore;
       await m.saveCurrentPosition();
       expect(spyDb.positionUpdates, hasLength(1));
+    });
+
+    test('restores a legacy row whose position_type is uppercase', () async {
+      // '{}' only has a location for 'txt' (paragraphIndex defaults to 0);
+      // with an unnormalised 'TXT' the restore would be silently skipped.
+      spyDb.storedPosition = {
+        'position_type': 'TXT',
+        'position_payload': '{}',
+      };
+      await fresh().restoreLastPosition();
+      expect(engine.goToCalls, hasLength(1));
     });
 
     test('saves go through after goToPosition throws', () async {

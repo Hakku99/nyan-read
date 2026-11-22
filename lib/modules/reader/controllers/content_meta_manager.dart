@@ -338,7 +338,8 @@ class ContentMetaManager {
           final type = bm['position_type'] ?? book.format;
 
           if (payload != null) {
-            final pos = ReadingPosition.fromJson(type.toString(), payload);
+            final pos =
+                ReadingPosition.fromJson(type.toString().toLowerCase(), payload);
             if (pos.hasLocation) {
               final text = await _textExtractionCapability?.getTextAtPosition(pos);
               if (text != null && text.isNotEmpty) {

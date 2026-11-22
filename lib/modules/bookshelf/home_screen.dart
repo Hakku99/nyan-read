@@ -419,7 +419,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         author: resolved.author,
         sourceLocator: importSource.sourceLocator,
         sourceType: importSource.sourceType,
-        format: path.extension(fileName).replaceAll('.', ''),
+        format: path.extension(fileName).replaceAll('.', '').toLowerCase(),
         titleSortKey: buildTitleSortKey(title),
         isPrivate: isPrivate,
         addedAt: addedAt,
