@@ -43,7 +43,15 @@ class EpubPackage {
     required this.toc,
     required this.coverPath,
     this.spinePaths = const [],
+    this.title,
+    this.author,
   });
+
+  /// OPF `dc:title` (first non-empty), whitespace-collapsed; null if absent.
+  final String? title;
+
+  /// OPF `dc:creator` entries joined with ", "; null if absent.
+  final String? author;
 
   final Archive archive;
   final List<EpubTocEntry> toc;
@@ -131,9 +139,8 @@ EpubPackage parseEpubPackageFromArchive(Archive archive) {
 
   // 4. TOC: EPUB3 nav → EPUB2 NCX → spine order.
   List<EpubTocEntry> toc = const [];
-  final navItem = manifest.values
-      .where((m) => m.props.split(' ').contains('nav'))
-      .toList();
+  final navItem =
+      manifest.values.where((m) => m.props.split(' ').contains('nav')).toList();
   if (navItem.isNotEmpty) {
     final navPath = resolveHref(opfDir, navItem.first.href).path;
     final navXml = readZipText(archive, navPath);
@@ -183,11 +190,70 @@ EpubPackage parseEpubPackageFromArchive(Archive archive) {
     }
   }
 
+  // 6. Metadata: dc:title / dc:creator. namespace '*' matches the local name,
+  //    since the elements carry a `dc:` prefix.
+  String? clean(XmlElement e) {
+    final text = e.innerText.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return text.isEmpty ? null : text;
+  }
+
+  // EPUB3 refinements: <meta refines="#id" property="title-type|role">value.
+  String? refinement(XmlElement e, String property) {
+    final id = e.getAttribute('id');
+    if (id == null || id.isEmpty) return null;
+    for (final meta in opf.findAllElements('meta', namespace: '*')) {
+      if (meta.getAttribute('refines') == '#$id' &&
+          meta.getAttribute('property') == property) {
+        return meta.innerText.trim().toLowerCase();
+      }
+    }
+    return null;
+  }
+
+  // Main title: an explicit title-type "main" wins; otherwise the first
+  // untyped title (the common case); otherwise the first non-empty one, so a
+  // subtitle/series entry listed first is not mistaken for the book title.
+  final titleEntries = [
+    for (final e in opf.findAllElements('title', namespace: '*'))
+      if (clean(e) != null)
+        (text: clean(e)!, type: refinement(e, 'title-type')),
+  ];
+  final title = (titleEntries.where((t) => t.type == 'main').firstOrNull ??
+          titleEntries.where((t) => t.type == null).firstOrNull ??
+          titleEntries.firstOrNull)
+      ?.text;
+
+  // Authors: a creator with no role is an author by spec; drop the ones
+  // explicitly marked as something else (illustrator, translator, editor...)
+  // via EPUB2 opf:role or EPUB3 refines role. If that leaves nobody (e.g. an
+  // anthology with only an editor), fall back to everyone listed.
+  final creatorEntries = [
+    for (final e in opf.findAllElements('creator', namespace: '*'))
+      if (clean(e) != null)
+        (
+          text: clean(e)!,
+          role: (e.attributes
+                      .where((a) => a.name.local == 'role')
+                      .firstOrNull
+                      ?.value ??
+                  refinement(e, 'role'))
+              ?.trim()
+              .toLowerCase(),
+        ),
+  ];
+  final authors = creatorEntries
+      .where((c) => c.role == null || c.role!.isEmpty || c.role == 'aut')
+      .toList();
+  final creators =
+      (authors.isEmpty ? creatorEntries : authors).map((c) => c.text).toList();
+
   return EpubPackage(
     archive: archive,
     toc: toc,
     coverPath: coverPath,
     spinePaths: spinePaths,
+    title: title,
+    author: creators.isEmpty ? null : creators.join(', '),
   );
 }
 
@@ -223,9 +289,10 @@ List<EpubTocEntry> _parseNavList(XmlElement ol, String navDir) {
     final childOl = li.findElements('ol').toList();
     final href = a.isEmpty ? null : a.first.getAttribute('href');
     final title = a.isEmpty
-        ? li.findElements('span').map((s) => s.innerText.trim()).firstWhere(
-            (t) => t.isNotEmpty,
-            orElse: () => '')
+        ? li
+            .findElements('span')
+            .map((s) => s.innerText.trim())
+            .firstWhere((t) => t.isNotEmpty, orElse: () => '')
         : a.first.innerText.trim();
     final resolved = href == null ? null : resolveHref(navDir, href);
     entries.add(EpubTocEntry(

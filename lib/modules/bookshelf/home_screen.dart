@@ -40,6 +40,7 @@ import 'widgets/bookshelf_shelf_toolbar.dart';
 import 'widgets/bookshelf_sort_sheet.dart';
 import '../../core/ui/components/segmented_tab_control.dart';
 import 'book_search_page.dart';
+import 'epub_metadata_reader.dart';
 import 'bookshelf_view_model.dart';
 import 'bookshelf_view_model_provider.dart';
 
@@ -399,15 +400,27 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         return _ImportOutcome.skipped;
       }
 
+      // EPUB filenames are often scraped junk ("[Author] Title (Z-Lib)"); the
+      // OPF has the real title/author. Only read it for non-duplicates, and
+      // fall back to the filename on any failure.
+      final meta = path.extension(fileName).toLowerCase() == '.epub'
+          ? await readEpubMetadataForImport(
+              sourceType: importSource.sourceType,
+              sourceLocator: importSource.sourceLocator,
+              transientFilePath: transientFilePath,
+            )
+          : null;
+      final resolved = resolveImportedTitleAuthor(fileName, meta);
+      final title = resolved.title;
+
       final book = Book(
         id: const Uuid().v4(),
-        title: path.basenameWithoutExtension(fileName),
-        author: 'Unknown',
+        title: title,
+        author: resolved.author,
         sourceLocator: importSource.sourceLocator,
         sourceType: importSource.sourceType,
         format: path.extension(fileName).replaceAll('.', ''),
-        titleSortKey:
-            buildTitleSortKey(path.basenameWithoutExtension(fileName)),
+        titleSortKey: buildTitleSortKey(title),
         isPrivate: isPrivate,
         addedAt: addedAt,
         contentSignature: contentSignature,
