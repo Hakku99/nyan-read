@@ -3,6 +3,16 @@ import 'package:nyan_read/l10n/app_localizations.dart';
 
 import '../reader_engine/reader_engine.dart';
 
+/// Display title for [chapter]; localizes untitled and synthetic entries.
+String readerChapterTitle(
+    ReaderChapter chapter, int index, AppLocalizations loc) {
+  if (chapter.title.isNotEmpty) return chapter.title;
+  final page = chapter.locator.pageNumber;
+  return chapter.isSynthetic && page != null
+      ? loc.pdfPageStart(page)
+      : loc.chapterName(index + 1);
+}
+
 /// Human-readable chapter context for progress UI (menu overlay / sheet).
 String readerChapterSummaryLabel({
   required List<ReaderChapter> chapters,
@@ -13,7 +23,7 @@ String readerChapterSummaryLabel({
       currentChapterIndex >= 0 &&
       currentChapterIndex < chapters.length) {
     final chapter = normalizeChapterHeadingForDisplay(
-      chapters[currentChapterIndex].title,
+      readerChapterTitle(chapters[currentChapterIndex], currentChapterIndex, loc),
     ).trim();
     if (chapter.isNotEmpty) {
       return chapter;

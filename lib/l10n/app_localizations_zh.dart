@@ -840,6 +840,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String pdfPageStart(int page) {
+    return '第 $page 页';
+  }
+
+  @override
   String bookmarksTitle(int count) {
     return '书签 ($count)';
   }

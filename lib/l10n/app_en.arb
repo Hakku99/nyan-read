@@ -394,6 +394,15 @@
       }
     }
   },
+  "pdfPageStart": "Page {page}",
+  "@pdfPageStart": {
+    "description": "Fallback table-of-contents entry for a PDF without an outline; the page the group of pages starts on.",
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
   "bookmarksTitle": "Bookmarks ({count})",
   "@bookmarksTitle": {
     "placeholders": {

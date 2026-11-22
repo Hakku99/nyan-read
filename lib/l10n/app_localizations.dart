@@ -1670,6 +1670,12 @@ abstract class AppLocalizations {
   /// **'Chapter {index}'**
   String chapterName(int index);
 
+  /// Fallback table-of-contents entry for a PDF without an outline; the page the group of pages starts on.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page}'**
+  String pdfPageStart(int page);
+
   /// No description provided for @bookmarksTitle.
   ///
   /// In en, this message translates to:

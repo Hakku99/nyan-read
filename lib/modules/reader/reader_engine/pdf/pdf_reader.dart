@@ -337,7 +337,9 @@ class PdfReaderEngine
       for (int i = 1; i <= count; i += pagesPerChapter) {
         chapters.add(
           ReaderChapter(
-            title: 'Page $i',
+            // Empty on purpose: the engine has no l10n access; the UI renders
+            // synthetic chapters via readerChapterTitle().
+            title: '',
             index: chapters.length,
             locator: ChapterLocator(pageNumber: i),
             isSynthetic: true,

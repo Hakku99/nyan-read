@@ -242,7 +242,9 @@ void main() {
       harness.finishOpen(pagesCount: 12);
       await _flushUntil(tester, () => controller.chapters.isNotEmpty);
       expect(controller.chapters.map((chapter) => chapter.title),
-          ['Page 1', 'Page 11']);
+          ['', ''], reason: 'synthetic titles are localized by the UI');
+      expect(controller.chapters.every((chapter) => chapter.isSynthetic),
+          isTrue);
       expect(controller.chapters.map((chapter) => chapter.locator.pageNumber),
           [1, 11]);
       expect(controller.currentChapterIndex, 0);

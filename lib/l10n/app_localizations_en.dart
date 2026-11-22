@@ -880,6 +880,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String pdfPageStart(int page) {
+    return 'Page $page';
+  }
+
+  @override
   String bookmarksTitle(int count) {
     return 'Bookmarks ($count)';
   }
