@@ -1,8 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 
+/// Outcome of an OS authentication prompt. [error] is kept apart from
+/// [cancelled] so the UI can say "unavailable" instead of failing silently
+/// (a misconfigured Activity once made the fingerprint key a no-op).
+enum BiometricResult { success, cancelled, error }
+
 /// Thin wrapper around [LocalAuthentication] for biometric / device-credential
-/// unlock. Used exclusively by [PinOverlayPage] in verify mode.
+/// unlock. Used by [PinOverlayPage] in verify mode and by the forgot-PIN flow.
 ///
 /// Registered as a get_it singleton; injected via [PrivacyLockService].
 class BiometricService {
@@ -20,20 +25,37 @@ class BiometricService {
     }
   }
 
-  /// Triggers the OS biometric prompt. [localizedReason] is shown to the user
-  /// in the system dialog. Returns true on successful authentication.
-  Future<bool> authenticate(String localizedReason) async {
+  /// True when the OS can authenticate the owner at all — biometrics OR a
+  /// device PIN/pattern/password. Gate for the forgot-PIN "verify with device
+  /// lock" path, which must also work for users with no fingerprint enrolled.
+  Future<bool> isDeviceAuthSupported() async {
     try {
-      return await _auth.authenticate(
+      return await _auth.isDeviceSupported();
+    } catch (e) {
+      debugPrint('[BiometricService] isDeviceAuthSupported error: $e');
+      return false;
+    }
+  }
+
+  /// Triggers the OS prompt. [localizedReason] is shown to the user in the
+  /// system dialog. With [biometricOnly] false the device lock screen
+  /// credential is accepted as well.
+  Future<BiometricResult> authenticate(
+    String localizedReason, {
+    bool biometricOnly = true,
+  }) async {
+    try {
+      final ok = await _auth.authenticate(
         localizedReason: localizedReason,
-        options: const AuthenticationOptions(
-          biometricOnly: true,
+        options: AuthenticationOptions(
+          biometricOnly: biometricOnly,
           stickyAuth: true,
         ),
       );
+      return ok ? BiometricResult.success : BiometricResult.cancelled;
     } catch (e) {
       debugPrint('[BiometricService] authenticate error: $e');
-      return false;
+      return BiometricResult.error;
     }
   }
 }

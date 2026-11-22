@@ -7,7 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.DocumentsContract
 import android.view.WindowManager
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
@@ -15,7 +15,11 @@ import java.io.FileOutputStream
 import java.util.UUID
 import java.util.concurrent.Executors
 
-class MainActivity : FlutterActivity() {
+// FlutterFragmentActivity (not FlutterActivity): local_auth's BiometricPrompt
+// needs a FragmentActivity, otherwise authenticate() throws no_fragment_activity
+// and the private-shelf fingerprint key silently does nothing. The picker
+// request codes below must stay within 16 bits (FragmentActivity restriction).
+class MainActivity : FlutterFragmentActivity() {
     companion object {
         private const val CHANNEL = "com.example.nyan_read/book_source"
         private const val PRIVACY_CHANNEL = "com.example.nyan_read/privacy"

@@ -1328,6 +1328,90 @@ abstract class AppLocalizations {
   /// **'Verify your identity to open your private shelf.'**
   String get pinBiometricReason;
 
+  /// No description provided for @pinForgotDeviceReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify it\'s you to reset your private shelf PIN.'**
+  String get pinForgotDeviceReason;
+
+  /// No description provided for @pinDeviceAuthUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Device verification isn\'t available right now.'**
+  String get pinDeviceAuthUnavailable;
+
+  /// No description provided for @pinForgotSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot your PIN?'**
+  String get pinForgotSheetTitle;
+
+  /// No description provided for @pinForgotSheetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how to get back into your private shelf.'**
+  String get pinForgotSheetBody;
+
+  /// No description provided for @pinForgotVerifyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify with device lock'**
+  String get pinForgotVerifyTitle;
+
+  /// No description provided for @pinForgotVerifySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your fingerprint, face or screen lock, then set a new PIN. Your private books are kept.'**
+  String get pinForgotVerifySubtitle;
+
+  /// No description provided for @pinForgotEraseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Erase private shelf'**
+  String get pinForgotEraseTitle;
+
+  /// No description provided for @pinForgotEraseSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete every private book and start over with a new PIN.'**
+  String get pinForgotEraseSubtitle;
+
+  /// No description provided for @pinEraseConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Erase your private shelf?'**
+  String get pinEraseConfirmTitle;
+
+  /// No description provided for @pinEraseConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every private book is deleted along with its reading progress, bookmarks and highlights. This can\'t be undone. Your public shelf is not affected.'**
+  String get pinEraseConfirmBody;
+
+  /// No description provided for @pinEraseConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Erase'**
+  String get pinEraseConfirmAction;
+
+  /// No description provided for @pinEraseDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Private shelf erased'**
+  String get pinEraseDone;
+
+  /// No description provided for @pinEraseDoneDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'You can set a new PIN next time you open it.'**
+  String get pinEraseDoneDesc;
+
+  /// No description provided for @pinEraseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t erase the private shelf. Your PIN is unchanged.'**
+  String get pinEraseFailed;
+
   /// No description provided for @fontSize.
   ///
   /// In en, this message translates to:

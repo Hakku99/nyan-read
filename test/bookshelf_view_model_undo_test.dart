@@ -23,6 +23,9 @@ class _FakeDb extends DatabaseService {
 
   int restoreCalls = 0;
 
+  /// Simulates a delete that silently leaves rows behind.
+  bool refuseDelete = false;
+
   @override
   Future<List<Map<String, dynamic>>> getBooks({
     bool isPrivate = false,
@@ -44,6 +47,7 @@ class _FakeDb extends DatabaseService {
 
   @override
   Future<void> deleteBooksWithAssociatedData(List<String> bookIds) async {
+    if (refuseDelete) return;
     for (final id in bookIds) {
       books.remove(id);
       bookmarksByBook.remove(id);
@@ -148,8 +152,7 @@ void main() {
     expect(db.bookmarksByBook['b1'], isNotEmpty);
   });
 
-  test('second delete batch invalidates the previous undo snapshot',
-      () async {
+  test('second delete batch invalidates the previous undo snapshot', () async {
     db.books['b2'] = _bookRow('b2');
     await vm.loadBooks();
 
@@ -182,8 +185,7 @@ void main() {
     expect(db.restoreCalls, 0);
   });
 
-  test('sandbox copies are reclaimed even when deleteFiles is false',
-      () async {
+  test('sandbox copies are reclaimed even when deleteFiles is false', () async {
     final tempDir = await Directory.systemTemp.createTemp('nyan_vm_test');
     addTearDown(() async {
       try {
@@ -304,8 +306,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 200));
     }
 
-    test('are handed to the platform delete when the user opted in',
-        () async {
+    test('are handed to the platform delete when the user opted in', () async {
       final failures = <int>[];
       vm.onFileDeletionFailed = failures.add;
 
@@ -335,6 +336,89 @@ void main() {
 
       expect(deletedUris, isEmpty);
       expect(failures, isEmpty);
+    });
+  });
+
+  group('eraseAllPrivateBooks (forgot-PIN erase)', () {
+    setUp(() async {
+      db.books['p1'] = {..._bookRow('p1'), 'is_private': 1};
+      db.books['p2'] = {..._bookRow('p2'), 'is_private': 1};
+      db.bookmarksByBook['p1'] = [
+        {'id': 'bm9', 'book_id': 'p1', 'page_index': 0},
+      ];
+      await vm.loadBooks();
+    });
+
+    test('removes every private book and its notes, public shelf untouched',
+        () async {
+      // A public book is mid-selection: erase must not depend on or consume it.
+      vm.toggleSelectionMode(active: true, initialBookId: 'b1');
+
+      final removed = await vm.eraseAllPrivateBooks();
+
+      expect(removed, 2);
+      expect(db.books.keys, ['b1']);
+      expect(db.bookmarksByBook.containsKey('p1'), isFalse);
+      expect(vm.privateBooks, isEmpty);
+      expect(vm.selectedBookIds, {'b1'});
+    });
+
+    test('a public-only Undo snapshot survives an erase', () async {
+      vm.toggleSelectionMode(active: true, initialBookId: 'b1');
+      await vm.deleteSelectedBooks(false);
+
+      await vm.eraseAllPrivateBooks();
+      await vm.undoLastDelete();
+
+      expect(db.restoreCalls, 1, reason: 'the visible Undo toast must work');
+      expect(db.books.keys, contains('b1'));
+      expect(db.books.values.where((b) => b['is_private'] == 1), isEmpty);
+    });
+
+    test('an Undo snapshot holding private books is dropped by erase',
+        () async {
+      vm.toggleSelectionMode(active: true, initialBookId: 'p1');
+      await vm.deleteSelectedBooks(false);
+
+      await vm.eraseAllPrivateBooks();
+      await vm.undoLastDelete();
+
+      expect(db.restoreCalls, 0,
+          reason: 'Undo must not resurrect a private book after erase');
+      expect(db.books.values.where((b) => b['is_private'] == 1), isEmpty);
+    });
+
+    test('hasAnyPrivateBooks reads the DB, tracks erase', () async {
+      expect(await vm.hasAnyPrivateBooks(), isTrue);
+      db.books['p3'] = {..._bookRow('p3'), 'is_private': 1}; // VM list is stale
+      await vm.eraseAllPrivateBooks();
+      expect(await vm.hasAnyPrivateBooks(), isFalse);
+      db.books['p4'] = {..._bookRow('p4'), 'is_private': 1}; // e.g. restored
+      expect(await vm.hasAnyPrivateBooks(), isTrue);
+    });
+
+    test('is not undoable: no snapshot of the private shelf survives',
+        () async {
+      await vm.eraseAllPrivateBooks();
+      await vm.undoLastDelete();
+
+      expect(db.restoreCalls, 0);
+      expect(db.books.keys, ['b1']);
+    });
+
+    test('works from the DB even when the VM list is stale', () async {
+      db.books['p3'] = {..._bookRow('p3'), 'is_private': 1}; // VM never saw it
+
+      await vm.eraseAllPrivateBooks();
+
+      expect(db.books.values.where((b) => b['is_private'] == 1), isEmpty);
+    });
+
+    test('throws when private rows survive, so the PIN stays intact', () async {
+      db.refuseDelete = true;
+
+      await expectLater(vm.eraseAllPrivateBooks(), throwsStateError);
+      expect(db.books.keys, containsAll(['p1', 'p2']));
     });
   });
 

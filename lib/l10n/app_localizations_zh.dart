@@ -651,6 +651,48 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pinBiometricReason => '验证您的身份以打开隐私书架。';
 
   @override
+  String get pinForgotDeviceReason => '验证您的身份以重设隐私书架 PIN。';
+
+  @override
+  String get pinDeviceAuthUnavailable => '设备验证暂时不可用。';
+
+  @override
+  String get pinForgotSheetTitle => '忘记 PIN？';
+
+  @override
+  String get pinForgotSheetBody => '选择找回隐私书架的方式。';
+
+  @override
+  String get pinForgotVerifyTitle => '使用设备锁验证';
+
+  @override
+  String get pinForgotVerifySubtitle => '通过指纹、面容或手机锁屏验证后设置新 PIN，私密书籍会完整保留。';
+
+  @override
+  String get pinForgotEraseTitle => '清空隐私书架';
+
+  @override
+  String get pinForgotEraseSubtitle => '删除所有私密书籍，并重新设置 PIN。';
+
+  @override
+  String get pinEraseConfirmTitle => '清空隐私书架？';
+
+  @override
+  String get pinEraseConfirmBody => '所有私密书籍及其阅读进度、书签和高亮都会被删除，且无法恢复。公共书架不受影响。';
+
+  @override
+  String get pinEraseConfirmAction => '清空';
+
+  @override
+  String get pinEraseDone => '隐私书架已清空';
+
+  @override
+  String get pinEraseDoneDesc => '下次打开时可以设置新的 PIN。';
+
+  @override
+  String get pinEraseFailed => '无法清空隐私书架，PIN 保持不变。';
+
+  @override
   String get fontSize => '字体大小';
 
   @override

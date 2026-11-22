@@ -71,13 +71,9 @@ class BookshelfViewModel extends ChangeNotifier {
       case ShelfStatusFilter.all:
         return books;
       case ShelfStatusFilter.reading:
-        return books
-            .where((b) => b.lastReadAt != null)
-            .toList(growable: false);
+        return books.where((b) => b.lastReadAt != null).toList(growable: false);
       case ShelfStatusFilter.unread:
-        return books
-            .where((b) => b.lastReadAt == null)
-            .toList(growable: false);
+        return books.where((b) => b.lastReadAt == null).toList(growable: false);
     }
   }
 
@@ -268,8 +264,7 @@ class BookshelfViewModel extends ChangeNotifier {
     // Take and clear the snapshot BEFORE the first await: a second Undo tap
     // (or a new delete batch) during the prefs write must not see it.
     final books = List<Map<String, dynamic>>.from(_lastDeletedBookMaps);
-    final bookmarks =
-        List<Map<String, dynamic>>.from(_lastDeletedBookmarkMaps);
+    final bookmarks = List<Map<String, dynamic>>.from(_lastDeletedBookmarkMaps);
     final highlights =
         List<Map<String, dynamic>>.from(_lastDeletedHighlightMaps);
     _clearUndoSnapshot();
@@ -289,6 +284,66 @@ class BookshelfViewModel extends ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+  }
+
+  /// Fresh DB check (not the cached list) for "does a private book exist?".
+  /// Gates PIN-less first-time setup: private rows that survive without a PIN
+  /// (restored backup, self-heal) must not be handed to whoever taps first.
+  Future<bool> hasAnyPrivateBooks() async =>
+      (await _db.getBooks(isPrivate: true)).isNotEmpty;
+
+  /// Forgot-PIN "erase": removes EVERY private book with its bookmarks and
+  /// highlights. Deliberately independent of the selection state (the user may
+  /// have public books selected) and of undo — a restorable snapshot of the
+  /// private shelf would defeat the point of erasing it, so an undo snapshot
+  /// that holds private rows is committed and dropped. A snapshot of public
+  /// books only is left alone, so a visible Undo toast keeps working.
+  ///
+  /// Only app-private sandbox copies are reclaimed; user-owned source files
+  /// stay put, matching the default "also delete files" = off of a normal
+  /// delete. Returns the number of books removed.
+  ///
+  /// Reads the private rows straight from the DB (not [_privateBooks]) and
+  /// verifies none survive: the caller clears the PIN right after, and a PIN-
+  /// less shelf that still holds books would be open to whoever taps unlock
+  /// next. Throws if anything remains, so the PIN is left untouched.
+  Future<int> eraseAllPrivateBooks() async {
+    if (_lastDeletedBookMaps.any((m) => m['is_private'] == 1)) {
+      await _commitPendingFileDeletions();
+      _clearUndoSnapshot();
+    }
+
+    final books = (await _db.getBooks(isPrivate: true))
+        .map(Book.fromMap)
+        .toList(growable: false);
+    if (books.isEmpty) return 0;
+
+    final ids = books.map((b) => b.id).toList(growable: false);
+    final pathsToDelete = _collectDeletableSourcePaths(books
+        .where((b) => b.storageType == BookStorageType.appPrivateCopy)
+        .toList());
+
+    await _db.deleteBooksWithAssociatedData(ids);
+    _selectedBookIds.removeAll(ids);
+    if ((await _db.getBooks(isPrivate: true)).isNotEmpty) {
+      await loadBooks();
+      throw StateError('Private books survived erase');
+    }
+
+    if (pathsToDelete.isNotEmpty) {
+      // Persist first so a kill mid-deletion replays on next launch, then
+      // delete right away: there is no undo window to wait out.
+      // Merged, not replaced: a public delete may still be inside its undo
+      // window with its own paths persisted.
+      await _persistPendingDeletions(
+          [..._prefs.pendingFileDeletions, ...pathsToDelete]);
+      final failed = await _deleteSourceFilesBestEffort(pathsToDelete);
+      await _forgetPersistedDeletions(pathsToDelete);
+      if (failed > 0) onFileDeletionFailed?.call(failed);
+    }
+
+    await loadBooks();
+    return ids.length;
   }
 
   void _clearUndoSnapshot() {
