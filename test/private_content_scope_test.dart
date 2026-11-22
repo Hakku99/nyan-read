@@ -193,4 +193,35 @@ void main() {
     expect(find.text('home'), findsOneWidget);
     expect(screen.hasHolders, isFalse);
   });
+
+  testWidgets('lock drops text focus so the keyboard does not flash',
+      (tester) async {
+    final navKey = GlobalKey<NavigatorState>();
+    final node = FocusNode();
+    addTearDown(node.dispose);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        featureManagerRpProvider.overrideWithValue(fm),
+        privacyScreenRpProvider.overrideWithValue(screen),
+      ],
+      child: MaterialApp(
+        navigatorKey: navKey,
+        home: Scaffold(
+          body: PrivateContentScope(
+            isPrivate: true,
+            onLocked: () async {},
+            child: TextField(focusNode: node, autofocus: true),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(node.hasFocus, isTrue);
+
+    fm.lockPrivateShelf();
+    await tester.pump();
+
+    expect(node.hasFocus, isFalse);
+  });
+
 }

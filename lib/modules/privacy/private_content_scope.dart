@@ -98,6 +98,9 @@ class _PrivateContentScopeState extends ConsumerState<PrivateContentScope> {
 
   Future<void> _exitForLock() async {
     _exiting = true;
+    // Drop focus first so an IME raised by a text field (private search)
+    // does not flash while the page closes.
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _covering = true);
     final route = _route;
     final nav = Navigator.maybeOf(context);
