@@ -31,7 +31,7 @@ def instrument(source):
     hooks = {
         '    final turn = request ?? PageTurnRequest();': "    PerfTrace.mark('accepted');\n    final turn = request ?? PageTurnRequest();",
         '      _outgoingImage = await _captureFor(turn);': "      PerfTrace.mark('captureOld');\n      _outgoingImage = await _captureFor(turn);\n      PerfTrace.mark('coverOld');",
-        '      await turn\n          .wait(Future<void>.sync(dispatchTurn)': "      PerfTrace.mark('navigate');\n      await turn\n          .wait(Future<void>.sync(dispatchTurn)",
+        '      final dispatched = Future<void>.sync(dispatchTurn);': "      PerfTrace.mark('navigate');\n      final dispatched = Future<void>.sync(dispatchTurn);",
         '      bool ready;': "      PerfTrace.mark('ready');\n      bool ready;",
         "      metrics['readyMs'] = phase.elapsedMicroseconds / 1000;": "      PerfTrace.mark('readyFrame');\n      metrics['readyMs'] = phase.elapsedMicroseconds / 1000;",
         '      _controller.value = 0;': "      PerfTrace.mark('motion');\n      _controller.value = 0;",

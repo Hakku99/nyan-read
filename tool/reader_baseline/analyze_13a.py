@@ -18,7 +18,7 @@ def stats(values):
         for k, p in [('p50', .5), ('p95', .95), ('p99', .99), ('max', 1)]}}
 
 
-def analyze(data):
+def analyze(data, *, target_capture_variants=('B',)):
     if data['overflow']:
         raise ValueError('Trace overflow')
     cfg = data['config']
@@ -53,7 +53,7 @@ def analyze(data):
                 if names.count(name) != 1: raise ValueError(f'Missing/duplicate {name}: {names}')
         if data['config']['trace'] and cfg.get('compiledVariant') is not None:
             incoming = sum(e['phase'] == 'captureNew' for e in events)
-            expected = 1 if cfg['variant'] == 'B' and not data['scene'].startswith('pdf') else 0
+            expected = 1 if cfg['variant'] in target_capture_variants and not data['scene'].startswith('pdf') else 0
             if incoming != expected: raise ValueError('Target capture variant mismatch')
             resources = [e for e in events if e['phase'] == 'resources']
             if not resources or resources[-1]['images'] != 0 or resources[-1]['capturePending']:
@@ -128,6 +128,8 @@ def position_equal(a, b):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('directory', type=Path)
+    parser.add_argument('--target-capture-variants', nargs='+', choices=['A', 'B'], default=['B'],
+        help='13A captures the target only in B; 13B-1 requires it in both A and B.')
     args = parser.parse_args()
     reports = []
     trajectories = defaultdict(dict)
@@ -150,7 +152,7 @@ def main():
             rejected.append(str(path.relative_to(args.directory)))
             continue
         try:
-            report, rows = analyze(data)
+            report, rows = analyze(data, target_capture_variants=args.target_capture_variants)
             report['source'] = str(path.relative_to(args.directory))
             reports.append(report)
             with path.with_suffix('.frames.csv').open('w', encoding='utf-8', newline='') as stream:

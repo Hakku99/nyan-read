@@ -33,7 +33,7 @@ def execute(config, timeout=600, install=True):
     config['apkSha256'] = hashlib.sha256(apk.read_bytes()).hexdigest()
     (target / 'config.json').write_text(json.dumps(config, indent=2), encoding='utf-8')
     adb('shell', 'am', 'force-stop', PACKAGE)
-    if config.get('fullApp'):
+    if config.get('fullApp') and not config.get('freshInstall'):
         # Reset only the dedicated test package so prior A/B progress cannot
         # seed a different initial restore or image cache.
         adb('shell', 'pm', 'clear', PACKAGE)

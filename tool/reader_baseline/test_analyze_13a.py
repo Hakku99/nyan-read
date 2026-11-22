@@ -4,6 +4,20 @@ from analyze_13a_timeline import overlaps_frame
 
 
 class FrameAttributionTest(unittest.TestCase):
+    def test_both_capture_policy_requires_target_in_baseline(self):
+        data = self.fixture()
+        data['config'].update(variant='A', compiledVariant='A')
+        data['events'].append({'request': 0, 'phase': 'resources', 'us': 30500,
+                               'images': 0, 'capturePending': False})
+        data['events'].sort(key=lambda e: e['us'])
+        with self.assertRaisesRegex(ValueError, 'Target capture variant mismatch'):
+            analyze(data, target_capture_variants=('A', 'B'))
+        data['events'].append({'request': 0, 'phase': 'captureNew', 'us': 190})
+        data['events'].sort(key=lambda e: e['us'])
+        analyze(data, target_capture_variants=('A', 'B'))
+        with self.assertRaisesRegex(ValueError, 'Target capture variant mismatch'):
+            analyze(data)
+
     def fixture(self):
         phases = [('input', 100), ('accepted', 110), ('motion', 200),
                   ('release', 30000), ('returned', 31000), ('postFrame', 32000), ('windowEnd', 190000)]
