@@ -12,6 +12,7 @@ import 'package:nyan_read/core/services/reader_preferences_service.dart';
 import 'package:nyan_read/modules/reader/controllers/reader_controller.dart';
 import 'package:nyan_read/modules/reader/reader_engine/pdf/pdf_reader.dart';
 import 'package:nyan_read/modules/reader/reader_engine/reader_engine.dart';
+import 'package:nyan_read/modules/reader/reader_error.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _pdfChannel = MethodChannel('io.scer.pdf_renderer');
@@ -38,7 +39,8 @@ class _PdfHarness {
   Future<Object?> handle(MethodCall call) async {
     switch (call.method) {
       case 'open.document.file':
-        openStarted.complete();
+        // Retry reopens the document, so this can fire more than once.
+        if (!openStarted.isCompleted) openStarted.complete();
         final result = await opened.future;
         if (failOpen) throw PlatformException(code: 'open_failed');
         return result;
@@ -359,13 +361,106 @@ void main() {
       await attachController(tester, controller);
       harness.failOpen = true;
       harness.finishOpen();
-      await _flushUntil(tester,
-          () => find.textContaining('Failed to open PDF').evaluate().isNotEmpty);
+      await _flushUntil(tester, () => controller.errorState != null);
+      // The rejected restore must not downgrade this to the generic error.
+      expect(controller.errorState!.type, ReaderErrorType.parseFailed);
       controller.didChangeAppLifecycleState(AppLifecycleState.paused);
       await controller.saveBeforeExit();
       expect(database.writtenPages, isEmpty);
       expect(database.savedPage, 24);
       expect(database.savedProgress, 24 / 25);
+    } finally {
+      await closeController(tester, controller);
+    }
+  });
+
+  testWidgets(
+      'PDF retry replaces the failed temp copy and opens with the view detached',
+      (tester) async {
+    final directory = await tester.runAsync(
+        () => Directory.systemTemp.createTemp('nyan-pdf-retry-'));
+    final first = File('${directory!.path}/first.pdf');
+    final second = File('${directory.path}/second.pdf');
+    await tester.runAsync(() async {
+      await first.writeAsBytes([1]);
+      await second.writeAsBytes([1]);
+    });
+    addTearDown(() async {
+      await tester.runAsync(() => directory.delete(recursive: true));
+    });
+
+    // Detached: no PdfView yet, so loadDocument would be a no-op.
+    await mount(tester, attach: false, temporaryPath: first.path);
+    harness.failOpen = true;
+    harness.finishOpen();
+    await _flushUntil(tester, () => engine.documentError != null);
+    expect(await tester.runAsync(first.exists), isTrue,
+        reason: 'failed attempt keeps its copy until retry or disposal');
+
+    var copied = false;
+    binding.defaultBinaryMessenger.setMockMethodCallHandler(_sourceChannel,
+        (call) async {
+      copied = true;
+      return second.path;
+    });
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    harness.failOpen = false;
+    await engine.initialize();
+    // The platform check runs after the old copy is deleted; keep the
+    // override until the content-URI copy has been requested.
+    await _flushUntil(tester, () => copied);
+    debugDefaultTargetPlatformOverride = null;
+    await _flushUntil(tester, () async => !(await tester.runAsync(first.exists))!);
+    expect(await tester.runAsync(second.exists), isTrue);
+    await _flushUntil(tester, () => engine.documentError == null);
+
+    // A view attaching after the retry must pick up the new document.
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(body: Builder(builder: engine.buildReader))));
+    await _flushUntil(
+        tester, () => find.byType(PageView).evaluate().isNotEmpty);
+    expect(engine.documentError, isNull);
+  });
+
+  testWidgets('PDF open failure on a vanished source is fileNotFound',
+      (tester) async {
+    final database = _PdfTestDatabase()..positionReadGate.complete();
+    final controller = await openController(tester, database);
+    try {
+      await attachController(tester, controller);
+      // Source disappears after the availability pre-check; the native open
+      // then fails with a PlatformException, not a FileSystemException.
+      await tester.runAsync(() => File(controller.book.filePath).delete());
+      harness.failOpen = true;
+      harness.finishOpen();
+      await _flushUntil(tester, () => controller.errorState != null);
+      expect(controller.errorState!.type, ReaderErrorType.fileNotFound);
+    } finally {
+      await closeController(tester, controller);
+    }
+  });
+
+  testWidgets(
+      'PDF open failure reaches the shared error page and Retry reopens it',
+      (tester) async {
+    // No saved position: nothing navigates, so only the open watcher can
+    // surface the failure.
+    final database = _PdfTestDatabase()..positionReadGate.complete();
+    final controller = await openController(tester, database);
+    try {
+      await attachController(tester, controller);
+      harness.failOpen = true;
+      harness.finishOpen();
+      await _flushUntil(tester, () => controller.errorState != null);
+      expect(controller.errorState!.type, ReaderErrorType.parseFailed);
+      expect(controller.errorState!.technicalMessage, isNotEmpty);
+
+      harness.failOpen = false;
+      controller.retry();
+      await _flushUntil(
+          tester, () => find.byType(PageView).evaluate().isNotEmpty);
+      await _flushUntil(tester, () => controller.chapters.isNotEmpty);
+      expect(controller.errorState, isNull);
     } finally {
       await closeController(tester, controller);
     }

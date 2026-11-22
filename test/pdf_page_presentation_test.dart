@@ -9,6 +9,7 @@ import 'package:image/image.dart' as img;
 import 'package:nyan_read/core/models/book.dart';
 import 'package:nyan_read/core/services/database_service.dart';
 import 'package:nyan_read/core/services/reader_preferences_service.dart';
+import 'package:nyan_read/l10n/app_localizations.dart';
 import 'package:nyan_read/modules/reader/controllers/reader_controller.dart';
 import 'package:nyan_read/modules/reader/reader_engine/page_turn_request.dart';
 import 'package:nyan_read/modules/reader/reader_engine/pdf/pdf_reader.dart';
@@ -98,6 +99,9 @@ void main() {
     await engine.initialize();
     if (attach) {
       await tester.pumpWidget(MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
           home: Scaffold(body: Builder(builder: engine.buildReader))));
     }
     await tester.pump(const Duration(milliseconds: 180));
@@ -391,7 +395,11 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await failure;
-    expect(find.textContaining('Failed to open PDF'), findsOneWidget);
+    expect(engine.documentError, isA<PlatformException>());
+    // Fallback text is localized and never echoes the raw platform error.
+    final loc = await AppLocalizations.delegate.load(const Locale('en'));
+    expect(find.text(loc.errorParseFailedBody), findsOneWidget);
+    expect(find.textContaining('PlatformException'), findsNothing);
     await expectLater(engine.goToPosition(const ReadingPosition(pageNumber: 3)),
         throwsA(isA<PlatformException>()));
   });
