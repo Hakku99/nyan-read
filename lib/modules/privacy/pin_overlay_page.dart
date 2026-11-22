@@ -16,7 +16,7 @@ import 'widgets/pin_input_widget.dart';
 
 enum PinOverlayMode { setup, verify, change }
 
-enum _PinInputError { mismatch, unavailable, biometricUnavailable }
+enum _PinInputError { mismatch, unavailable }
 
 /// Full-screen PIN takeover (U16). Light branch uses resolved NyanTheme tokens;
 /// dark branch uses bespoke ink literals (`#1D211E` / `#E8E1D5`) matching the
@@ -59,6 +59,17 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
   String? _firstPin;
   bool _biometricAvailable = false;
   bool _isVerifying = false;
+
+  // True while the forgot-PIN flow (sheet → OS prompt → erase / re-setup) is
+  // running: blocks a second tap from stacking another sheet and freezes the
+  // keypad so nothing races the recovery.
+  bool _isRecovering = false;
+
+  // Biometric-prompt failure notice. Kept apart from [_inputError] on purpose:
+  // that one paints the dots red, shakes and later wipes typed digits, none of
+  // which fits "the OS prompt could not open".
+  bool _biometricNotice = false;
+  Timer? _biometricNoticeTimer;
   int _lockoutSeconds = 0;
   Timer? _lockoutTimer;
 
@@ -88,6 +99,7 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
   void dispose() {
     _errorResetTimer?.cancel();
     _lockoutTimer?.cancel();
+    _biometricNoticeTimer?.cancel();
     super.dispose();
   }
 
@@ -234,15 +246,33 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
         Navigator.of(context).pop(true);
       case BiometricResult.error:
         // A failing OS prompt must not look like a dead button.
-        _showErrorThenReset(_PinInputError.biometricUnavailable);
+        _showBiometricNotice();
       case BiometricResult.cancelled:
         break;
     }
   }
 
+  void _showBiometricNotice() {
+    _biometricNoticeTimer?.cancel();
+    setState(() => _biometricNotice = true);
+    _biometricNoticeTimer = Timer(const Duration(milliseconds: 2000), () {
+      if (mounted) setState(() => _biometricNotice = false);
+    });
+  }
+
   Future<void> _handleForgotPin() async {
-    final outcome = await widget.onForgotPin!(context);
+    if (_isRecovering) return;
+    setState(() => _isRecovering = true);
+    final ForgotPinOutcome outcome;
+    try {
+      outcome = await widget.onForgotPin!(context);
+    } catch (error) {
+      debugPrint('Forgot-PIN flow failed (${error.runtimeType}).');
+      if (mounted) setState(() => _isRecovering = false);
+      return;
+    }
     if (!mounted) return;
+    setState(() => _isRecovering = false);
     switch (outcome) {
       case ForgotPinOutcome.pinReset:
         widget.onSuccess?.call();
@@ -280,14 +310,15 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
     final isLocked = _lockoutSeconds > 0;
     final notice = isLocked
         ? loc.pinTemporarilyLocked(_lockoutSeconds)
-        : switch (_inputError) {
-            null => null,
-            _PinInputError.unavailable => loc.pinVerificationUnavailable,
-            _PinInputError.biometricUnavailable => loc.pinDeviceAuthUnavailable,
-            _PinInputError.mismatch => widget.mode == PinOverlayMode.verify
-                ? loc.pinIncorrect
-                : loc.pinMismatch,
-          };
+        : _biometricNotice
+            ? loc.pinDeviceAuthUnavailable
+            : switch (_inputError) {
+                null => null,
+                _PinInputError.unavailable => loc.pinVerificationUnavailable,
+                _PinInputError.mismatch => widget.mode == PinOverlayMode.verify
+                    ? loc.pinIncorrect
+                    : loc.pinMismatch,
+              };
     // Spacing around subtitle: shrinks when error hint takes space.
     final subtitleBottom = notice != null ? 22.0 : 38.0;
     final padAboveKeypad = notice != null ? 28.0 : 42.0;
@@ -399,7 +430,7 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
                       keyText: keyText,
                       ghostColor: ghostColor,
                       isError: _inputError != null,
-                      pinEnabled: !isLocked,
+                      pinEnabled: !isLocked && !_isRecovering,
                       showBiometric: _biometricAvailable &&
                           widget.mode == PinOverlayMode.verify,
                       onBiometricTap: _handleBiometric,
@@ -454,10 +485,12 @@ class _PinOverlayPageState extends State<PinOverlayPage> {
                   shape: const CircleBorder(),
                   clipBehavior: Clip.antiAlias,
                   child: InkWell(
-                    onTap: () {
-                      widget.onCancel?.call();
-                      Navigator.of(context).pop(false);
-                    },
+                    onTap: _isRecovering
+                        ? null
+                        : () {
+                            widget.onCancel?.call();
+                            Navigator.of(context).pop(false);
+                          },
                     customBorder: const CircleBorder(),
                     child: Center(
                       child: Icon(

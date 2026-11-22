@@ -9,6 +9,10 @@ import '../../core/ui/nyan_icons.dart';
 import '../../core/ui/nyan_sheet.dart';
 import '../../core/ui/nyan_theme_context.dart';
 
+/// Confirm-sheet button height: same 50pt as the delete-confirm buttons
+/// (`bundle3.jsx` `DeleteConfirmSheet`), the sheet this one is modelled on.
+const double _kConfirmButtonHeight = 50;
+
 /// What the user picked on the "Forgot PIN?" sheet.
 enum ForgotPinChoice { verifyDevice, eraseShelf }
 
@@ -49,8 +53,8 @@ Future<ForgotPinChoice?> showForgotPinSheet(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: NyanSpacing.space8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: NyanSpacing.space8),
                 child: Text(
                   loc.pinForgotSheetTitle,
                   style: TextStyle(
@@ -63,8 +67,8 @@ Future<ForgotPinChoice?> showForgotPinSheet(
               ),
               const SizedBox(height: NyanSpacing.space8),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: NyanSpacing.space8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: NyanSpacing.space8),
                 child: Text(
                   loc.pinForgotSheetBody,
                   style: TextStyle(
@@ -115,8 +119,8 @@ Future<bool> showEraseShelfConfirmSheet(BuildContext context) async {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: NyanSpacing.space8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: NyanSpacing.space8),
                 child: Text(
                   loc.pinEraseConfirmTitle,
                   style: TextStyle(
@@ -129,8 +133,8 @@ Future<bool> showEraseShelfConfirmSheet(BuildContext context) async {
               ),
               const SizedBox(height: NyanSpacing.space8),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: NyanSpacing.space8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: NyanSpacing.space8),
                 child: Text(
                   loc.pinEraseConfirmBody,
                   style: TextStyle(
@@ -146,25 +150,30 @@ Future<bool> showEraseShelfConfirmSheet(BuildContext context) async {
               Row(
                 children: [
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(ctx).pop(false),
-                      child: Container(
-                        height: NyanSpacing.minTapTarget + 6,
-                        decoration: BoxDecoration(
-                          borderRadius:
-                              BorderRadius.circular(NyanRadius.cardNested),
-                          border: Border.all(
-                            color: nyan.divider.withValues(alpha: 0.60),
+                    child: Semantics(
+                      button: true,
+                      label: loc.cancel,
+                      excludeSemantics: true,
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(ctx).pop(false),
+                        child: Container(
+                          height: _kConfirmButtonHeight,
+                          decoration: BoxDecoration(
+                            borderRadius:
+                                BorderRadius.circular(NyanRadius.cardNested),
+                            border: Border.all(
+                              color: nyan.divider.withValues(alpha: 0.60),
+                            ),
                           ),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          loc.cancel,
-                          style: TextStyle(
-                            fontFamily: NyanTypography.uiFontFamily,
-                            fontSize: NyanTypography.body,
-                            fontWeight: FontWeight.w600,
-                            color: nyan.textSecondary,
+                          alignment: Alignment.center,
+                          child: Text(
+                            loc.cancel,
+                            style: TextStyle(
+                              fontFamily: NyanTypography.uiFontFamily,
+                              fontSize: NyanTypography.body,
+                              fontWeight: FontWeight.w600,
+                              color: nyan.textSecondary,
+                            ),
                           ),
                         ),
                       ),
@@ -172,23 +181,28 @@ Future<bool> showEraseShelfConfirmSheet(BuildContext context) async {
                   ),
                   const SizedBox(width: NyanSpacing.space8),
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(ctx).pop(true),
-                      child: Container(
-                        height: NyanSpacing.minTapTarget + 6,
-                        decoration: BoxDecoration(
-                          color: nyan.errorPrimaryTextColor,
-                          borderRadius:
-                              BorderRadius.circular(NyanRadius.cardNested),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          loc.pinEraseConfirmAction,
-                          style: TextStyle(
-                            fontFamily: NyanTypography.uiFontFamily,
-                            fontSize: NyanTypography.body,
-                            fontWeight: FontWeight.w600,
-                            color: nyan.surface,
+                    child: Semantics(
+                      button: true,
+                      label: loc.pinEraseConfirmAction,
+                      excludeSemantics: true,
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(ctx).pop(true),
+                        child: Container(
+                          height: _kConfirmButtonHeight,
+                          decoration: BoxDecoration(
+                            color: nyan.errorPrimaryTextColor,
+                            borderRadius:
+                                BorderRadius.circular(NyanRadius.cardNested),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            loc.pinEraseConfirmAction,
+                            style: TextStyle(
+                              fontFamily: NyanTypography.uiFontFamily,
+                              fontSize: NyanTypography.body,
+                              fontWeight: FontWeight.w600,
+                              color: nyan.surface,
+                            ),
                           ),
                         ),
                       ),

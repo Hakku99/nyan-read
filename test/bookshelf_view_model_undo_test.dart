@@ -152,8 +152,7 @@ void main() {
     expect(db.bookmarksByBook['b1'], isNotEmpty);
   });
 
-  test('second delete batch invalidates the previous undo snapshot',
-      () async {
+  test('second delete batch invalidates the previous undo snapshot', () async {
     db.books['b2'] = _bookRow('b2');
     await vm.loadBooks();
 
@@ -186,8 +185,7 @@ void main() {
     expect(db.restoreCalls, 0);
   });
 
-  test('sandbox copies are reclaimed even when deleteFiles is false',
-      () async {
+  test('sandbox copies are reclaimed even when deleteFiles is false', () async {
     final tempDir = await Directory.systemTemp.createTemp('nyan_vm_test');
     addTearDown(() async {
       try {
@@ -308,8 +306,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 200));
     }
 
-    test('are handed to the platform delete when the user opted in',
-        () async {
+    test('are handed to the platform delete when the user opted in', () async {
       final failures = <int>[];
       vm.onFileDeletionFailed = failures.add;
 
@@ -364,6 +361,31 @@ void main() {
       expect(db.bookmarksByBook.containsKey('p1'), isFalse);
       expect(vm.privateBooks, isEmpty);
       expect(vm.selectedBookIds, {'b1'});
+    });
+
+    test('a public-only Undo snapshot survives an erase', () async {
+      vm.toggleSelectionMode(active: true, initialBookId: 'b1');
+      await vm.deleteSelectedBooks(false);
+
+      await vm.eraseAllPrivateBooks();
+      await vm.undoLastDelete();
+
+      expect(db.restoreCalls, 1, reason: 'the visible Undo toast must work');
+      expect(db.books.keys, contains('b1'));
+      expect(db.books.values.where((b) => b['is_private'] == 1), isEmpty);
+    });
+
+    test('an Undo snapshot holding private books is dropped by erase',
+        () async {
+      vm.toggleSelectionMode(active: true, initialBookId: 'p1');
+      await vm.deleteSelectedBooks(false);
+
+      await vm.eraseAllPrivateBooks();
+      await vm.undoLastDelete();
+
+      expect(db.restoreCalls, 0,
+          reason: 'Undo must not resurrect a private book after erase');
+      expect(db.books.values.where((b) => b['is_private'] == 1), isEmpty);
     });
 
     test('hasAnyPrivateBooks reads the DB, tracks erase', () async {
