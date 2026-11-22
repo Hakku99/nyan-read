@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 
-import '../../core/services/database_service.dart';
-import '../../core/services/service_locator.dart';
 import '../../core/theme/nyan_radius.dart';
 import '../../core/theme/nyan_shadows.dart';
 import '../../core/theme/nyan_spacing.dart';
@@ -11,8 +10,10 @@ import '../../core/theme/nyan_typography.dart';
 import '../../core/ui/components/components.dart';
 import '../../core/ui/nyan_theme_context.dart';
 import '../../core/utils/snackbar_utils.dart';
+import '../notes/annotations_load_error.dart';
+import '../notes/book_annotations_provider.dart';
 
-class BookmarkListPage extends StatefulWidget {
+class BookmarkListPage extends ConsumerStatefulWidget {
   final String bookId;
   final String bookTitle;
 
@@ -23,12 +24,13 @@ class BookmarkListPage extends StatefulWidget {
   });
 
   @override
-  State<BookmarkListPage> createState() => _BookmarkListPageState();
+  ConsumerState<BookmarkListPage> createState() => _BookmarkListPageState();
 }
 
-class _BookmarkListPageState extends State<BookmarkListPage> {
+class _BookmarkListPageState extends ConsumerState<BookmarkListPage> {
   List<Map<String, dynamic>> _bookmarks = [];
   bool _isLoading = true;
+  bool _loadFailed = false;
 
   AppLocalizations get _loc => AppLocalizations.of(context)!;
 
@@ -55,26 +57,29 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
   }
 
   Future<void> _loadBookmarks() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _loadFailed = false;
+    });
     try {
-      final data = await getIt<DatabaseService>().getBookmarks(widget.bookId);
+      // Rows come back copied, in display order, with `index` already set.
+      final bookmarks =
+          await ref.read(bookAnnotationsRpProvider).loadBookmarks(widget.bookId);
       if (!mounted) {
         return;
-      }
-
-      final bookmarks = List<Map<String, dynamic>>.from(data);
-      for (int i = 0; i < bookmarks.length; i++) {
-        bookmarks[i] = Map<String, dynamic>.from(bookmarks[i]);
-        bookmarks[i]['index'] = i + 1;
       }
 
       setState(() {
         _bookmarks = bookmarks;
         _isLoading = false;
       });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[BookmarkListPage] Failed to load bookmarks: $e');
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _loadFailed = true;
+        });
       }
     }
   }
@@ -92,7 +97,7 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
     });
 
     try {
-      await getIt<DatabaseService>().deleteBookmark(id);
+      await ref.read(bookAnnotationsRpProvider).deleteBookmark(id);
     } catch (e) {
       if (!mounted) {
         return;
@@ -121,7 +126,11 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
               // "{n} saved" meta — not the book title (you're already in the
               // book's context when arriving here).
               title: loc.bookmarks,
-              subtitle: loc.bookmarksSavedCount(_bookmarks.length),
+              // No count while the read has failed: "0 saved" would say the
+              // bookmarks are gone, which is exactly what the error state
+              // must not imply.
+              subtitle:
+                  _loadFailed ? null : loc.bookmarksSavedCount(_bookmarks.length),
               titleStyle: theme.textTheme.titleLarge?.copyWith(
                 fontSize: NyanTypography.section,
                 fontWeight: FontWeight.w600,
@@ -159,6 +168,13 @@ class _BookmarkListPageState extends State<BookmarkListPage> {
     if (_isLoading) {
       return Center(
         child: CircularProgressIndicator(color: nyanTheme.primary),
+      );
+    }
+
+    if (_loadFailed) {
+      return AnnotationsLoadError(
+        title: _loc.failedToLoadBookmarks,
+        onRetry: _loadBookmarks,
       );
     }
 

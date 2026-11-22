@@ -465,6 +465,25 @@
     }
   },
   "noHighlightsYet": "No highlights yet",
+  "highlightsCount": "{count, plural, =1{1 highlight} other{{count} highlights}}",
+  "@highlightsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToLoadBookmarks": "Couldn't load bookmarks",
+  "failedToLoadHighlights": "Couldn't load highlights",
+  "failedToLoadHint": "Reading from storage failed. Please try again.",
+  "failedToSaveNote": "Failed to save note: {error}",
+  "@failedToSaveNote": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "longPressToCreateHighlight": "Long-press on text to create highlights",
   "highlightName": "Highlight #{index}",
   "@highlightName": {

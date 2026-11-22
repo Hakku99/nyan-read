@@ -443,6 +443,25 @@
     }
   },
   "noHighlightsYet": "暂无高亮",
+  "highlightsCount": "{count} 条高亮",
+  "@highlightsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToLoadBookmarks": "无法加载书签",
+  "failedToLoadHighlights": "无法加载高亮",
+  "failedToLoadHint": "读取本地数据失败，请重试。",
+  "failedToSaveNote": "保存笔记失败：{error}",
+  "@failedToSaveNote": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "longPressToCreateHighlight": "长按文本创建高亮",
   "highlightName": "高亮 #{index}",
   "@highlightName": {

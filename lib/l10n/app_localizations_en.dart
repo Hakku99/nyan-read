@@ -985,6 +985,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noHighlightsYet => 'No highlights yet';
 
   @override
+  String highlightsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count highlights',
+      one: '1 highlight',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get failedToLoadBookmarks => 'Couldn\'t load bookmarks';
+
+  @override
+  String get failedToLoadHighlights => 'Couldn\'t load highlights';
+
+  @override
+  String get failedToLoadHint =>
+      'Reading from storage failed. Please try again.';
+
+  @override
+  String failedToSaveNote(String error) {
+    return 'Failed to save note: $error';
+  }
+
+  @override
   String get longPressToCreateHighlight =>
       'Long-press on text to create highlights';
 
