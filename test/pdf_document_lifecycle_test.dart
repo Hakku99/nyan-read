@@ -362,11 +362,31 @@ void main() {
       harness.failOpen = true;
       harness.finishOpen();
       await _flushUntil(tester, () => controller.errorState != null);
+      // The rejected restore must not downgrade this to the generic error.
+      expect(controller.errorState!.type, ReaderErrorType.parseFailed);
       controller.didChangeAppLifecycleState(AppLifecycleState.paused);
       await controller.saveBeforeExit();
       expect(database.writtenPages, isEmpty);
       expect(database.savedPage, 24);
       expect(database.savedProgress, 24 / 25);
+    } finally {
+      await closeController(tester, controller);
+    }
+  });
+
+  testWidgets('PDF open failure on a vanished source is fileNotFound',
+      (tester) async {
+    final database = _PdfTestDatabase()..positionReadGate.complete();
+    final controller = await openController(tester, database);
+    try {
+      await attachController(tester, controller);
+      // Source disappears after the availability pre-check; the native open
+      // then fails with a PlatformException, not a FileSystemException.
+      await tester.runAsync(() => File(controller.book.filePath).delete());
+      harness.failOpen = true;
+      harness.finishOpen();
+      await _flushUntil(tester, () => controller.errorState != null);
+      expect(controller.errorState!.type, ReaderErrorType.fileNotFound);
     } finally {
       await closeController(tester, controller);
     }

@@ -161,6 +161,14 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       _renderEpoch++;
       notifyListeners();
     } catch (e, stack) {
+      // A rejected restore navigation carries the PDF open error, but the
+      // watcher's classification is the right one; without this the generic
+      // path below reports it as `unknown`.
+      final reader = engine;
+      if (reader is PdfReaderEngine && reader.documentError != null) {
+        await _setPdfOpenError(reader.documentError!);
+        return;
+      }
       ReaderErrorType type = ReaderErrorType.unknown;
       final errorStr = e.toString().toLowerCase();
 
@@ -191,7 +199,17 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     await reader.documentLoadComplete;
     final error = reader.documentError;
     if (_isDisposed || error == null || _errorState != null) return;
-    final isMissing = error is FileSystemException;
+    await _setPdfOpenError(error);
+  }
+
+  Future<void> _setPdfOpenError(Object error) async {
+    // pdfx reports a vanished file or revoked grant as a PlatformException,
+    // not a FileSystemException, so re-check the source instead of guessing
+    // from the exception type.
+    final isMissing =
+        error is FileSystemException || !await BookSourceAccess.isAvailable(book);
+    // The catch path and the watcher can both land here; first writer wins.
+    if (_isDisposed || _errorState != null) return;
     _errorState = ReaderErrorState(
       type: isMissing
           ? ReaderErrorType.fileNotFound
