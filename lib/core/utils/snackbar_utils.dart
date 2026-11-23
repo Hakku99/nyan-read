@@ -142,6 +142,9 @@ class SnackBarUtils {
           content: Text(message, maxLines: clippedLines),
           duration: duration,
           behavior: SnackBarBehavior.floating,
+          action: actionLabel != null && onActionTap != null
+              ? SnackBarAction(label: actionLabel, onPressed: onActionTap)
+              : null,
         ),
       );
       onAction?.call();
