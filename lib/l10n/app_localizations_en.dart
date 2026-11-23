@@ -1174,7 +1174,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importMovedToPrivateNote =>
-      'Some books were moved to the private shelf to match the backup.';
+      'Some were moved to the private shelf.';
 
   @override
   String importNoLocalBooks(int count) {

@@ -8,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/services/database_service.dart';
 import 'package:nyan_read/core/theme/theme_presets.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
+import 'package:nyan_read/l10n/app_localizations_en.dart';
+import 'package:nyan_read/l10n/app_localizations_zh.dart';
 import 'package:nyan_read/modules/settings/settings_page.dart';
 
 Future<void> _show(WidgetTester tester, RestoreResult? result) async {
@@ -40,8 +42,8 @@ Future<void> _expireToast(WidgetTester tester) async {
 void main() {
   testWidgets('matched but nothing written shows the neutral notice',
       (tester) async {
-    await _show(tester,
-        const RestoreResult(matched: 2, written: 0, unmatched: 1));
+    await _show(
+        tester, const RestoreResult(matched: 2, written: 0, unmatched: 1));
     expect(find.textContaining('Nothing to restore'), findsOneWidget);
     expect(find.textContaining('Successfully restored'), findsNothing);
     await _expireToast(tester);
@@ -49,8 +51,8 @@ void main() {
 
   testWidgets('no local match asks to import the book files first',
       (tester) async {
-    await _show(tester,
-        const RestoreResult(matched: 0, written: 0, unmatched: 5));
+    await _show(
+        tester, const RestoreResult(matched: 0, written: 0, unmatched: 5));
     expect(find.textContaining('None of the 5 books'), findsOneWidget);
     expect(find.textContaining('Import the book files first'), findsOneWidget);
     expect(find.textContaining('Successfully restored'), findsNothing);
@@ -59,8 +61,8 @@ void main() {
 
   testWidgets('empty backup (no books at all) is not "0 books not found"',
       (tester) async {
-    await _show(tester,
-        const RestoreResult(matched: 0, written: 0, unmatched: 0));
+    await _show(
+        tester, const RestoreResult(matched: 0, written: 0, unmatched: 0));
     expect(find.textContaining('Nothing to restore'), findsOneWidget);
     expect(find.textContaining('Import the book files first'), findsNothing);
     await _expireToast(tester);
@@ -68,8 +70,8 @@ void main() {
 
   testWidgets('written shows success without extra notes when all matched',
       (tester) async {
-    await _show(tester,
-        const RestoreResult(matched: 3, written: 3, unmatched: 0));
+    await _show(
+        tester, const RestoreResult(matched: 3, written: 3, unmatched: 0));
     expect(find.text('Successfully restored 3 books!'), findsOneWidget);
     expect(find.textContaining('on this device'), findsNothing);
     expect(find.textContaining('private shelf'), findsNothing);
@@ -83,8 +85,7 @@ void main() {
         const RestoreResult(
             matched: 3, written: 2, unmatched: 4, movedToPrivate: 1));
     expect(find.text('Successfully restored 2 books!'), findsOneWidget);
-    expect(find.textContaining('4 more books'),
-        findsOneWidget);
+    expect(find.textContaining('4 more books'), findsOneWidget);
     expect(find.textContaining('private shelf'), findsOneWidget);
     await _expireToast(tester);
   });
@@ -93,5 +94,19 @@ void main() {
     await _show(tester, null);
     expect(find.textContaining('restore'), findsNothing);
     expect(find.textContaining('device'), findsNothing);
+  });
+
+  // The toast description is capped at two lines (NyanResponse spec): ~44 Latin
+  // or ~26 CJK chars per line at 360dp on device. flutter_test renders with the
+  // Ahem font, so a layout assertion would be meaningless; budget the text.
+  test('both restore notes fit the two-line description budget', () {
+    final en = AppLocalizationsEn();
+    final zh = AppLocalizationsZh();
+    final enNotes =
+        '${en.importUnmatchedNote(99)} ${en.importMovedToPrivateNote}';
+    final zhNotes =
+        '${zh.importUnmatchedNote(99)} ${zh.importMovedToPrivateNote}';
+    expect(enNotes.length, lessThanOrEqualTo(75), reason: enNotes);
+    expect(zhNotes.length, lessThanOrEqualTo(40), reason: zhNotes);
   });
 }

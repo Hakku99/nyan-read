@@ -1103,7 +1103,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get importMovedToPrivateNote => '部分书籍已按备份放入私密书架。';
+  String get importMovedToPrivateNote => '部分已按备份放入私密书架。';
 
   @override
   String importNoLocalBooks(int count) {

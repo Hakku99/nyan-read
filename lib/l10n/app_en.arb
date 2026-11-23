@@ -564,7 +564,7 @@
       }
     }
   },
-  "importMovedToPrivateNote": "Some books were moved to the private shelf to match the backup.",
+  "importMovedToPrivateNote": "Some were moved to the private shelf.",
   "importNoLocalBooks": "{count, plural, one{The book in this backup isn't on this device.} other{None of the {count} books in this backup are on this device.}} Import the book files first, then import your reading data again.",
   "@importNoLocalBooks": {
     "placeholders": {

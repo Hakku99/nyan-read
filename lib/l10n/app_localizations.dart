@@ -2147,7 +2147,7 @@ abstract class AppLocalizations {
   /// No description provided for @importMovedToPrivateNote.
   ///
   /// In en, this message translates to:
-  /// **'Some books were moved to the private shelf to match the backup.'**
+  /// **'Some were moved to the private shelf.'**
   String get importMovedToPrivateNote;
 
   /// No description provided for @importNoLocalBooks.

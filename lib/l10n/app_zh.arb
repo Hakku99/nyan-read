@@ -542,7 +542,7 @@
       }
     }
   },
-  "importMovedToPrivateNote": "部分书籍已按备份放入私密书架。",
+  "importMovedToPrivateNote": "部分已按备份放入私密书架。",
   "importNoLocalBooks": "备份中的 {count} 本书在本机找不到，请先导入书籍文件，再重新导入阅读记录。",
   "@importNoLocalBooks": {
     "placeholders": {
