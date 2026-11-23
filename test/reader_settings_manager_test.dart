@@ -66,4 +66,25 @@ void main() {
       await manager.dispose();
     });
   }
+
+  test('setWarmth does not reconfigure the engine or notify', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = ReaderPreferencesService();
+    await prefs.initialize();
+    final engine = _CountingEngine();
+    var notified = 0;
+    final manager = ReaderSettingsManager(
+      engine: engine,
+      lifecycle: LifecycleRegistry(),
+      onSettingsChanged: () => notified++,
+      preferences: prefs,
+    );
+    engine.configs.clear();
+
+    await prefs.setWarmth(0.6);
+
+    expect(engine.configs, isEmpty);
+    expect(notified, 0);
+    await manager.dispose();
+  });
 }

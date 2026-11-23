@@ -308,6 +308,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get filePathCopied => '文件路径已复制到剪贴板';
 
   @override
+  String get selectionCopy => '复制';
+
+  @override
+  String get selectionSearch => '搜索';
+
+  @override
   String get copiedToClipboard => '已复制到剪贴板';
 
   @override

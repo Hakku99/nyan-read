@@ -107,7 +107,11 @@ class _BookSearchPageState extends ConsumerState<BookSearchPage> {
   Future<void> _submitSearch(String query) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return;
-    await ref.read(bookshelfPreferencesRpProvider).addRecentSearch(trimmed);
+    // The recent-searches list is global and shown on the public shelf, so a
+    // private-shelf query (usually a private title) must never be stored.
+    if (!widget.isPrivate) {
+      await ref.read(bookshelfPreferencesRpProvider).addRecentSearch(trimmed);
+    }
     setState(() {}); // Refresh recent list if user clears field after submit.
   }
 

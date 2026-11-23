@@ -40,7 +40,10 @@ class AdsUI {
     final meetsPlacementRules = !isPrivateShelf &&
         !isSelectionMode &&
         bookCount >= minBooksForInlineShelfAd;
-    return meetsPlacementRules && (adsEnabled || kDebugMode);
+    // Release builds never show the placeholder feed above: it is fake data
+    // (incl. a real author's name) labelled "Sponsored". Re-enable for release
+    // only once a real ad/feed source replaces the placeholders.
+    return meetsPlacementRules && kDebugMode;
   }
 
   /// Whether to show the Pro nudge in the sponsored slot (no ad available).

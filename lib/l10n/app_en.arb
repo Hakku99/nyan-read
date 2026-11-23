@@ -106,6 +106,8 @@
   "continueReading": "Continue Reading",
   "copyPath": "Copy Path",
   "filePathCopied": "File path copied to clipboard",
+  "selectionCopy": "Copy",
+  "selectionSearch": "Search",
   "copiedToClipboard": "Copied to clipboard",
   "couldNotOpenBrowserSearchCopied": "Could not open browser — search link copied",
   "fileExists": "File exists",

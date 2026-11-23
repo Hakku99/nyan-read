@@ -7,6 +7,7 @@ library;
 
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/services/bookshelf_preferences_service.dart';
@@ -432,5 +433,72 @@ void main() {
           .containsKey('bookshelf_pending_file_deletions'),
       isFalse,
     );
+  });
+
+  group('SAF grant give-back on delete', () {
+    const channel = MethodChannel('com.example.nyan_read/book_source');
+    const fileUri = 'content://com.android.providers.downloads.documents/'
+        'document/42';
+    const treeUri = 'content://com.android.externalstorage.documents/tree/'
+        'primary%3ABooks/document/primary%3ABooks%2Fa.epub';
+    late List<String> released;
+
+    setUp(() async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      released = [];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'releasePersistedPermission') {
+          released.add((call.arguments as Map)['uri'] as String);
+          return true;
+        }
+        return null;
+      });
+      addTearDown(() {
+        debugDefaultTargetPlatformOverride = null;
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null);
+      });
+      db.books['c1'] = {
+        ..._bookRow('c1'),
+        'file_path': fileUri,
+        'source_type': 'android_content_uri',
+        'format': 'epub',
+      };
+      db.books['t1'] = {
+        ..._bookRow('t1'),
+        'file_path': treeUri,
+        'source_type': 'android_tree_uri',
+        'format': 'epub',
+      };
+      await vm.loadBooks();
+    });
+
+    Future<void> deleteBoth() async {
+      vm.toggleSelectionMode(active: true, initialBookId: 'c1');
+      vm.toggleBookSelection('t1');
+      await vm.deleteSelectedBooks(false);
+    }
+
+    test('is deferred past the undo window and covers per-file books only',
+        () async {
+      await deleteBoth();
+      expect(released, isEmpty);
+
+      vm.dispose(); // commits the deferred work
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
+      // The tree grant belongs to the library folder, not to one book.
+      expect(released, [fileUri]);
+    });
+
+    test('undo cancels the give-back', () async {
+      await deleteBoth();
+      await vm.undoLastDelete();
+      vm.dispose();
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
+      expect(released, isEmpty);
+    });
   });
 }

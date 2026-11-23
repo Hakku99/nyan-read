@@ -5,6 +5,7 @@ import 'package:nyan_read/core/theme/nyan_shadows.dart';
 import 'package:nyan_read/core/theme/nyan_typography.dart';
 import 'package:nyan_read/core/ui/nyan_icons.dart';
 import '../../../core/models/highlight.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/theme/nyan_colors.dart';
 import '../../../core/theme/theme_presets.dart';
 
@@ -31,6 +32,7 @@ class TextSelectionMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final nyan = Theme.of(context).extension<NyanTheme>()!;
+    final loc = AppLocalizations.of(context)!;
     // Opt out of text scaling so icon size (18pt) and label size (10pt) stay
     // at their spec pixel values regardless of the device's accessibility scale.
     return MediaQuery(
@@ -58,7 +60,7 @@ class TextSelectionMenu extends StatelessWidget {
                 children: [
                   _ActionButton(
                     icon: NyanIcons.copy,
-                    label: 'Copy',
+                    label: loc.selectionCopy,
                     nyan: nyan,
                     onTap: () {
                       Clipboard.setData(ClipboardData(text: selectedText));
@@ -68,7 +70,7 @@ class TextSelectionMenu extends StatelessWidget {
                   const SizedBox(width: 4),
                   _ActionButton(
                     icon: NyanIcons.search,
-                    label: 'Search',
+                    label: loc.selectionSearch,
                     nyan: nyan,
                     onTap: onSearch,
                   ),

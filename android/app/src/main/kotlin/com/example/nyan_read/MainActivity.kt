@@ -369,14 +369,23 @@ class MainActivity : FlutterFragmentActivity() {
 
     private fun releasePersistedPermission(uriString: String): Boolean {
         val uri = Uri.parse(uriString)
-        val grant = contentResolver.persistedUriPermissions
-            .firstOrNull { it.uri == uri } ?: return false
-        var flags = 0
-        if (grant.isReadPermission) flags = flags or Intent.FLAG_GRANT_READ_URI_PERMISSION
-        if (grant.isWritePermission) flags = flags or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        val before = contentResolver.persistedUriPermissions
+        // The grant can be recorded under a different URI form than the one
+        // the picker returned (observed: Downloads provider hands out
+        // `msf:<id>` but the system stores `raw:<path>`), so an exact match is
+        // only used to pick the flags; the release is attempted regardless and
+        // judged by whether the persisted count actually dropped.
+        val grant = before.firstOrNull { it.uri == uri }
+        var flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+            Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        if (grant != null) {
+            flags = 0
+            if (grant.isReadPermission) flags = flags or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            if (grant.isWritePermission) flags = flags or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        }
         return try {
             contentResolver.releasePersistableUriPermission(uri, flags)
-            true
+            contentResolver.persistedUriPermissions.size < before.size
         } catch (_: Exception) {
             false
         }

@@ -118,6 +118,9 @@ class BookshelfViewModel extends ChangeNotifier {
   // still bring the book back with a working source. Committed when the
   // timer fires, a new delete batch starts, or the VM is disposed.
   List<String> _pendingFileDeletions = const [];
+  // SAF grants to hand back once the undo window closes. In-memory only: a
+  // kill inside the 8s window leaks at most this batch's grants.
+  List<String> _pendingGrantReleases = const [];
   Timer? _pendingFileDeleteTimer;
 
   // Undo toast shows for 4s; leave margin so a last-moment tap still wins.
@@ -254,9 +257,16 @@ class BookshelfViewModel extends ChangeNotifier {
     try {
       await _db.deleteBooksWithAssociatedData(idsToDelete);
 
-      if (pathsToDelete.isNotEmpty) {
+      // Independent of the "also delete files" toggle: the grant is ours to
+      // give back either way (Android silently evicts the oldest grants once
+      // the per-app quota is exceeded).
+      _pendingGrantReleases = _collectReleasableGrants(selectedBooks);
+
+      if (pathsToDelete.isNotEmpty || _pendingGrantReleases.isNotEmpty) {
         _pendingFileDeletions = pathsToDelete;
-        await _persistPendingDeletions(pathsToDelete);
+        if (pathsToDelete.isNotEmpty) {
+          await _persistPendingDeletions(pathsToDelete);
+        }
         _pendingFileDeleteTimer = Timer(_fileDeleteGraceWindow, () {
           // Fire-and-forget: the timer callback cannot await, and a failed
           // deferred deletion only leaves an orphan file behind.
@@ -285,6 +295,7 @@ class BookshelfViewModel extends ChangeNotifier {
     _pendingFileDeleteTimer?.cancel();
     _pendingFileDeleteTimer = null;
     _pendingFileDeletions = const [];
+    _pendingGrantReleases = const [];
 
     // Take and clear the snapshot BEFORE the first await: a second Undo tap
     // (or a new delete batch) during the prefs write must not see it.
@@ -354,6 +365,7 @@ class BookshelfViewModel extends ChangeNotifier {
       await loadBooks();
       throw StateError('Private books survived erase');
     }
+    await _releaseGrants(_collectReleasableGrants(books));
 
     if (pathsToDelete.isNotEmpty) {
       // Persist first so a kill mid-deletion replays on next launch, then
@@ -384,15 +396,43 @@ class BookshelfViewModel extends ChangeNotifier {
     _pendingFileDeleteTimer?.cancel();
     _pendingFileDeleteTimer = null;
     final paths = _pendingFileDeletions;
+    final grants = _pendingGrantReleases;
     _pendingFileDeletions = const [];
-    if (paths.isEmpty) return;
+    _pendingGrantReleases = const [];
+    if (paths.isEmpty && grants.isEmpty) return;
 
+    // Once files are gone or grants released an undo could no longer restore
+    // a working book.
     _clearUndoSnapshot();
-    final failed = await _deleteSourceFilesBestEffort(paths);
-    // Forgotten only after the attempt: a kill mid-deletion replays the
-    // (safe, idempotent) list on next launch instead of losing it.
-    await _forgetPersistedDeletions(paths);
-    if (failed > 0) onFileDeletionFailed?.call(failed);
+    if (paths.isNotEmpty) {
+      final failed = await _deleteSourceFilesBestEffort(paths);
+      // Forgotten only after the attempt: a kill mid-deletion replays the
+      // (safe, idempotent) list on next launch instead of losing it.
+      await _forgetPersistedDeletions(paths);
+      if (failed > 0) onFileDeletionFailed?.call(failed);
+    }
+    // After the file delete: deleting a document needs the grant.
+    await _releaseGrants(grants);
+  }
+
+  /// Per-file `content://` grants only. A library-folder (tree) grant covers
+  /// every book under it and is owned by the folder, not by any one book.
+  /// Fingerprint dedup keeps one book per locator, so the grant is not shared.
+  List<String> _collectReleasableGrants(List<Book> books) => [
+        for (final b in books)
+          if (b.isAndroidContentUri &&
+              b.sourceLocator.toLowerCase().startsWith('content://'))
+            b.sourceLocator,
+      ];
+
+  Future<void> _releaseGrants(List<String> uris) async {
+    for (final uri in uris) {
+      try {
+        await BookSourcePlatform.releasePersistedPermission(uri);
+      } catch (e) {
+        debugPrint('Failed to release persisted permission: $e');
+      }
+    }
   }
 
   /// Drops only [done] from the persisted list. A blanket clear would also

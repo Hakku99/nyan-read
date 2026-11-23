@@ -40,19 +40,24 @@ class ReaderSettingsManager {
     _updateEngineConfig();
   }
 
+  ReaderConfig? _lastConfig;
+
+  // The preferences service notifies for every field (warmth, brightness...).
+  // Only push to the engine / notify the controller when the layout-relevant
+  // config actually changed, otherwise dragging the warmth slider re-lays out
+  // the body every frame.
   void _handlePreferencesChanged() {
     _fontSize = preferences.fontSize;
     _lineHeight = preferences.lineHeight;
     _backgroundColor = preferences.backgroundColor;
-    _updateEngineConfig();
-    onSettingsChanged();
+    if (_updateEngineConfig()) onSettingsChanged();
   }
 
-  void _updateEngineConfig() {
+  bool _updateEngineConfig() {
     final isDark = _backgroundColor.computeLuminance() < 0.5;
     _textColor = isDark ? NyanColors.readerInkDark : NyanColors.readerInkDefault;
 
-    engine.setConfig(ReaderConfig(
+    final config = ReaderConfig(
       backgroundColor: _backgroundColor,
       textColor: _textColor,
       fontSize: _fontSize,
@@ -60,7 +65,11 @@ class ReaderSettingsManager {
       pageTurnMode: preferences.pageTurnMode,
       pageAnimation: preferences.pageAnimation,
       useSerif: preferences.useSerif,
-    ));
+    );
+    if (config == _lastConfig) return false;
+    _lastConfig = config;
+    engine.setConfig(config);
+    return true;
   }
 
   // The three setters below only persist: preferences.notifyListeners fires

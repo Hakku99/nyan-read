@@ -89,7 +89,7 @@ ALTER TABLE books ADD COLUMN archived INTEGER DEFAULT 0; -- 1 = 归档，主书�
 ## 6. 防护与遗留修复
 
 - **配额水位**：逐文件导入路径检查授权总数 >100（兼容老设备 128 上限）→ toast 引导改用文件夹；
-- **遗留归还**：删除 `androidContentUri` 书籍时调 `releasePersistedPermission`（去重保证 URI 不共享，安全）——修复现状配额只进不出；
+- **遗留归还**：删除 `androidContentUri` 书籍时调 `releasePersistedPermission`（去重保证 URI 不共享，安全）——修复现状配额只进不出。**已提前实现（2026-11-23，PR #29）**：`BookshelfViewModel` 在撤销窗口（8s）结束后归还，撤销则取消，`eraseAllPrivateBooks` 立即归还；`androidTreeUri` 书不归还（树授权归文件夹所有）。窗口内杀进程会漏掉这一批（仅内存，未落盘），启动时对账仍待 Phase C；
 - **移除文件夹**：警告"N 本书将不可用"（locator 前缀 LIKE 计数）+ 提供"同时移出这些书"。
 
 ## 7. 分期
@@ -98,7 +98,7 @@ ALTER TABLE books ADD COLUMN archived INTEGER DEFAULT 0; -- 1 = 归档，主书�
 |---|---|---|
 | A | 原生四方法 + `androidTreeUri` + 访问路径 case | Kotlin 编译 + Dart 单测（normalize/去重/locator 解析）；**实机 gate**：pick→persist→枚举→读取全链路；超限真实行为（LRU vs 报错） |
 | B | 导入入口 + 扫描导入循环 + **状态 filter chips**（全量导入体验前提） | 实机导入真实书库；重扫幂等 |
-| C | 归档 + 读完标记 + 文件夹管理页 + 水位提示 + 遗留归还 + schema v10 | 迁移单测；实机移除授权降级正确 |
+| C | 归档 + 读完标记 + 文件夹管理页 + 水位提示 + 遗留归还（删除即归还已在 PR #29 提前落地，余启动对账） + schema v10 | 迁移单测；实机移除授权降级正确 |
 | D（可选） | 桌面端同 UX（`dart:io` 扫描、file_path 来源）；签名自愈重绑；按文件夹分组 | 单测可覆盖 |
 
 ## 8. 风险与回滚
@@ -133,3 +133,11 @@ ALTER TABLE books ADD COLUMN archived INTEGER DEFAULT 0; -- 1 = 归档，主书�
 - Download **子目录**可授权（限制只针对根目录）——UI 引导文案放宽；
 - 运行时授权会掩盖持久授权丢失 → **授权健康检查不能用读探测**（会话内会假阳性），必须比对 `getPersistedUriPermissions()` 列表与书籍 locator 的树前缀；
 - "新授权永远成功、最旧的悄悄死"——水位防护（§6）从"建议"升级为**必须**，且逐文件删除时的配额归还（release-on-delete）同样必须。
+
+### 10.1 真机补充（2026-11-23 · vivo V2144 / Android 15 · 下载目录单文件导入）
+
+| 结论 | 证据 |
+|---|---|
+| **授权地址与书里存的 locator 不是同一种写法**：Downloads provider 返回 `.../document/msf%3A2766`，系统却把持久授权记在 `.../document/raw%3A%2Fstorage%2Femulated%2F0%2FDownload%2F<文件名>`。原生 `releasePersistedPermission` 原先按 URI 精确匹配授权，匹配不上就静默返回 false，删书后授权一直不归还 | `dumpsys activity permissions`：授权数 导入前 4 → 导入后 5 → 删书 12s 后仍为 5（修复前） |
+| **修复**：精确匹配仅用于挑 flags；匹配不上也照样调用系统的 `releasePersistableUriPermission`，以"持久授权数是否减少"判定成败 | 修复后 4 → 5 → 窗口内 5 → 窗口结束后 4，该文件授权从系统列表消失 |
+| **因此上表第 4 行"授权不存在时 release 返回 false"不再严格成立**：现在返回值 = 授权数是否真的减少。只在 Downloads provider 上观察到 `msf:`/`raw:` 不一致，其它 provider 未验证 | — |
