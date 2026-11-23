@@ -357,7 +357,7 @@ class DatabaseService {
       // isolate boundary. Logs are collected and replayed on the main
       // isolate via debugPrint so they still show up in IDE consoles.
       final outcome = await Isolate.run(
-        () => _runRestoreFromBackupInIsolate(
+        () => runRestoreFromBackup(
           mainDbPath: mainDbPath,
           backupDirPath: backupDirPath,
         ),
@@ -421,7 +421,10 @@ class DatabaseService {
     // library still opens (or fails loudly) whereas a missing file makes
     // openDatabase silently create an empty one.
     final archive = originalArchive;
-    if (archive == null) return; // Main DB was never touched.
+    // No archive means the worker never moved the main DB: either it bailed
+    // out before archiving, or archiving failed and it aborted without
+    // writing to / deleting the main file.
+    if (archive == null) return;
     debugPrint(
         '--- [DatabaseService] Restore gave up; putting the original database back ---');
     final logs = await Isolate.run(() => restoreOriginalFromArchive(
@@ -433,8 +436,9 @@ class DatabaseService {
 
   /// Moves the archived original ([archivedPath]) back to [mainDbPath],
   /// discarding whatever failed-restore leftovers sit there (main file and
-  /// its sidecars). Isolate-safe; returns log lines. Keeps the archive if it
-  /// had to fall back to copying.
+  /// its sidecars), then puts the original's archived `-wal`/`-shm` back so
+  /// commits that were never checkpointed are not lost. Isolate-safe;
+  /// returns log lines. Keeps the archive if it had to fall back to copying.
   @visibleForTesting
   static List<String> restoreOriginalFromArchive({
     required String mainDbPath,
@@ -451,10 +455,16 @@ class DatabaseService {
       for (final path in [mainDbPath, '$mainDbPath-wal', '$mainDbPath-shm']) {
         _deleteIgnoringErrors(File(path), logs);
       }
-      try {
-        archive.renameSync(mainDbPath);
-      } catch (_) {
-        archive.copySync(mainDbPath);
+      _moveOrCopy(archive, mainDbPath);
+      for (final suffix in _sidecarSuffixes) {
+        final sidecar = File('$archivedPath$suffix');
+        if (!sidecar.existsSync()) continue;
+        try {
+          _moveOrCopy(sidecar, '$mainDbPath$suffix');
+        } catch (e) {
+          logs.add(
+              '--- [DatabaseService] Warning: could not put back $suffix sidecar: $e ---');
+        }
       }
       logs.add('--- [DatabaseService] Original database put back ---');
     } catch (e) {
@@ -462,6 +472,16 @@ class DatabaseService {
           '--- [DatabaseService] Rollback of original database failed: $e ---');
     }
     return logs;
+  }
+
+  static const _sidecarSuffixes = ['-wal', '-shm'];
+
+  static void _moveOrCopy(File src, String destPath) {
+    try {
+      src.renameSync(destPath);
+    } catch (_) {
+      src.copySync(destPath);
+    }
   }
 
   /// Isolate worker for [_restoreFromLatestBackup]. Discovers the best
@@ -475,12 +495,22 @@ class DatabaseService {
   ///
   /// Always picks the newest snapshot by `modified` timestamp, regardless
   /// of format.  The corrupted main file is archived as
-  /// `<path>_corrupted_<ms>.bak`; existing `-wal`/`-shm` sidecars are
-  /// deleted so SQLite opens the restored DB cleanly.
-  static _DbRestoreOutcome _runRestoreFromBackupInIsolate({
+  /// `<path>_corrupted_<ms>.bak` and its `-wal`/`-shm` sidecars as
+  /// `<archive>-wal` / `<archive>-shm`, so SQLite opens the restored DB
+  /// cleanly while a rollback can still bring the original back whole.
+  ///
+  /// If the main file cannot be archived the worker gives up WITHOUT
+  /// touching it: writing over or deleting an unarchived original is the one
+  /// way this routine could leave the user with nothing.
+  ///
+  /// [archive] is a test seam to simulate archive failure.
+  @visibleForTesting
+  static DbRestoreOutcome runRestoreFromBackup({
     required String mainDbPath,
     required String backupDirPath,
+    bool Function(File file, String archivePath, List<String> logs)? archive,
   }) {
+    final archiveMain = archive ?? _archiveOrDelete;
     final logs = <String>[];
     // Declared outside the try so the catch-all can still report where the
     // original went — the caller needs it to roll back.
@@ -490,7 +520,7 @@ class DatabaseService {
       if (!backupDir.existsSync()) {
         logs.add(
             '--- [DatabaseService] Self-heal aborted: no backup directory available ---');
-        return _DbRestoreOutcome(logs);
+        return DbRestoreOutcome(logs);
       }
 
       // Collect candidates from both snapshot formats.
@@ -521,30 +551,47 @@ class DatabaseService {
       if (candidates.isEmpty) {
         logs.add(
             '--- [DatabaseService] Self-heal aborted: no backup snapshots found ---');
-        return _DbRestoreOutcome(logs);
+        return DbRestoreOutcome(logs);
       }
 
       // Newest snapshot wins regardless of format.
       candidates.sort((a, b) => b.modified.compareTo(a.modified));
 
       // Archive the corrupted main file before overwriting it.
-      // Use rename → copy+delete → delete fallback chain because renameSync
-      // can fail on Windows (cross-drive, locked file) and on mobile
-      // (cross-filesystem).  If none work, copySync below will clobber the
-      // destination on most platforms anyway.
+      // Use rename → copy+delete fallback chain because renameSync can fail
+      // on Windows (cross-drive, locked file) and on mobile
+      // (cross-filesystem).  If neither works we abort: the original stays
+      // exactly where it is, and the candidate-failure cleanup below (which
+      // deletes the main path) must never run against an unarchived original.
       final corruptFile = File(mainDbPath);
       final ts = DateTime.now().millisecondsSinceEpoch;
       if (corruptFile.existsSync()) {
         final target = '${mainDbPath}_corrupted_$ts.bak';
-        if (_archiveOrDelete(corruptFile, target, logs)) archivedPath = target;
+        if (!archiveMain(corruptFile, target, logs)) {
+          logs.add(
+              '--- [DatabaseService] Could not archive the original database; leaving it untouched and skipping restore ---');
+          return DbRestoreOutcome(logs);
+        }
+        archivedPath = target;
+
+        // Archive -wal/-shm next to the archive (best-effort) so un-
+        // checkpointed commits survive a rollback. They MUST leave the main
+        // path either way: a stale WAL applied on top of the restored file
+        // could re-corrupt it, so fall back to deleting.
+        for (final suffix in _sidecarSuffixes) {
+          final sidecar = File('$mainDbPath$suffix');
+          if (!sidecar.existsSync()) continue;
+          if (!_archiveOrDelete(sidecar, '$target$suffix', logs)) {
+            _deleteIgnoringErrors(sidecar, logs);
+          }
+        }
       }
 
-      // Remove -wal/-shm sidecars (best-effort).  A stale WAL from the
-      // corrupted DB could be applied on top of the restored file and
-      // re-corrupt it, so deletion is important.  If it fails we warn and
-      // proceed; copySync will at least give us a clean main file.
-      for (final sidecarPath in ['$mainDbPath-wal', '$mainDbPath-shm']) {
-        _deleteIgnoringErrors(File(sidecarPath), logs);
+      // Main is absent or archived by now. Sweep any sidecars that had no
+      // main file (or that archiving left behind) so none gets applied to
+      // the restored DB.
+      for (final suffix in _sidecarSuffixes) {
+        _deleteIgnoringErrors(File('$mainDbPath$suffix'), logs);
       }
 
       // Try backup candidates in newest-first order.  If a candidate's file
@@ -565,7 +612,7 @@ class DatabaseService {
           }
           logs.add(
               '--- [DatabaseService] Restore succeeded ($restoredSize bytes) ---');
-          return _DbRestoreOutcome(logs,
+          return DbRestoreOutcome(logs,
               restoredFromPath: candidate.file.path,
               archivedPath: archivedPath);
         } catch (e) {
@@ -582,17 +629,14 @@ class DatabaseService {
       logs.add(
           '--- [DatabaseService] Backup restore failed in isolate: $e\n$stack ---');
     }
-    return _DbRestoreOutcome(logs, archivedPath: archivedPath);
+    return DbRestoreOutcome(logs, archivedPath: archivedPath);
   }
 
   /// Archives [file] to [archivePath] using rename, falling back to
   /// copy+delete.  If both fail the file is left in place (never bare-deleted:
   /// a corrupt DB may still be manually salvageable).  Logs outcomes and
-  /// returns whether the archive now exists.
-  ///
-  /// If the file cannot be archived at all, the subsequent `copySync` call
-  /// will clobber the destination on most platforms (POSIX semantics), so
-  /// the restore still has a chance to succeed.
+  /// returns whether the archive now exists.  The main-DB caller treats
+  /// `false` as "abort the restore".
   static bool _archiveOrDelete(
       File file, String archivePath, List<String> logs) {
     // 1. Atomic rename (preferred).
@@ -610,14 +654,11 @@ class DatabaseService {
     } catch (_) {
       // If copy also fails (e.g. read error on the corrupt file) fall through.
     }
-    // 3. Leave the corrupt file in place. Deliberately NOT deleting it:
-    // if every backup candidate later fails to restore, this file is the
-    // user's only remaining copy of their metadata and may be manually
-    // salvageable. The subsequent copySync may still clobber it on POSIX;
-    // on Windows the copy will fail instead — that error surfaces in the
-    // retry loop above.
+    // 3. Leave the file in place. Deliberately NOT deleting it: it may be
+    // the user's only remaining copy of their metadata and may be manually
+    // salvageable.
     logs.add(
-        '--- [DatabaseService] Warning: could not archive corrupted DB; leaving it in place for manual recovery ---');
+        '--- [DatabaseService] Warning: could not archive a database file; leaving it in place ---');
     return false;
   }
 
@@ -1303,8 +1344,8 @@ class DatabaseService {
 /// the helper isolate and replay them on the main isolate because
 /// `debugPrint` inside an isolate does not flush to IDE consoles on every
 /// platform.
-class _DbRestoreOutcome {
-  _DbRestoreOutcome(this.logs, {this.restoredFromPath, this.archivedPath});
+class DbRestoreOutcome {
+  DbRestoreOutcome(this.logs, {this.restoredFromPath, this.archivedPath});
   final List<String> logs;
 
   /// Where the original main DB was archived this round, or null when the
@@ -1318,7 +1359,7 @@ class _DbRestoreOutcome {
   final String? restoredFromPath;
 }
 
-/// Lightweight record used inside [_runRestoreFromBackupInIsolate] to
+/// Lightweight record used inside [runRestoreFromBackup] to
 /// represent a backup candidate from either the new flat-file or legacy
 /// triad-directory format.  Never crosses an isolate boundary.
 class _BackupCandidate {

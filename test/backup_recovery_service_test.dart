@@ -997,6 +997,108 @@ void main() {
           reason: 'must not delete main when there is nothing to put back');
     });
 
+    test('archive failure aborts the worker; main DB is never written/deleted',
+        () async {
+      // One good snapshot (copy would succeed) and one zero-byte snapshot
+      // (copy-failure cleanup would delete main): both used to risk the
+      // un-archived original.
+      for (final good in [true, false]) {
+        final name = good ? 'good' : 'zero';
+        final backupDir = Directory(join(tempDir.path, 'n5_noarch_$name'))
+          ..createSync();
+        final snap = join(backupDir.path, 'nyan_read_1000.db');
+        if (good) {
+          final seed =
+              await _openFileDb(join(tempDir.path, 'n5_noarch_seed.db'));
+          await _vacuumInto(seed, snap);
+          await seed.close();
+          File(join(tempDir.path, 'n5_noarch_seed.db')).deleteSync();
+        } else {
+          File(snap).writeAsBytesSync([]);
+        }
+        final mainDbPath = join(tempDir.path, 'n5_main_noarch_$name.db');
+        final original = await writeOriginal(mainDbPath);
+        File('$mainDbPath-wal').writeAsBytesSync([4, 5, 6]);
+
+        final outcome = DatabaseService.runRestoreFromBackup(
+          mainDbPath: mainDbPath,
+          backupDirPath: backupDir.path,
+          archive: (file, archivePath, logs) => false,
+        );
+
+        expect(outcome.restoredFromPath, isNull, reason: name);
+        expect(outcome.archivedPath, isNull, reason: name);
+        expectOriginalIntact(mainDbPath, original);
+        expect(File('$mainDbPath-wal').readAsBytesSync(), [4, 5, 6],
+            reason: '$name: sidecar must stay untouched too');
+      }
+    });
+
+    test('rollback brings back the original -wal/-shm byte-for-byte',
+        () async {
+      final backupDir = Directory(join(tempDir.path, 'n5_wal_rb'))
+        ..createSync();
+      File(join(backupDir.path, 'nyan_read_1000.db')).writeAsBytesSync([]);
+      final mainDbPath = join(tempDir.path, 'n5_main_wal_rb.db');
+      final original = await writeOriginal(mainDbPath);
+      File('$mainDbPath-wal').writeAsBytesSync([1, 1, 2, 3, 5]);
+      File('$mainDbPath-shm').writeAsBytesSync([8, 13, 21]);
+
+      await DatabaseService().restoreFromBackupDir(
+          mainDbPath: mainDbPath, backupDirPath: backupDir.path);
+
+      expectOriginalIntact(mainDbPath, original);
+      expect(File('$mainDbPath-wal').readAsBytesSync(), [1, 1, 2, 3, 5]);
+      expect(File('$mainDbPath-shm').readAsBytesSync(), [8, 13, 21]);
+    });
+
+    test('restoreOriginalFromArchive restores archived sidecars', () {
+      final mainDbPath = join(tempDir.path, 'n5_rb3.db');
+      final archivePath = '${mainDbPath}_corrupted_2.bak';
+      File(archivePath).writeAsBytesSync([1]);
+      File('$archivePath-wal').writeAsBytesSync([2]);
+      File('$archivePath-shm').writeAsBytesSync([3]);
+      // Leftovers from the failed restore must not survive.
+      File(mainDbPath).writeAsBytesSync([9]);
+      File('$mainDbPath-wal').writeAsBytesSync([9, 9]);
+
+      DatabaseService.restoreOriginalFromArchive(
+          mainDbPath: mainDbPath, archivedPath: archivePath);
+
+      expect(File(mainDbPath).readAsBytesSync(), [1]);
+      expect(File('$mainDbPath-wal').readAsBytesSync(), [2]);
+      expect(File('$mainDbPath-shm').readAsBytesSync(), [3]);
+    });
+
+    test('successful restore leaves no stale WAL; sidecars archived', () async {
+      final backupDir = Directory(join(tempDir.path, 'n5_wal_ok'))
+        ..createSync();
+      final seed = await _openFileDb(join(tempDir.path, 'n5_wal_ok_seed.db'));
+      await _vacuumInto(seed, join(backupDir.path, 'nyan_read_1000.db'));
+      await seed.close();
+      final mainDbPath = join(tempDir.path, 'n5_main_wal_ok.db');
+      await writeOriginal(mainDbPath);
+      File('$mainDbPath-wal').writeAsBytesSync([7, 7]);
+      File('$mainDbPath-shm').writeAsBytesSync([8, 8]);
+
+      await DatabaseService().restoreFromBackupDir(
+          mainDbPath: mainDbPath, backupDirPath: backupDir.path);
+
+      expect(File('$mainDbPath-wal').existsSync(), isFalse,
+          reason: 'a stale WAL must not sit beside the restored DB');
+      expect(File('$mainDbPath-shm').existsSync(), isFalse);
+      final bak = Directory(tempDir.path)
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.contains('n5_main_wal_ok.db_corrupted_'))
+          .map((f) => f.path)
+          .toList();
+      final walBak = bak.singleWhere((p) => p.endsWith('.bak-wal'));
+      final shmBak = bak.singleWhere((p) => p.endsWith('.bak-shm'));
+      expect(File(walBak).readAsBytesSync(), [7, 7]);
+      expect(File(shmBak).readAsBytesSync(), [8, 8]);
+    });
+
     test('normal restore: original archived, good snapshot in place', () async {
       final backupDir = Directory(join(tempDir.path, 'n5_ok'))..createSync();
       final snap = join(backupDir.path, 'nyan_read_1000.db');
