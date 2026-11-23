@@ -118,8 +118,8 @@ class BookshelfViewModel extends ChangeNotifier {
   // still bring the book back with a working source. Committed when the
   // timer fires, a new delete batch starts, or the VM is disposed.
   List<String> _pendingFileDeletions = const [];
-  // SAF grants to hand back once the undo window closes. In-memory only: a
-  // kill inside the 8s window leaks at most this batch's grants.
+  // SAF grants to hand back once the undo window closes. Mirrored in prefs so
+  // a kill inside the 8s window is finished by the next launch.
   List<String> _pendingGrantReleases = const [];
   Timer? _pendingFileDeleteTimer;
 
@@ -261,6 +261,10 @@ class BookshelfViewModel extends ChangeNotifier {
       // give back either way (Android silently evicts the oldest grants once
       // the per-app quota is exceeded).
       _pendingGrantReleases = _collectReleasableGrants(selectedBooks);
+      if (_pendingGrantReleases.isNotEmpty) {
+        await _persistPendingGrants(
+            [..._prefs.pendingGrantReleases, ..._pendingGrantReleases]);
+      }
 
       if (pathsToDelete.isNotEmpty || _pendingGrantReleases.isNotEmpty) {
         _pendingFileDeletions = pathsToDelete;
@@ -295,6 +299,7 @@ class BookshelfViewModel extends ChangeNotifier {
     _pendingFileDeleteTimer?.cancel();
     _pendingFileDeleteTimer = null;
     _pendingFileDeletions = const [];
+    final cancelledGrants = _pendingGrantReleases;
     _pendingGrantReleases = const [];
 
     // Take and clear the snapshot BEFORE the first await: a second Undo tap
@@ -307,6 +312,7 @@ class BookshelfViewModel extends ChangeNotifier {
 
     // Before the restore, so a kill mid-restore cannot replay the deletion.
     await _persistPendingDeletions(const []);
+    await _forgetPersistedGrants(cancelledGrants);
 
     try {
       await _db.restoreDeletedBooksBatch(
@@ -413,6 +419,7 @@ class BookshelfViewModel extends ChangeNotifier {
     }
     // After the file delete: deleting a document needs the grant.
     await _releaseGrants(grants);
+    await _forgetPersistedGrants(grants);
   }
 
   /// Per-file `content://` grants only. A library-folder (tree) grant covers
@@ -460,11 +467,53 @@ class BookshelfViewModel extends ChangeNotifier {
   /// only consistent outcome.
   Future<void> _recoverInterruptedFileDeletions() async {
     final stale = _prefs.pendingFileDeletions;
+    if (stale.isNotEmpty) {
+      // Forget only after the attempt, like the normal commit path: dying
+      // again mid-recovery must not drop the list with the files still on disk.
+      await _deleteSourceFilesBestEffort(stale);
+      await _forgetPersistedDeletions(stale);
+    }
+    await _recoverInterruptedGrantReleases();
+  }
+
+  Future<void> _recoverInterruptedGrantReleases() async {
+    final stale = _prefs.pendingGrantReleases;
     if (stale.isEmpty) return;
-    // Forget only after the attempt, like the normal commit path: dying
-    // again mid-recovery must not drop the list with the files still on disk.
-    await _deleteSourceFilesBestEffort(stale);
-    await _forgetPersistedDeletions(stale);
+    // Never hand back a grant a live book still reads from (e.g. the persisted
+    // list outlived an undo whose prefs write failed).
+    final live = <String>{};
+    try {
+      for (final isPrivate in const [false, true]) {
+        for (final row in await _db.getBooks(isPrivate: isPrivate)) {
+          final locator = row['file_path'];
+          if (locator is String) live.add(locator);
+        }
+      }
+    } catch (e) {
+      // Keep the list for the next launch rather than risk a wrong release.
+      debugPrint('Skipping grant recovery, shelf unreadable: $e');
+      return;
+    }
+    await _releaseGrants([
+      for (final uri in stale)
+        if (!live.contains(uri)) uri,
+    ]);
+    await _forgetPersistedGrants(stale);
+  }
+
+  /// Drops only [done]: a newer batch may have been persisted meanwhile.
+  Future<void> _forgetPersistedGrants(List<String> done) =>
+      _persistPendingGrants([
+        for (final u in _prefs.pendingGrantReleases)
+          if (!done.contains(u)) u,
+      ]);
+
+  Future<void> _persistPendingGrants(List<String> uris) async {
+    try {
+      await _prefs.setPendingGrantReleases(uris);
+    } catch (e) {
+      debugPrint('Failed to persist pending grant releases: $e');
+    }
   }
 
   @override

@@ -492,6 +492,47 @@ void main() {
       expect(released, [fileUri]);
     });
 
+    test('is persisted until released, and forgotten by commit', () async {
+      await deleteBoth();
+      expect(prefs.pendingGrantReleases, [fileUri]);
+
+      vm.dispose();
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
+      expect(released, [fileUri]);
+      expect(prefs.pendingGrantReleases, isEmpty);
+    });
+
+    test('undo also forgets the persisted grants', () async {
+      await deleteBoth();
+      await vm.undoLastDelete();
+
+      expect(prefs.pendingGrantReleases, isEmpty);
+    });
+
+    test('next launch releases grants left by a killed session', () async {
+      db.books.remove('c1'); // the killed session had deleted it
+      await pumpVm({
+        'bookshelf_pending_grant_releases': [fileUri],
+      });
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
+      expect(released, [fileUri]);
+      expect(prefs.pendingGrantReleases, isEmpty);
+    });
+
+    test('recovery never releases a grant a live book still uses', () async {
+      // c1 (fileUri) is still on the shelf, e.g. an undo whose prefs write
+      // failed left the URI in the persisted list.
+      await pumpVm({
+        'bookshelf_pending_grant_releases': [fileUri],
+      });
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
+      expect(released, isEmpty);
+      expect(prefs.pendingGrantReleases, isEmpty);
+    });
+
     test('undo cancels the give-back', () async {
       await deleteBoth();
       await vm.undoLastDelete();

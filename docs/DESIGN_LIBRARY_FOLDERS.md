@@ -89,7 +89,7 @@ ALTER TABLE books ADD COLUMN archived INTEGER DEFAULT 0; -- 1 = 归档，主书�
 ## 6. 防护与遗留修复
 
 - **配额水位**：逐文件导入路径检查授权总数 >100（兼容老设备 128 上限）→ toast 引导改用文件夹；
-- **遗留归还**：删除 `androidContentUri` 书籍时调 `releasePersistedPermission`（去重保证 URI 不共享，安全）——修复现状配额只进不出。**已提前实现（2026-11-23，PR #29）**：`BookshelfViewModel` 在撤销窗口（8s）结束后归还，撤销则取消，`eraseAllPrivateBooks` 立即归还；`androidTreeUri` 书不归还（树授权归文件夹所有）。窗口内杀进程会漏掉这一批（仅内存，未落盘），启动时对账仍待 Phase C；
+- **遗留归还**：删除 `androidContentUri` 书籍时调 `releasePersistedPermission`（去重保证 URI 不共享，安全）——修复现状配额只进不出。**已提前实现（2026-11-23，PR #29）**：`BookshelfViewModel` 在撤销窗口（8s）结束后归还，撤销则取消，`eraseAllPrivateBooks` 立即归还；`androidTreeUri` 书不归还（树授权归文件夹所有）。待归还的 URI 同时落盘（`bookshelf_pending_grant_releases`），窗口内杀进程后下次启动补归还（跳过仍被现有书籍引用的 URI）；与 DB 的全量孤儿授权对账（回收历史欠账）仍待 Phase C；
 - **移除文件夹**：警告"N 本书将不可用"（locator 前缀 LIKE 计数）+ 提供"同时移出这些书"。
 
 ## 7. 分期
@@ -98,7 +98,7 @@ ALTER TABLE books ADD COLUMN archived INTEGER DEFAULT 0; -- 1 = 归档，主书�
 |---|---|---|
 | A | 原生四方法 + `androidTreeUri` + 访问路径 case | Kotlin 编译 + Dart 单测（normalize/去重/locator 解析）；**实机 gate**：pick→persist→枚举→读取全链路；超限真实行为（LRU vs 报错） |
 | B | 导入入口 + 扫描导入循环 + **状态 filter chips**（全量导入体验前提） | 实机导入真实书库；重扫幂等 |
-| C | 归档 + 读完标记 + 文件夹管理页 + 水位提示 + 遗留归还（删除即归还已在 PR #29 提前落地，余启动对账） + schema v10 | 迁移单测；实机移除授权降级正确 |
+| C | 归档 + 读完标记 + 文件夹管理页 + 水位提示 + 遗留归还（删除即归还及杀进程补归还已在 PR #29 提前落地，余历史孤儿授权对账） + schema v10 | 迁移单测；实机移除授权降级正确 |
 | D（可选） | 桌面端同 UX（`dart:io` 扫描、file_path 来源）；签名自愈重绑；按文件夹分组 | 单测可覆盖 |
 
 ## 8. 风险与回滚
