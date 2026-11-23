@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/services/database_service.dart';
 import '../../core/services/reader_preferences_service.dart';
 import '../../core/services/riverpod_providers.dart';
 import '../../core/theme/nyan_colors.dart';
@@ -20,6 +21,7 @@ import '../../core/ui/components/components.dart';
 import '../../core/ui/nyan_icons.dart';
 import '../../core/ui/nyan_theme_context.dart';
 import '../../core/utils/snackbar_utils.dart';
+import '../bookshelf/bookshelf_view_model_provider.dart';
 import '../privacy/privacy_lock_service.dart';
 
 const double _kHPad = NyanSpacing.space16;
@@ -165,13 +167,26 @@ Future<void> _shareFile(String exportFilePath) async {
 
 // ── Import flow ───────────────────────────────────────────────────────────────
 
-/// -1 means the picker was cancelled; 0 means nothing was written (no
-/// matching books, or local progress is newer and the backup has no notes).
+/// Three tiers (null = picker cancelled, stays silent):
+///   - nothing matched a local book → ask the user to import the files first;
+///   - matched but nothing written → neutral notice (local progress is newer
+///     or the backup has no notes);
+///   - written → success, with optional notes for unmatched / private books.
+/// Only counts are shown, never titles: backups may include private books.
 @visibleForTesting
-void showRestoreResult(BuildContext context, int restoredCount) {
-  if (restoredCount == -1) return;
+void showRestoreResult(BuildContext context, RestoreResult? result) {
+  if (result == null) return;
   final loc = AppLocalizations.of(context)!;
-  if (restoredCount == 0) {
+  // matched == 0 && unmatched == 0: the file had no books at all (wrong JSON).
+  if (result.matched == 0 && result.unmatched > 0) {
+    SnackBarUtils.show(
+      context,
+      loc.importNoLocalBooks(result.unmatched),
+      tone: NyanSnackTone.skipped,
+    );
+    return;
+  }
+  if (result.written == 0) {
     SnackBarUtils.show(
       context,
       loc.importNothingRestored,
@@ -179,15 +194,22 @@ void showRestoreResult(BuildContext context, int restoredCount) {
     );
     return;
   }
+  final notes = [
+    if (result.unmatched > 0) loc.importUnmatchedNote(result.unmatched),
+    if (result.movedToPrivate > 0) loc.importMovedToPrivateNote,
+  ];
   SnackBarUtils.show(
     context,
-    loc.importSuccess(restoredCount),
+    loc.importSuccess(result.written),
+    description: notes.isEmpty ? null : notes.join(' '),
     tone: NyanSnackTone.success,
   );
 }
 
 Future<void> _handleImportData(BuildContext context, WidgetRef ref) async {
   final loc = AppLocalizations.of(context)!;
+  // Read before the await: the page may be gone when the restore finishes.
+  final shelfVm = ref.read(bookshelfViewModelRpProvider);
   _showLoadingDialog(
     context,
     title: loc.importData,
@@ -196,10 +218,15 @@ Future<void> _handleImportData(BuildContext context, WidgetRef ref) async {
 
   try {
     final backupService = ref.read(backupRecoveryServiceRpProvider);
-    final restoredCount = await backupService.importGlobalUserData();
+    final result = await backupService.importGlobalUserData();
     if (context.mounted) _closeDialog(context);
+    // The shelf VM is app-lifetime, so is_private changes and fresh progress
+    // only show up after an explicit reload.
+    if (result != null && result.written > 0) {
+      unawaited(shelfVm.loadBooks());
+    }
     if (!context.mounted) return;
-    showRestoreResult(context, restoredCount);
+    showRestoreResult(context, result);
   } catch (e) {
     if (context.mounted) {
       _closeDialog(context);

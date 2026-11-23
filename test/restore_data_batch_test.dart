@@ -25,7 +25,7 @@ Future<Database> _openDb() async {
             file_path TEXT NOT NULL, format TEXT NOT NULL,
             current_progress REAL DEFAULT 0, last_read_at INTEGER,
             last_position_type TEXT, last_position_payload TEXT,
-            content_signature TEXT)''');
+            content_signature TEXT, is_private INTEGER DEFAULT 0)''');
         await db.execute('''
           CREATE TABLE bookmarks (
             id TEXT PRIMARY KEY, book_id TEXT NOT NULL,
@@ -50,6 +50,7 @@ Future<void> _insertBook(
   String? sig,
   double progress = 0,
   int? lastReadAt,
+  int isPrivate = 0,
 }) =>
     db.insert('books', {
       'id': id,
@@ -59,6 +60,7 @@ Future<void> _insertBook(
       'content_signature': sig,
       'current_progress': progress,
       'last_read_at': lastReadAt,
+      'is_private': isPrivate,
     });
 
 Map<String, dynamic> _backupBook({
@@ -66,6 +68,7 @@ Map<String, dynamic> _backupBook({
   String? sig,
   double progress = 0.9,
   int? lastReadAt = 2000,
+  int? isPrivate,
   List<Map<String, dynamic>> highlights = const [],
 }) =>
     {
@@ -73,6 +76,7 @@ Map<String, dynamic> _backupBook({
       'content_signature': sig,
       'current_progress': progress,
       'last_read_at': lastReadAt,
+      'is_private': isPrivate,
       'highlights': highlights,
     };
 
@@ -103,10 +107,10 @@ void main() {
 
   test('signature match restores progress and highlights', () async {
     await _insertBook(db, 'a', sig: 'S1', lastReadAt: 1000);
-    final n = await service.restoreDataBatch({
+    final r = await service.restoreDataBatch({
       'books': [_backupBook(sig: 'S1', highlights: [_hl('h1')])]
     });
-    expect(n, 1);
+    expect(r.written, 1);
     expect((await row('a'))['current_progress'], 0.9);
     expect(await hlCount('a'), 1);
   });
@@ -114,30 +118,31 @@ void main() {
   test('signed backup book with no signature match skips same-titled book',
       () async {
     await _insertBook(db, 'a', sig: 'OTHER', progress: 0.1, lastReadAt: 1000);
-    final n = await service.restoreDataBatch({
+    final r = await service.restoreDataBatch({
       'books': [_backupBook(sig: 'S1', highlights: [_hl('h1')])]
     });
-    expect(n, 0);
+    expect(r.written, 0);
+    expect((r.matched, r.unmatched), (0, 1));
     expect((await row('a'))['current_progress'], 0.1);
     expect(await hlCount('a'), 0);
   });
 
   test('unsigned backup book matches a unique unsigned local title', () async {
     await _insertBook(db, 'a', lastReadAt: 1000);
-    final n = await service.restoreDataBatch({
+    final r = await service.restoreDataBatch({
       'books': [_backupBook(highlights: [_hl('h1')])]
     });
-    expect(n, 1);
+    expect(r.written, 1);
     expect(await hlCount('a'), 1);
   });
 
   test('signed backup book matches a unique unsigned local title', () async {
     // Local signature backfill pending or failed: the title is the only link.
     await _insertBook(db, 'a', lastReadAt: 1000);
-    final n = await service.restoreDataBatch({
+    final r = await service.restoreDataBatch({
       'books': [_backupBook(sig: 'S1', highlights: [_hl('h1')])]
     });
-    expect(n, 1);
+    expect(r.written, 1);
     expect((await row('a'))['current_progress'], 0.9);
     expect(await hlCount('a'), 1);
   });
@@ -145,41 +150,110 @@ void main() {
   test('signed backup book skips ambiguous unsigned local titles', () async {
     await _insertBook(db, 'a');
     await _insertBook(db, 'b');
-    final n = await service.restoreDataBatch({
+    final r = await service.restoreDataBatch({
       'books': [_backupBook(sig: 'S1', highlights: [_hl('h1')])]
     });
-    expect(n, 0);
+    expect(r.written, 0);
     expect(await hlCount('a') + await hlCount('b'), 0);
   });
 
   test('unsigned backup book skips an ambiguous local title', () async {
     await _insertBook(db, 'a');
     await _insertBook(db, 'b');
-    final n = await service.restoreDataBatch({
+    final r = await service.restoreDataBatch({
       'books': [_backupBook(highlights: [_hl('h1')])]
     });
-    expect(n, 0);
+    expect(r.written, 0);
     expect(await hlCount('a') + await hlCount('b'), 0);
   });
 
   test('unsigned backup book does not match a signed local book', () async {
     await _insertBook(db, 'a', sig: 'S1');
-    final n = await service.restoreDataBatch({
+    final r = await service.restoreDataBatch({
       'books': [_backupBook()]
     });
-    expect(n, 0);
+    expect(r.written, 0);
   });
 
   test('one local book is matched at most once per restore', () async {
     await _insertBook(db, 'a');
-    final n = await service.restoreDataBatch({
+    final r = await service.restoreDataBatch({
       'books': [
         _backupBook(progress: 0.3, highlights: [_hl('h1')]),
         _backupBook(progress: 0.8, highlights: [_hl('h2')]),
       ]
     });
-    expect(n, 1);
+    expect(r.written, 1);
+    // The duplicate entry has a local book (already used): not "missing".
+    expect((r.matched, r.unmatched), (1, 0));
     expect(await hlCount('a'), 1);
+  });
+
+  test('duplicate same-signature backup entries match once, none unmatched',
+      () async {
+    await _insertBook(db, 'a', sig: 'S1', lastReadAt: 1000);
+    final r = await service.restoreDataBatch({
+      'books': [_backupBook(sig: 'S1'), _backupBook(sig: 'S1')]
+    });
+    expect((r.matched, r.written, r.unmatched), (1, 1, 0));
+  });
+
+  test('backup without a books list reports nothing matched or unmatched',
+      () async {
+    await _insertBook(db, 'a', sig: 'S1');
+    final r = await service.restoreDataBatch({'version': 1});
+    expect((r.matched, r.written, r.unmatched), (0, 0, 0));
+  });
+
+  group('is_private (tighten only)', () {
+    Future<Object?> privateAfter({required int local, int? backup}) async {
+      await _insertBook(db, 'a',
+          sig: 'S1', lastReadAt: 3000, isPrivate: local);
+      await service.restoreDataBatch({
+        'books': [_backupBook(sig: 'S1', lastReadAt: 2000, isPrivate: backup)]
+      });
+      return (await row('a'))['is_private'];
+    }
+
+    test('backup private makes a public local book private', () async {
+      await _insertBook(db, 'a', sig: 'S1', lastReadAt: 3000);
+      final r = await service.restoreDataBatch({
+        'books': [_backupBook(sig: 'S1', lastReadAt: 2000, isPrivate: 1)]
+      });
+      expect((await row('a'))['is_private'], 1);
+      // Local progress is newer, so the privacy change is the only write.
+      expect((r.matched, r.written, r.movedToPrivate), (1, 1, 1));
+      expect((await row('a'))['last_read_at'], 3000);
+    });
+
+    test('backup public never exposes a private local book', () async {
+      expect(await privateAfter(local: 1, backup: 0), 1);
+    });
+    test('backup without the field leaves a private book private', () async {
+      expect(await privateAfter(local: 1), 1);
+    });
+    test('backup without the field leaves a public book public', () async {
+      expect(await privateAfter(local: 0), 0);
+    });
+    test('already private local book is not counted as written', () async {
+      await _insertBook(db, 'a', sig: 'S1', lastReadAt: 3000, isPrivate: 1);
+      final r = await service.restoreDataBatch({
+        'books': [_backupBook(sig: 'S1', lastReadAt: 2000, isPrivate: 1)]
+      });
+      expect((r.matched, r.written, r.movedToPrivate), (1, 0, 0));
+    });
+  });
+
+  test('matched and unmatched are counted across a mixed backup', () async {
+    await _insertBook(db, 'a', sig: 'S1', progress: 0.1, lastReadAt: 3000);
+    final r = await service.restoreDataBatch({
+      'books': [
+        _backupBook(sig: 'S1'), // matched, local newer, nothing to write
+        _backupBook(title: 'Gone', sig: 'S2'),
+        _backupBook(title: 'Gone Too', sig: 'S3'),
+      ]
+    });
+    expect((r.matched, r.written, r.unmatched), (1, 0, 2));
   });
 
   group('progress overwrite', () {
@@ -211,10 +285,10 @@ void main() {
 
     test('matched book with nothing written is not counted', () async {
       await _insertBook(db, 'a', sig: 'S1', progress: 0.1, lastReadAt: 3000);
-      final n = await service.restoreDataBatch({
+      final r = await service.restoreDataBatch({
         'books': [_backupBook(sig: 'S1')]
       });
-      expect(n, 0);
+      expect(r.written, 0);
     });
 
     test('highlights still restore when progress is kept', () async {

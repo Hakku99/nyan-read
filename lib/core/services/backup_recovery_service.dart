@@ -314,7 +314,9 @@ class BackupRecoveryService extends WidgetsBindingObserver {
 
   /// 机制 E: 全局资产导入恢复 (Data Restore)
   /// file_picker 选文件 → Isolate 负责 readAsString + jsonDecode → 主线程 restoreDataBatch
-  Future<int> importGlobalUserData() async {
+  ///
+  /// Returns null when the user cancelled the picker.
+  Future<RestoreResult?> importGlobalUserData() async {
     // 1. 在主线程唤起文件选择器（Platform Channel）
     final pick = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -323,7 +325,7 @@ class BackupRecoveryService extends WidgetsBindingObserver {
     );
 
     if (pick == null || pick.files.single.path == null) {
-      return -1; // 用户取消，无需报错
+      return null; // 用户取消，无需报错
     }
 
     final filePath = pick.files.single.path!;
@@ -333,8 +335,7 @@ class BackupRecoveryService extends WidgetsBindingObserver {
 
     // 3. 将解析后的纯 Dart Map 交给主线程 DatabaseService 批量写入
     final dbService = _dbService;
-    final restoredCount = await dbService.restoreDataBatch(parsedJson);
-    return restoredCount;
+    return dbService.restoreDataBatch(parsedJson);
   }
 
   /// [Isolate 内部] 单纯做文件读取和 JSON 解析，无任何 Platform Channel 调用

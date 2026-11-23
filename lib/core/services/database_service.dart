@@ -1382,10 +1382,12 @@ class DatabaseService {
   ///   - Progress fields are overwritten only by a strictly newer backup
   ///     (`last_read_at`); highlights/bookmarks are restored regardless.
   ///   - Rebind matched highlights/bookmarks to the local UUID before upsert.
-  ///   - Returns the number of books where progress, highlights or bookmarks
-  ///     were actually written; a matched book with nothing to write is not
-  ///     counted, so 0 can mean "matched, but local progress was newer".
-  Future<int> restoreDataBatch(Map<String, dynamic> parsedJson) async {
+  ///   - `is_private` is only ever tightened: a backup `is_private = 1` sets a
+  ///     local public book private; a local private book is never made public.
+  ///   - Returns a [RestoreResult]; a matched book with nothing to write is
+  ///     counted in `matched` but not `written`, so `written == 0` can mean
+  ///     "matched, but local progress was newer".
+  Future<RestoreResult> restoreDataBatch(Map<String, dynamic> parsedJson) async {
     final db = await database;
 
     // 1. Build TWO local indexes: the primary one keyed by content_signature,
@@ -1393,17 +1395,25 @@ class DatabaseService {
     //    a null signature are only reachable via the title index.
     final localBooksRaw = await db.query(
       'books',
-      columns: ['id', 'title', 'content_signature', 'last_read_at'],
+      columns: [
+        'id',
+        'title',
+        'content_signature',
+        'last_read_at',
+        'is_private',
+      ],
     );
     final Map<String, String> localBySignature = {};
     final Map<String, List<String>> unsignedByTitle = {};
     final Map<String, int?> localLastRead = {};
+    final Set<String> localPrivate = {};
     final Set<String> claimed = {};
     for (final row in localBooksRaw) {
       final id = row['id'] as String?;
       if (id == null) continue;
       final sig = row['content_signature'] as String?;
       localLastRead[id] = (row['last_read_at'] as num?)?.toInt();
+      if ((row['is_private'] as num?)?.toInt() == 1) localPrivate.add(id);
       if (sig != null && sig.isNotEmpty) {
         localBySignature[sig] = id;
       } else {
@@ -1429,6 +1439,9 @@ class DatabaseService {
 
     final batch = db.batch();
     int syncedBookCount = 0;
+    int matchedCount = 0;
+    int unmatchedCount = 0;
+    int movedToPrivateCount = 0;
     int legacyFallbackCount = 0;
 
     final books = (parsedJson['books'] as List?) ?? [];
@@ -1453,15 +1466,18 @@ class DatabaseService {
         }
       }
       if (localBookId != null && !claimed.add(localBookId)) {
-        debugPrint(
-            '--- [Restore] Skip book, local match already used: "${title ?? signature}" ---');
+        // Duplicate backup entry for a book already restored: the local book
+        // exists, so it is neither matched again nor "missing on this device".
+        debugPrint('--- [Restore] Skip book, local match already used ---');
         continue;
       }
       if (localBookId == null) {
-        final label = title ?? signature ?? '(unknown)';
-        debugPrint('--- [Restore] Skip book with no local match: "$label" ---');
+        // Never log the title here: it may belong to a private-shelf book.
+        debugPrint('--- [Restore] Skip book with no local match ---');
+        unmatchedCount++;
         continue;
       }
+      matchedCount++;
 
       // 3. Only update progress metadata; never rewrite id or file_path.
       final backupReadAt = (book['last_read_at'] as num?)?.toInt();
@@ -1480,6 +1496,13 @@ class DatabaseService {
       }
       if (backupIsNewer) {
         progressUpdate['last_read_at'] = backupReadAt;
+      }
+      // Tighten only: a backup-private book must not stay public here, but a
+      // local private book is never exposed by an older backup.
+      if ((book['is_private'] as num?)?.toInt() == 1 &&
+          !localPrivate.contains(localBookId)) {
+        progressUpdate['is_private'] = 1;
+        movedToPrivateCount++;
       }
 
       // Counts only books that actually changed, so a restore that kept every
@@ -1533,8 +1556,39 @@ class DatabaseService {
       debugPrint(
           '--- [DatabaseService] Logical restore finished: $syncedBookCount books synced into local assets ---');
     }
-    return syncedBookCount;
+    return RestoreResult(
+      matched: matchedCount,
+      written: syncedBookCount,
+      unmatched: unmatchedCount,
+      movedToPrivate: movedToPrivateCount,
+    );
   }
+}
+
+/// Outcome of [DatabaseService.restoreDataBatch].
+///
+/// Counts are in books, never titles: backups may contain private-shelf
+/// titles and the UI only needs numbers.
+class RestoreResult {
+  const RestoreResult({
+    required this.matched,
+    required this.written,
+    required this.unmatched,
+    this.movedToPrivate = 0,
+  });
+
+  /// Backup books that found a local book.
+  final int matched;
+
+  /// Matched books where progress, highlights, bookmarks or `is_private`
+  /// were actually written (a subset of [matched]).
+  final int written;
+
+  /// Backup books with no local book to restore into.
+  final int unmatched;
+
+  /// Local books set private to follow the backup (a subset of [written]).
+  final int movedToPrivate;
 }
 
 /// Isolate-safe DTO for the cold-backup restore helper.  We collect logs in

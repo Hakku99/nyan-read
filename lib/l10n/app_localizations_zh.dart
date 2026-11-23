@@ -1090,13 +1090,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get emptyShelfSubtitle => '导入一本书开始阅读';
 
   @override
-  String get exportData => '导出数据';
+  String get exportData => '导出阅读记录';
 
   @override
-  String get exportDataSubtitle => '保存到设备或分享';
+  String get exportDataSubtitle => '进度、书签和笔记，不含书籍文件';
 
   @override
-  String get exportDataSheetSubtitle => '选择阅读数据的保存方式';
+  String get exportDataSheetSubtitle => '选择阅读记录的保存方式，不含书籍文件';
 
   @override
   String get saveToDevice => '保存到设备';
@@ -1111,14 +1111,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get shareViaSubtitle => '通过 Gmail、Drive 等应用发送';
 
   @override
-  String get importData => '导入数据';
+  String get importData => '导入阅读记录';
 
   @override
-  String get importDataSubtitle => '从备份文件恢复';
+  String get importDataSubtitle => '恢复进度、书签和笔记；需先导入书籍文件';
 
   @override
   String importSuccess(int count) {
     return '成功恢复 $count 本书！';
+  }
+
+  @override
+  String importUnmatchedNote(int count) {
+    return '另有 $count 本在本机找不到对应的书。';
+  }
+
+  @override
+  String get importMovedToPrivateNote => '部分已按备份放入私密书架。';
+
+  @override
+  String importNoLocalBooks(int count) {
+    return '备份中的 $count 本书在本机找不到，请先导入书籍文件，再重新导入阅读记录。';
   }
 
   @override

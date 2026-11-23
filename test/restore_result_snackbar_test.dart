@@ -1,14 +1,18 @@
-/// `showRestoreResult`: cancelled picker is silent, 0 is a skipped notice,
-/// a positive count is the success message.
+/// `showRestoreResult`: cancelled picker (null) is silent; no local match asks
+/// for the book files first; matched-but-unwritten is a neutral notice;
+/// written is the success message, with optional unmatched / private notes.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nyan_read/core/services/database_service.dart';
 import 'package:nyan_read/core/theme/theme_presets.dart';
 import 'package:nyan_read/l10n/app_localizations.dart';
+import 'package:nyan_read/l10n/app_localizations_en.dart';
+import 'package:nyan_read/l10n/app_localizations_zh.dart';
 import 'package:nyan_read/modules/settings/settings_page.dart';
 
-Future<void> _show(WidgetTester tester, int count) async {
+Future<void> _show(WidgetTester tester, RestoreResult? result) async {
   await tester.pumpWidget(
     MaterialApp(
       theme: themePresets[ThemePreset.creamLight]!.themeData,
@@ -17,7 +21,7 @@ Future<void> _show(WidgetTester tester, int count) async {
       home: Scaffold(
         body: Builder(
           builder: (context) => TextButton(
-            onPressed: () => showRestoreResult(context, count),
+            onPressed: () => showRestoreResult(context, result),
             child: const Text('go'),
           ),
         ),
@@ -36,21 +40,73 @@ Future<void> _expireToast(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('0 shows the nothing-to-restore notice', (tester) async {
-    await _show(tester, 0);
+  testWidgets('matched but nothing written shows the neutral notice',
+      (tester) async {
+    await _show(
+        tester, const RestoreResult(matched: 2, written: 0, unmatched: 1));
     expect(find.textContaining('Nothing to restore'), findsOneWidget);
     expect(find.textContaining('Successfully restored'), findsNothing);
     await _expireToast(tester);
   });
 
-  testWidgets('positive count shows the success message', (tester) async {
-    await _show(tester, 3);
-    expect(find.text('Successfully restored 3 books!'), findsOneWidget);
+  testWidgets('no local match asks to import the book files first',
+      (tester) async {
+    await _show(
+        tester, const RestoreResult(matched: 0, written: 0, unmatched: 5));
+    expect(find.textContaining('None of the 5 books'), findsOneWidget);
+    expect(find.textContaining('Import the book files first'), findsOneWidget);
+    expect(find.textContaining('Successfully restored'), findsNothing);
     await _expireToast(tester);
   });
 
-  testWidgets('-1 (picker cancelled) shows nothing', (tester) async {
-    await _show(tester, -1);
+  testWidgets('empty backup (no books at all) is not "0 books not found"',
+      (tester) async {
+    await _show(
+        tester, const RestoreResult(matched: 0, written: 0, unmatched: 0));
+    expect(find.textContaining('Nothing to restore'), findsOneWidget);
+    expect(find.textContaining('Import the book files first'), findsNothing);
+    await _expireToast(tester);
+  });
+
+  testWidgets('written shows success without extra notes when all matched',
+      (tester) async {
+    await _show(
+        tester, const RestoreResult(matched: 3, written: 3, unmatched: 0));
+    expect(find.text('Successfully restored 3 books!'), findsOneWidget);
+    expect(find.textContaining('on this device'), findsNothing);
+    expect(find.textContaining('private shelf'), findsNothing);
+    await _expireToast(tester);
+  });
+
+  testWidgets('written with unmatched and private moves adds both notes',
+      (tester) async {
+    await _show(
+        tester,
+        const RestoreResult(
+            matched: 3, written: 2, unmatched: 4, movedToPrivate: 1));
+    expect(find.text('Successfully restored 2 books!'), findsOneWidget);
+    expect(find.textContaining('4 more books'), findsOneWidget);
+    expect(find.textContaining('private shelf'), findsOneWidget);
+    await _expireToast(tester);
+  });
+
+  testWidgets('null (picker cancelled) shows nothing', (tester) async {
+    await _show(tester, null);
     expect(find.textContaining('restore'), findsNothing);
+    expect(find.textContaining('device'), findsNothing);
+  });
+
+  // The toast description is capped at two lines (NyanResponse spec): ~44 Latin
+  // or ~26 CJK chars per line at 360dp on device. flutter_test renders with the
+  // Ahem font, so a layout assertion would be meaningless; budget the text.
+  test('both restore notes fit the two-line description budget', () {
+    final en = AppLocalizationsEn();
+    final zh = AppLocalizationsZh();
+    final enNotes =
+        '${en.importUnmatchedNote(99)} ${en.importMovedToPrivateNote}';
+    final zhNotes =
+        '${zh.importUnmatchedNote(99)} ${zh.importMovedToPrivateNote}';
+    expect(enNotes.length, lessThanOrEqualTo(75), reason: enNotes);
+    expect(zhNotes.length, lessThanOrEqualTo(40), reason: zhNotes);
   });
 }
