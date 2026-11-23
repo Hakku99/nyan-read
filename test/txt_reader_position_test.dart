@@ -85,7 +85,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       expectSameViewport(chapter, engine.getCurrentPosition()!);
       await perform(tester, () => engine.seekToProgress(.8));
-      expect(engine.getCurrentPosition()!.paragraphIndex, 79);
+      // Character-based: the one long paragraph at index 20 shifts 80% back
+      // from line 79 to line 77.
+      expect(engine.getCurrentPosition()!.paragraphIndex, 77);
       final before = engine.getCurrentPosition()!;
       await perform(tester, engine.nextPage);
       expect(advanced(before, engine.getCurrentPosition()!), isTrue);

@@ -84,6 +84,22 @@ Afterword
       );
     });
 
+    test('does not treat narrative lines starting with a number as chapters',
+        () async {
+      final engine = await _createEngineWithContent('''
+Chapter 1 The Beginning
+3 days later, he left the village.
+5 people were waiting at the gate.
+3 Days Later
+12 终局
+''');
+      addTearDown(engine.dispose);
+
+      final titles = (await engine.getChapters()).map((c) => c.title).toList();
+
+      expect(titles, ['Chapter 1 The Beginning', '3 Days Later', '12 终局']);
+    });
+
     test('treats standalone numeric headings with subtitle lines as chapters', () async {
       final engine = await _createEngineWithContent('''
 1
