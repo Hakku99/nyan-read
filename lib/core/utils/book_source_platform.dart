@@ -162,6 +162,19 @@ class BookSourcePlatform {
     return result ?? const {'totalCount': 0, 'trees': []};
   }
 
+  /// Number of persisted grants the app holds (0 off Android or on failure).
+  /// Android caps these per app, so a high count means new per-file imports
+  /// will start evicting older books' grants.
+  static Future<int> persistedGrantCount() async {
+    try {
+      final result = await listPersistedPermissions();
+      return (result['totalCount'] as num?)?.toInt() ?? 0;
+    } catch (e) {
+      debugPrint('persistedGrantCount failed: ${e.runtimeType}');
+      return 0;
+    }
+  }
+
   /// Releases a persisted grant (folder removal; also quota give-back when
   /// deleting legacy per-file books). True only if the app's persisted-grant
   /// count actually dropped. The system may record a grant under a different

@@ -329,6 +329,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fileUnavailableCta => '文件不可用';
 
   @override
+  String get bookSourceUnavailableNotice =>
+      '这本书的源文件可能已被移动、重命名、删除，或访问授权已失效。重新导入同一个文件即可恢复，阅读进度和笔记不会丢失。';
+
+  @override
   String get unknown => '未知';
 
   @override
@@ -883,6 +887,25 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String booksRelinked(int count) {
+    return '已重新关联 $count 本书';
+  }
+
+  @override
+  String get importGrantWarningTitle => '已授权的文件较多';
+
+  @override
+  String importGrantWarningBody(int count) {
+    return 'Android 只会保留有限数量的单文件授权，目前已有 $count 个。继续逐个导入可能导致较早导入的书无法打开。导入文件夹只占用一个授权，即可覆盖其中所有书。';
+  }
+
+  @override
+  String get importGrantWarningUseFolder => '导入文件夹';
+
+  @override
+  String get importGrantWarningContinue => '仍然继续';
+
+  @override
   String get noChaptersDetected => '未检测到章节';
 
   @override
@@ -1039,7 +1062,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorFileNotFoundTitle => '这本书迷路了';
 
   @override
-  String get errorFileNotFoundBody => '找不到源文件——它可能已被移动或删除。';
+  String get errorFileNotFoundBody =>
+      '找不到源文件——它可能已被移动、删除，或访问授权已失效。重新导入同一个文件即可恢复，阅读进度和笔记不会丢失。';
 
   @override
   String get errorUnsupportedFormatTitle => 'Nyan 还不能读取这种格式';

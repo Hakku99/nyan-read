@@ -11,13 +11,39 @@ import '../services/database_service.dart';
 import 'book_source_access.dart';
 import 'book_source_platform.dart';
 
+/// Where an already-imported book currently reads from.
+class BookSourceRef {
+  final String bookId;
+  final String sourceType;
+  final String sourceLocator;
+
+  const BookSourceRef({
+    required this.bookId,
+    required this.sourceType,
+    required this.sourceLocator,
+  });
+}
+
+/// Mutable per-batch copy of [BookImportDedupIndex.booksBySignature]; the
+/// lists are copied too so a batch never edits the index it was built from.
+Map<String, List<BookSourceRef>> copyBooksBySignature(
+  Map<String, List<BookSourceRef>> source,
+) =>
+    {for (final e in source.entries) e.key: [...e.value]};
+
 class BookImportDedupIndex {
   final Set<String> signatures;
   final Set<String> normalizedLocators;
 
+  /// Signature → every book carrying it, so a duplicate hit can be traced back
+  /// to the books whose source may need re-linking (several books can share a
+  /// signature, e.g. after a restore).
+  final Map<String, List<BookSourceRef>> booksBySignature;
+
   const BookImportDedupIndex({
     required this.signatures,
     required this.normalizedLocators,
+    this.booksBySignature = const {},
   });
 }
 
@@ -37,6 +63,7 @@ class BookImportFingerprint {
     final rows = await db.getBookImportEntries();
     final signatures = <String>{};
     final normalizedLocators = <String>{};
+    final booksBySignature = <String, List<BookSourceRef>>{};
 
     for (final row in rows) {
       final bookId = row['id'] as String?;
@@ -52,6 +79,15 @@ class BookImportFingerprint {
 
       if (existingSignature != null && existingSignature.isNotEmpty) {
         signatures.add(existingSignature);
+        if (bookId != null && bookId.isNotEmpty) {
+          booksBySignature.putIfAbsent(existingSignature, () => []).add(
+                BookSourceRef(
+                  bookId: bookId,
+                  sourceType: sourceType,
+                  sourceLocator: sourceLocator,
+                ),
+              );
+        }
         continue;
       }
 
@@ -74,7 +110,51 @@ class BookImportFingerprint {
     return BookImportDedupIndex(
       signatures: signatures,
       normalizedLocators: normalizedLocators,
+      booksBySignature: booksBySignature,
     );
+  }
+
+  /// Re-points ONE book among [candidates] (the books sharing a signature hit)
+  /// at the freshly picked source: the first whose current source is
+  /// unreadable, and only when the new source is readable. A readable old
+  /// source is never replaced, so a sampled-signature collision between two
+  /// different files cannot hijack a healthy book. Progress, bookmarks,
+  /// highlights and privacy are untouched (same book id).
+  /// Returns the candidate that was re-linked, or null when none was.
+  static Future<BookSourceRef?> relinkIfStale(
+    DatabaseService db, {
+    required Iterable<BookSourceRef> candidates,
+    required String newSourceType,
+    required String newSourceLocator,
+    required String newStorageType,
+    Future<bool> Function({
+      required String sourceType,
+      required String sourceLocator,
+    }) isAvailable = BookSourceAccess.isAvailableFor,
+  }) async {
+    if (candidates.isEmpty) return null;
+    if (!await isAvailable(
+      sourceType: newSourceType,
+      sourceLocator: newSourceLocator,
+    )) {
+      return null;
+    }
+    for (final existing in candidates) {
+      if (await isAvailable(
+        sourceType: existing.sourceType,
+        sourceLocator: existing.sourceLocator,
+      )) {
+        continue;
+      }
+      await db.relinkBookSource(
+        existing.bookId,
+        locator: newSourceLocator,
+        sourceType: newSourceType,
+        storageType: newStorageType,
+      );
+      return existing;
+    }
+    return null;
   }
 
   /// Returns books that are missing a content signature, for background backfill.

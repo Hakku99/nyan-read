@@ -2,21 +2,34 @@
 /// progress rules can be tested without the shelf screen.
 library;
 
-enum ImportOutcome { imported, skipped, failed }
+/// `relinked`: the file matched an existing book whose source had gone
+/// unreadable, so that book now points at the new source (no new row).
+enum ImportOutcome { imported, skipped, relinked, failed }
 
 class FolderImportResult {
   const FolderImportResult({
     required this.imported,
     required this.skipped,
     required this.stoppedEarly,
+    this.relinked = 0,
   });
 
   final int imported;
   final int skipped;
+  final int relinked;
 
   /// True only when a cancel actually left documents unprocessed; a cancel
   /// that arrives while the last book is in flight is not "early".
   final bool stoppedEarly;
+}
+
+/// Joins the non-empty [parts] of an import-result toast description with a
+/// space, or null when there is nothing to say. Used so the "re-linked" note
+/// never displaces the "cancelled" note: a cancel that left files behind must
+/// not read like a full import.
+String? joinToastDescription(Iterable<String?> parts) {
+  final kept = parts.whereType<String>().where((p) => p.isNotEmpty);
+  return kept.isEmpty ? null : kept.join(' ');
 }
 
 /// Imports [docs] one by one. [isCancelled] is checked before each document,
@@ -30,6 +43,7 @@ Future<FolderImportResult> importFolderDocs(
 }) async {
   var imported = 0;
   var skipped = 0;
+  var relinked = 0;
   var stoppedEarly = false;
   for (var i = 0; i < docs.length; i++) {
     if (isCancelled()) {
@@ -43,10 +57,12 @@ Future<FolderImportResult> importFolderDocs(
     final outcome = await importOne(uri, name);
     if (outcome == ImportOutcome.imported) imported++;
     if (outcome == ImportOutcome.skipped) skipped++;
+    if (outcome == ImportOutcome.relinked) relinked++;
   }
   return FolderImportResult(
     imported: imported,
     skipped: skipped,
+    relinked: relinked,
     stoppedEarly: stoppedEarly,
   );
 }

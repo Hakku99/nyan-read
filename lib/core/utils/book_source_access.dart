@@ -16,7 +16,7 @@ class PdfCompatibleSource {
 
 class BookSourceAccess {
   static const String unavailableMessage =
-      "This book's source file may have been moved, renamed, deleted, or access has expired. Remove it from your bookshelf and import it again.";
+      "This book's source file may have been moved, renamed, deleted, or access has expired. Import the same file again to restore it; your progress and notes are kept.";
 
   static String technicalMessage(Book book) => technicalMessageFor(
         sourceType: book.sourceType,

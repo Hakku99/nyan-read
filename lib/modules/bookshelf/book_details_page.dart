@@ -296,7 +296,7 @@ class BookDetailsPage extends StatelessWidget {
                       if (hasAvailability && !isAvailable) ...[
                         const SizedBox(height: 10),
                         _UnavailableNotice(
-                          message: BookSourceAccess.unavailableMessage,
+                          message: loc.bookSourceUnavailableNotice,
                         ),
                       ],
                       const SizedBox(height: NyanSpacing.space16),

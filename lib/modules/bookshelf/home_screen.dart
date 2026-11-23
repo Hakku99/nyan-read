@@ -245,8 +245,36 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     }
   }
 
+  /// Per-file imports each hold one persisted SAF grant and the system caps
+  /// them per app; past this count the folder import (one grant for the whole
+  /// folder) is the safer path. Below the cap with margin so the warning
+  /// lands before older books start losing access.
+  static const int _kGrantWarnThreshold = 100;
+
   Future<void> _importBook(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
+
+    if (!kIsWeb && Platform.isAndroid) {
+      final grants = await BookSourcePlatform.persistedGrantCount();
+      if (!context.mounted) return;
+      if (grants > _kGrantWarnThreshold) {
+        final useFolder = await showNyanConfirmDialog(
+          context,
+          title: loc.importGrantWarningTitle,
+          description: loc.importGrantWarningBody(grants),
+          confirmLabel: loc.importGrantWarningUseFolder,
+          cancelLabel: loc.importGrantWarningContinue,
+          tone: NyanConfirmTone.warning,
+        );
+        // null = dismissed outside the dialog: abort rather than guess.
+        if (useFolder == null || !context.mounted) return;
+        if (useFolder) {
+          await _importLibraryFolder(context);
+          return;
+        }
+      }
+    }
+
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowMultiple: true,
@@ -286,8 +314,10 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
       int successCount = 0;
       int skippedCount = 0;
+      int relinkedCount = 0;
       final knownSignatures = <String>{...existingIndex.signatures};
       final knownLocators = <String>{...existingIndex.normalizedLocators};
+      final knownBooks = copyBooksBySignature(existingIndex.booksBySignature);
 
       for (final file in result.files) {
         final importSource = await _resolveImportedSource(file);
@@ -298,11 +328,13 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           importSource: importSource,
           knownLocators: knownLocators,
           knownSignatures: knownSignatures,
+          knownBooks: knownBooks,
           isPrivate: isPrivate,
           transientFilePath: file.path,
         );
         if (outcome == ImportOutcome.imported) successCount++;
         if (outcome == ImportOutcome.skipped) skippedCount++;
+        if (outcome == ImportOutcome.relinked) relinkedCount++;
       }
 
       await _cleanupPickerTempFiles();
@@ -312,10 +344,20 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       if (!context.mounted) return;
 
       final shelfLabel = isPrivate ? loc.privateShelf : loc.publicShelf;
+      // Re-link toasts carry a count only: titles could belong to private
+      // books while this import runs on the public shelf.
       if (successCount > 0) {
         SnackBarUtils.show(
           context,
           loc.importedBooks(successCount, shelfLabel),
+          description:
+              relinkedCount > 0 ? loc.booksRelinked(relinkedCount) : null,
+          tone: NyanSnackTone.success,
+        );
+      } else if (relinkedCount > 0) {
+        SnackBarUtils.show(
+          context,
+          loc.booksRelinked(relinkedCount),
           tone: NyanSnackTone.success,
         );
       } else if (skippedCount > 0) {
@@ -335,7 +377,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         );
       }
 
-      if (successCount > 0) {
+      if (successCount > 0 || relinkedCount > 0) {
         _vm.loadBooks();
       }
     } catch (e) {
@@ -376,6 +418,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     required _ImportedBookSource importSource,
     required Set<String> knownLocators,
     required Set<String> knownSignatures,
+    required Map<String, List<BookSourceRef>> knownBooks,
     required bool isPrivate,
     String? transientFilePath,
   }) async {
@@ -393,10 +436,35 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         transientFilePath: transientFilePath,
       );
 
-      final isDuplicate = knownLocators.contains(normalizedSourceLocator) ||
+      final isLocatorHit = knownLocators.contains(normalizedSourceLocator);
+      final isDuplicate = isLocatorHit ||
           (contentSignature != null &&
               knownSignatures.contains(contentSignature));
       if (isDuplicate) {
+        // Same content under a new locator: the old book may just have lost
+        // its source (SAF grant reclaimed, file moved). Locator-only hits are
+        // the same source, whose grant was already re-persisted upstream.
+        final candidates =
+            contentSignature == null ? null : knownBooks[contentSignature];
+        if (!isLocatorHit && candidates != null) {
+          final relinked = await BookImportFingerprint.relinkIfStale(
+            db,
+            candidates: candidates,
+            newSourceType: importSource.sourceType,
+            newSourceLocator: importSource.sourceLocator,
+            newStorageType: importSource.storageType,
+          );
+          if (relinked != null) {
+            debugPrint('Relinked book source: $fileName');
+            knownLocators.add(normalizedSourceLocator);
+            candidates[candidates.indexOf(relinked)] = BookSourceRef(
+              bookId: relinked.bookId,
+              sourceType: importSource.sourceType,
+              sourceLocator: importSource.sourceLocator,
+            );
+            return ImportOutcome.relinked;
+          }
+        }
         debugPrint('Skipping duplicate import: $fileName');
         return ImportOutcome.skipped;
       }
@@ -432,6 +500,13 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       knownLocators.add(normalizedSourceLocator);
       if (contentSignature != null) {
         knownSignatures.add(contentSignature);
+        knownBooks.putIfAbsent(contentSignature, () => []).add(
+              BookSourceRef(
+                bookId: book.id,
+                sourceType: importSource.sourceType,
+                sourceLocator: importSource.sourceLocator,
+              ),
+            );
       }
       return ImportOutcome.imported;
     } catch (e) {
@@ -520,6 +595,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
       final knownSignatures = <String>{...existingIndex.signatures};
       final knownLocators = <String>{...existingIndex.normalizedLocators};
+      final knownBooks = copyBooksBySignature(existingIndex.booksBySignature);
 
       // ponytail: fingerprinting uses a native sampled read (full read only
       // for providers without random access), but EPUB metadata still copies
@@ -542,11 +618,13 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           ),
           knownLocators: knownLocators,
           knownSignatures: knownSignatures,
+          knownBooks: knownBooks,
           isPrivate: isPrivate,
         ),
       );
       final successCount = result.imported;
       final skippedCount = result.skipped;
+      final relinkedCount = result.relinked;
 
       if (!context.mounted) return;
       await _awaitMinLoadingDisplay(loadingShownAt);
@@ -559,6 +637,16 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         SnackBarUtils.show(
           context,
           loc.importedBooks(successCount, shelfLabel),
+          description: joinToastDescription([
+            relinkedCount > 0 ? loc.booksRelinked(relinkedCount) : null,
+            cancelNote,
+          ]),
+          tone: NyanSnackTone.success,
+        );
+      } else if (relinkedCount > 0) {
+        SnackBarUtils.show(
+          context,
+          loc.booksRelinked(relinkedCount),
           description: cancelNote,
           tone: NyanSnackTone.success,
         );
@@ -583,7 +671,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         );
       }
 
-      if (successCount > 0) {
+      if (successCount > 0 || relinkedCount > 0) {
         _vm.loadBooks();
       }
     } catch (e) {
