@@ -173,14 +173,24 @@ class BackupRecoveryService extends WidgetsBindingObserver {
       debugPrint('--- [Cache Scavenger] 启动全局临时碎片扫荡，目标沙盒: ${tempDir.path} ---');
 
       // 绞肉机隔离：将耗时的目录遍历和成百上千个小文件的物理删除推送至 Isolate
-      await Isolate.run(() => _heavyCacheCleanupTask(tempDir.path));
+      await Isolate.run(() => cacheCleanupTask(tempDir.path));
     } catch (e, stack) {
       debugPrint('--- [Cache Scavenger] 清道夫防线崩溃: $e\n$stack ---');
     }
   }
 
+  /// Export JSON lives in the temp dir until shared/saved. Share targets may
+  /// read it after `share()` returns, so it can't be deleted right away; a
+  /// previous session's export is always stale, so the scavenger removes it
+  /// regardless of age.
+  static bool _isExportFile(String path) {
+    final name = basename(path);
+    return name.startsWith('nyan_read_export_') && name.endsWith('.json');
+  }
+
   /// 顶级方法，用于被 Isolate.run() 调用
-  static void _heavyCacheCleanupTask(String tempDirPath) {
+  @visibleForTesting
+  static void cacheCleanupTask(String tempDirPath) {
     try {
       final tempDir = Directory(tempDirPath);
       if (!tempDir.existsSync()) return;
@@ -200,7 +210,7 @@ class BackupRecoveryService extends WidgetsBindingObserver {
             final differenceHours = now.difference(lastModified).inHours;
 
             // 仅清理老化超过 24 小时（24小时）的残留物
-            if (differenceHours >= 24) {
+            if (differenceHours >= 24 || _isExportFile(entity.path)) {
               final size = entity.lengthSync();
               entity.deleteSync();
               deletedSize += size;

@@ -135,13 +135,24 @@ Future<void> _saveToDevice(
   String exportFilePath,
   AppLocalizations loc,
 ) async {
-  final savedPath = await FilePicker.platform.saveFile(
-    dialogTitle: loc.saveToDevice,
-    fileName: 'nyan_read_export.json',
-    bytes: await File(exportFilePath).readAsBytes(),
-  );
-  if (savedPath != null && context.mounted) {
-    SnackBarUtils.show(context, loc.exportSaved, tone: NyanSnackTone.success);
+  final file = File(exportFilePath);
+  try {
+    final savedPath = await FilePicker.platform.saveFile(
+      dialogTitle: loc.saveToDevice,
+      fileName: 'nyan_read_export.json',
+      bytes: await file.readAsBytes(),
+    );
+    if (savedPath != null && context.mounted) {
+      SnackBarUtils.show(context, loc.exportSaved, tone: NyanSnackTone.success);
+    }
+  } finally {
+    // The saved copy is independent; don't leave plaintext notes in cache.
+    // Dismissed/shared exports are removed by the next-launch scavenger.
+    try {
+      await file.delete();
+    } catch (e) {
+      debugPrint('Export temp cleanup failed: ${e.runtimeType}');
+    }
   }
 }
 
