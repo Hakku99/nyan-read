@@ -1145,6 +1145,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get importNothingRestored =>
+      'Nothing to restore: no matching books, or your local progress is newer.';
+
+  @override
   String importFailed(String error) {
     return 'Import failed: $error';
   }

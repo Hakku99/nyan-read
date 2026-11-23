@@ -524,6 +524,7 @@
       }
     }
   },
+  "importNothingRestored": "没有可恢复的内容：没有匹配的书，或本地进度更新。",
   "importFailed": "导入失败：{error}",
   "@importFailed": {
     "placeholders": {

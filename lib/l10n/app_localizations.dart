@@ -2114,6 +2114,12 @@ abstract class AppLocalizations {
   /// **'Successfully restored {count} books!'**
   String importSuccess(int count);
 
+  /// No description provided for @importNothingRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to restore: no matching books, or your local progress is newer.'**
+  String get importNothingRestored;
+
   /// No description provided for @importFailed.
   ///
   /// In en, this message translates to:

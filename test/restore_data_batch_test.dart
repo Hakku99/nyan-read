@@ -209,6 +209,14 @@ void main() {
       expect(await restoredProgress(local: 1000, backup: null), 0.1);
     });
 
+    test('matched book with nothing written is not counted', () async {
+      await _insertBook(db, 'a', sig: 'S1', progress: 0.1, lastReadAt: 3000);
+      final n = await service.restoreDataBatch({
+        'books': [_backupBook(sig: 'S1')]
+      });
+      expect(n, 0);
+    });
+
     test('highlights still restore when progress is kept', () async {
       await _insertBook(db, 'a', sig: 'S1', progress: 0.1, lastReadAt: 3000);
       await service.restoreDataBatch({

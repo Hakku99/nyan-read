@@ -546,6 +546,7 @@
       }
     }
   },
+  "importNothingRestored": "Nothing to restore: no matching books, or your local progress is newer.",
   "importFailed": "Import failed: {error}",
   "@importFailed": {
     "placeholders": {

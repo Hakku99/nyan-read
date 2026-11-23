@@ -69,8 +69,7 @@ Future<void> _handleExportData(BuildContext context, WidgetRef ref) async {
   } catch (e) {
     debugPrint('Export privacy gate check failed: $e');
     if (context.mounted) {
-      SnackBarUtils.show(context, loc.exportFailed(e.toString()),
-          tone: NyanSnackTone.error);
+      SnackBarUtils.show(context, loc.exportFailed(e.toString()), tone: NyanSnackTone.error);
     }
     return;
   }
@@ -96,7 +95,8 @@ Future<void> _handleExportData(BuildContext context, WidgetRef ref) async {
   } catch (e) {
     if (context.mounted) {
       _closeDialog(context);
-      SnackBarUtils.show(context, loc.exportFailed(e.toString()), tone: NyanSnackTone.error);
+      SnackBarUtils.show(context, loc.exportFailed(e.toString()),
+          tone: NyanSnackTone.error);
     }
   }
 }
@@ -165,6 +165,27 @@ Future<void> _shareFile(String exportFilePath) async {
 
 // ── Import flow ───────────────────────────────────────────────────────────────
 
+/// -1 means the picker was cancelled; 0 means nothing was written (no
+/// matching books, or local progress is newer and the backup has no notes).
+@visibleForTesting
+void showRestoreResult(BuildContext context, int restoredCount) {
+  if (restoredCount == -1) return;
+  final loc = AppLocalizations.of(context)!;
+  if (restoredCount == 0) {
+    SnackBarUtils.show(
+      context,
+      loc.importNothingRestored,
+      tone: NyanSnackTone.skipped,
+    );
+    return;
+  }
+  SnackBarUtils.show(
+    context,
+    loc.importSuccess(restoredCount),
+    tone: NyanSnackTone.success,
+  );
+}
+
 Future<void> _handleImportData(BuildContext context, WidgetRef ref) async {
   final loc = AppLocalizations.of(context)!;
   _showLoadingDialog(
@@ -178,12 +199,7 @@ Future<void> _handleImportData(BuildContext context, WidgetRef ref) async {
     final restoredCount = await backupService.importGlobalUserData();
     if (context.mounted) _closeDialog(context);
     if (!context.mounted) return;
-    if (restoredCount == -1) return;
-    SnackBarUtils.show(
-      context,
-      loc.importSuccess(restoredCount),
-      tone: NyanSnackTone.success,
-    );
+    showRestoreResult(context, restoredCount);
   } catch (e) {
     if (context.mounted) {
       _closeDialog(context);

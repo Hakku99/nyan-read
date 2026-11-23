@@ -1025,6 +1025,9 @@ class DatabaseService {
   ///   - Progress fields are overwritten only by a strictly newer backup
   ///     (`last_read_at`); highlights/bookmarks are restored regardless.
   ///   - Rebind matched highlights/bookmarks to the local UUID before upsert.
+  ///   - Returns the number of books where progress, highlights or bookmarks
+  ///     were actually written; a matched book with nothing to write is not
+  ///     counted, so 0 can mean "matched, but local progress was newer".
   Future<int> restoreDataBatch(Map<String, dynamic> parsedJson) async {
     final db = await database;
 
@@ -1103,15 +1106,6 @@ class DatabaseService {
         continue;
       }
 
-      if (matchedByLegacy) {
-        legacyFallbackCount++;
-        debugPrint(
-            '--- [Restore][legacy] Title-fallback matched: "${title ?? '(no title)'}" -> $localBookId ---');
-      } else {
-        debugPrint(
-            '--- [Restore] Signature-matched local book: "${title ?? '(no title)'}" -> $localBookId ---');
-      }
-
       // 3. Only update progress metadata; never rewrite id or file_path.
       final backupReadAt = (book['last_read_at'] as num?)?.toInt();
       final localReadAt = localLastRead[localBookId];
@@ -1131,15 +1125,20 @@ class DatabaseService {
         progressUpdate['last_read_at'] = backupReadAt;
       }
 
+      // Counts only books that actually changed, so a restore that kept every
+      // local progress and had no notes reports 0 instead of "restored N".
+      var wrote = false;
       if (progressUpdate.isNotEmpty) {
         batch.update('books', progressUpdate,
             where: 'id = ?', whereArgs: [localBookId]);
+        wrote = true;
       }
 
       // 4. Rebind highlights/bookmarks book_id to the local UUID before upsert.
       final highlights = (book['highlights'] as List?) ?? [];
       for (final h in highlights) {
         if (h is Map<String, dynamic>) {
+          wrote = true;
           final sanitized = sanitize(
             Map<String, dynamic>.from(h)..['book_id'] = localBookId,
             validHighlightCols,
@@ -1152,6 +1151,7 @@ class DatabaseService {
       final bookmarks = (book['bookmarks'] as List?) ?? [];
       for (final b in bookmarks) {
         if (b is Map<String, dynamic>) {
+          wrote = true;
           final sanitized = sanitize(
             Map<String, dynamic>.from(b)..['book_id'] = localBookId,
             validBookmarkCols,
@@ -1161,7 +1161,10 @@ class DatabaseService {
         }
       }
 
-      syncedBookCount++;
+      if (matchedByLegacy) legacyFallbackCount++;
+      debugPrint(
+          '--- [Restore]${matchedByLegacy ? '[legacy] Title-fallback' : ' Signature'} matched "${title ?? '(no title)'}" -> $localBookId, ${wrote ? 'wrote data' : 'nothing to write'} ---');
+      if (wrote) syncedBookCount++;
     }
 
     // 5. noResult: true avoids returning rowIds for every row and reduces memory pressure.

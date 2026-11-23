@@ -1084,6 +1084,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get importNothingRestored => '没有可恢复的内容：没有匹配的书，或本地进度更新。';
+
+  @override
   String importFailed(String error) {
     return '导入失败：$error';
   }
