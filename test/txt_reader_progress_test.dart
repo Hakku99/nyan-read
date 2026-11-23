@@ -55,8 +55,9 @@ void main() {
   test('seekToProgress is the inverse of getProgress', () async {
     for (final p in [0.0, 0.25, 0.5, 0.9, 1.0]) {
       await engine.seekToProgress(p);
-      // One long paragraph is ~2% of this book.
-      expect(engine.getProgress(), closeTo(p, 0.02), reason: 'p=$p');
+      // Nearest paragraph start: error is at most half a long paragraph
+      // (~1% of this book); a floor would allow ~2%.
+      expect(engine.getProgress(), closeTo(p, 0.01), reason: 'p=$p');
     }
   });
 }

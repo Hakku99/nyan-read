@@ -602,10 +602,15 @@ class TxtReaderEngine
       r'^\s*(?:volume|vol\.?|book|part)\s+(?:\d+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b\s+(?:chapter|chap\.)\s+(?:\d+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b(?:[\uff1a:._\- ]\s*.*)?$',
       caseSensitive: false,
     ),
-    RegExp(r'^\s*\d{1,4}[\u3001\uff0c.,:\uff1a\-]\s*\S.+$'),
-    // "12 终局" yes; "3 days later, he left." no: the title must not start
-    // with a lowercase ASCII letter or contain sentence punctuation.
-    RegExp(r'^\s*\d{1,4}\s+(?![a-z])[^,.;!?，。；！？]+$'),
+    // "1.开局" / "1.2 Overview" yes; "5, he said" / "3.5 million people" no:
+    // the text after the separator must not start with a lowercase word.
+    RegExp(r'^\s*\d{1,4}[\u3001\uff0c.,:\uff1a\-]\s*(?![a-z]|\d+\s+[a-z])\S.+$'),
+    // "12 终局" / "7 Rise, and Shine" yes; "3 days later, he left." no: the
+    // title must not start with a lowercase ASCII letter and is capped at 30
+    // chars. ponytail: a short capitalised sentence ("300 Spartans fought
+    // bravely") is indistinguishable from a title by regex; add a
+    // title-case check only if such lines show up in real books.
+    RegExp(r'^\s*\d{1,4}\s+(?![a-z])\S.{0,29}$'),
   ];
   static final List<RegExp> _specialHeadingPatterns = [
     RegExp(
@@ -779,8 +784,9 @@ class TxtReaderEngine
     final lastOffset = _paragraphOffsets[_lineCount - 1];
     if (lastOffset == 0) return 1.0;
     // Character-based so the percentage agrees with getCurrentPageIndex().
-    // Divided by the last paragraph's start (not total length) so the final
-    // paragraph reads exactly 1.0 — the bookshelf treats >= 1 as finished.
+    // Divided by the last paragraph's start (not total length) so the scale
+    // is exactly 0..1 and invertible. The anchor is the topmost visible
+    // paragraph, so 1.0 is only reported when the last item is at the top.
     return _paragraphOffsets[index.clamp(0, _lineCount - 1)] / lastOffset;
   }
 
@@ -1151,8 +1157,14 @@ class TxtReaderEngine
     // progress slider jumps after a drag.
     final target =
         (progress.clamp(0.0, 1.0) * _paragraphOffsets[_lineCount - 1]).round();
-    await goToPosition(
-        ReadingPosition(paragraphIndex: _paragraphIndexForOffset(target)));
+    var index = _paragraphIndexForOffset(target);
+    // Nearest paragraph start, not floor: avoids the slider snapping back by
+    // up to a whole paragraph when it is long.
+    if (index + 1 < _lineCount &&
+        _paragraphOffsets[index + 1] - target < target - _paragraphOffsets[index]) {
+      index++;
+    }
+    await goToPosition(ReadingPosition(paragraphIndex: index));
   }
 
   @override
