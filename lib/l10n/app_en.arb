@@ -539,17 +539,34 @@
   "errorUnknownBody": "An unexpected error occurred. Please try again.",
   "emptyShelfTitle": "Bookshelf is waiting for stories",
   "emptyShelfSubtitle": "Import a book to start reading",
-  "exportData": "Export Data",
-  "exportDataSubtitle": "Save to device or share",
-  "exportDataSheetSubtitle": "Choose where your reading data goes.",
+  "exportData": "Export Reading Data",
+  "exportDataSubtitle": "Progress, bookmarks and notes — no book files",
+  "exportDataSheetSubtitle": "Choose where your reading data goes. Book files are not included.",
   "saveToDevice": "Save to Device",
   "saveToDeviceSubtitle": "Store a JSON backup in your Files",
   "shareVia": "Share...",
   "shareViaSubtitle": "Send via Gmail, Drive or another app",
-  "importData": "Import Data",
-  "importDataSubtitle": "Restore from a backup file",
+  "importData": "Import Reading Data",
+  "importDataSubtitle": "Restores progress, bookmarks and notes — import your book files first",
   "importSuccess": "Successfully restored {count} books!",
   "@importSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importUnmatchedNote": "{count, plural, one{1 more book isn't on this device.} other{{count} more books aren't on this device.}}",
+  "@importUnmatchedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importMovedToPrivateNote": "Some books were moved to the private shelf to match the backup.",
+  "importNoLocalBooks": "{count, plural, one{The book in this backup isn't on this device.} other{None of the {count} books in this backup are on this device.}} Import the book files first, then import your reading data again.",
+  "@importNoLocalBooks": {
     "placeholders": {
       "count": {
         "type": "int"

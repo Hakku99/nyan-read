@@ -2081,19 +2081,19 @@ abstract class AppLocalizations {
   /// No description provided for @exportData.
   ///
   /// In en, this message translates to:
-  /// **'Export Data'**
+  /// **'Export Reading Data'**
   String get exportData;
 
   /// No description provided for @exportDataSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Save to device or share'**
+  /// **'Progress, bookmarks and notes — no book files'**
   String get exportDataSubtitle;
 
   /// No description provided for @exportDataSheetSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose where your reading data goes.'**
+  /// **'Choose where your reading data goes. Book files are not included.'**
   String get exportDataSheetSubtitle;
 
   /// No description provided for @saveToDevice.
@@ -2123,13 +2123,13 @@ abstract class AppLocalizations {
   /// No description provided for @importData.
   ///
   /// In en, this message translates to:
-  /// **'Import Data'**
+  /// **'Import Reading Data'**
   String get importData;
 
   /// No description provided for @importDataSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Restore from a backup file'**
+  /// **'Restores progress, bookmarks and notes — import your book files first'**
   String get importDataSubtitle;
 
   /// No description provided for @importSuccess.
@@ -2137,6 +2137,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Successfully restored {count} books!'**
   String importSuccess(int count);
+
+  /// No description provided for @importUnmatchedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 more book isn\'t on this device.} other{{count} more books aren\'t on this device.}}'**
+  String importUnmatchedNote(int count);
+
+  /// No description provided for @importMovedToPrivateNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Some books were moved to the private shelf to match the backup.'**
+  String get importMovedToPrivateNote;
+
+  /// No description provided for @importNoLocalBooks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{The book in this backup isn\'t on this device.} other{None of the {count} books in this backup are on this device.}} Import the book files first, then import your reading data again.'**
+  String importNoLocalBooks(int count);
 
   /// No description provided for @importNothingRestored.
   ///

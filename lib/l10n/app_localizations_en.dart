@@ -1127,13 +1127,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emptyShelfSubtitle => 'Import a book to start reading';
 
   @override
-  String get exportData => 'Export Data';
+  String get exportData => 'Export Reading Data';
 
   @override
-  String get exportDataSubtitle => 'Save to device or share';
+  String get exportDataSubtitle =>
+      'Progress, bookmarks and notes — no book files';
 
   @override
-  String get exportDataSheetSubtitle => 'Choose where your reading data goes.';
+  String get exportDataSheetSubtitle =>
+      'Choose where your reading data goes. Book files are not included.';
 
   @override
   String get saveToDevice => 'Save to Device';
@@ -1148,14 +1150,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareViaSubtitle => 'Send via Gmail, Drive or another app';
 
   @override
-  String get importData => 'Import Data';
+  String get importData => 'Import Reading Data';
 
   @override
-  String get importDataSubtitle => 'Restore from a backup file';
+  String get importDataSubtitle =>
+      'Restores progress, bookmarks and notes — import your book files first';
 
   @override
   String importSuccess(int count) {
     return 'Successfully restored $count books!';
+  }
+
+  @override
+  String importUnmatchedNote(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more books aren\'t on this device.',
+      one: '1 more book isn\'t on this device.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importMovedToPrivateNote =>
+      'Some books were moved to the private shelf to match the backup.';
+
+  @override
+  String importNoLocalBooks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'None of the $count books in this backup are on this device.',
+      one: 'The book in this backup isn\'t on this device.',
+    );
+    return '$_temp0 Import the book files first, then import your reading data again.';
   }
 
   @override

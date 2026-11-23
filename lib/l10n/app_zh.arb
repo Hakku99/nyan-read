@@ -517,17 +517,34 @@
   "errorUnknownBody": "发生了意外错误，请稍后再试。",
   "emptyShelfTitle": "书架正在等待新的故事",
   "emptyShelfSubtitle": "导入一本书开始阅读",
-  "exportData": "导出数据",
-  "exportDataSubtitle": "保存到设备或分享",
-  "exportDataSheetSubtitle": "选择阅读数据的保存方式",
+  "exportData": "导出阅读记录",
+  "exportDataSubtitle": "进度、书签和笔记，不含书籍文件",
+  "exportDataSheetSubtitle": "选择阅读记录的保存方式，不含书籍文件",
   "saveToDevice": "保存到设备",
   "saveToDeviceSubtitle": "将 JSON 备份存储到文件",
   "shareVia": "分享...",
   "shareViaSubtitle": "通过 Gmail、Drive 等应用发送",
-  "importData": "导入数据",
-  "importDataSubtitle": "从备份文件恢复",
+  "importData": "导入阅读记录",
+  "importDataSubtitle": "恢复进度、书签和笔记；需先导入书籍文件",
   "importSuccess": "成功恢复 {count} 本书！",
   "@importSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importUnmatchedNote": "另有 {count} 本在本机找不到对应的书。",
+  "@importUnmatchedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importMovedToPrivateNote": "部分书籍已按备份放入私密书架。",
+  "importNoLocalBooks": "备份中的 {count} 本书在本机找不到，请先导入书籍文件，再重新导入阅读记录。",
+  "@importNoLocalBooks": {
     "placeholders": {
       "count": {
         "type": "int"
