@@ -462,6 +462,15 @@ Role (2026-07 self-hosted stack — no epub_view/epubx dependency):
 - restore and persist location by absolute paragraph index; EPUB payloads
   written since the spine-primary switch carry `enumVersion` in their JSON
   (forensic marker, never consulted on restore)
+- **enumeration v3 (2026-11):** `<svg><image xlink:href|href>` pages emit image
+  paragraphs, and `<rt>`/`<rp>` text is dropped from the base text. Books
+  with svg images gain slots (a Sigil cover page shifts every later index by
+  1), so their stored positions/bookmarks/progress drift once — there is no
+  remap for those. Highlights self-heal: `ContentMetaManager._healHighlights`
+  falls back to `AnchorHealer.findHealedInWindow` (±20 paragraphs, nearest
+  first, forward before backward, full `pre+exact+post` signature required
+  outside the stored paragraph) and writes the new `paragraph_index` back.
+  Books without svg images enumerate identically to v2
 
 Core characteristics:
 - progress is paragraph based rather than page based

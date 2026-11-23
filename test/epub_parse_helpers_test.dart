@@ -219,6 +219,62 @@ void main() {
       expect(result.paragraphKinds[1], EpubParagraphKind.image);
     });
 
+    test('<svg><image> pages become image paragraphs (xlink:href and href)',
+        () async {
+      // Sigil/Calibre cover-page layout, plus the SVG2 plain-href spelling.
+      final result = await computeEpubParseResultFromSources([
+        _chapter(
+            title: 'Cover',
+            fileName: 'cover.xhtml',
+            html: _html([
+              '<div><svg xmlns="http://www.w3.org/2000/svg" '
+                  'xmlns:xlink="http://www.w3.org/1999/xlink" '
+                  'viewBox="0 0 1 1"><image width="1" height="1" '
+                  'xlink:href="../Images/cover.jpg"/></svg></div>',
+              '<p>body</p>',
+              '<svg xmlns="http://www.w3.org/2000/svg"><image href="pic.png"/>'
+                  '</svg>',
+            ])),
+      ]);
+
+      expect(result.paragraphCount, 3);
+      expect(result.paragraphKinds[0], EpubParagraphKind.image);
+      expect(contentAt(result, 0), '../Images/cover.jpg');
+      expect(result.paragraphKinds[1], EpubParagraphKind.text);
+      expect(result.paragraphKinds[2], EpubParagraphKind.image);
+      expect(contentAt(result, 2), 'pic.png');
+    });
+
+    test('<svg><image> without an href emits nothing', () async {
+      final result = await computeEpubParseResultFromSources([
+        _chapter(
+            title: 'One',
+            fileName: 'ch1.xhtml',
+            html: _html([
+              '<p>text</p><svg xmlns="http://www.w3.org/2000/svg"><image/></svg>'
+            ])),
+      ]);
+
+      expect(result.paragraphCount, 1);
+    });
+
+    test('ruby annotations (<rt>/<rp>) are dropped from the base text',
+        () async {
+      final result = await computeEpubParseResultFromSources([
+        _chapter(
+            title: 'One',
+            fileName: 'ch1.xhtml',
+            html: _html([
+              '<p><ruby>漢字<rp>(</rp><rt>かんじ</rt><rp>)</rp></ruby>です</p>',
+              '<p>no ruby here</p>',
+            ])),
+      ]);
+
+      expect(result.paragraphCount, 2);
+      expect(contentAt(result, 0), '漢字です');
+      expect(contentAt(result, 1), 'no ruby here');
+    });
+
     test('CJK text round-trips through the UTF-8 byte store', () async {
       final result = await computeEpubParseResultFromSources([
         _chapter(

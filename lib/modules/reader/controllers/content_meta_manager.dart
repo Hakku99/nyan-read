@@ -9,6 +9,14 @@ import '../../../core/services/database_service.dart';
 import '../../../core/utils/anchor_healer.dart';
 import '../reader_engine/reader_engine.dart';
 
+/// How many paragraphs either side of a highlight's stored paragraph the
+/// healer searches. 20 covers a book with a cover page plus a few dozen
+/// inline illustrations before the highlight; wider windows start to risk
+/// cross-paragraph false hits. ponytail: a fixed window, not an exact
+/// old→new index remap — add the remap if highlights past ~20 inserted
+/// slots go missing in real books.
+const int _kHealWindow = 20;
+
 class ContentMetaManager {
   final ReaderEngine engine;
   final Book book;
@@ -95,21 +103,17 @@ class ContentMetaManager {
     // used to spawn one isolate per highlight, serially, on book open.
     final results = List<Highlight?>.filled(raw.length, null);
     final slowIndexes = <int>[];
-    final slowParagraphTexts = <String>[];
+    final slowWindows = <List<String?>>[];
 
     for (var i = 0; i < raw.length; i++) {
       final h = raw[i];
       final paragraphText = textCapability.getParagraphText(h.paragraphIndex);
-      if (paragraphText == null) {
-        // Paragraph unavailable (out of range / not loaded); keep as-is.
-        results[i] = h;
-        continue;
-      }
 
       // Fast-Path: stored offsets still select the original text.
       final start = h.startOffset;
       final end = h.endOffset;
-      final isOffsetValid = start >= 0 &&
+      final isOffsetValid = paragraphText != null &&
+          start >= 0 &&
           end <= paragraphText.length &&
           start < end &&
           paragraphText.substring(start, end) == h.selectedText;
@@ -128,32 +132,46 @@ class ContentMetaManager {
         continue;
       }
 
+      // Texts are gathered here because the engine cannot cross into the
+      // isolate; unavailable slots (image paragraphs, out of range) are null.
       slowIndexes.add(i);
-      slowParagraphTexts.add(paragraphText);
+      slowWindows.add([
+        for (var d = -_kHealWindow; d <= _kHealWindow; d++)
+          h.paragraphIndex + d < 0
+              ? null
+              : textCapability.getParagraphText(h.paragraphIndex + d),
+      ]);
     }
 
     // Pass 2: one isolate heals the whole batch.
     if (slowIndexes.isNotEmpty) {
-      final requests = <({String text, String pre, String exact, String post})>[
+      final requests = <({List<String?> window, String pre, String exact, String post})>[
         for (var k = 0; k < slowIndexes.length; k++)
           (
-            text: slowParagraphTexts[k],
+            window: slowWindows[k],
             pre: raw[slowIndexes[k]].preContext,
             exact: raw[slowIndexes[k]].selectedText,
             post: raw[slowIndexes[k]].postContext,
           ),
       ];
-      final healedOffsets = await Isolate.run(
-        () => <int?>[
+      final healed = await Isolate.run(
+        () => [
           for (final r in requests)
-            AnchorHealer.findHealedOffset(r.text, r.pre, r.exact, r.post),
+            AnchorHealer.findHealedInWindow(r.window, r.pre, r.exact, r.post),
         ],
       );
 
       for (var k = 0; k < slowIndexes.length; k++) {
         final h = raw[slowIndexes[k]];
-        final newStart = healedOffsets[k];
-        if (newStart == null) {
+        final result = healed[k];
+        if (result == null) {
+          if (slowWindows[k][_kHealWindow] == null) {
+            // The stored slot has no text (image paragraph / not loaded) and
+            // no neighbour matched: nothing was wrong that we can prove, so
+            // keep it as before.
+            results[slowIndexes[k]] = h;
+            continue;
+          }
           // Healing failed: drop from the render list (offsets would paint
           // in the wrong place) but leave the DB row so the user's note
           // text survives and healing can retry on the next open.
@@ -162,17 +180,21 @@ class ContentMetaManager {
           continue;
         }
 
+        final newStart = result.offset;
         final newEnd = newStart + h.selectedText.length;
+        final newParagraph = h.paragraphIndex + result.delta;
         debugPrint(
-            '[ContentMetaManager] Healed highlight anchor: "${h.selectedText}" ${h.startOffset} -> $newStart');
+            '[ContentMetaManager] Healed highlight anchor: "${h.selectedText}" ${h.paragraphIndex}:${h.startOffset} -> $newParagraph:$newStart');
         results[slowIndexes[k]] = h.copyWith(
+          paragraphIndex: newParagraph,
           startOffset: newStart,
           endOffset: newEnd,
           isHealed: 1,
         );
         // Fire-and-forget write-back: a lost write only means healing
         // re-runs on the next open, so blocking the load loop is not worth it.
-        unawaited(_db.updateHighlightHealedOffset(h.id, newStart, newEnd));
+        unawaited(_db.updateHighlightHealedOffset(h.id, newStart, newEnd,
+            paragraphIndex: newParagraph));
       }
     }
 

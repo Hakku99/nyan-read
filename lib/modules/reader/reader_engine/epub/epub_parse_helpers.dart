@@ -130,7 +130,13 @@ class EpubChapterSource {
 /// their payload, so a future migration (or a rollback post-mortem) can tell
 /// which enumeration a stored anchor was measured against. Version-1
 /// (TOC-driven) payloads have no marker.
-const int kEpubEnumerationVersion = 2;
+///
+/// Version 3 (2026-11): `<svg><image>` pages become image paragraphs and
+/// `<rt>`/`<rp>` text is dropped. Books containing svg images gain slots, so
+/// their stored positions/bookmarks drift once (a Sigil cover page shifts
+/// everything by 1); highlights re-locate via AnchorHealer's neighbour
+/// window. Books without svg images enumerate identically to version 2.
+const int kEpubEnumerationVersion = 3;
 
 /// Walks an [EpubPackage] (own parser, P3c): content enumeration follows the
 /// SPINE — the authoritative linear reading order (standard EPUB reader
@@ -295,6 +301,18 @@ class _FileLinearization {
 /// of actual prose.
 const Set<String> _headingTags = {'h1', 'h2', 'h3', 'h4', 'h5', 'h6'};
 
+const String _svgNamespace = 'http://www.w3.org/2000/svg';
+
+/// `package:html` keys `xlink:href` by an `AttributeName` object, not a
+/// String, so `attributes['xlink:href']` never matches; compare by text.
+String _svgImageHref(dom.Element node) {
+  for (final attribute in node.attributes.entries) {
+    final name = attribute.key.toString();
+    if (name == 'xlink:href' || name == 'href') return attribute.value.trim();
+  }
+  return '';
+}
+
 _FileLinearization _linearizeChapterDocument(dom.Document document) {
   final out = _FileLinearization();
   final buffer = StringBuffer();
@@ -336,11 +354,24 @@ _FileLinearization _linearizeChapterDocument(dom.Document document) {
       }
       return;
     }
+    // Sigil/Calibre cover and illustration pages wrap the picture as
+    // <svg><image xlink:href=…/></svg>; without this they vanish entirely.
+    if (tag == 'image' && node.namespaceUri == _svgNamespace) {
+      flush();
+      final href = _svgImageHref(node);
+      if (href.isNotEmpty) {
+        out.texts.add(href);
+        out.kinds.add(EpubParagraphKind.image);
+      }
+      return;
+    }
     if (tag == 'br') {
       flush();
       return;
     }
-    if (tag == 'script' || tag == 'style') {
+    // Ruby annotations are glossing, not prose: keeping them turns
+    // <ruby>漢字<rt>かんじ</rt></ruby> into "漢字かんじ".
+    if (tag == 'script' || tag == 'style' || tag == 'rt' || tag == 'rp') {
       return;
     }
 

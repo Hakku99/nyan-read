@@ -65,6 +65,42 @@ class AnchorHealer {
     return null; // 搜救彻底失败
   }
 
+  /// Neighbour-paragraph variant for when an enumeration change moved the
+  /// whole paragraph (e.g. a newly recognised cover image shifts every later
+  /// index by one).
+  ///
+  /// [window] holds paragraph texts centred on the stored paragraph (odd
+  /// length; `null` = unavailable or an image slot). The stored paragraph is
+  /// tried first with the lenient [findHealedOffset]. Neighbours are then
+  /// searched nearest-first, forward before backward (inserted slots push
+  /// content forward), and ONLY accept the full `pre+exact+post` signature:
+  /// an exact-only match in a different paragraph is too likely a false hit.
+  /// Returns the paragraph delta from the centre plus the offset inside it.
+  static ({int delta, int offset})? findHealedInWindow(
+      List<String?> window, String pre, String exact, String post) {
+    if (window.isEmpty || exact.isEmpty) return null;
+    final center = window.length ~/ 2;
+
+    final centerText = window[center];
+    if (centerText != null) {
+      final offset = findHealedOffset(centerText, pre, exact, post);
+      if (offset != null) return (delta: 0, offset: offset);
+    }
+    // Nothing to tell paragraphs apart with: do not guess across them.
+    if (pre.isEmpty && post.isEmpty) return null;
+
+    final signature = '$pre$exact$post';
+    for (var distance = 1; distance <= center; distance++) {
+      for (final delta in [distance, -distance]) {
+        final text = window[center + delta];
+        if (text == null) continue;
+        final index = text.indexOf(signature);
+        if (index != -1) return (delta: delta, offset: index + pre.length);
+      }
+    }
+    return null;
+  }
+
   static int _calculateOverlap(String target, String actual,
       {required bool alignRight}) {
     int score = 0;

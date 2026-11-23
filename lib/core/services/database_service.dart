@@ -959,12 +959,17 @@ class DatabaseService {
   }
 
   /// Fire-and-forget healed offset writeback; should not block the UI.
+  ///
+  /// [paragraphIndex] is set when the healer found the text in a neighbouring
+  /// paragraph (enumeration shift); omitted, the row keeps its paragraph.
   Future<void> updateHighlightHealedOffset(
-      String id, int newStart, int newEnd) async {
+      String id, int newStart, int newEnd,
+      {int? paragraphIndex}) async {
     final db = await database;
     await db.update(
       'highlights',
       {
+        if (paragraphIndex != null) 'paragraph_index': paragraphIndex,
         'start_offset': newStart,
         'end_offset': newEnd,
         'is_healed': 1,
