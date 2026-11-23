@@ -253,9 +253,9 @@ class DatabaseService {
     // Android's default SQLite error handler deletes a database file the
     // moment it hits SQLITE_CORRUPT (and header-damaged files too), i.e.
     // *inside* the check below and before the worker could archive it. Keep
-    // a plain copy first so a failed heal can still put the library back.
-    // Copy failure (e.g. disk full) must never block startup: log and go on
-    // without the safety net.
+    // a plain copy first; if the check then reports corruption it becomes the
+    // permanent salvage copy. Copy failure (e.g. disk full) must never block
+    // startup: log and go on without the safety net.
     final snapshot = await Isolate.run(() => snapshotMainForHeal(mainDbPath));
     for (final line in snapshot.logs) {
       debugPrint(line);
@@ -304,8 +304,7 @@ class DatabaseService {
   static const _preservedCopySuffix = '.preheal';
 
   /// Where the pre-heal copy of [mainDbPath] lives; its sidecars are
-  /// `<path>-wal` / `<path>-shm`, the same naming [restoreOriginalFromArchive]
-  /// expects of an archive.
+  /// `<path>-wal` / `<path>-shm`, the same naming archives use.
   @visibleForTesting
   static String preservedCopyPathFor(String mainDbPath) =>
       '$mainDbPath$_preservedCopySuffix';
@@ -358,6 +357,56 @@ class DatabaseService {
     for (final line in logs) {
       debugPrint(line);
     }
+  }
+
+  /// Turns the pre-heal copy into a permanent salvage copy
+  /// `<main>_corrupted_<ms>.bak` (+ `-wal`/`-shm`), the same naming the
+  /// restore worker uses when it archives the original itself.
+  @visibleForTesting
+  static List<String> promotePreservedCopy(String mainDbPath) {
+    final logs = <String>[];
+    final source = preservedCopyPathFor(mainDbPath);
+    final target =
+        '${mainDbPath}_corrupted_${DateTime.now().millisecondsSinceEpoch}.bak';
+    for (final suffix in ['', ..._sidecarSuffixes]) {
+      final file = File('$source$suffix');
+      if (file.existsSync()) _archiveOrDelete(file, '$target$suffix', logs);
+    }
+    return logs;
+  }
+
+  /// How many `_corrupted_*.bak` salvage sets (db + sidecars) to keep.
+  static const int _maxSalvageCopies = 2;
+
+  /// Deletes all but the newest [keep] `<main>_corrupted_<ms>.bak` sets next
+  /// to [mainDbPath] (with their `-wal`/`-shm`). Failures only produce log
+  /// lines. Isolate-safe.
+  @visibleForTesting
+  static List<String> pruneSalvageCopies(String mainDbPath,
+      {int keep = _maxSalvageCopies}) {
+    final logs = <String>[];
+    try {
+      final prefix = '${basename(mainDbPath)}_corrupted_';
+      final found = <({File file, int stamp})>[];
+      for (final entry in Directory(dirname(mainDbPath)).listSync()) {
+        if (entry is! File) continue;
+        final name = basename(entry.path);
+        if (!name.startsWith(prefix) || !name.endsWith('.bak')) continue;
+        final stamp =
+            int.tryParse(name.substring(prefix.length, name.length - 4));
+        if (stamp != null) found.add((file: entry, stamp: stamp));
+      }
+      found.sort((a, b) => b.stamp.compareTo(a.stamp));
+      for (final old in found.skip(keep)) {
+        _deleteIgnoringErrors(old.file, logs);
+        for (final suffix in _sidecarSuffixes) {
+          _deleteIgnoringErrors(File('${old.file.path}$suffix'), logs);
+        }
+      }
+    } catch (e) {
+      logs.add('--- [DatabaseService] Salvage copy cleanup failed: $e ---');
+    }
+    return logs;
   }
 
   /// Opens [path] and runs `PRAGMA quick_check`. Never throws: failures are
@@ -419,10 +468,18 @@ class DatabaseService {
   /// must pass `PRAGMA quick_check` on the main isolate; failures are
   /// quarantined by rename so the next round picks the next-newest snapshot.
   ///
-  /// [preservedCopyPath] is the pre-heal copy of the original (see
-  /// [checkAndHealDatabase]). It is the fallback original when the main file
-  /// was already gone before the worker could archive it, and is removed once
-  /// the main path is settled.
+  /// The original is never deleted. If the worker archives it, the
+  /// `_corrupted_<ms>.bak*` files are the salvage copy. If the main file was
+  /// already gone on entry (Android's corruption handler deletes it during
+  /// the check), the pre-heal copy ([preservedCopyPath], see
+  /// [checkAndHealDatabase]) is promoted to that same name instead. Only the
+  /// newest [_maxSalvageCopies] sets are kept.
+  ///
+  /// When every snapshot fails: if the main file was present on entry the
+  /// original is copied back (the salvage copy stays); if the OS had already
+  /// deleted it, it is NOT resurrected — SQLite has judged it corrupt and the
+  /// OS would just delete it again on first use, so the app starts on a
+  /// fresh DB with the salvage copy left in the databases directory.
   @visibleForTesting
   Future<void> restoreFromBackupDir({
     required String mainDbPath,
@@ -430,6 +487,20 @@ class DatabaseService {
     String? preservedCopyPath,
   }) async {
     final originalPresent = File(mainDbPath).existsSync();
+    if (preservedCopyPath != null) {
+      // Done before any restore work so the salvage copy is permanent even
+      // if the process dies mid-restore. With the main file still present
+      // the worker archives it itself, so the pre-heal copy is redundant.
+      final logs = await Isolate.run(() {
+        if (!originalPresent) return promotePreservedCopy(mainDbPath);
+        final logs = <String>[];
+        _deleteAllPreserved(mainDbPath, logs);
+        return logs;
+      });
+      for (final line in logs) {
+        debugPrint(line);
+      }
+    }
     var settled = false;
     // Where the isolate archived the original main DB in round 1. Later
     // rounds start from a deleted main file and never archive again, so
@@ -502,42 +573,55 @@ class DatabaseService {
 
     if (!settled) {
       // Every give-up exit (no usable snapshot, quarantine failure, attempt
-      // cap) lands here. Never leave the main path empty: a possibly damaged
-      // library still opens (or fails loudly) whereas a missing file makes
-      // openDatabase silently create an empty one.
-      //
-      // Source of the original: the worker's archive if it made one;
-      // otherwise the pre-heal copy, but only if the original was already
-      // gone on entry (deleted by Android's corruption handler). No archive
-      // with the original still present means the worker aborted without
-      // touching it, so there is nothing to put back.
+      // cap) lands here.
       final archive = originalArchive;
-      final fallback = preservedCopyPath;
-      final String? source =
-          archive ?? (!originalPresent && fallback != null ? fallback : null);
-      if (source != null) {
+      if (originalPresent && archive != null) {
+        // A possibly damaged library still opens (or fails loudly), whereas
+        // a missing file makes openDatabase silently create an empty one.
         debugPrint(
-            '--- [DatabaseService] Restore gave up; putting the original database back ---');
+            '--- [DatabaseService] Restore gave up; copying the original database back ---');
         final logs = await Isolate.run(() => restoreOriginalFromArchive(
-            mainDbPath: mainDbPath, archivedPath: source));
+            mainDbPath: mainDbPath, archivedPath: archive));
+        for (final line in logs) {
+          debugPrint(line);
+        }
+      } else if (!originalPresent) {
+        // OS already deleted the corrupt original: start fresh, salvage copy
+        // stays. Drop a failed restore's leftovers so they are not opened.
+        debugPrint(
+            '--- [DatabaseService] Restore gave up; original was already removed, starting fresh (salvage copy kept) ---');
+        final logs = await Isolate.run(() {
+          final logs = <String>[];
+          for (final path in [
+            mainDbPath,
+            '$mainDbPath-wal',
+            '$mainDbPath-shm'
+          ]) {
+            _deleteIgnoringErrors(File(path), logs);
+          }
+          return logs;
+        });
         for (final line in logs) {
           debugPrint(line);
         }
       }
+      // else: archiving failed and the worker left the original untouched.
     }
 
-    // Keep the pre-heal copy if the main path is still empty: it is then
-    // the only copy left.
-    if (preservedCopyPath != null && File(mainDbPath).existsSync()) {
-      await _discardPreservedCopy(mainDbPath);
+    final pruneLogs =
+        await Isolate.run(() => pruneSalvageCopies(mainDbPath));
+    for (final line in pruneLogs) {
+      debugPrint(line);
     }
   }
 
-  /// Moves the archived original ([archivedPath]) back to [mainDbPath],
+  /// Copies the archived original ([archivedPath]) back to [mainDbPath],
   /// discarding whatever failed-restore leftovers sit there (main file and
-  /// its sidecars), then puts the original's archived `-wal`/`-shm` back so
-  /// commits that were never checkpointed are not lost. Isolate-safe;
-  /// returns log lines. Keeps the archive if it had to fall back to copying.
+  /// its sidecars), then copies the original's archived `-wal`/`-shm` back
+  /// so commits that were never checkpointed are not lost. Always a copy:
+  /// the archive stays as the salvage copy, because SQLite may judge the
+  /// original corrupt again and the OS delete it. Isolate-safe; returns log
+  /// lines.
   @visibleForTesting
   static List<String> restoreOriginalFromArchive({
     required String mainDbPath,
@@ -554,18 +638,18 @@ class DatabaseService {
       for (final path in [mainDbPath, '$mainDbPath-wal', '$mainDbPath-shm']) {
         _deleteIgnoringErrors(File(path), logs);
       }
-      _moveOrCopy(archive, mainDbPath);
+      archive.copySync(mainDbPath);
       for (final suffix in _sidecarSuffixes) {
         final sidecar = File('$archivedPath$suffix');
         if (!sidecar.existsSync()) continue;
         try {
-          _moveOrCopy(sidecar, '$mainDbPath$suffix');
+          sidecar.copySync('$mainDbPath$suffix');
         } catch (e) {
           logs.add(
               '--- [DatabaseService] Warning: could not put back $suffix sidecar: $e ---');
         }
       }
-      logs.add('--- [DatabaseService] Original database put back ---');
+      logs.add('--- [DatabaseService] Original database copied back ---');
     } catch (e) {
       logs.add(
           '--- [DatabaseService] Rollback of original database failed: $e ---');
@@ -574,14 +658,6 @@ class DatabaseService {
   }
 
   static const _sidecarSuffixes = ['-wal', '-shm'];
-
-  static void _moveOrCopy(File src, String destPath) {
-    try {
-      src.renameSync(destPath);
-    } catch (_) {
-      src.copySync(destPath);
-    }
-  }
 
   /// Isolate worker for [_restoreFromLatestBackup]. Discovers the best
   /// available backup snapshot and copies it over the corrupted main DB.

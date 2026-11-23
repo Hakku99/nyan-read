@@ -1246,8 +1246,24 @@ void main() {
                 preservedCopyPath: preserved),
           );
 
-      test('no usable backup: original db + wal + shm come back byte-for-byte',
-          () async {
+      int stampOf(String path) => int.parse(
+          RegExp(r'_corrupted_(\d+)\.bak$').firstMatch(path)!.group(1)!);
+
+      /// `<main>_corrupted_<ms>.bak` files (db only), oldest first.
+      List<File> salvageSets() {
+        final prefix = '${basename(mainDbPath)}_corrupted_';
+        return Directory(tempDir.path)
+            .listSync()
+            .whereType<File>()
+            .where((f) =>
+                basename(f.path).startsWith(prefix) && f.path.endsWith('.bak'))
+            .toList()
+          ..sort((a, b) => stampOf(a.path).compareTo(stampOf(b.path)));
+      }
+
+      test(
+          'no usable backup, OS deleted main: not resurrected; salvage copy '
+          'is byte-identical incl. wal/shm', () async {
         final backupDir = Directory(join(tempDir.path, 'n5_pre_zero'))
           ..createSync();
         File(join(backupDir.path, 'nyan_read_1000.db')).writeAsBytesSync([]);
@@ -1257,23 +1273,26 @@ void main() {
 
         await healWithRealRestore(backupDir.path);
 
-        expectOriginalIntact(mainDbPath, original);
-        expect(File('$mainDbPath-wal').readAsBytesSync(), [3, 1, 4, 1, 5]);
-        expect(File('$mainDbPath-shm').readAsBytesSync(), [9, 2, 6]);
-        expect(prehealFiles(), isEmpty,
-            reason: 'copy is consumed / cleaned once main is back');
+        expect(File(mainDbPath).existsSync(), isFalse,
+            reason: 'a corrupt original must not become the active DB again');
+        final salvage = salvageSets().single.path;
+        expect(File(salvage).readAsBytesSync(), original);
+        expect(File('$salvage-wal').readAsBytesSync(), [3, 1, 4, 1, 5]);
+        expect(File('$salvage-shm').readAsBytesSync(), [9, 2, 6]);
+        expect(prehealFiles(), isEmpty);
       });
 
-      test('no backup directory at all: original still comes back', () async {
+      test('no backup directory at all: same, salvage kept', () async {
         final original = await writeOriginal(mainDbPath);
 
         await healWithRealRestore(join(tempDir.path, 'n5_pre_nodir'));
 
-        expectOriginalIntact(mainDbPath, original);
+        expect(File(mainDbPath).existsSync(), isFalse);
+        expect(salvageSets().single.readAsBytesSync(), original);
         expect(prehealFiles(), isEmpty);
       });
 
-      test('good backup restores; no .preheal residue', () async {
+      test('good backup restores and the salvage copy is kept', () async {
         final backupDir = Directory(join(tempDir.path, 'n5_pre_ok'))
           ..createSync();
         final seed = await _openFileDb(join(tempDir.path, 'n5_pre_seed.db'));
@@ -1285,7 +1304,7 @@ void main() {
         });
         await _vacuumInto(seed, join(backupDir.path, 'nyan_read_1000.db'));
         await seed.close();
-        await writeOriginal(mainDbPath);
+        final original = await writeOriginal(mainDbPath);
 
         await healWithRealRestore(backupDir.path);
 
@@ -1293,7 +1312,65 @@ void main() {
         final rows = await restored.query('books');
         await restored.close();
         expect(rows.single['title'], 'from snapshot');
+        expect(salvageSets().single.readAsBytesSync(), original);
         expect(prehealFiles(), isEmpty);
+      });
+
+      test('main still present when restore gives up: copied back, salvage kept',
+          () async {
+        final backupDir = Directory(join(tempDir.path, 'n5_pre_present'))
+          ..createSync();
+        File(join(backupDir.path, 'nyan_read_1000.db')).writeAsBytesSync([]);
+        final original = await writeOriginal(mainDbPath);
+        File('$mainDbPath-wal').writeAsBytesSync([2, 7]);
+
+        // quick_check said "not ok" but the OS did not delete the file.
+        await DatabaseService().checkAndHealDatabase(
+          mainDbPath,
+          retryDelay: Duration.zero,
+          check: (_) async => QuickCheckVerdict.corrupt,
+          restore: (main, preserved) => DatabaseService().restoreFromBackupDir(
+              mainDbPath: main,
+              backupDirPath: backupDir.path,
+              preservedCopyPath: preserved),
+        );
+
+        expectOriginalIntact(mainDbPath, original);
+        expect(File('$mainDbPath-wal').readAsBytesSync(), [2, 7]);
+        final salvage = salvageSets().single.path;
+        expect(File(salvage).readAsBytesSync(), original,
+            reason: 'copy-back must leave the salvage copy in place');
+        expect(File('$salvage-wal').readAsBytesSync(), [2, 7]);
+        expect(prehealFiles(), isEmpty);
+      });
+
+      test('only the newest 2 salvage sets are kept', () async {
+        // Three older sets (db + wal), then a heal that produces a fourth.
+        for (final stamp in [100, 200, 300]) {
+          File('${mainDbPath}_corrupted_$stamp.bak').writeAsBytesSync([1]);
+          File('${mainDbPath}_corrupted_$stamp.bak-wal')
+              .writeAsBytesSync([1]);
+        }
+        final backupDir = Directory(join(tempDir.path, 'n5_pre_prune'))
+          ..createSync();
+        final original = await writeOriginal(mainDbPath);
+
+        await healWithRealRestore(backupDir.path);
+
+        final sets = salvageSets();
+        expect(sets, hasLength(2));
+        expect(sets.first.path, endsWith('_corrupted_300.bak'));
+        expect(sets.last.readAsBytesSync(), original,
+            reason: 'the fresh salvage copy is among the newest 2');
+        for (final stamp in [100, 200]) {
+          expect(File('${mainDbPath}_corrupted_$stamp.bak').existsSync(),
+              isFalse);
+          expect(File('${mainDbPath}_corrupted_$stamp.bak-wal').existsSync(),
+              isFalse,
+              reason: 'sidecars of pruned sets go too');
+        }
+        expect(File('${mainDbPath}_corrupted_300.bak-wal').existsSync(),
+            isTrue);
       });
 
       test('healthy and unknown verdicts leave no .preheal residue', () async {
