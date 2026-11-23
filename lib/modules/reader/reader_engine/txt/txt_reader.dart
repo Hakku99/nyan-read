@@ -424,19 +424,22 @@ bool _looksLikeChapterHeadingStatic(String line) {
   return false;
 }
 
+// Hoisted: building this per line slowed down opening large books.
+final RegExp _chapterMarkerRegExp = RegExp(
+  r'(?:\d+|'
+  r'[IVXLCDMivxlcdm]+|'
+  r'[一-鿿]|'
+  r'(?:chapter|chap|volume|vol|book|part|prologue|epilogue|'
+  r'interlude|side.?story|extra|appendix|preface|序|序言|前言|終章|'
+  r'後記|番外|外伝|幕間|間章|短編|特典))',
+  caseSensitive: false,
+);
+
 bool _hasChapterMarkerStatic(String line) {
   // Fast checks for lines that look like chapters: contain digits, CJK
   // characters, or English chapter keywords.  Helps skip obviously non-chapter
   // lines (narrative content) before running expensive regex patterns.
-  return RegExp(
-    r'(?:\d+|'
-    r'[IVXLCDMivxlcdm]+|'
-    r'[一-鿿]|'
-    r'(?:chapter|chap|volume|vol|book|part|prologue|epilogue|'
-    r'interlude|side.?story|extra|appendix|preface|序|序言|前言|終章|'
-    r'後記|番外|外伝|幕間|間章|短編|特典))',
-    caseSensitive: false,
-  ).hasMatch(line);
+  return _chapterMarkerRegExp.hasMatch(line);
 }
 
 bool _isStandaloneNumericHeadingStatic(String line) {
@@ -599,8 +602,15 @@ class TxtReaderEngine
       r'^\s*(?:volume|vol\.?|book|part)\s+(?:\d+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b\s+(?:chapter|chap\.)\s+(?:\d+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b(?:[\uff1a:._\- ]\s*.*)?$',
       caseSensitive: false,
     ),
-    RegExp(r'^\s*\d{1,4}[\u3001\uff0c.,:\uff1a\-]\s*\S.+$'),
-    RegExp(r'^\s*\d{1,4}\s+\S.+$'),
+    // "1.开局" / "1.2 Overview" yes; "5, he said" / "3.5 million people" no:
+    // the text after the separator must not start with a lowercase word.
+    RegExp(r'^\s*\d{1,4}[\u3001\uff0c.,:\uff1a\-]\s*(?![a-z]|\d+\s+[a-z])\S.+$'),
+    // "12 终局" / "7 Rise, and Shine" yes; "3 days later, he left." no: the
+    // title must not start with a lowercase ASCII letter and is capped at 30
+    // chars. ponytail: a short capitalised sentence ("300 Spartans fought
+    // bravely") is indistinguishable from a title by regex; add a
+    // title-case check only if such lines show up in real books.
+    RegExp(r'^\s*\d{1,4}\s+(?![a-z])\S.{0,29}$'),
   ];
   static final List<RegExp> _specialHeadingPatterns = [
     RegExp(
@@ -767,15 +777,32 @@ class TxtReaderEngine
 
   @override
   double? getProgress() {
-    if (_lineCount == 0) return 0.0;
-    final pos = getCurrentPosition();
-    if (pos?.paragraphIndex != null) {
-      if (_lineCount == 1) {
-        return 1.0;
+    if (_lineCount == 0 || _paragraphOffsets.length != _lineCount) return 0.0;
+    final index = getCurrentPosition()?.paragraphIndex;
+    if (index == null) return 0.0;
+    // Offsets are strictly increasing, so a zero last offset means one line.
+    final lastOffset = _paragraphOffsets[_lineCount - 1];
+    if (lastOffset == 0) return 1.0;
+    // Character-based so the percentage agrees with getCurrentPageIndex().
+    // Divided by the last paragraph's start (not total length) so the scale
+    // is exactly 0..1 and invertible. The anchor is the topmost visible
+    // paragraph, so 1.0 is only reported when the last item is at the top.
+    return _paragraphOffsets[index.clamp(0, _lineCount - 1)] / lastOffset;
+  }
+
+  /// Greatest paragraph index whose start offset is <= [target].
+  int _paragraphIndexForOffset(int target) {
+    var lo = 0;
+    var hi = _lineCount - 1;
+    while (lo < hi) {
+      final mid = (lo + hi + 1) >> 1;
+      if (_paragraphOffsets[mid] <= target) {
+        lo = mid;
+      } else {
+        hi = mid - 1;
       }
-      return pos!.paragraphIndex! / (_lineCount - 1);
     }
-    return 0.0;
+    return lo;
   }
 
   @override
@@ -1126,8 +1153,18 @@ class TxtReaderEngine
   @override
   Future<void> seekToProgress(double progress) async {
     if (_lineCount == 0 || !progress.isFinite) return;
-    await goToPosition(ReadingPosition(
-        paragraphIndex: (progress.clamp(0.0, 1.0) * (_lineCount - 1)).round()));
+    // Inverse of getProgress(); both must use the same character scale or the
+    // progress slider jumps after a drag.
+    final target =
+        (progress.clamp(0.0, 1.0) * _paragraphOffsets[_lineCount - 1]).round();
+    var index = _paragraphIndexForOffset(target);
+    // Nearest paragraph start, not floor: avoids the slider snapping back by
+    // up to a whole paragraph when it is long.
+    if (index + 1 < _lineCount &&
+        _paragraphOffsets[index + 1] - target < target - _paragraphOffsets[index]) {
+      index++;
+    }
+    await goToPosition(ReadingPosition(paragraphIndex: index));
   }
 
   @override

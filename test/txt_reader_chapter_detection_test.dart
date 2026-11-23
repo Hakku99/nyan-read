@@ -84,6 +84,50 @@ Afterword
       );
     });
 
+    test('does not treat narrative lines starting with a number as chapters',
+        () async {
+      final engine = await _createEngineWithContent('''
+Chapter 1 The Beginning
+3 days later, he left the village.
+5 people were waiting at the gate.
+3.5 million people lived there.
+5, he said, was the number.
+42 The Long Winded Capitalised Sentence Of Doom
+3 Days Later
+12 终局
+''');
+      addTearDown(engine.dispose);
+
+      final titles = (await engine.getChapters()).map((c) => c.title).toList();
+
+      expect(titles, ['Chapter 1 The Beginning', '3 Days Later', '12 终局']);
+    });
+
+    test('keeps numbered titles that contain punctuation', () async {
+      final engine = await _createEngineWithContent('''
+7 Rise, and Shine
+Body paragraph
+2 Who Am I?
+Body paragraph
+12 终局。
+Body paragraph
+1.开局
+Body paragraph
+1.2 Overview
+''');
+      addTearDown(engine.dispose);
+
+      final titles = (await engine.getChapters()).map((c) => c.title).toList();
+
+      expect(titles, [
+        '7 Rise, and Shine',
+        '2 Who Am I?',
+        '12 终局。',
+        '1.开局',
+        '1.2 Overview',
+      ]);
+    });
+
     test('treats standalone numeric headings with subtitle lines as chapters', () async {
       final engine = await _createEngineWithContent('''
 1
