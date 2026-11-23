@@ -49,6 +49,24 @@ class NyanPillButton extends StatelessWidget {
 
     // AnimatedContainer owns the background + border so they cross-fade.
     // Material is transparent and only provides the InkWell ripple clip.
+    // Visual chip stays at the spec's 36pt; the outer box extends the hit area
+    // to the AGENTS.md 4.3 44pt minimum.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onPressed,
+      child: ConstrainedBox(
+        constraints:
+            const BoxConstraints(minHeight: NyanSpacing.minTapTarget),
+        child: Center(
+          widthFactor: 1,
+          heightFactor: 1,
+          child: _buildChip(bg, borderColor, textColor),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChip(Color bg, Color borderColor, Color textColor) {
     return AnimatedContainer(
       duration: _kDuration,
       curve: _kCurve,

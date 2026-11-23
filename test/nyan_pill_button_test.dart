@@ -161,13 +161,13 @@ void main() {
   });
 
   // ── Tap target ─────────────────────────────────────────────────────────────
-  // Spec PillButton minHeight 36 (inside a 1.5px border on each side) is a
-  // delivery-package override of the 44pt tap target for dense settings rows.
-  testWidgets('respects spec minimum height 36 (+ 1.5px border)',
-      (tester) async {
+  // Visual chip is the spec's 36pt (+ border); the hit area is 44pt.
+  testWidgets('respects minimum 44pt tap target', (tester) async {
     await pumpPill(tester);
     final box = tester.getSize(find.byType(NyanPillButton));
-    expect(box.height, greaterThanOrEqualTo(36.0 + 2 * 1.5));
+    expect(box.height, greaterThanOrEqualTo(NyanSpacing.minTapTarget));
+    final chip = tester.getSize(find.byType(AnimatedContainer));
+    expect(chip.height, greaterThanOrEqualTo(36.0 + 2 * 1.5));
   });
 
   // ── Tap ────────────────────────────────────────────────────────────────────
