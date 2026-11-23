@@ -1025,6 +1025,9 @@ class DatabaseService {
   ///   - Progress fields are overwritten only by a strictly newer backup
   ///     (`last_read_at`); highlights/bookmarks are restored regardless.
   ///   - Rebind matched highlights/bookmarks to the local UUID before upsert.
+  ///   - Returns the number of books where progress, highlights or bookmarks
+  ///     were actually written; a matched book with nothing to write is not
+  ///     counted, so 0 can mean "matched, but local progress was newer".
   Future<int> restoreDataBatch(Map<String, dynamic> parsedJson) async {
     final db = await database;
 
@@ -1103,15 +1106,6 @@ class DatabaseService {
         continue;
       }
 
-      if (matchedByLegacy) {
-        legacyFallbackCount++;
-        debugPrint(
-            '--- [Restore][legacy] Title-fallback matched: "${title ?? '(no title)'}" -> $localBookId ---');
-      } else {
-        debugPrint(
-            '--- [Restore] Signature-matched local book: "${title ?? '(no title)'}" -> $localBookId ---');
-      }
-
       // 3. Only update progress metadata; never rewrite id or file_path.
       final backupReadAt = (book['last_read_at'] as num?)?.toInt();
       final localReadAt = localLastRead[localBookId];
@@ -1167,6 +1161,9 @@ class DatabaseService {
         }
       }
 
+      if (matchedByLegacy) legacyFallbackCount++;
+      debugPrint(
+          '--- [Restore]${matchedByLegacy ? '[legacy] Title-fallback' : ' Signature'} matched "${title ?? '(no title)'}" -> $localBookId, ${wrote ? 'wrote data' : 'nothing to write'} ---');
       if (wrote) syncedBookCount++;
     }
 

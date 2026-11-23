@@ -37,6 +37,6 @@
 
 - TXT Big5 检测（gbk 解码伪成功，等真实乱码报告；`txt_reader.dart` 有 `ponytail:` 注释）
 - PDF 无真实 outline（每 10 页合成伪章节并本地化为"第 N 页"，pdfx 2.9.2 无公开 API 读原生书签）
-- 带 tag 的功能 TODO：`#package-info` / `#highlight-detail` / `#share` / `#pin-forgot`
+- 带 tag 的功能 TODO：`#package-info` / `#highlight-detail` / `#pin-forgot`
 - 小优化：`getBooks` 书架查询可收窄列（不取 `last_position_payload`）；
   `SignatureBackfillService` 逐本 isolate 可合并为单次批处理

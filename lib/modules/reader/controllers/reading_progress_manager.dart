@@ -120,7 +120,6 @@ class ReadingProgressManager {
           await Future<void>.delayed(const Duration(milliseconds: 120));
           refreshFromEngine();
         }
-
       }
     } catch (e) {
       debugPrint('Error restoring position: $e');
