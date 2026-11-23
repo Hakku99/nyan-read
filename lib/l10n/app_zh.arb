@@ -226,6 +226,14 @@
   "supportedFormatsDescription": "Nyan Read 目前支持从设备中导入 TXT、EPUB 和 PDF 文件。",
   "importingBooksTitle": "导入中",
   "importingBooksSubtitle": "正在把书放进书架…",
+  "importingBooksProgress": "正在导入 {current} / {total}",
+  "@importingBooksProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "importCancelled": "已取消导入",
   "importedBooks": "已导入 {count} 本书",
   "@importedBooks": {
     "placeholders": {

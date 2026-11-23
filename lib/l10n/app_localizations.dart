@@ -1184,6 +1184,18 @@ abstract class AppLocalizations {
   /// **'Placing books onto your shelf...'**
   String get importingBooksSubtitle;
 
+  /// No description provided for @importingBooksProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing {current} of {total}'**
+  String importingBooksProgress(int current, int total);
+
+  /// No description provided for @importCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Import cancelled'**
+  String get importCancelled;
+
   /// No description provided for @importedBooks.
   ///
   /// In en, this message translates to:

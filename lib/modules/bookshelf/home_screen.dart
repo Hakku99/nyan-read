@@ -35,6 +35,7 @@ import '../../core/utils/book_source_platform.dart';
 import '../../core/utils/snackbar_utils.dart';
 import '../../core/utils/title_sort_key.dart';
 import 'book_details_page.dart';
+import 'folder_import_runner.dart';
 import 'widgets/import_book_sheet.dart';
 import 'widgets/bookshelf_shelf_toolbar.dart';
 import 'widgets/bookshelf_sort_sheet.dart';
@@ -300,8 +301,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           isPrivate: isPrivate,
           transientFilePath: file.path,
         );
-        if (outcome == _ImportOutcome.imported) successCount++;
-        if (outcome == _ImportOutcome.skipped) skippedCount++;
+        if (outcome == ImportOutcome.imported) successCount++;
+        if (outcome == ImportOutcome.skipped) skippedCount++;
       }
 
       await _cleanupPickerTempFiles();
@@ -368,9 +369,9 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   /// Shared per-source import core for both the file-picker and
   /// library-folder flows: fingerprint dedupe → Book row insert. Mutates the
   /// known-sets so a batch also dedupes against itself; failures are logged
-  /// and reported as [_ImportOutcome.failed] (callers count neither way,
+  /// and reported as [ImportOutcome.failed] (callers count neither way,
   /// matching the historical loop).
-  Future<_ImportOutcome> _importResolvedSource({
+  Future<ImportOutcome> _importResolvedSource({
     required DatabaseService db,
     required _ImportedBookSource importSource,
     required Set<String> knownLocators,
@@ -397,7 +398,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
               knownSignatures.contains(contentSignature));
       if (isDuplicate) {
         debugPrint('Skipping duplicate import: $fileName');
-        return _ImportOutcome.skipped;
+        return ImportOutcome.skipped;
       }
 
       // EPUB filenames are often scraped junk ("[Author] Title (Z-Lib)"); the
@@ -432,10 +433,10 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       if (contentSignature != null) {
         knownSignatures.add(contentSignature);
       }
-      return _ImportOutcome.imported;
+      return ImportOutcome.imported;
     } catch (e) {
       debugPrint('Error importing ${importSource.displayName}: $e');
-      return _ImportOutcome.failed;
+      return ImportOutcome.failed;
     }
   }
 
@@ -461,17 +462,43 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     if (treeUri == null || treeUri.isEmpty) return;
     if (!context.mounted) return;
 
-    DateTime? loadingShownAt;
-    try {
+    // Cancel stops before the next book; the one in flight finishes, and
+    // everything imported so far stays. Available from the first toast so a
+    // slow folder scan can be stopped too.
+    var cancelled = false;
+    final isPrivate =
+        ref.read(featureManagerRpProvider).isPrivateShelfUnlocked &&
+            _tabController.index == 1;
+    void showLoading(String title, String? description) {
+      if (!context.mounted) return;
       SnackBarUtils.show(
         context,
-        loc.importingBooksTitle,
-        description: loc.importingBooksSubtitle,
+        title,
+        description: description,
         tone: NyanSnackTone.loading,
+        actionLabel: cancelled ? null : loc.cancel,
+        onActionTap: cancelled
+            ? null
+            : () {
+                cancelled = true;
+                showLoading(title, description);
+              },
       );
+    }
+
+    DateTime? loadingShownAt;
+    try {
+      showLoading(loc.importingBooksTitle, loc.importingBooksSubtitle);
       loadingShownAt = DateTime.now();
       await WidgetsBinding.instance.endOfFrame;
       if (!context.mounted) return;
+
+      Future<void> finishCancelled() async {
+        await _awaitMinLoadingDisplay(loadingShownAt);
+        if (!context.mounted) return;
+        SnackBarUtils.show(context, loc.importCancelled,
+            tone: NyanSnackTone.skipped);
+      }
 
       final scan = await BookSourcePlatform.listTreeDocuments(treeUri);
       final docs = ((scan['documents'] as List?) ?? const [])
@@ -485,29 +512,27 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             tone: NyanSnackTone.skipped);
         return;
       }
+      if (cancelled) return finishCancelled();
 
       final db = ref.read(databaseServiceRpProvider);
       final existingIndex = await BookImportFingerprint.buildExistingIndex(db);
-      final featureManager = ref.read(featureManagerRpProvider);
-      final isPrivate =
-          featureManager.isPrivateShelfUnlocked && _tabController.index == 1;
+      if (cancelled) return finishCancelled();
 
-      int successCount = 0;
-      int skippedCount = 0;
       final knownSignatures = <String>{...existingIndex.signatures};
       final knownLocators = <String>{...existingIndex.normalizedLocators};
 
-      // ponytail: fingerprinting reads each tree book fully through a native
-      // temp copy (no local picker cache to sample from). Fine for the
-      // one-shot import gesture; add a native sampled-read method if folder
-      // import ever feels slow on 100MB-book libraries.
-      for (final doc in docs) {
-        final uri = doc['uri'] as String?;
-        final name = doc['name'] as String?;
-        if (uri == null || uri.isEmpty || name == null || name.isEmpty) {
-          continue;
-        }
-        final outcome = await _importResolvedSource(
+      // ponytail: fingerprinting uses a native sampled read (full read only
+      // for providers without random access), but EPUB metadata still copies
+      // a temp file per book. Revisit if big EPUB libraries import slowly.
+      final result = await importFolderDocs(
+        docs,
+        isCancelled: () => cancelled,
+        // Private shelf: no file names on screen outside the privacy overlay.
+        onProgress: (current, name) => showLoading(
+          loc.importingBooksProgress(current, docs.length),
+          isPrivate ? null : name,
+        ),
+        importOne: (uri, name) => _importResolvedSource(
           db: db,
           importSource: _ImportedBookSource(
             sourceLocator: uri,
@@ -518,26 +543,36 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
           knownLocators: knownLocators,
           knownSignatures: knownSignatures,
           isPrivate: isPrivate,
-        );
-        if (outcome == _ImportOutcome.imported) successCount++;
-        if (outcome == _ImportOutcome.skipped) skippedCount++;
-      }
+        ),
+      );
+      final successCount = result.imported;
+      final skippedCount = result.skipped;
 
       if (!context.mounted) return;
       await _awaitMinLoadingDisplay(loadingShownAt);
       if (!context.mounted) return;
 
       final shelfLabel = isPrivate ? loc.privateShelf : loc.publicShelf;
+      // A cancel that left files behind must not read like a full import.
+      final cancelNote = result.stoppedEarly ? loc.importCancelled : null;
       if (successCount > 0) {
         SnackBarUtils.show(
           context,
           loc.importedBooks(successCount, shelfLabel),
+          description: cancelNote,
           tone: NyanSnackTone.success,
         );
       } else if (skippedCount > 0) {
         SnackBarUtils.show(
           context,
           loc.duplicatesSkipped(skippedCount),
+          description: cancelNote,
+          tone: NyanSnackTone.skipped,
+        );
+      } else if (result.stoppedEarly) {
+        SnackBarUtils.show(
+          context,
+          loc.importCancelled,
           tone: NyanSnackTone.skipped,
         );
       } else {
@@ -2134,8 +2169,6 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
 }
 
 // ── Imported book source ───────────────────────────────────────────────────────
-
-enum _ImportOutcome { imported, skipped, failed }
 
 class _ImportedBookSource {
   final String sourceLocator;
