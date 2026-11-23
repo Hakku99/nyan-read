@@ -597,6 +597,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importingBooksSubtitle => 'Placing books onto your shelf...';
 
   @override
+  String importingBooksProgress(int current, int total) {
+    return 'Importing $current of $total';
+  }
+
+  @override
+  String get importCancelled => 'Import cancelled';
+
+  @override
   String importedBooks(int count, String shelf) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

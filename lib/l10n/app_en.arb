@@ -226,6 +226,14 @@
   "supportedFormatsDescription": "Nyan Read currently supports importing TXT, EPUB, and PDF files from your device.",
   "importingBooksTitle": "Importing",
   "importingBooksSubtitle": "Placing books onto your shelf...",
+  "importingBooksProgress": "Importing {current} of {total}",
+  "@importingBooksProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "importCancelled": "Import cancelled",
   "importedBooks": "{count, plural, one{Imported {count} book} other{Imported {count} books}}",
   "@importedBooks": {
     "placeholders": {

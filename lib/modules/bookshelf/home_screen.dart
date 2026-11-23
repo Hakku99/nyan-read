@@ -501,12 +501,35 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       // temp copy (no local picker cache to sample from). Fine for the
       // one-shot import gesture; add a native sampled-read method if folder
       // import ever feels slow on 100MB-book libraries.
-      for (final doc in docs) {
+      // Cancel stops before the next book; the one in flight finishes, and
+      // everything imported so far stays.
+      var cancelled = false;
+      void showProgress(int current, String bookName) {
+        if (!context.mounted) return;
+        SnackBarUtils.show(
+          context,
+          loc.importingBooksProgress(current, docs.length),
+          description: bookName,
+          tone: NyanSnackTone.loading,
+          actionLabel: cancelled ? null : loc.cancel,
+          onActionTap: cancelled
+              ? null
+              : () {
+                  cancelled = true;
+                  showProgress(current, bookName);
+                },
+        );
+      }
+
+      for (var i = 0; i < docs.length; i++) {
+        if (cancelled) break;
+        final doc = docs[i];
         final uri = doc['uri'] as String?;
         final name = doc['name'] as String?;
         if (uri == null || uri.isEmpty || name == null || name.isEmpty) {
           continue;
         }
+        showProgress(i + 1, name);
         final outcome = await _importResolvedSource(
           db: db,
           importSource: _ImportedBookSource(
@@ -538,6 +561,12 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         SnackBarUtils.show(
           context,
           loc.duplicatesSkipped(skippedCount),
+          tone: NyanSnackTone.skipped,
+        );
+      } else if (cancelled) {
+        SnackBarUtils.show(
+          context,
+          loc.importCancelled,
           tone: NyanSnackTone.skipped,
         );
       } else {

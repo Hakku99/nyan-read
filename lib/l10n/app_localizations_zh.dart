@@ -575,6 +575,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get importingBooksSubtitle => '正在把书放进书架…';
 
   @override
+  String importingBooksProgress(int current, int total) {
+    return '正在导入 $current / $total';
+  }
+
+  @override
+  String get importCancelled => '已取消导入';
+
+  @override
   String importedBooks(int count, String shelf) {
     return '已导入 $count 本书';
   }
