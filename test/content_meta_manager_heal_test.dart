@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +7,16 @@ import 'package:nyan_read/core/services/database_service.dart';
 import 'package:nyan_read/modules/reader/controllers/content_meta_manager.dart';
 import 'package:nyan_read/modules/reader/reader_engine/txt/txt_reader.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+/// Real engines (EPUB) hold Futures. Anything the healer's Isolate.run
+/// closure drags along in its captured context must stay sendable, so every
+/// test here runs against an engine that carries an unsendable field.
+class _FutureHoldingEngine extends TxtReaderEngine {
+  _FutureHoldingEngine(super.book);
+
+  // ignore: unused_field
+  final Future<void> _pending = Completer<void>().future;
+}
 
 class _MemoryDatabaseService extends DatabaseService {
   _MemoryDatabaseService(this.db);
@@ -82,7 +93,7 @@ void main() {
     ].join('\n'));
     final book = Book(
         id: 'b', title: 'T', author: 'A', filePath: file.path, format: 'txt');
-    final engine = TxtReaderEngine(book);
+    final engine = _FutureHoldingEngine(book);
     await engine.initialize();
     addTearDown(engine.dispose);
     manager = ContentMetaManager(

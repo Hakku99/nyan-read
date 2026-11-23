@@ -17,6 +17,28 @@ import '../reader_engine/reader_engine.dart';
 /// slots go missing in real books.
 const int _kHealWindow = 20;
 
+typedef _HealRequest = ({
+  List<String?> window,
+  String pre,
+  String exact,
+  String post,
+});
+
+/// Top-level on purpose: an `Isolate.run` closure is sent together with the
+/// whole context it was created in. Created inside `_healHighlights` that
+/// context also holds the engine (via the paragraph-text closure), and real
+/// engines hold Futures, which cannot cross isolates, so every highlight
+/// silently failed to load on EPUB. Here the closure only captures
+/// [requests].
+Future<List<({int delta, int offset})?>> _healBatch(
+        List<_HealRequest> requests) =>
+    Isolate.run(
+      () => [
+        for (final r in requests)
+          AnchorHealer.findHealedInWindow(r.window, r.pre, r.exact, r.post),
+      ],
+    );
+
 class ContentMetaManager {
   final ReaderEngine engine;
   final Book book;
@@ -154,7 +176,7 @@ class ContentMetaManager {
 
     // Pass 2: one isolate heals the whole batch.
     if (slowIndexes.isNotEmpty) {
-      final requests = <({List<String?> window, String pre, String exact, String post})>[
+      final requests = <_HealRequest>[
         for (var k = 0; k < slowIndexes.length; k++)
           (
             window: slowWindows[k],
@@ -163,12 +185,7 @@ class ContentMetaManager {
             post: raw[slowIndexes[k]].postContext,
           ),
       ];
-      final healed = await Isolate.run(
-        () => [
-          for (final r in requests)
-            AnchorHealer.findHealedInWindow(r.window, r.pre, r.exact, r.post),
-        ],
-      );
+      final healed = await _healBatch(requests);
 
       for (var k = 0; k < slowIndexes.length; k++) {
         final h = raw[slowIndexes[k]];
