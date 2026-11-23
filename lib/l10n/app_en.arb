@@ -113,6 +113,7 @@
   "fileExists": "File exists",
   "fileNotFound": "File not found",
   "fileUnavailableCta": "File unavailable",
+  "bookSourceUnavailableNotice": "This book's source file may have been moved, renamed, deleted, or access has expired. Import the same file again to restore it; your progress and notes are kept.",
   "unknown": "Unknown",
   "never": "Never",
   "backToBookshelf": "Back to Bookshelf",
@@ -401,6 +402,25 @@
       }
     }
   },
+  "booksRelinked": "{count, plural, one{Re-linked {count} book} other{Re-linked {count} books}}",
+  "@booksRelinked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importGrantWarningTitle": "Many files already authorized",
+  "importGrantWarningBody": "Android only keeps access to a limited number of individually imported files, and this app already holds {count}. Importing more may make older books unreadable. Importing a folder uses a single authorization for every book inside.",
+  "@importGrantWarningBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importGrantWarningUseFolder": "Import a folder",
+  "importGrantWarningContinue": "Continue anyway",
   "noChaptersDetected": "No chapters detected",
   "chapterCount": "{count} chapters",
   "@chapterCount": {
@@ -530,7 +550,7 @@
   "timeLongAgo": "Long ago",
   "neverRead": "Never read",
   "errorFileNotFoundTitle": "This book lost its way",
-  "errorFileNotFoundBody": "The file can't be found — it may have been moved or deleted.",
+  "errorFileNotFoundBody": "The file can't be found — it may have been moved or deleted, or access has expired. Import the same file again to restore it; your progress and notes are kept.",
   "errorUnsupportedFormatTitle": "Nyan can't read this format",
   "errorUnsupportedFormatBody": "This file type isn't supported yet.",
   "errorParseFailedTitle": "These pages are stuck together",

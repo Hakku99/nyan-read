@@ -734,6 +734,12 @@ abstract class AppLocalizations {
   /// **'File unavailable'**
   String get fileUnavailableCta;
 
+  /// No description provided for @bookSourceUnavailableNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This book\'s source file may have been moved, renamed, deleted, or access has expired. Import the same file again to restore it; your progress and notes are kept.'**
+  String get bookSourceUnavailableNotice;
+
   /// No description provided for @unknown.
   ///
   /// In en, this message translates to:
@@ -1760,6 +1766,36 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{Skipped {count} duplicate item.} other{Skipped {count} duplicate items.}}'**
   String duplicatesSkipped(int count);
 
+  /// No description provided for @booksRelinked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Re-linked {count} book} other{Re-linked {count} books}}'**
+  String booksRelinked(int count);
+
+  /// No description provided for @importGrantWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Many files already authorized'**
+  String get importGrantWarningTitle;
+
+  /// No description provided for @importGrantWarningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Android only keeps access to a limited number of individually imported files, and this app already holds {count}. Importing more may make older books unreadable. Importing a folder uses a single authorization for every book inside.'**
+  String importGrantWarningBody(int count);
+
+  /// No description provided for @importGrantWarningUseFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Import a folder'**
+  String get importGrantWarningUseFolder;
+
+  /// No description provided for @importGrantWarningContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue anyway'**
+  String get importGrantWarningContinue;
+
   /// No description provided for @noChaptersDetected.
   ///
   /// In en, this message translates to:
@@ -2027,7 +2063,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorFileNotFoundBody.
   ///
   /// In en, this message translates to:
-  /// **'The file can\'t be found — it may have been moved or deleted.'**
+  /// **'The file can\'t be found — it may have been moved or deleted, or access has expired. Import the same file again to restore it; your progress and notes are kept.'**
   String get errorFileNotFoundBody;
 
   /// No description provided for @errorUnsupportedFormatTitle.

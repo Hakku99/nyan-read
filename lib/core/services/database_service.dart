@@ -711,6 +711,28 @@ class DatabaseService {
     );
   }
 
+  /// Points an existing book at a new source file. Touches only the three
+  /// source columns so progress, bookmarks, highlights and `is_private` keep
+  /// belonging to the same book id.
+  Future<void> relinkBookSource(
+    String bookId, {
+    required String locator,
+    required String sourceType,
+    required String storageType,
+  }) async {
+    final db = await database;
+    await db.update(
+      'books',
+      {
+        'file_path': locator,
+        'source_type': sourceType,
+        'storage_type': storageType,
+      },
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
+  }
+
   Future<Set<String>> getAllBookFilenames() async {
     final db = await database;
     final results = await db.query(

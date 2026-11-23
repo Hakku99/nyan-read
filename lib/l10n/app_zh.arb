@@ -113,6 +113,7 @@
   "fileExists": "文件存在",
   "fileNotFound": "文件未找到",
   "fileUnavailableCta": "文件不可用",
+  "bookSourceUnavailableNotice": "这本书的源文件可能已被移动、重命名、删除，或访问授权已失效。重新导入同一个文件即可恢复，阅读进度和笔记不会丢失。",
   "unknown": "未知",
   "never": "从未",
   "backToBookshelf": "返回书架",
@@ -379,6 +380,25 @@
       }
     }
   },
+  "booksRelinked": "已重新关联 {count} 本书",
+  "@booksRelinked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importGrantWarningTitle": "已授权的文件较多",
+  "importGrantWarningBody": "Android 只会保留有限数量的单文件授权，目前已有 {count} 个。继续逐个导入可能导致较早导入的书无法打开。导入文件夹只占用一个授权，即可覆盖其中所有书。",
+  "@importGrantWarningBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importGrantWarningUseFolder": "导入文件夹",
+  "importGrantWarningContinue": "仍然继续",
   "noChaptersDetected": "未检测到章节",
   "chapterCount": "{count} 章",
   "@chapterCount": {
@@ -508,7 +528,7 @@
   "timeLongAgo": "很久以前",
   "neverRead": "从未阅读",
   "errorFileNotFoundTitle": "这本书迷路了",
-  "errorFileNotFoundBody": "找不到源文件——它可能已被移动或删除。",
+  "errorFileNotFoundBody": "找不到源文件——它可能已被移动、删除，或访问授权已失效。重新导入同一个文件即可恢复，阅读进度和笔记不会丢失。",
   "errorUnsupportedFormatTitle": "Nyan 还不能读取这种格式",
   "errorUnsupportedFormatBody": "暂不支持该文件类型。",
   "errorParseFailedTitle": "书页像是粘在一起了",

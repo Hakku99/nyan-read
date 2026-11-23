@@ -11,13 +11,31 @@ import '../services/database_service.dart';
 import 'book_source_access.dart';
 import 'book_source_platform.dart';
 
+/// Where an already-imported book currently reads from.
+class BookSourceRef {
+  final String bookId;
+  final String sourceType;
+  final String sourceLocator;
+
+  const BookSourceRef({
+    required this.bookId,
+    required this.sourceType,
+    required this.sourceLocator,
+  });
+}
+
 class BookImportDedupIndex {
   final Set<String> signatures;
   final Set<String> normalizedLocators;
 
+  /// Signature → the book that owns it, so a duplicate hit can be traced back
+  /// to the book whose source may need re-linking.
+  final Map<String, BookSourceRef> booksBySignature;
+
   const BookImportDedupIndex({
     required this.signatures,
     required this.normalizedLocators,
+    this.booksBySignature = const {},
   });
 }
 
@@ -37,6 +55,7 @@ class BookImportFingerprint {
     final rows = await db.getBookImportEntries();
     final signatures = <String>{};
     final normalizedLocators = <String>{};
+    final booksBySignature = <String, BookSourceRef>{};
 
     for (final row in rows) {
       final bookId = row['id'] as String?;
@@ -52,6 +71,16 @@ class BookImportFingerprint {
 
       if (existingSignature != null && existingSignature.isNotEmpty) {
         signatures.add(existingSignature);
+        if (bookId != null && bookId.isNotEmpty) {
+          booksBySignature.putIfAbsent(
+            existingSignature,
+            () => BookSourceRef(
+              bookId: bookId,
+              sourceType: sourceType,
+              sourceLocator: sourceLocator,
+            ),
+          );
+        }
         continue;
       }
 
@@ -74,7 +103,46 @@ class BookImportFingerprint {
     return BookImportDedupIndex(
       signatures: signatures,
       normalizedLocators: normalizedLocators,
+      booksBySignature: booksBySignature,
     );
+  }
+
+  /// Re-points the book behind a signature hit at the freshly picked source,
+  /// but only when its current source is unreadable and the new one is
+  /// readable. A readable old source is never replaced, so a sampled-signature
+  /// collision between two different files cannot hijack a healthy book.
+  /// Progress, bookmarks, highlights and privacy are untouched (same book id).
+  /// Returns true when the book was re-linked.
+  static Future<bool> relinkIfStale(
+    DatabaseService db, {
+    required BookSourceRef existing,
+    required String newSourceType,
+    required String newSourceLocator,
+    required String newStorageType,
+    Future<bool> Function({
+      required String sourceType,
+      required String sourceLocator,
+    }) isAvailable = BookSourceAccess.isAvailableFor,
+  }) async {
+    if (await isAvailable(
+      sourceType: existing.sourceType,
+      sourceLocator: existing.sourceLocator,
+    )) {
+      return false;
+    }
+    if (!await isAvailable(
+      sourceType: newSourceType,
+      sourceLocator: newSourceLocator,
+    )) {
+      return false;
+    }
+    await db.relinkBookSource(
+      existing.bookId,
+      locator: newSourceLocator,
+      sourceType: newSourceType,
+      storageType: newStorageType,
+    );
+    return true;
   }
 
   /// Returns books that are missing a content signature, for background backfill.

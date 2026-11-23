@@ -337,6 +337,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fileUnavailableCta => 'File unavailable';
 
   @override
+  String get bookSourceUnavailableNotice =>
+      'This book\'s source file may have been moved, renamed, deleted, or access has expired. Import the same file again to restore it; your progress and notes are kept.';
+
+  @override
   String get unknown => 'Unknown';
 
   @override
@@ -930,6 +934,31 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String booksRelinked(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Re-linked $count books',
+      one: 'Re-linked $count book',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importGrantWarningTitle => 'Many files already authorized';
+
+  @override
+  String importGrantWarningBody(int count) {
+    return 'Android only keeps access to a limited number of individually imported files, and this app already holds $count. Importing more may make older books unreadable. Importing a folder uses a single authorization for every book inside.';
+  }
+
+  @override
+  String get importGrantWarningUseFolder => 'Import a folder';
+
+  @override
+  String get importGrantWarningContinue => 'Continue anyway';
+
+  @override
   String get noChaptersDetected => 'No chapters detected';
 
   @override
@@ -1097,7 +1126,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorFileNotFoundBody =>
-      'The file can\'t be found — it may have been moved or deleted.';
+      'The file can\'t be found — it may have been moved or deleted, or access has expired. Import the same file again to restore it; your progress and notes are kept.';
 
   @override
   String get errorUnsupportedFormatTitle => 'Nyan can\'t read this format';
