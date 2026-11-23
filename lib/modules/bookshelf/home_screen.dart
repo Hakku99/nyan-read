@@ -145,7 +145,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
     final double screenWidth = MediaQuery.sizeOf(context).width;
     final double usedWidth =
-        2 * gridSideInset + 2 * crossAxisSpacing; // 2 gaps for 3 columns
+        2 * gridSideInset +
+        2 * crossAxisSpacing; // 2 gaps for 3 columns
     final double cardWidth = (screenWidth - usedWidth) / 3;
     final double coverHeight = cardWidth / NyanShelfUi.gridCoverAspectRatio;
     final double cardHeight =
@@ -167,14 +168,13 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     final books = vm.selectedBooks;
 
     // U21 spec: bottom sheet confirm with book list + "also delete files" toggle.
-    final result =
-        await showNyanSheet<({bool confirmed, bool alsoDeleteFiles})>(
+    final result = await showNyanSheet<({bool confirmed, bool alsoDeleteFiles})>(
       context: context,
       isDismissible: false,
       builder: (sheetCtx) => DeleteBooksSheetContent(
         books: books,
-        onDelete: (alsoDelete) => Navigator.pop(
-            sheetCtx, (confirmed: true, alsoDeleteFiles: alsoDelete)),
+        onDelete: (alsoDelete) =>
+            Navigator.pop(sheetCtx, (confirmed: true, alsoDeleteFiles: alsoDelete)),
         onCancel: () =>
             Navigator.pop(sheetCtx, (confirmed: false, alsoDeleteFiles: false)),
       ),
@@ -717,9 +717,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
   Future<void> _showSetPasswordDialog(BuildContext context) async {
     // Full-screen PIN takeover (U16) — set→confirm. PrivacyLockService stores a
     // 4-digit hashed PIN, so the numeric keypad is the canonical entry surface.
-    final created = await ref
-        .read(privacyLockServiceRpProvider)
-        .showPinSetupGuarded(context);
+    final created =
+        await ref.read(privacyLockServiceRpProvider).showPinSetupGuarded(context);
     if (created == true && mounted) {
       _unlockPrivateShelfAfterRouteSettles();
     }
@@ -802,7 +801,8 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                             horizontal: NyanSpacing.space12),
                         decoration: BoxDecoration(
                           color: nyan.primary.withValues(alpha: 0.10),
-                          borderRadius: BorderRadius.circular(NyanRadius.chip),
+                          borderRadius:
+                              BorderRadius.circular(NyanRadius.chip),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -959,8 +959,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
             delegate: _ShelfToolbarDelegate(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               isGridView: _prefs.viewMode == ViewMode.grid,
-              isSortActive:
-                  _prefs.sortBy != SortBy.recency || _prefs.isAscending,
+              isSortActive: _prefs.sortBy != SortBy.recency || _prefs.isAscending,
               isPrivacyUnlocked: featureManager.isPrivateShelfUnlocked,
               showsScrollUnderEdge: !showPrivacyTab,
               sortTooltip: loc.sortBy,
@@ -1103,15 +1102,16 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
                 Positioned(
                   left: NyanSpacing.space12,
                   right: NyanSpacing.space12,
-                  bottom: NyanSpacing.space12 +
-                      MediaQuery.viewPaddingOf(context).bottom,
+                  bottom:
+                      NyanSpacing.space12 + MediaQuery.viewPaddingOf(context).bottom,
                   child: ListenableBuilder(
                     listenable: vm,
                     builder: (context, _) {
                       final singleBook = vm.selectedCount == 1
                           ? vm.publicBooks
                               .followedBy(vm.privateBooks)
-                              .where((b) => vm.selectedBookIds.contains(b.id))
+                              .where((b) =>
+                                  vm.selectedBookIds.contains(b.id))
                               .firstOrNull
                           : null;
                       return _SelectActionBar(
@@ -1234,7 +1234,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
     final Widget? slotWidget = showInlineAd
         ? AdsUI.buildBookshelfInlineAd(context,
-            onDismiss: () => setState(() => _adDismissed = true))
+              onDismiss: () => setState(() => _adDismissed = true))
         : showProNudge
             ? AdsUI.buildProNudge(context)
             : null;
@@ -1340,7 +1340,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
     final Widget? slotWidget = showInlineAd
         ? AdsUI.buildBookshelfInlineAd(context,
-            onDismiss: () => setState(() => _adDismissed = true))
+              onDismiss: () => setState(() => _adDismissed = true))
         : showProNudge
             ? AdsUI.buildProNudge(context)
             : null;
@@ -1473,8 +1473,7 @@ class _SelectActionBar extends StatelessWidget {
       bool isDanger = false,
     }) {
       // Spec: icon = primaryDeep, label = textSecondary for normal; both error for danger.
-      final iconColor =
-          isDanger ? nyan.errorPrimaryTextColor : nyan.primaryDeep;
+      final iconColor = isDanger ? nyan.errorPrimaryTextColor : nyan.primaryDeep;
       final labelColor =
           isDanger ? nyan.errorPrimaryTextColor : nyan.textSecondary;
       return Expanded(
@@ -1567,9 +1566,15 @@ class _SelectActionBar extends StatelessWidget {
 ///
 /// Per bundle3.jsx `DeleteConfirmSheet`: 56×56 error icon container,
 /// 18pt/600 title, 13.5pt/400 body, full-width Delete and Cancel buttons.
+// 0.9 leaves a gap below the status bar. 0.3 keeps the list a peek of a few
+// rows so the surrounding chrome stays visible with hundreds selected.
+const double _kSheetMaxHeightFraction = 0.9;
+const double _kBookListMaxHeightFraction = 0.3;
+
 @visibleForTesting
 class DeleteBooksSheetContent extends StatefulWidget {
   const DeleteBooksSheetContent({
+    super.key,
     required this.books,
     required this.onDelete,
     required this.onCancel,
@@ -1581,10 +1586,10 @@ class DeleteBooksSheetContent extends StatefulWidget {
 
   @override
   State<DeleteBooksSheetContent> createState() =>
-      DeleteBooksSheetContentState();
+      _DeleteBooksSheetContentState();
 }
 
-class DeleteBooksSheetContentState extends State<DeleteBooksSheetContent> {
+class _DeleteBooksSheetContentState extends State<DeleteBooksSheetContent> {
   bool _alsoDeleteFiles = false;
 
   @override
@@ -1611,7 +1616,14 @@ class DeleteBooksSheetContentState extends State<DeleteBooksSheetContent> {
               borderRadius: borderRadius,
               border: Border.all(color: chromeEdge, width: 1),
             ),
-            child: Column(
+            // Cap the whole sheet so it never outgrows short (landscape)
+            // screens; the middle section scrolls, buttons stay pinned.
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight:
+                    MediaQuery.sizeOf(context).height * _kSheetMaxHeightFraction,
+              ),
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -1633,6 +1645,12 @@ class DeleteBooksSheetContentState extends State<DeleteBooksSheetContent> {
                   ),
                 ),
 
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                 // ── Icon + title + body ───────────────────────────────────
                 // Spec: padding "18px 24px 4px".
                 Padding(
@@ -1655,8 +1673,8 @@ class DeleteBooksSheetContentState extends State<DeleteBooksSheetContent> {
                           borderRadius:
                               BorderRadius.circular(NyanRadius.cardNested),
                           border: Border.all(
-                            color: nyan.errorPrimaryTextColor
-                                .withValues(alpha: 0.26),
+                            color: nyan.errorPrimaryTextColor.withValues(
+                                alpha: 0.26),
                             width: 0.7,
                           ),
                         ),
@@ -1705,8 +1723,8 @@ class DeleteBooksSheetContentState extends State<DeleteBooksSheetContent> {
                 // Spec: padding "16px 16px 0"; surfaceMuted recessed panel.
                 if (widget.books.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(NyanSpacing.space16,
-                        NyanSpacing.space16, NyanSpacing.space16, 0),
+                    padding: const EdgeInsets.fromLTRB(
+                        NyanSpacing.space16, NyanSpacing.space16, NyanSpacing.space16, 0),
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         color: nyan.surfaceMuted,
@@ -1720,35 +1738,31 @@ class DeleteBooksSheetContentState extends State<DeleteBooksSheetContent> {
                       child: ClipRRect(
                         borderRadius:
                             BorderRadius.circular(NyanRadius.cardNested),
-                        // Cap the panel so title + buttons stay on screen with
-                        // hundreds selected (sheet is non-dismissible).
                         // ponytail: eager rows inside a scroll view; switch to a
                         // builder if selections reach the thousands.
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            maxHeight: MediaQuery.sizeOf(context).height * 0.3,
+                            maxHeight: MediaQuery.sizeOf(context).height *
+                                _kBookListMaxHeightFraction,
                           ),
                           child: SingleChildScrollView(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                for (int i = 0;
-                                    i < widget.books.length;
-                                    i++) ...[
-                                  if (i > 0)
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: NyanSpacing.space12),
-                                      child: Container(
-                                        height: 0.5,
-                                        color: nyan.divider
-                                            .withValues(alpha: 0.40),
-                                      ),
-                                    ),
-                                  _BookPreviewRow(book: widget.books[i]),
-                                ],
-                              ],
-                            ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (int i = 0; i < widget.books.length; i++) ...[
+                              if (i > 0)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: NyanSpacing.space12),
+                                  child: Container(
+                                    height: 0.5,
+                                    color: nyan.divider.withValues(alpha: 0.40),
+                                  ),
+                                ),
+                              _BookPreviewRow(book: widget.books[i]),
+                            ],
+                          ],
+                        ),
                           ),
                         ),
                       ),
@@ -1791,8 +1805,7 @@ class DeleteBooksSheetContentState extends State<DeleteBooksSheetContent> {
                                 border: Border.all(
                                   color: _alsoDeleteFiles
                                       ? nyan.errorPrimaryTextColor
-                                      : nyan.textPrimary
-                                          .withValues(alpha: 0.28),
+                                      : nyan.textPrimary.withValues(alpha: 0.28),
                                   width: 1.5,
                                 ),
                               ),
@@ -1833,6 +1846,11 @@ class DeleteBooksSheetContentState extends State<DeleteBooksSheetContent> {
                           ],
                         ),
                       ),
+                    ),
+                  ),
+                ),
+
+                      ],
                     ),
                   ),
                 ),
@@ -1910,6 +1928,7 @@ class DeleteBooksSheetContentState extends State<DeleteBooksSheetContent> {
                   ),
                 ),
               ],
+            ),
             ),
           ),
         ),
@@ -2069,8 +2088,7 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => _kHeight;
 
   @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     final nyan = context.nyanTheme;
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -2127,7 +2145,9 @@ class _ShelfToolbarDelegate extends SliverPersistentHeaderDelegate {
                 ),
                 const SizedBox(width: 6),
                 NyanSquareActionButton(
-                  icon: isPrivacyUnlocked ? NyanIcons.lockOpen : NyanIcons.lock,
+                  icon: isPrivacyUnlocked
+                      ? NyanIcons.lockOpen
+                      : NyanIcons.lock,
                   tooltip: lockTooltip,
                   onPressed: onPrivacyLock,
                 ),
