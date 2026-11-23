@@ -12,6 +12,10 @@ class DatabaseService {
 
   DatabaseService();
 
+  /// Wraps an already-open database so tests can skip path_provider.
+  @visibleForTesting
+  DatabaseService.withDatabase(Database db) : _database = db;
+
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
@@ -1012,10 +1016,14 @@ class DatabaseService {
   ///     survives file renames / retitles (extension + size + content
   ///     windows are unchanged), so a renamed book gets its highlights back
   ///     and two same-titled books no longer cross-contaminate notes.
-  ///   - Fallback to `title` matching **only** when the backup payload or
-  ///     the local row has no signature yet (legacy data). Fallback hits
-  ///     are logged with `[Restore][legacy]` so we can track migration
-  ///     progress.
+  ///   - Title fallback **only** when the backup book has no signature AND
+  ///     exactly one local book has that title AND that local book has no
+  ///     signature either. A signed backup book that misses locally is a
+  ///     different book, even if the title matches. Each local book is
+  ///     matched at most once per restore. Fallback hits are logged with
+  ///     `[Restore][legacy]`.
+  ///   - Progress fields are overwritten only by a strictly newer backup
+  ///     (`last_read_at`); highlights/bookmarks are restored regardless.
   ///   - Rebind matched highlights/bookmarks to the local UUID before upsert.
   Future<int> restoreDataBatch(Map<String, dynamic> parsedJson) async {
     final db = await database;
@@ -1025,20 +1033,24 @@ class DatabaseService {
     //    a null signature are only reachable via the title index.
     final localBooksRaw = await db.query(
       'books',
-      columns: ['id', 'title', 'content_signature'],
+      columns: ['id', 'title', 'content_signature', 'last_read_at'],
     );
     final Map<String, String> localBySignature = {};
-    final Map<String, String> localByTitle = {};
+    final Map<String, List<String>> unsignedByTitle = {};
+    final Map<String, int?> localLastRead = {};
+    final Set<String> claimed = {};
     for (final row in localBooksRaw) {
       final id = row['id'] as String?;
       if (id == null) continue;
       final sig = row['content_signature'] as String?;
+      localLastRead[id] = (row['last_read_at'] as num?)?.toInt();
       if (sig != null && sig.isNotEmpty) {
         localBySignature[sig] = id;
-      }
-      final title = row['title'] as String?;
-      if (title != null && title.isNotEmpty) {
-        localByTitle[title] = id;
+      } else {
+        final title = row['title'] as String?;
+        if (title != null && title.isNotEmpty) {
+          unsignedByTitle.putIfAbsent(title, () => []).add(id);
+        }
       }
     }
 
@@ -1066,19 +1078,23 @@ class DatabaseService {
       final title = book['title'] as String?;
       final signature = book['content_signature'] as String?;
 
-      // 2. Match by content_signature first, falling back to title only if
-      //    we have no signature on either side. Skip entirely if we can not
-      //    identify the target row.
+      // 2. Signed backup books match by signature only; unsigned ones may fall
+      //    back to a unique unsigned local title. Skip if no target row.
       String? localBookId;
       bool matchedByLegacy = false;
       if (signature != null && signature.isNotEmpty) {
         localBookId = localBySignature[signature];
-      }
-      if (localBookId == null && title != null && title.isNotEmpty) {
-        localBookId = localByTitle[title];
-        if (localBookId != null) {
+      } else if (title != null && title.isNotEmpty) {
+        final candidates = unsignedByTitle[title];
+        if (candidates != null && candidates.length == 1) {
+          localBookId = candidates.single;
           matchedByLegacy = true;
         }
+      }
+      if (localBookId != null && !claimed.add(localBookId)) {
+        debugPrint(
+            '--- [Restore] Skip book, local match already used: "${title ?? signature}" ---');
+        continue;
       }
       if (localBookId == null) {
         final label = title ?? signature ?? '(unknown)';
@@ -1096,18 +1112,22 @@ class DatabaseService {
       }
 
       // 3. Only update progress metadata; never rewrite id or file_path.
+      final backupReadAt = (book['last_read_at'] as num?)?.toInt();
+      final localReadAt = localLastRead[localBookId];
+      final backupIsNewer = backupReadAt != null &&
+          (localReadAt == null || backupReadAt > localReadAt);
       final progressUpdate = <String, dynamic>{};
-      if (book['current_progress'] != null) {
+      if (backupIsNewer && book['current_progress'] != null) {
         progressUpdate['current_progress'] = book['current_progress'];
       }
-      if (book['last_position_type'] != null) {
+      if (backupIsNewer && book['last_position_type'] != null) {
         progressUpdate['last_position_type'] = book['last_position_type'];
       }
-      if (book['last_position_payload'] != null) {
+      if (backupIsNewer && book['last_position_payload'] != null) {
         progressUpdate['last_position_payload'] = book['last_position_payload'];
       }
-      if (book['last_read_at'] != null) {
-        progressUpdate['last_read_at'] = book['last_read_at'];
+      if (backupIsNewer) {
+        progressUpdate['last_read_at'] = backupReadAt;
       }
 
       if (progressUpdate.isNotEmpty) {
