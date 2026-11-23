@@ -1016,12 +1016,12 @@ class DatabaseService {
   ///     survives file renames / retitles (extension + size + content
   ///     windows are unchanged), so a renamed book gets its highlights back
   ///     and two same-titled books no longer cross-contaminate notes.
-  ///   - Title fallback **only** when the backup book has no signature AND
-  ///     exactly one local book has that title AND that local book has no
-  ///     signature either. A signed backup book that misses locally is a
-  ///     different book, even if the title matches. Each local book is
-  ///     matched at most once per restore. Fallback hits are logged with
-  ///     `[Restore][legacy]`.
+  ///   - Title fallback **only** against local books that have no signature
+  ///     (backfill pending or failed) and only when exactly one such local
+  ///     book has that title. A local book that already has a different
+  ///     signature is a different book, even if the title matches. Each
+  ///     local book is matched at most once per restore. Fallback hits are
+  ///     logged with `[Restore][legacy]`.
   ///   - Progress fields are overwritten only by a strictly newer backup
   ///     (`last_read_at`); highlights/bookmarks are restored regardless.
   ///   - Rebind matched highlights/bookmarks to the local UUID before upsert.
@@ -1078,13 +1078,14 @@ class DatabaseService {
       final title = book['title'] as String?;
       final signature = book['content_signature'] as String?;
 
-      // 2. Signed backup books match by signature only; unsigned ones may fall
-      //    back to a unique unsigned local title. Skip if no target row.
+      // 2. Match by signature; otherwise fall back to a unique *unsigned*
+      //    local title. Skip if no target row.
       String? localBookId;
       bool matchedByLegacy = false;
       if (signature != null && signature.isNotEmpty) {
         localBookId = localBySignature[signature];
-      } else if (title != null && title.isNotEmpty) {
+      }
+      if (localBookId == null && title != null && title.isNotEmpty) {
         final candidates = unsignedByTitle[title];
         if (candidates != null && candidates.length == 1) {
           localBookId = candidates.single;

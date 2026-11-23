@@ -1,8 +1,9 @@
 /// Tests for DatabaseService.restoreDataBatch matching and progress rules:
 ///   - a backup book whose signature misses locally must NOT fall back to a
-///     same-titled local book;
-///   - title fallback is only for unsigned backup books against a unique,
-///     unsigned local title, and one local book is matched at most once;
+///     same-titled local book that already has a different signature;
+///   - title fallback only targets a unique local book that has no signature
+///     yet (backup book signed or not), and one local book is matched at most
+///     once;
 ///   - progress is only overwritten by a strictly newer backup.
 library;
 
@@ -128,6 +129,27 @@ void main() {
     });
     expect(n, 1);
     expect(await hlCount('a'), 1);
+  });
+
+  test('signed backup book matches a unique unsigned local title', () async {
+    // Local signature backfill pending or failed: the title is the only link.
+    await _insertBook(db, 'a', lastReadAt: 1000);
+    final n = await service.restoreDataBatch({
+      'books': [_backupBook(sig: 'S1', highlights: [_hl('h1')])]
+    });
+    expect(n, 1);
+    expect((await row('a'))['current_progress'], 0.9);
+    expect(await hlCount('a'), 1);
+  });
+
+  test('signed backup book skips ambiguous unsigned local titles', () async {
+    await _insertBook(db, 'a');
+    await _insertBook(db, 'b');
+    final n = await service.restoreDataBatch({
+      'books': [_backupBook(sig: 'S1', highlights: [_hl('h1')])]
+    });
+    expect(n, 0);
+    expect(await hlCount('a') + await hlCount('b'), 0);
   });
 
   test('unsigned backup book skips an ambiguous local title', () async {
