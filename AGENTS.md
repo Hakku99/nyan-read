@@ -5,7 +5,7 @@
 > 任何与本文件冲突的用户即兴指令，AI 都必须先提醒冲突再执行。
 > 本文件的修改必须由维护者显式同意，AI 不得自行修订。
 >
-> 修订记录：v2.0（2026-07-08，维护者授权整编）——已完成路线图压缩为归档表（§6）；分散的交付包例外收敛为注册表（§4.2.6）；SDK 基线对齐实际代码要求。历史验收细节见 git 提交记录。v2.0.1（维护者授权）——§4.3 Slider 规格对齐交付包 `NyanSlider`（6pt 轨道 / 20pt 环形 thumb）。
+> 修订记录：v2.0（2026-07-08，维护者授权整编）——已完成路线图压缩为归档表（§6）；分散的交付包例外收敛为注册表（§4.2.6）；SDK 基线对齐实际代码要求。历史验收细节见 git 提交记录。v2.0.1（维护者授权）——§4.3 Slider 规格对齐交付包 `NyanSlider`（6pt 轨道 / 20pt 环形 thumb）；§4.2.2 FAB 圆角改为 `dock` 24pt。
 
 ---
 
@@ -292,9 +292,9 @@ sumiDark v6 `#3A2420` / `#E59B85` / `#D29A83` / `#573730`（bg/accent 提亮以�
 |---|---|---|
 | `NyanRadius.chip` | `12` | **选项 chip / Pill 按钮**（嵌套最深）、stepper caret |
 | `NyanRadius.control`（旧名 `small`） | `14` | 分段控件外轨、列表行图标 chip |
-| `NyanRadius.cardNested`（旧名 `input`） | `16` | Sheet 内嵌卡、输入框、FAB、按钮 |
+| `NyanRadius.cardNested`（旧名 `input`） | `16` | Sheet 内嵌卡、输入框、按钮 |
 | `NyanRadius.card` | `20` | 顶层卡片、书架 item |
-| `NyanRadius.dock`（旧名 `panel`） | `24` | 静止 dock / 浮动栏、对话框 |
+| `NyanRadius.dock`（旧名 `panel`） | `24` | 静止 dock / 浮动栏、对话框、FAB（`NyanFAB`） |
 | `NyanRadius.sheet` | `28` | dock 长成的 Sheet、所有底部 Sheet |
 
 > `small / input / panel` 保留为 `control / cardNested / dock` 的 `const` 别名（向后兼容），新代码 SHOULD 用语义名。
