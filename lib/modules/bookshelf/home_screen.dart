@@ -1234,7 +1234,6 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     final showInlineAd = !forceProNudge &&
         !_adDismissed &&
         AdsUI.shouldShowBookshelfInlineAd(
-          adsEnabled: adsEnabled,
           isPrivateShelf: isPrivate,
           isSelectionMode: isSelectionMode,
           isProUser: isProUser,

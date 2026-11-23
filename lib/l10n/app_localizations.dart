@@ -692,6 +692,18 @@ abstract class AppLocalizations {
   /// **'File path copied to clipboard'**
   String get filePathCopied;
 
+  /// No description provided for @selectionCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get selectionCopy;
+
+  /// No description provided for @selectionSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get selectionSearch;
+
   /// No description provided for @copiedToClipboard.
   ///
   /// In en, this message translates to:

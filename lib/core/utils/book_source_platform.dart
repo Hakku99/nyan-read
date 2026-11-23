@@ -163,7 +163,10 @@ class BookSourcePlatform {
   }
 
   /// Releases a persisted grant (folder removal; also quota give-back when
-  /// deleting legacy per-file books). False when the grant wasn't held.
+  /// deleting legacy per-file books). True only if the app's persisted-grant
+  /// count actually dropped. The system may record a grant under a different
+  /// URI form than the picker returned (Downloads: `msf:` vs `raw:`), so the
+  /// release is attempted even without an exact URI match.
   static Future<bool> releasePersistedPermission(String uri) async {
     if (!_isAndroid) return false;
     final released = await _channel.invokeMethod<bool>(

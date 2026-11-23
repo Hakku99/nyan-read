@@ -30,6 +30,8 @@ class BookshelfPreferencesService {
   static const String _keyHeroCollapsed = 'bookshelf_hero_collapsed';
   static const String _keyPendingFileDeletions =
       'bookshelf_pending_file_deletions';
+  static const String _keyPendingGrantReleases =
+      'bookshelf_pending_grant_releases';
   static const int _maxRecentSearches = 5;
 
   // Default values
@@ -80,6 +82,27 @@ class BookshelfPreferencesService {
       await _prefs?.remove(_keyPendingFileDeletions);
     } else {
       await _prefs?.setStringList(_keyPendingFileDeletions, locators);
+    }
+  }
+
+  /// Persisted `content://` URIs whose SAF grant still has to be handed back
+  /// (deleted books whose undo window a killed session never closed).
+  List<String> get pendingGrantReleases {
+    try {
+      return List.unmodifiable(
+          _prefs?.getStringList(_keyPendingGrantReleases) ?? const []);
+    } catch (e) {
+      debugPrint('Discarding malformed pending grant releases: $e');
+      unawaited(_prefs?.remove(_keyPendingGrantReleases));
+      return const [];
+    }
+  }
+
+  Future<void> setPendingGrantReleases(List<String> uris) async {
+    if (uris.isEmpty) {
+      await _prefs?.remove(_keyPendingGrantReleases);
+    } else {
+      await _prefs?.setStringList(_keyPendingGrantReleases, uris);
     }
   }
 

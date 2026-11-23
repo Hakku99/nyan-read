@@ -315,6 +315,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filePathCopied => 'File path copied to clipboard';
 
   @override
+  String get selectionCopy => 'Copy';
+
+  @override
+  String get selectionSearch => 'Search';
+
+  @override
   String get copiedToClipboard => 'Copied to clipboard';
 
   @override

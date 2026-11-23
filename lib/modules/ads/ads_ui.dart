@@ -22,7 +22,8 @@ class AdsUI {
   static const _suggestionsEn = [
     NyanMiniSuggest(title: 'Star Ocean: Fleet Chronicles', author: 'Lin Shen'),
     NyanMiniSuggest(title: 'Farming at the End of Days', author: 'Su Wan'),
-    NyanMiniSuggest(title: "Chang'an: Twelve Hours Beyond", author: 'Ma Boyong'),
+    NyanMiniSuggest(
+        title: "Chang'an: Twelve Hours Beyond", author: 'Ma Boyong'),
   ];
 
   static void init() {
@@ -30,7 +31,6 @@ class AdsUI {
   }
 
   static bool shouldShowBookshelfInlineAd({
-    required bool adsEnabled,
     required bool isPrivateShelf,
     required bool isSelectionMode,
     required bool isProUser,
@@ -40,7 +40,10 @@ class AdsUI {
     final meetsPlacementRules = !isPrivateShelf &&
         !isSelectionMode &&
         bookCount >= minBooksForInlineShelfAd;
-    return meetsPlacementRules && (adsEnabled || kDebugMode);
+    // Release builds never show the placeholder feed above: it is fake data
+    // (incl. a real author's name) labelled "Sponsored". Re-enable for release
+    // only once a real ad/feed source replaces the placeholders.
+    return meetsPlacementRules && kDebugMode;
   }
 
   /// Whether to show the Pro nudge in the sponsored slot (no ad available).

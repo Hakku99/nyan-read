@@ -181,6 +181,24 @@ class ReaderConfig {
     this.pageAnimation = PageAnimation.fade,
     this.useSerif = false,
   });
+
+  // Value equality lets ReaderSettingsManager skip no-op config pushes, which
+  // otherwise rebuild the whole body list (e.g. on every warmth slider frame).
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ReaderConfig &&
+          other.backgroundColor == backgroundColor &&
+          other.textColor == textColor &&
+          other.fontSize == fontSize &&
+          other.lineHeight == lineHeight &&
+          other.pageTurnMode == pageTurnMode &&
+          other.pageAnimation == pageAnimation &&
+          other.useSerif == useSerif;
+
+  @override
+  int get hashCode => Object.hash(backgroundColor, textColor, fontSize,
+      lineHeight, pageTurnMode, pageAnimation, useSerif);
 }
 
 class ReaderCapabilities {
