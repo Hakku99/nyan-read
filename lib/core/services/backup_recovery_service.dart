@@ -8,6 +8,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../utils/book_cover_cache.dart';
 import 'database_service.dart';
 
 class BackupRecoveryService extends WidgetsBindingObserver {
@@ -205,7 +206,7 @@ class BackupRecoveryService extends WidgetsBindingObserver {
       // On Android getTemporaryDirectory() and getApplicationCacheDirectory()
       // are the same cacheDir, so BookCoverCache's `covers/` lives under the
       // directory swept here. It has its own LRU cap; never age it out.
-      final coversPrefix = '${join(tempDirPath, 'covers')}$separator';
+      final coversPrefix = '${join(tempDirPath, BookCoverCache.dirName)}$separator';
 
       for (final entity in entities) {
         if (entity is File && !entity.path.startsWith(coversPrefix)) {

@@ -619,9 +619,10 @@ class BookshelfViewModel extends ChangeNotifier {
             await file.delete();
           }
         } catch (e, stackTrace) {
-          debugPrint(
-            'Failed to delete source file: $e\n$stackTrace',
-          );
+          // FileSystemException.toString() embeds the absolute path
+          // (AGENTS §2.2.4), so log only its message / the error type.
+          final reason = e is FileSystemException ? e.message : e.runtimeType;
+          debugPrint('Failed to delete source file: $reason\n$stackTrace');
           failed++;
         }
       }),
