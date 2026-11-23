@@ -23,6 +23,10 @@ class BookshelfPreferencesService {
   static const String _keyIsAscending = 'bookshelf_sort_ascending';
   static const String _keyDeleteFiles = 'bookshelf_delete_files_on_remove';
   static const String _keyRecentSearches = 'bookshelf_recent_searches';
+  // Before this purge, private-shelf queries were saved into the shared list
+  // and cannot be told apart from public ones; drop the whole list once.
+  static const String _keyRecentSearchesPurged =
+      'bookshelf_recent_searches_purged_v1';
   // Per-shelf so the private tab's filter doesn't leak onto the public one.
   static const String _keyPublicStatusFilter = 'bookshelf_status_filter_public';
   static const String _keyPrivateStatusFilter =
@@ -134,6 +138,10 @@ class BookshelfPreferencesService {
     _deleteFilesOnRemove = _prefs!.getBool(_keyDeleteFiles) ?? false;
 
     // Load recent searches
+    if (_prefs!.getBool(_keyRecentSearchesPurged) != true) {
+      await _prefs!.remove(_keyRecentSearches);
+      await _prefs!.setBool(_keyRecentSearchesPurged, true);
+    }
     _recentSearches = _prefs!.getStringList(_keyRecentSearches) ?? [];
 
     // Load per-shelf status filters

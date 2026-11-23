@@ -9,8 +9,10 @@ import 'package:path_provider/path_provider.dart';
 /// with LRU eviction). Keyed by book id; one JPEG per book.
 ///
 /// Lives under the application *cache* directory — deliberately NOT the
-/// temporary directory, which our own cache scavenger wipes after 24h, and
+/// temporary directory, whose files our scavenger ages out after 24h, and
 /// NOT documents, which iOS backs up to iCloud (covers are re-derivable).
+/// Caveat: on Android both directories are the same `cacheDir`, so the
+/// scavenger (BackupRecoveryService.cacheCleanupTask) skips `covers/`.
 class BookCoverCache {
   BookCoverCache._();
 

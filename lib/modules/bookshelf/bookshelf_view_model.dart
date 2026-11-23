@@ -599,7 +599,7 @@ class BookshelfViewModel extends ChangeNotifier {
       if (!deleted) {
         debugPrint(
           'Failed to delete content Uri (unsupported provider or no '
-          'persistable delete permission): $locator',
+          'persistable delete permission)',
         );
         failed++;
       }
@@ -620,7 +620,7 @@ class BookshelfViewModel extends ChangeNotifier {
           }
         } catch (e, stackTrace) {
           debugPrint(
-            'Failed to delete source file: $locator\n$e\n$stackTrace',
+            'Failed to delete source file: $e\n$stackTrace',
           );
           failed++;
         }

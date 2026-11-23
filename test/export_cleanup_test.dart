@@ -22,4 +22,21 @@ void main() {
     expect(export.existsSync(), isFalse);
     expect(other.existsSync(), isTrue);
   });
+
+  test('scavenger never ages out the cover cache subdirectory', () {
+    final dir = Directory.systemTemp.createTempSync('scav_');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    Directory(join(dir.path, 'covers')).createSync();
+    final cover = File(join(dir.path, 'covers', 'book1.jpg'))
+      ..writeAsStringSync('x')
+      ..setLastModifiedSync(DateTime.now().subtract(const Duration(days: 3)));
+    final stale = File(join(dir.path, 'stale.bin'))
+      ..writeAsStringSync('x')
+      ..setLastModifiedSync(DateTime.now().subtract(const Duration(days: 3)));
+
+    BackupRecoveryService.cacheCleanupTask(dir.path);
+
+    expect(cover.existsSync(), isTrue);
+    expect(stale.existsSync(), isFalse);
+  });
 }

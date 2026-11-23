@@ -612,7 +612,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       final persisted =
           await BookSourcePlatform.persistReadPermission(identifier);
       if (!persisted) {
-        debugPrint('Failed to persist read permission for $identifier');
+        debugPrint('Failed to persist read permission for imported content Uri');
         return null;
       }
       return _ImportedBookSource(

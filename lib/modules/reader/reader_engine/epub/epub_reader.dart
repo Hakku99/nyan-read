@@ -211,7 +211,8 @@ class EpubReaderEngine
               ? parseResult.chapterStartIndexes[index]
               : 0;
           return ReaderChapter(
-            title: title ?? 'Chapter ${index + 1}',
+            // Empty when untitled: no l10n here; the UI fills it via readerChapterTitle().
+            title: title ?? '',
             index: index,
             locator: ChapterLocator(contentIndex: startIndex),
           );

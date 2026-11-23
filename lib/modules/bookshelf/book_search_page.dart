@@ -212,6 +212,9 @@ class _BookSearchPageState extends ConsumerState<BookSearchPage> {
     NyanTheme nyan,
     bool isDark,
   ) {
+    // The recents list is the public shelf's; showing it here would imply
+    // private queries are remembered and expose the public ones behind the PIN.
+    if (widget.isPrivate) return const SizedBox.shrink();
     final prefs = ref.read(bookshelfPreferencesRpProvider);
     final recents = prefs.recentSearches;
     if (recents.isEmpty) return const SizedBox.shrink();
