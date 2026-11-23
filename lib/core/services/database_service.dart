@@ -7,6 +7,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import '../utils/title_sort_key.dart';
 
+/// Outcome of a `quick_check` run. [unknown] means the check could not be
+/// completed for a reason that says nothing about the file (disk full,
+/// locked, permissions) and must never be treated as corruption.
+enum QuickCheckVerdict { healthy, corrupt, unknown }
+
 class DatabaseService {
   Database? _database;
 
@@ -27,7 +32,7 @@ class DatabaseService {
     final path = join(dbPath, 'nyan_read.db');
 
     // Self-heal the database before opening it.
-    await _checkAndHealDatabase(path);
+    await checkAndHealDatabase(path);
 
     final db = await openDatabase(
       path,
@@ -205,69 +210,241 @@ class DatabaseService {
     await db.execute("VACUUM INTO '$safePath'");
   }
 
-  Future<void> _checkAndHealDatabase(String mainDbPath) async {
-    final file = File(mainDbPath);
-    if (!file.existsSync()) return;
+  /// Classifies a `PRAGMA quick_check` result row. Anything but "ok" is
+  /// definite corruption.
+  @visibleForTesting
+  static QuickCheckVerdict classifyQuickCheckStatus(String status) =>
+      status.toLowerCase() == 'ok'
+          ? QuickCheckVerdict.healthy
+          : QuickCheckVerdict.corrupt;
 
+  /// Classifies an exception thrown while opening / checking the database.
+  /// Only SQLite's explicit corruption messages count as corrupt; disk
+  /// full, locked file, permission errors etc. are transient environment
+  /// faults and stay unknown. Deliberately a short keyword list: missing a
+  /// corruption (one fewer restore) is cheap, a false positive quarantines a
+  /// healthy library.
+  @visibleForTesting
+  static QuickCheckVerdict classifyCheckError(Object error) {
+    final message = error.toString().toLowerCase();
+    const corruptMarkers = ['malformed', 'not a database', 'corrupt'];
+    return corruptMarkers.any(message.contains)
+        ? QuickCheckVerdict.corrupt
+        : QuickCheckVerdict.unknown;
+  }
+
+  /// Self-heal entry point. Only a *definite* corruption verdict triggers a
+  /// restore; an inconclusive check is retried once and then left alone so
+  /// the real error surfaces on open instead of the library being replaced
+  /// (and, historically, silently emptied). [check] / [restore] / [retryDelay]
+  /// are test seams; [restore] receives the pre-heal copy path (or null).
+  @visibleForTesting
+  Future<void> checkAndHealDatabase(
+    String mainDbPath, {
+    Future<QuickCheckVerdict> Function(String path)? check,
+    Future<void> Function(String mainDbPath, String? preservedCopyPath)?
+        restore,
+    Duration retryDelay = const Duration(milliseconds: 500),
+  }) async {
+    if (!File(mainDbPath).existsSync()) return;
+    final runCheck = check ?? _quickCheck;
+    final runRestore = restore ?? _restoreFromLatestBackup;
+
+    // Android's default SQLite error handler deletes a database file the
+    // moment it hits SQLITE_CORRUPT (and header-damaged files too), i.e.
+    // *inside* the check below and before the worker could archive it. Keep
+    // a plain copy first; if the check then reports corruption it becomes the
+    // permanent salvage copy. Copy failure (e.g. disk full) must never block
+    // startup: log and go on without the safety net.
+    final snapshot = await Isolate.run(() => snapshotMainForHeal(mainDbPath));
+    for (final line in snapshot.logs) {
+      debugPrint(line);
+    }
+    final preservedCopy = snapshot.ok ? preservedCopyPathFor(mainDbPath) : null;
+
+    // sqflite's Platform Channel MUST run on the main isolate, so the
+    // integrity check stays here. Phase 2 · P0-7 moves the *recovery*
+    // work (rename / copy / delete of the WAL + SHM triad) into an
+    // isolate so a corrupt-DB boot no longer holds the splash screen on
+    // Android while we shuffle megabytes of backup files.
+    //
+    // We also deliberately avoid `openReadOnlyDatabase` because it skips
+    // the WAL, which would hide some classes of corruption.
+    //
+    // quick_check (not integrity_check): the full check is O(db size) and
+    // runs on every cold start *before* getIt.allReady(), so a large
+    // library on a slow device could blow the DI bootstrap timeout.
+    // quick_check skips the slow index-content verification but still
+    // catches page-level corruption — the class that actually crashes
+    // sqflite at runtime.
+    var verdict = await runCheck(mainDbPath);
+    if (verdict == QuickCheckVerdict.unknown) {
+      debugPrint(
+          '--- [DatabaseService] quick_check inconclusive; retrying once ---');
+      await Future<void>.delayed(retryDelay);
+      verdict = await runCheck(mainDbPath);
+    }
+
+    switch (verdict) {
+      case QuickCheckVerdict.healthy:
+        debugPrint(
+            '--- [DatabaseService] Main database quick_check passed (ok) ---');
+      case QuickCheckVerdict.corrupt:
+        debugPrint('--- [DatabaseService] Database self-heal triggered ---');
+        // The restore owns (and cleans up) the copy from here on.
+        await runRestore(mainDbPath, preservedCopy);
+        return;
+      case QuickCheckVerdict.unknown:
+        debugPrint(
+            '--- [DatabaseService] quick_check still inconclusive; leaving database untouched ---');
+    }
+    if (preservedCopy != null) await _discardPreservedCopy(mainDbPath);
+  }
+
+  static const _preservedCopySuffix = '.preheal';
+
+  /// Where the pre-heal copy of [mainDbPath] lives; its sidecars are
+  /// `<path>-wal` / `<path>-shm`, the same naming archives use.
+  @visibleForTesting
+  static String preservedCopyPathFor(String mainDbPath) =>
+      '$mainDbPath$_preservedCopySuffix';
+
+  /// Copies the main DB (and `-wal`/`-shm` when present) to the fixed
+  /// pre-heal names, overwriting leftovers from a crashed earlier boot.
+  /// All-or-nothing: on any failure everything copied is removed again, so a
+  /// half-set (e.g. a fresh DB with an older WAL) can never be rolled back.
+  /// Isolate-safe; only strings cross the boundary.
+  @visibleForTesting
+  static ({bool ok, List<String> logs}) snapshotMainForHeal(
+      String mainDbPath) {
+    final logs = <String>[];
+    final target = preservedCopyPathFor(mainDbPath);
     try {
-      // sqflite's Platform Channel MUST run on the main isolate, so the
-      // integrity check stays here. Phase 2 · P0-7 moves the *recovery*
-      // work (rename / copy / delete of the WAL + SHM triad) into an
-      // isolate so a corrupt-DB boot no longer holds the splash screen on
-      // Android while we shuffle megabytes of backup files.
-      //
-      // We also deliberately avoid `openReadOnlyDatabase` because it skips
-      // the WAL, which would hide some classes of corruption.
-      //
-      // quick_check (not integrity_check): the full check is O(db size) and
-      // runs on every cold start *before* getIt.allReady(), so a large
-      // library on a slow device could blow the DI bootstrap timeout.
-      // quick_check skips the slow index-content verification but still
-      // catches page-level corruption — the class that actually crashes
-      // sqflite at runtime.
-      if (!await _passesQuickCheck(mainDbPath)) {
-        throw Exception('Database corrupted');
+      File(mainDbPath).copySync(target);
+      for (final suffix in _sidecarSuffixes) {
+        final source = File('$mainDbPath$suffix');
+        if (source.existsSync()) {
+          source.copySync('$target$suffix');
+        } else {
+          // Stale sidecar from a previous boot must not pair with this copy.
+          final stale = File('$target$suffix');
+          if (stale.existsSync()) stale.deleteSync();
+        }
       }
-      debugPrint(
-          '--- [DatabaseService] Main database quick_check passed (ok) ---');
+      return (ok: true, logs: logs);
     } catch (e) {
-      debugPrint(
-          '--- [DatabaseService] Database self-heal triggered. Recovery reason: $e ---');
-      await _restoreFromLatestBackup(mainDbPath);
+      logs.add(
+          '--- [DatabaseService] Pre-heal copy failed ($e); continuing without a safety copy ---');
+      _deleteAllPreserved(mainDbPath, logs);
+      return (ok: false, logs: logs);
     }
   }
 
-  /// Opens [path] and runs `PRAGMA quick_check`. Returns false on any
-  /// failure — an unopenable file and a failing check both mean "unusable".
-  /// sqflite's Platform Channel MUST run on the main isolate, which is why
-  /// restored candidates are verified here and not inside the restore worker.
-  Future<bool> _passesQuickCheck(String path) async {
+  static void _deleteAllPreserved(String mainDbPath, List<String> logs) {
+    final target = preservedCopyPathFor(mainDbPath);
+    _deleteIgnoringErrors(File(target), logs);
+    for (final suffix in _sidecarSuffixes) {
+      _deleteIgnoringErrors(File('$target$suffix'), logs);
+    }
+  }
+
+  Future<void> _discardPreservedCopy(String mainDbPath) async {
+    final logs = await Isolate.run(() {
+      final logs = <String>[];
+      _deleteAllPreserved(mainDbPath, logs);
+      return logs;
+    });
+    for (final line in logs) {
+      debugPrint(line);
+    }
+  }
+
+  /// Turns the pre-heal copy into a permanent salvage copy
+  /// `<main>_corrupted_<ms>.bak` (+ `-wal`/`-shm`), the same naming the
+  /// restore worker uses when it archives the original itself.
+  @visibleForTesting
+  static List<String> promotePreservedCopy(String mainDbPath) {
+    final logs = <String>[];
+    final source = preservedCopyPathFor(mainDbPath);
+    final target =
+        '${mainDbPath}_corrupted_${DateTime.now().millisecondsSinceEpoch}.bak';
+    for (final suffix in ['', ..._sidecarSuffixes]) {
+      final file = File('$source$suffix');
+      if (file.existsSync()) _archiveOrDelete(file, '$target$suffix', logs);
+    }
+    return logs;
+  }
+
+  /// How many `_corrupted_*.bak` salvage sets (db + sidecars) to keep.
+  static const int _maxSalvageCopies = 2;
+
+  /// Deletes all but the newest [keep] `<main>_corrupted_<ms>.bak` sets next
+  /// to [mainDbPath] (with their `-wal`/`-shm`). Failures only produce log
+  /// lines. Isolate-safe.
+  @visibleForTesting
+  static List<String> pruneSalvageCopies(String mainDbPath,
+      {int keep = _maxSalvageCopies}) {
+    final logs = <String>[];
+    try {
+      final prefix = '${basename(mainDbPath)}_corrupted_';
+      final found = <({File file, int stamp})>[];
+      for (final entry in Directory(dirname(mainDbPath)).listSync()) {
+        if (entry is! File) continue;
+        final name = basename(entry.path);
+        if (!name.startsWith(prefix) || !name.endsWith('.bak')) continue;
+        final stamp =
+            int.tryParse(name.substring(prefix.length, name.length - 4));
+        if (stamp != null) found.add((file: entry, stamp: stamp));
+      }
+      found.sort((a, b) => b.stamp.compareTo(a.stamp));
+      for (final old in found.skip(keep)) {
+        _deleteIgnoringErrors(old.file, logs);
+        for (final suffix in _sidecarSuffixes) {
+          _deleteIgnoringErrors(File('${old.file.path}$suffix'), logs);
+        }
+      }
+    } catch (e) {
+      logs.add('--- [DatabaseService] Salvage copy cleanup failed: $e ---');
+    }
+    return logs;
+  }
+
+  /// Opens [path] and runs `PRAGMA quick_check`. Never throws: failures are
+  /// classified via [classifyCheckError]. sqflite's Platform Channel MUST run
+  /// on the main isolate, which is why restored candidates are verified here
+  /// and not inside the restore worker.
+  Future<QuickCheckVerdict> _quickCheck(String path) async {
     try {
       final db = await openDatabase(path, singleInstance: false);
       try {
         final result = await db.rawQuery('PRAGMA quick_check;');
         final status = result.first.values.first as String;
-        if (status.toLowerCase() != 'ok') {
+        final verdict = classifyQuickCheckStatus(status);
+        if (verdict != QuickCheckVerdict.healthy) {
           debugPrint(
               '--- [DatabaseService] quick_check failed: PRAGMA quick_check = $status ---');
-          return false;
         }
-        return true;
+        return verdict;
       } finally {
         await db.close();
       }
     } catch (e) {
-      debugPrint('--- [DatabaseService] quick_check could not run: $e ---');
-      return false;
+      final verdict = classifyCheckError(e);
+      debugPrint(
+          '--- [DatabaseService] quick_check could not run (${verdict.name}): $e ---');
+      return verdict;
     }
   }
 
-  Future<void> _restoreFromLatestBackup(String mainDbPath) async {
+  Future<void> _restoreFromLatestBackup(
+      String mainDbPath, String? preservedCopyPath) async {
     try {
       final dbPath = await getDatabasesPath();
       final backupDirPath = join(dbPath, 'backups');
       await restoreFromBackupDir(
-          mainDbPath: mainDbPath, backupDirPath: backupDirPath);
+          mainDbPath: mainDbPath,
+          backupDirPath: backupDirPath,
+          preservedCopyPath: preservedCopyPath);
     } catch (e, stack) {
       debugPrint(
           '--- [DatabaseService] Catastrophic recovery failed - $e\n$stack ---');
@@ -290,11 +467,45 @@ class DatabaseService {
   /// (worst case: a startup-failure loop). Now every restored candidate
   /// must pass `PRAGMA quick_check` on the main isolate; failures are
   /// quarantined by rename so the next round picks the next-newest snapshot.
+  ///
+  /// The original is never deleted. If the worker archives it, the
+  /// `_corrupted_<ms>.bak*` files are the salvage copy. If the main file was
+  /// already gone on entry (Android's corruption handler deletes it during
+  /// the check), the pre-heal copy ([preservedCopyPath], see
+  /// [checkAndHealDatabase]) is promoted to that same name instead. Only the
+  /// newest [_maxSalvageCopies] sets are kept.
+  ///
+  /// When every snapshot fails: if the main file was present on entry the
+  /// original is copied back (the salvage copy stays); if the OS had already
+  /// deleted it, it is NOT resurrected — SQLite has judged it corrupt and the
+  /// OS would just delete it again on first use, so the app starts on a
+  /// fresh DB with the salvage copy left in the databases directory.
   @visibleForTesting
   Future<void> restoreFromBackupDir({
     required String mainDbPath,
     required String backupDirPath,
+    String? preservedCopyPath,
   }) async {
+    final originalPresent = File(mainDbPath).existsSync();
+    if (preservedCopyPath != null) {
+      // Done before any restore work so the salvage copy is permanent even
+      // if the process dies mid-restore. With the main file still present
+      // the worker archives it itself, so the pre-heal copy is redundant.
+      final logs = await Isolate.run(() {
+        if (!originalPresent) return promotePreservedCopy(mainDbPath);
+        final logs = <String>[];
+        _deleteAllPreserved(mainDbPath, logs);
+        return logs;
+      });
+      for (final line in logs) {
+        debugPrint(line);
+      }
+    }
+    var settled = false;
+    // Where the isolate archived the original main DB in round 1. Later
+    // rounds start from a deleted main file and never archive again, so
+    // only the first non-null value is the user's original library.
+    String? originalArchive;
     for (var attempt = 0; attempt < _maxRestoreAttempts; attempt++) {
       // Phase 2 / P0-7: the restore itself is pure file-system work (no
       // sqflite channel calls), so we hand it to a helper isolate to keep
@@ -302,7 +513,7 @@ class DatabaseService {
       // isolate boundary. Logs are collected and replayed on the main
       // isolate via debugPrint so they still show up in IDE consoles.
       final outcome = await Isolate.run(
-        () => _runRestoreFromBackupInIsolate(
+        () => runRestoreFromBackup(
           mainDbPath: mainDbPath,
           backupDirPath: backupDirPath,
         ),
@@ -311,17 +522,28 @@ class DatabaseService {
       for (final line in outcome.logs) {
         debugPrint(line);
       }
+      originalArchive ??= outcome.archivedPath;
 
       final restoredFrom = outcome.restoredFromPath;
       if (restoredFrom == null) {
         // No candidate could be restored (none found, or all exhausted).
-        return;
+        break;
       }
 
-      if (await _passesQuickCheck(mainDbPath)) {
+      final verdict = await _quickCheck(mainDbPath);
+      if (verdict == QuickCheckVerdict.healthy) {
+        debugPrint('--- [DatabaseService] Restored DB passed quick_check ---');
+        settled = true;
+        break;
+      }
+      if (verdict == QuickCheckVerdict.unknown) {
+        // Can't tell (disk full / locked ...): don't quarantine a snapshot
+        // that may be fine. Keep the restored file; a real problem surfaces
+        // as a normal open error instead of another round of file shuffling.
         debugPrint(
-            '--- [DatabaseService] Restored DB passed quick_check ---');
-        return;
+            '--- [DatabaseService] Restored DB check inconclusive; keeping it ---');
+        settled = true;
+        break;
       }
 
       // Quarantine by rename, not delete: the snapshot may still be
@@ -331,13 +553,13 @@ class DatabaseService {
       final quarantinePath =
           '$restoredFrom.quarantined_${DateTime.now().millisecondsSinceEpoch}';
       debugPrint(
-          '--- [DatabaseService] Restored DB failed quick_check; quarantining $restoredFrom ---');
+          '--- [DatabaseService] Restored DB failed quick_check; quarantining snapshot ---');
       try {
         File(restoredFrom).renameSync(quarantinePath);
       } catch (e) {
         debugPrint(
             '--- [DatabaseService] Quarantine rename failed ($e); aborting retries to avoid a restore loop ---');
-        return;
+        break;
       }
       // Drop the bad restored main file so the next round starts clean and
       // the worker does not archive it as a "corrupted original".
@@ -348,9 +570,94 @@ class DatabaseService {
             '--- [DatabaseService] Warning: could not delete failed restore: $e ---');
       }
     }
-    debugPrint(
-        '--- [DatabaseService] Restore attempt cap reached; giving up ---');
+
+    if (!settled) {
+      // Every give-up exit (no usable snapshot, quarantine failure, attempt
+      // cap) lands here.
+      final archive = originalArchive;
+      if (originalPresent && archive != null) {
+        // A possibly damaged library still opens (or fails loudly), whereas
+        // a missing file makes openDatabase silently create an empty one.
+        debugPrint(
+            '--- [DatabaseService] Restore gave up; copying the original database back ---');
+        final logs = await Isolate.run(() => restoreOriginalFromArchive(
+            mainDbPath: mainDbPath, archivedPath: archive));
+        for (final line in logs) {
+          debugPrint(line);
+        }
+      } else if (!originalPresent) {
+        // OS already deleted the corrupt original: start fresh, salvage copy
+        // stays. Drop a failed restore's leftovers so they are not opened.
+        debugPrint(
+            '--- [DatabaseService] Restore gave up; original was already removed, starting fresh (salvage copy kept) ---');
+        final logs = await Isolate.run(() {
+          final logs = <String>[];
+          for (final path in [
+            mainDbPath,
+            '$mainDbPath-wal',
+            '$mainDbPath-shm'
+          ]) {
+            _deleteIgnoringErrors(File(path), logs);
+          }
+          return logs;
+        });
+        for (final line in logs) {
+          debugPrint(line);
+        }
+      }
+      // else: archiving failed and the worker left the original untouched.
+    }
+
+    final pruneLogs =
+        await Isolate.run(() => pruneSalvageCopies(mainDbPath));
+    for (final line in pruneLogs) {
+      debugPrint(line);
+    }
   }
+
+  /// Copies the archived original ([archivedPath]) back to [mainDbPath],
+  /// discarding whatever failed-restore leftovers sit there (main file and
+  /// its sidecars), then copies the original's archived `-wal`/`-shm` back
+  /// so commits that were never checkpointed are not lost. Always a copy:
+  /// the archive stays as the salvage copy, because SQLite may judge the
+  /// original corrupt again and the OS delete it. Isolate-safe; returns log
+  /// lines.
+  @visibleForTesting
+  static List<String> restoreOriginalFromArchive({
+    required String mainDbPath,
+    required String archivedPath,
+  }) {
+    final logs = <String>[];
+    try {
+      final archive = File(archivedPath);
+      if (!archive.existsSync()) {
+        logs.add(
+            '--- [DatabaseService] Rollback skipped: archived original is missing ---');
+        return logs;
+      }
+      for (final path in [mainDbPath, '$mainDbPath-wal', '$mainDbPath-shm']) {
+        _deleteIgnoringErrors(File(path), logs);
+      }
+      archive.copySync(mainDbPath);
+      for (final suffix in _sidecarSuffixes) {
+        final sidecar = File('$archivedPath$suffix');
+        if (!sidecar.existsSync()) continue;
+        try {
+          sidecar.copySync('$mainDbPath$suffix');
+        } catch (e) {
+          logs.add(
+              '--- [DatabaseService] Warning: could not put back $suffix sidecar: $e ---');
+        }
+      }
+      logs.add('--- [DatabaseService] Original database copied back ---');
+    } catch (e) {
+      logs.add(
+          '--- [DatabaseService] Rollback of original database failed: $e ---');
+    }
+    return logs;
+  }
+
+  static const _sidecarSuffixes = ['-wal', '-shm'];
 
   /// Isolate worker for [_restoreFromLatestBackup]. Discovers the best
   /// available backup snapshot and copies it over the corrupted main DB.
@@ -363,19 +670,32 @@ class DatabaseService {
   ///
   /// Always picks the newest snapshot by `modified` timestamp, regardless
   /// of format.  The corrupted main file is archived as
-  /// `<path>_corrupted_<ms>.bak`; existing `-wal`/`-shm` sidecars are
-  /// deleted so SQLite opens the restored DB cleanly.
-  static _DbRestoreOutcome _runRestoreFromBackupInIsolate({
+  /// `<path>_corrupted_<ms>.bak` and its `-wal`/`-shm` sidecars as
+  /// `<archive>-wal` / `<archive>-shm`, so SQLite opens the restored DB
+  /// cleanly while a rollback can still bring the original back whole.
+  ///
+  /// If the main file cannot be archived the worker gives up WITHOUT
+  /// touching it: writing over or deleting an unarchived original is the one
+  /// way this routine could leave the user with nothing.
+  ///
+  /// [archive] is a test seam to simulate archive failure.
+  @visibleForTesting
+  static DbRestoreOutcome runRestoreFromBackup({
     required String mainDbPath,
     required String backupDirPath,
+    bool Function(File file, String archivePath, List<String> logs)? archive,
   }) {
+    final archiveMain = archive ?? _archiveOrDelete;
     final logs = <String>[];
+    // Declared outside the try so the catch-all can still report where the
+    // original went — the caller needs it to roll back.
+    String? archivedPath;
     try {
       final backupDir = Directory(backupDirPath);
       if (!backupDir.existsSync()) {
         logs.add(
             '--- [DatabaseService] Self-heal aborted: no backup directory available ---');
-        return _DbRestoreOutcome(logs);
+        return DbRestoreOutcome(logs);
       }
 
       // Collect candidates from both snapshot formats.
@@ -406,29 +726,47 @@ class DatabaseService {
       if (candidates.isEmpty) {
         logs.add(
             '--- [DatabaseService] Self-heal aborted: no backup snapshots found ---');
-        return _DbRestoreOutcome(logs);
+        return DbRestoreOutcome(logs);
       }
 
       // Newest snapshot wins regardless of format.
       candidates.sort((a, b) => b.modified.compareTo(a.modified));
 
       // Archive the corrupted main file before overwriting it.
-      // Use rename → copy+delete → delete fallback chain because renameSync
-      // can fail on Windows (cross-drive, locked file) and on mobile
-      // (cross-filesystem).  If none work, copySync below will clobber the
-      // destination on most platforms anyway.
+      // Use rename → copy+delete fallback chain because renameSync can fail
+      // on Windows (cross-drive, locked file) and on mobile
+      // (cross-filesystem).  If neither works we abort: the original stays
+      // exactly where it is, and the candidate-failure cleanup below (which
+      // deletes the main path) must never run against an unarchived original.
       final corruptFile = File(mainDbPath);
       final ts = DateTime.now().millisecondsSinceEpoch;
       if (corruptFile.existsSync()) {
-        _archiveOrDelete(corruptFile, '${mainDbPath}_corrupted_$ts.bak', logs);
+        final target = '${mainDbPath}_corrupted_$ts.bak';
+        if (!archiveMain(corruptFile, target, logs)) {
+          logs.add(
+              '--- [DatabaseService] Could not archive the original database; leaving it untouched and skipping restore ---');
+          return DbRestoreOutcome(logs);
+        }
+        archivedPath = target;
+
+        // Archive -wal/-shm next to the archive (best-effort) so un-
+        // checkpointed commits survive a rollback. They MUST leave the main
+        // path either way: a stale WAL applied on top of the restored file
+        // could re-corrupt it, so fall back to deleting.
+        for (final suffix in _sidecarSuffixes) {
+          final sidecar = File('$mainDbPath$suffix');
+          if (!sidecar.existsSync()) continue;
+          if (!_archiveOrDelete(sidecar, '$target$suffix', logs)) {
+            _deleteIgnoringErrors(sidecar, logs);
+          }
+        }
       }
 
-      // Remove -wal/-shm sidecars (best-effort).  A stale WAL from the
-      // corrupted DB could be applied on top of the restored file and
-      // re-corrupt it, so deletion is important.  If it fails we warn and
-      // proceed; copySync will at least give us a clean main file.
-      for (final sidecarPath in ['$mainDbPath-wal', '$mainDbPath-shm']) {
-        _deleteIgnoringErrors(File(sidecarPath), logs);
+      // Main is absent or archived by now. Sweep any sidecars that had no
+      // main file (or that archiving left behind) so none gets applied to
+      // the restored DB.
+      for (final suffix in _sidecarSuffixes) {
+        _deleteIgnoringErrors(File('$mainDbPath$suffix'), logs);
       }
 
       // Try backup candidates in newest-first order.  If a candidate's file
@@ -449,8 +787,9 @@ class DatabaseService {
           }
           logs.add(
               '--- [DatabaseService] Restore succeeded ($restoredSize bytes) ---');
-          return _DbRestoreOutcome(logs,
-              restoredFromPath: candidate.file.path);
+          return DbRestoreOutcome(logs,
+              restoredFromPath: candidate.file.path,
+              archivedPath: archivedPath);
         } catch (e) {
           logs.add(
               '--- [DatabaseService] Copy failed from ${candidate.file.path}: $e; trying next candidate ---');
@@ -465,22 +804,20 @@ class DatabaseService {
       logs.add(
           '--- [DatabaseService] Backup restore failed in isolate: $e\n$stack ---');
     }
-    return _DbRestoreOutcome(logs);
+    return DbRestoreOutcome(logs, archivedPath: archivedPath);
   }
 
   /// Archives [file] to [archivePath] using rename, falling back to
   /// copy+delete.  If both fail the file is left in place (never bare-deleted:
-  /// a corrupt DB may still be manually salvageable).  Logs outcomes.
-  ///
-  /// If the file cannot be archived at all, the subsequent `copySync` call
-  /// will clobber the destination on most platforms (POSIX semantics), so
-  /// the restore still has a chance to succeed.
-  static void _archiveOrDelete(
+  /// a corrupt DB may still be manually salvageable).  Logs outcomes and
+  /// returns whether the archive now exists.  The main-DB caller treats
+  /// `false` as "abort the restore".
+  static bool _archiveOrDelete(
       File file, String archivePath, List<String> logs) {
     // 1. Atomic rename (preferred).
     try {
       file.renameSync(archivePath);
-      return;
+      return true;
     } catch (_) {
       // Cross-drive on Windows or cross-mount-point on POSIX can fail here.
     }
@@ -488,18 +825,16 @@ class DatabaseService {
     try {
       file.copySync(archivePath);
       file.deleteSync();
-      return;
+      return true;
     } catch (_) {
       // If copy also fails (e.g. read error on the corrupt file) fall through.
     }
-    // 3. Leave the corrupt file in place. Deliberately NOT deleting it:
-    // if every backup candidate later fails to restore, this file is the
-    // user's only remaining copy of their metadata and may be manually
-    // salvageable. The subsequent copySync may still clobber it on POSIX;
-    // on Windows the copy will fail instead — that error surfaces in the
-    // retry loop above.
+    // 3. Leave the file in place. Deliberately NOT deleting it: it may be
+    // the user's only remaining copy of their metadata and may be manually
+    // salvageable.
     logs.add(
-        '--- [DatabaseService] Warning: could not archive corrupted DB; leaving it in place for manual recovery ---');
+        '--- [DatabaseService] Warning: could not archive a database file; leaving it in place ---');
+    return false;
   }
 
   /// Deletes [file] if it exists, logging a warning (not an error) if
@@ -1184,9 +1519,14 @@ class DatabaseService {
 /// the helper isolate and replay them on the main isolate because
 /// `debugPrint` inside an isolate does not flush to IDE consoles on every
 /// platform.
-class _DbRestoreOutcome {
-  _DbRestoreOutcome(this.logs, {this.restoredFromPath});
+class DbRestoreOutcome {
+  DbRestoreOutcome(this.logs, {this.restoredFromPath, this.archivedPath});
   final List<String> logs;
+
+  /// Where the original main DB was archived this round, or null when the
+  /// main file was absent / could not be archived. The caller puts it back
+  /// if the whole restore ends without a usable database.
+  final String? archivedPath;
 
   /// Path of the snapshot the main DB was restored from, or null when no
   /// candidate could be restored. The caller quick_checks the restored file
@@ -1194,7 +1534,7 @@ class _DbRestoreOutcome {
   final String? restoredFromPath;
 }
 
-/// Lightweight record used inside [_runRestoreFromBackupInIsolate] to
+/// Lightweight record used inside [runRestoreFromBackup] to
 /// represent a backup candidate from either the new flat-file or legacy
 /// triad-directory format.  Never crosses an isolate boundary.
 class _BackupCandidate {

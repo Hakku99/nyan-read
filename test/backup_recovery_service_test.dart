@@ -13,6 +13,7 @@
 library;
 
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 // 'path' exports an 'equals' function that conflicts with flutter_test/matcher.
@@ -857,6 +858,582 @@ void main() {
               .any((f) => f.path.endsWith('.db')),
           isFalse,
           reason: 'no unquarantined .db candidates may remain');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 8 (N5) — Never end up with an empty library: when restore gives up, the
+  //     archived original must be put back; inconclusive checks must not
+  //     trigger a restore at all.
+  // -------------------------------------------------------------------------
+
+  group('Never-empty self-heal (N5)', () {
+    setUpAll(() {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    });
+
+    /// A real DB with one marker row, closed so the bytes are stable.
+    Future<Uint8List> writeOriginal(String path) async {
+      final db = await _openFileDb(path);
+      await db.insert('books', {
+        'id': 'orig',
+        'title': 'original library',
+        'file_path': '/o.txt',
+        'format': 'txt',
+      });
+      await db.close();
+      return File(path).readAsBytesSync();
+    }
+
+    void expectOriginalIntact(String mainDbPath, Uint8List originalBytes) {
+      expect(File(mainDbPath).existsSync(), isTrue,
+          reason: 'main DB path must never be left empty');
+      expect(File(mainDbPath).readAsBytesSync(), originalBytes,
+          reason: 'original DB must come back byte-for-byte');
+    }
+
+    test('all backups unusable (zero-byte): original is put back', () async {
+      final backupDir = Directory(join(tempDir.path, 'n5_zero'))..createSync();
+      for (var i = 1; i <= 2; i++) {
+        File(join(backupDir.path, 'nyan_read_${i}000.db')).writeAsBytesSync([]);
+      }
+      final mainDbPath = join(tempDir.path, 'n5_main_zero.db');
+      final original = await writeOriginal(mainDbPath);
+
+      await DatabaseService().restoreFromBackupDir(
+          mainDbPath: mainDbPath, backupDirPath: backupDir.path);
+
+      expectOriginalIntact(mainDbPath, original);
+    });
+
+    test('truncated snapshots exhaust the attempt cap: original comes back',
+        () async {
+      final backupDir = Directory(join(tempDir.path, 'n5_cap'))..createSync();
+      final seedPath = join(tempDir.path, 'n5_cap_seed.db');
+      final seed = await _openFileDb(seedPath);
+      for (var i = 0; i < 200; i++) {
+        await seed.insert('books', {
+          'id': 'pad$i',
+          'title': 'padding row $i',
+          'file_path': '/tmp/pad',
+          'format': 'txt',
+        });
+      }
+      await seed.close();
+      final bytes = File(seedPath).readAsBytesSync();
+      // More truncated snapshots than _maxRestoreAttempts (8).
+      for (var i = 1; i <= 10; i++) {
+        File(join(backupDir.path, 'nyan_read_${i}000.db'))
+            .writeAsBytesSync(bytes.sublist(0, bytes.length ~/ 2));
+      }
+      final mainDbPath = join(tempDir.path, 'n5_main_cap.db');
+      final original = await writeOriginal(mainDbPath);
+
+      await DatabaseService().restoreFromBackupDir(
+          mainDbPath: mainDbPath, backupDirPath: backupDir.path);
+
+      expectOriginalIntact(mainDbPath, original);
+    });
+
+    test('quarantine cannot rename (snapshot held open): original comes back',
+        () async {
+      final backupDir = Directory(join(tempDir.path, 'n5_hold'))..createSync();
+      final snapshot = File(join(backupDir.path, 'nyan_read_1000.db'));
+      final seed = await _openFileDb(join(tempDir.path, 'n5_hold_seed.db'));
+      for (var i = 0; i < 200; i++) {
+        await seed.insert('books', {
+          'id': 'pad$i',
+          'title': 'padding row $i',
+          'file_path': '/tmp/pad',
+          'format': 'txt',
+        });
+      }
+      await seed.close();
+      final bytes =
+          File(join(tempDir.path, 'n5_hold_seed.db')).readAsBytesSync();
+      snapshot.writeAsBytesSync(bytes.sublist(0, bytes.length ~/ 2));
+      final mainDbPath = join(tempDir.path, 'n5_main_hold.db');
+      final original = await writeOriginal(mainDbPath);
+
+      // On Windows an open handle blocks the rename (abort exit); elsewhere
+      // the rename succeeds and the loop ends via exhaustion. Both exits
+      // must hand the original back.
+      final handle = snapshot.openSync();
+      try {
+        await DatabaseService().restoreFromBackupDir(
+            mainDbPath: mainDbPath, backupDirPath: backupDir.path);
+      } finally {
+        handle.closeSync();
+      }
+
+      expectOriginalIntact(mainDbPath, original);
+    });
+
+    test('restoreOriginalFromArchive replaces leftovers and sidecars', () {
+      final mainDbPath = join(tempDir.path, 'n5_rb.db');
+      final archivePath = '${mainDbPath}_corrupted_1.bak';
+      File(archivePath).writeAsBytesSync([1, 2, 3, 4]);
+      File(mainDbPath).writeAsBytesSync([9, 9, 9]);
+      File('$mainDbPath-wal').writeAsBytesSync([7]);
+      File('$mainDbPath-shm').writeAsBytesSync([7]);
+
+      DatabaseService.restoreOriginalFromArchive(
+          mainDbPath: mainDbPath, archivedPath: archivePath);
+
+      expect(File(mainDbPath).readAsBytesSync(), [1, 2, 3, 4]);
+      expect(File('$mainDbPath-wal').existsSync(), isFalse);
+      expect(File('$mainDbPath-shm').existsSync(), isFalse);
+    });
+
+    test('restoreOriginalFromArchive is a no-op when the archive is gone', () {
+      final mainDbPath = join(tempDir.path, 'n5_rb2.db');
+      File(mainDbPath).writeAsBytesSync([5, 5]);
+
+      DatabaseService.restoreOriginalFromArchive(
+          mainDbPath: mainDbPath, archivedPath: '$mainDbPath.missing');
+
+      expect(File(mainDbPath).readAsBytesSync(), [5, 5],
+          reason: 'must not delete main when there is nothing to put back');
+    });
+
+    test('archive failure aborts the worker; main DB is never written/deleted',
+        () async {
+      // One good snapshot (copy would succeed) and one zero-byte snapshot
+      // (copy-failure cleanup would delete main): both used to risk the
+      // un-archived original.
+      for (final good in [true, false]) {
+        final name = good ? 'good' : 'zero';
+        final backupDir = Directory(join(tempDir.path, 'n5_noarch_$name'))
+          ..createSync();
+        final snap = join(backupDir.path, 'nyan_read_1000.db');
+        if (good) {
+          final seed =
+              await _openFileDb(join(tempDir.path, 'n5_noarch_seed.db'));
+          await _vacuumInto(seed, snap);
+          await seed.close();
+          File(join(tempDir.path, 'n5_noarch_seed.db')).deleteSync();
+        } else {
+          File(snap).writeAsBytesSync([]);
+        }
+        final mainDbPath = join(tempDir.path, 'n5_main_noarch_$name.db');
+        final original = await writeOriginal(mainDbPath);
+        File('$mainDbPath-wal').writeAsBytesSync([4, 5, 6]);
+
+        final outcome = DatabaseService.runRestoreFromBackup(
+          mainDbPath: mainDbPath,
+          backupDirPath: backupDir.path,
+          archive: (file, archivePath, logs) => false,
+        );
+
+        expect(outcome.restoredFromPath, isNull, reason: name);
+        expect(outcome.archivedPath, isNull, reason: name);
+        expectOriginalIntact(mainDbPath, original);
+        expect(File('$mainDbPath-wal').readAsBytesSync(), [4, 5, 6],
+            reason: '$name: sidecar must stay untouched too');
+      }
+    });
+
+    test('rollback brings back the original -wal/-shm byte-for-byte',
+        () async {
+      final backupDir = Directory(join(tempDir.path, 'n5_wal_rb'))
+        ..createSync();
+      File(join(backupDir.path, 'nyan_read_1000.db')).writeAsBytesSync([]);
+      final mainDbPath = join(tempDir.path, 'n5_main_wal_rb.db');
+      final original = await writeOriginal(mainDbPath);
+      File('$mainDbPath-wal').writeAsBytesSync([1, 1, 2, 3, 5]);
+      File('$mainDbPath-shm').writeAsBytesSync([8, 13, 21]);
+
+      await DatabaseService().restoreFromBackupDir(
+          mainDbPath: mainDbPath, backupDirPath: backupDir.path);
+
+      expectOriginalIntact(mainDbPath, original);
+      expect(File('$mainDbPath-wal').readAsBytesSync(), [1, 1, 2, 3, 5]);
+      expect(File('$mainDbPath-shm').readAsBytesSync(), [8, 13, 21]);
+    });
+
+    test('restoreOriginalFromArchive restores archived sidecars', () {
+      final mainDbPath = join(tempDir.path, 'n5_rb3.db');
+      final archivePath = '${mainDbPath}_corrupted_2.bak';
+      File(archivePath).writeAsBytesSync([1]);
+      File('$archivePath-wal').writeAsBytesSync([2]);
+      File('$archivePath-shm').writeAsBytesSync([3]);
+      // Leftovers from the failed restore must not survive.
+      File(mainDbPath).writeAsBytesSync([9]);
+      File('$mainDbPath-wal').writeAsBytesSync([9, 9]);
+
+      DatabaseService.restoreOriginalFromArchive(
+          mainDbPath: mainDbPath, archivedPath: archivePath);
+
+      expect(File(mainDbPath).readAsBytesSync(), [1]);
+      expect(File('$mainDbPath-wal').readAsBytesSync(), [2]);
+      expect(File('$mainDbPath-shm').readAsBytesSync(), [3]);
+    });
+
+    test('successful restore leaves no stale WAL; sidecars archived', () async {
+      final backupDir = Directory(join(tempDir.path, 'n5_wal_ok'))
+        ..createSync();
+      final seed = await _openFileDb(join(tempDir.path, 'n5_wal_ok_seed.db'));
+      await _vacuumInto(seed, join(backupDir.path, 'nyan_read_1000.db'));
+      await seed.close();
+      final mainDbPath = join(tempDir.path, 'n5_main_wal_ok.db');
+      await writeOriginal(mainDbPath);
+      File('$mainDbPath-wal').writeAsBytesSync([7, 7]);
+      File('$mainDbPath-shm').writeAsBytesSync([8, 8]);
+
+      await DatabaseService().restoreFromBackupDir(
+          mainDbPath: mainDbPath, backupDirPath: backupDir.path);
+
+      expect(File('$mainDbPath-wal').existsSync(), isFalse,
+          reason: 'a stale WAL must not sit beside the restored DB');
+      expect(File('$mainDbPath-shm').existsSync(), isFalse);
+      final bak = Directory(tempDir.path)
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.contains('n5_main_wal_ok.db_corrupted_'))
+          .map((f) => f.path)
+          .toList();
+      final walBak = bak.singleWhere((p) => p.endsWith('.bak-wal'));
+      final shmBak = bak.singleWhere((p) => p.endsWith('.bak-shm'));
+      expect(File(walBak).readAsBytesSync(), [7, 7]);
+      expect(File(shmBak).readAsBytesSync(), [8, 8]);
+    });
+
+    test('normal restore: original archived, good snapshot in place', () async {
+      final backupDir = Directory(join(tempDir.path, 'n5_ok'))..createSync();
+      final snap = join(backupDir.path, 'nyan_read_1000.db');
+      final seed = await _openFileDb(join(tempDir.path, 'n5_ok_seed.db'));
+      await seed.insert('books', {
+        'id': 'b',
+        'title': 'from snapshot',
+        'file_path': '/s',
+        'format': 'txt',
+      });
+      await _vacuumInto(seed, snap);
+      await seed.close();
+      final mainDbPath = join(tempDir.path, 'n5_main_ok.db');
+      final original = await writeOriginal(mainDbPath);
+
+      await DatabaseService().restoreFromBackupDir(
+          mainDbPath: mainDbPath, backupDirPath: backupDir.path);
+
+      final restored = await _openFileDb(mainDbPath);
+      final rows = await restored.query('books');
+      await restored.close();
+      expect(rows.single['title'], 'from snapshot');
+      final bak = Directory(tempDir.path)
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.contains('n5_main_ok.db_corrupted_'))
+          .single;
+      expect(bak.readAsBytesSync(), original,
+          reason: 'corrupt original stays archived after a good restore');
+    });
+
+    group('classification', () {
+      test('quick_check status', () {
+        expect(DatabaseService.classifyQuickCheckStatus('ok'),
+            QuickCheckVerdict.healthy);
+        expect(DatabaseService.classifyQuickCheckStatus('OK'),
+            QuickCheckVerdict.healthy);
+        expect(
+            DatabaseService.classifyQuickCheckStatus(
+                '*** in database main *** Page 2: never used'),
+            QuickCheckVerdict.corrupt);
+      });
+
+      test('explicit corruption errors are corrupt', () {
+        for (final msg in [
+          'database disk image is malformed (code 11 SQLITE_CORRUPT)',
+          'file is not a database (code 26 SQLITE_NOTADB)',
+          'The database is CORRUPT',
+        ]) {
+          expect(DatabaseService.classifyCheckError(Exception(msg)),
+              QuickCheckVerdict.corrupt,
+              reason: msg);
+        }
+      });
+
+      test('environmental errors are unknown', () {
+        for (final msg in [
+          'database or disk is full (code 13 SQLITE_FULL)',
+          'database is locked (code 5 SQLITE_BUSY)',
+          'unable to open database file (code 14)',
+          'Permission denied',
+        ]) {
+          expect(DatabaseService.classifyCheckError(Exception(msg)),
+              QuickCheckVerdict.unknown,
+              reason: msg);
+        }
+      });
+    });
+
+    group('checkAndHealDatabase decisions', () {
+      late String mainDbPath;
+      late List<String> events;
+
+      setUp(() {
+        mainDbPath = join(tempDir.path, 'n5_heal.db');
+        File(mainDbPath).writeAsBytesSync([1, 2, 3]);
+        events = [];
+      });
+
+      Future<void> run(List<QuickCheckVerdict> verdicts) {
+        var i = 0;
+        return DatabaseService().checkAndHealDatabase(
+          mainDbPath,
+          retryDelay: Duration.zero,
+          check: (_) async {
+            events.add('check');
+            return verdicts[i++];
+          },
+          restore: (_, __) async => events.add('restore'),
+        );
+      }
+
+      test('healthy: no restore', () async {
+        await run([QuickCheckVerdict.healthy]);
+        expect(events, ['check']);
+      });
+
+      test('corrupt: restore immediately, no retry', () async {
+        await run([QuickCheckVerdict.corrupt]);
+        expect(events, ['check', 'restore']);
+      });
+
+      test('unknown then healthy: retried, no restore', () async {
+        await run([QuickCheckVerdict.unknown, QuickCheckVerdict.healthy]);
+        expect(events, ['check', 'check']);
+      });
+
+      test('unknown twice: database left untouched, no restore', () async {
+        await run([QuickCheckVerdict.unknown, QuickCheckVerdict.unknown]);
+        expect(events, ['check', 'check']);
+        expect(File(mainDbPath).readAsBytesSync(), [1, 2, 3]);
+      });
+    });
+
+    group('pre-heal copy (Android deletes the corrupt main DB)', () {
+      late String mainDbPath;
+
+      setUp(() {
+        mainDbPath = join(tempDir.path, 'n5_pre.db');
+      });
+
+      List<String> prehealFiles() => Directory(tempDir.path)
+          .listSync()
+          .map((e) => e.path)
+          .where((p) => p.contains('.preheal'))
+          .toList();
+
+      /// Fake check mimicking Android's DefaultDatabaseErrorHandler: the
+      /// corrupt file (and sidecars) vanish *during* the check.
+      Future<QuickCheckVerdict> osDeletesMain(String path) async {
+        for (final p in [path, '$path-wal', '$path-shm']) {
+          if (File(p).existsSync()) File(p).deleteSync();
+        }
+        return QuickCheckVerdict.corrupt;
+      }
+
+      Future<void> healWithRealRestore(String backupDirPath) =>
+          DatabaseService().checkAndHealDatabase(
+            mainDbPath,
+            retryDelay: Duration.zero,
+            check: osDeletesMain,
+            restore: (main, preserved) => DatabaseService().restoreFromBackupDir(
+                mainDbPath: main,
+                backupDirPath: backupDirPath,
+                preservedCopyPath: preserved),
+          );
+
+      int stampOf(String path) => int.parse(
+          RegExp(r'_corrupted_(\d+)\.bak$').firstMatch(path)!.group(1)!);
+
+      /// `<main>_corrupted_<ms>.bak` files (db only), oldest first.
+      List<File> salvageSets() {
+        final prefix = '${basename(mainDbPath)}_corrupted_';
+        return Directory(tempDir.path)
+            .listSync()
+            .whereType<File>()
+            .where((f) =>
+                basename(f.path).startsWith(prefix) && f.path.endsWith('.bak'))
+            .toList()
+          ..sort((a, b) => stampOf(a.path).compareTo(stampOf(b.path)));
+      }
+
+      test(
+          'no usable backup, OS deleted main: not resurrected; salvage copy '
+          'is byte-identical incl. wal/shm', () async {
+        final backupDir = Directory(join(tempDir.path, 'n5_pre_zero'))
+          ..createSync();
+        File(join(backupDir.path, 'nyan_read_1000.db')).writeAsBytesSync([]);
+        final original = await writeOriginal(mainDbPath);
+        File('$mainDbPath-wal').writeAsBytesSync([3, 1, 4, 1, 5]);
+        File('$mainDbPath-shm').writeAsBytesSync([9, 2, 6]);
+
+        await healWithRealRestore(backupDir.path);
+
+        expect(File(mainDbPath).existsSync(), isFalse,
+            reason: 'a corrupt original must not become the active DB again');
+        final salvage = salvageSets().single.path;
+        expect(File(salvage).readAsBytesSync(), original);
+        expect(File('$salvage-wal').readAsBytesSync(), [3, 1, 4, 1, 5]);
+        expect(File('$salvage-shm').readAsBytesSync(), [9, 2, 6]);
+        expect(prehealFiles(), isEmpty);
+      });
+
+      test('no backup directory at all: same, salvage kept', () async {
+        final original = await writeOriginal(mainDbPath);
+
+        await healWithRealRestore(join(tempDir.path, 'n5_pre_nodir'));
+
+        expect(File(mainDbPath).existsSync(), isFalse);
+        expect(salvageSets().single.readAsBytesSync(), original);
+        expect(prehealFiles(), isEmpty);
+      });
+
+      test('good backup restores and the salvage copy is kept', () async {
+        final backupDir = Directory(join(tempDir.path, 'n5_pre_ok'))
+          ..createSync();
+        final seed = await _openFileDb(join(tempDir.path, 'n5_pre_seed.db'));
+        await seed.insert('books', {
+          'id': 'b',
+          'title': 'from snapshot',
+          'file_path': '/s',
+          'format': 'txt',
+        });
+        await _vacuumInto(seed, join(backupDir.path, 'nyan_read_1000.db'));
+        await seed.close();
+        final original = await writeOriginal(mainDbPath);
+
+        await healWithRealRestore(backupDir.path);
+
+        final restored = await _openFileDb(mainDbPath);
+        final rows = await restored.query('books');
+        await restored.close();
+        expect(rows.single['title'], 'from snapshot');
+        expect(salvageSets().single.readAsBytesSync(), original);
+        expect(prehealFiles(), isEmpty);
+      });
+
+      test('main still present when restore gives up: copied back, salvage kept',
+          () async {
+        final backupDir = Directory(join(tempDir.path, 'n5_pre_present'))
+          ..createSync();
+        File(join(backupDir.path, 'nyan_read_1000.db')).writeAsBytesSync([]);
+        final original = await writeOriginal(mainDbPath);
+        File('$mainDbPath-wal').writeAsBytesSync([2, 7]);
+
+        // quick_check said "not ok" but the OS did not delete the file.
+        await DatabaseService().checkAndHealDatabase(
+          mainDbPath,
+          retryDelay: Duration.zero,
+          check: (_) async => QuickCheckVerdict.corrupt,
+          restore: (main, preserved) => DatabaseService().restoreFromBackupDir(
+              mainDbPath: main,
+              backupDirPath: backupDir.path,
+              preservedCopyPath: preserved),
+        );
+
+        expectOriginalIntact(mainDbPath, original);
+        expect(File('$mainDbPath-wal').readAsBytesSync(), [2, 7]);
+        final salvage = salvageSets().single.path;
+        expect(File(salvage).readAsBytesSync(), original,
+            reason: 'copy-back must leave the salvage copy in place');
+        expect(File('$salvage-wal').readAsBytesSync(), [2, 7]);
+        expect(prehealFiles(), isEmpty);
+      });
+
+      test('only the newest 2 salvage sets are kept', () async {
+        // Three older sets (db + wal), then a heal that produces a fourth.
+        for (final stamp in [100, 200, 300]) {
+          File('${mainDbPath}_corrupted_$stamp.bak').writeAsBytesSync([1]);
+          File('${mainDbPath}_corrupted_$stamp.bak-wal')
+              .writeAsBytesSync([1]);
+        }
+        final backupDir = Directory(join(tempDir.path, 'n5_pre_prune'))
+          ..createSync();
+        final original = await writeOriginal(mainDbPath);
+
+        await healWithRealRestore(backupDir.path);
+
+        final sets = salvageSets();
+        expect(sets, hasLength(2));
+        expect(sets.first.path, endsWith('_corrupted_300.bak'));
+        expect(sets.last.readAsBytesSync(), original,
+            reason: 'the fresh salvage copy is among the newest 2');
+        for (final stamp in [100, 200]) {
+          expect(File('${mainDbPath}_corrupted_$stamp.bak').existsSync(),
+              isFalse);
+          expect(File('${mainDbPath}_corrupted_$stamp.bak-wal').existsSync(),
+              isFalse,
+              reason: 'sidecars of pruned sets go too');
+        }
+        expect(File('${mainDbPath}_corrupted_300.bak-wal').existsSync(),
+            isTrue);
+      });
+
+      test('healthy and unknown verdicts leave no .preheal residue', () async {
+        await writeOriginal(mainDbPath);
+        File('$mainDbPath-wal').writeAsBytesSync([1]);
+        for (final verdict in [
+          QuickCheckVerdict.healthy,
+          QuickCheckVerdict.unknown
+        ]) {
+          await DatabaseService().checkAndHealDatabase(mainDbPath,
+              retryDelay: Duration.zero,
+              check: (_) async => verdict,
+              restore: (_, __) async => fail('must not restore'));
+          expect(prehealFiles(), isEmpty, reason: verdict.name);
+        }
+        expect(File('$mainDbPath-wal').readAsBytesSync(), [1]);
+      });
+
+      test('stale copy from a crashed boot is overwritten', () async {
+        final original = await writeOriginal(mainDbPath);
+        // Leftovers from an earlier boot: different db bytes, plus a WAL the
+        // current main does not have.
+        final preheal = DatabaseService.preservedCopyPathFor(mainDbPath);
+        File(preheal).writeAsBytesSync([0, 0, 0]);
+        File('$preheal-wal').writeAsBytesSync([6, 6, 6]);
+        String? seenPath;
+
+        await DatabaseService().checkAndHealDatabase(mainDbPath,
+            retryDelay: Duration.zero,
+            check: (_) async => QuickCheckVerdict.corrupt,
+            restore: (_, preserved) async => seenPath = preserved);
+
+        expect(seenPath, preheal);
+        expect(File(preheal).readAsBytesSync(), original);
+        expect(File('$preheal-wal').existsSync(), isFalse,
+            reason: 'stale WAL must not pair with the fresh copy');
+      });
+
+      test('copy failure never blocks startup; restore gets no copy',
+          () async {
+        await writeOriginal(mainDbPath);
+        // A directory at the target path makes the copy fail (stands in for
+        // disk full / permissions).
+        Directory(DatabaseService.preservedCopyPathFor(mainDbPath))
+            .createSync();
+        var restoreCalled = false;
+        String? seenPath = 'unset';
+
+        await DatabaseService().checkAndHealDatabase(mainDbPath,
+            retryDelay: Duration.zero,
+            check: (_) async => QuickCheckVerdict.corrupt,
+            restore: (_, preserved) async {
+              restoreCalled = true;
+              seenPath = preserved;
+            });
+        expect(restoreCalled, isTrue);
+        expect(seenPath, isNull);
+
+        await DatabaseService().checkAndHealDatabase(mainDbPath,
+            retryDelay: Duration.zero,
+            check: (_) async => QuickCheckVerdict.healthy,
+            restore: (_, __) async => fail('must not restore'));
+      });
     });
   });
 }
