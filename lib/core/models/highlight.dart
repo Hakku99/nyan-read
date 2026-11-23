@@ -86,6 +86,8 @@ class Highlight {
     String? preContext,
     String? postContext,
     int? isHealed,
+    // copyWith cannot express "set to null" via a null argument.
+    bool clearNote = false,
   }) {
     return Highlight(
       id: id ?? this.id,
@@ -95,7 +97,7 @@ class Highlight {
       endOffset: endOffset ?? this.endOffset,
       selectedText: selectedText ?? this.selectedText,
       colorCode: colorCode ?? this.colorCode,
-      note: note ?? this.note,
+      note: clearNote ? null : (note ?? this.note),
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       preContext: preContext ?? this.preContext,

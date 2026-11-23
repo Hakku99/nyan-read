@@ -929,13 +929,15 @@ class DatabaseService {
     );
   }
 
+  /// [note]: null leaves the stored note unchanged (colour-only edits);
+  /// an empty string clears it (stored as NULL).
   Future<void> updateHighlight(String id,
       {String? note, String? colorCode}) async {
     final db = await database;
     final Map<String, dynamic> values = {
       'updated_at': DateTime.now().millisecondsSinceEpoch,
     };
-    if (note != null) values['note'] = note;
+    if (note != null) values['note'] = note.isEmpty ? null : note;
     if (colorCode != null) values['color_code'] = colorCode;
 
     await db.update(

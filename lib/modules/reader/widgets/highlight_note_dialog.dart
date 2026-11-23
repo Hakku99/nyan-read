@@ -63,7 +63,8 @@ class _HighlightNoteDialogState extends State<HighlightNoteDialog> {
 
   void _handleSave() {
     final note = _controller.text.trim();
-    widget.onSave(note.isEmpty ? null : note, _selectedColorCode);
+    // Empty string (not null) tells updateHighlight to clear the stored note.
+    widget.onSave(note, _selectedColorCode);
     Navigator.of(context).pop();
   }
 
