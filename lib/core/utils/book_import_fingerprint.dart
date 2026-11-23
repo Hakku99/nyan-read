@@ -24,13 +24,21 @@ class BookSourceRef {
   });
 }
 
+/// Mutable per-batch copy of [BookImportDedupIndex.booksBySignature]; the
+/// lists are copied too so a batch never edits the index it was built from.
+Map<String, List<BookSourceRef>> copyBooksBySignature(
+  Map<String, List<BookSourceRef>> source,
+) =>
+    {for (final e in source.entries) e.key: [...e.value]};
+
 class BookImportDedupIndex {
   final Set<String> signatures;
   final Set<String> normalizedLocators;
 
-  /// Signature → the book that owns it, so a duplicate hit can be traced back
-  /// to the book whose source may need re-linking.
-  final Map<String, BookSourceRef> booksBySignature;
+  /// Signature → every book carrying it, so a duplicate hit can be traced back
+  /// to the books whose source may need re-linking (several books can share a
+  /// signature, e.g. after a restore).
+  final Map<String, List<BookSourceRef>> booksBySignature;
 
   const BookImportDedupIndex({
     required this.signatures,
@@ -55,7 +63,7 @@ class BookImportFingerprint {
     final rows = await db.getBookImportEntries();
     final signatures = <String>{};
     final normalizedLocators = <String>{};
-    final booksBySignature = <String, BookSourceRef>{};
+    final booksBySignature = <String, List<BookSourceRef>>{};
 
     for (final row in rows) {
       final bookId = row['id'] as String?;
@@ -72,14 +80,13 @@ class BookImportFingerprint {
       if (existingSignature != null && existingSignature.isNotEmpty) {
         signatures.add(existingSignature);
         if (bookId != null && bookId.isNotEmpty) {
-          booksBySignature.putIfAbsent(
-            existingSignature,
-            () => BookSourceRef(
-              bookId: bookId,
-              sourceType: sourceType,
-              sourceLocator: sourceLocator,
-            ),
-          );
+          booksBySignature.putIfAbsent(existingSignature, () => []).add(
+                BookSourceRef(
+                  bookId: bookId,
+                  sourceType: sourceType,
+                  sourceLocator: sourceLocator,
+                ),
+              );
         }
         continue;
       }
@@ -107,15 +114,16 @@ class BookImportFingerprint {
     );
   }
 
-  /// Re-points the book behind a signature hit at the freshly picked source,
-  /// but only when its current source is unreadable and the new one is
-  /// readable. A readable old source is never replaced, so a sampled-signature
-  /// collision between two different files cannot hijack a healthy book.
-  /// Progress, bookmarks, highlights and privacy are untouched (same book id).
-  /// Returns true when the book was re-linked.
-  static Future<bool> relinkIfStale(
+  /// Re-points ONE book among [candidates] (the books sharing a signature hit)
+  /// at the freshly picked source: the first whose current source is
+  /// unreadable, and only when the new source is readable. A readable old
+  /// source is never replaced, so a sampled-signature collision between two
+  /// different files cannot hijack a healthy book. Progress, bookmarks,
+  /// highlights and privacy are untouched (same book id).
+  /// Returns the candidate that was re-linked, or null when none was.
+  static Future<BookSourceRef?> relinkIfStale(
     DatabaseService db, {
-    required BookSourceRef existing,
+    required Iterable<BookSourceRef> candidates,
     required String newSourceType,
     required String newSourceLocator,
     required String newStorageType,
@@ -124,25 +132,29 @@ class BookImportFingerprint {
       required String sourceLocator,
     }) isAvailable = BookSourceAccess.isAvailableFor,
   }) async {
-    if (await isAvailable(
-      sourceType: existing.sourceType,
-      sourceLocator: existing.sourceLocator,
-    )) {
-      return false;
-    }
+    if (candidates.isEmpty) return null;
     if (!await isAvailable(
       sourceType: newSourceType,
       sourceLocator: newSourceLocator,
     )) {
-      return false;
+      return null;
     }
-    await db.relinkBookSource(
-      existing.bookId,
-      locator: newSourceLocator,
-      sourceType: newSourceType,
-      storageType: newStorageType,
-    );
-    return true;
+    for (final existing in candidates) {
+      if (await isAvailable(
+        sourceType: existing.sourceType,
+        sourceLocator: existing.sourceLocator,
+      )) {
+        continue;
+      }
+      await db.relinkBookSource(
+        existing.bookId,
+        locator: newSourceLocator,
+        sourceType: newSourceType,
+        storageType: newStorageType,
+      );
+      return existing;
+    }
+    return null;
   }
 
   /// Returns books that are missing a content signature, for background backfill.

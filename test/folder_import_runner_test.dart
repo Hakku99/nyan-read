@@ -90,6 +90,16 @@ void main() {
     expect(progress, [1, 4, 5]);
   });
 
+  test('joinToastDescription keeps both the relink and cancel notes', () {
+    expect(joinToastDescription(['Re-linked 2', null]), 'Re-linked 2');
+    expect(joinToastDescription([null, 'Import cancelled']),
+        'Import cancelled');
+    expect(joinToastDescription(['Re-linked 2', 'Import cancelled']),
+        'Re-linked 2 Import cancelled');
+    expect(joinToastDescription([null, null]), isNull);
+    expect(joinToastDescription(['', null]), isNull);
+  });
+
   test('relinked outcomes are counted apart from imported and skipped',
       () async {
     final r = await importFolderDocs(

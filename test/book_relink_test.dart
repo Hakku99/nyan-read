@@ -88,14 +88,21 @@ void main() {
   Future<Map<String, Object?>> row(String id) async =>
       (await db.query('books', where: 'id = ?', whereArgs: [id])).single;
 
-  Future<bool> relink(BookSourceRef existing, {String? newLocator}) =>
-      BookImportFingerprint.relinkIfStale(
-        service,
-        existing: existing,
-        newSourceType: BookSourceType.filePath,
-        newSourceLocator: newLocator ?? readablePath,
-        newStorageType: BookStorageType.appPrivateCopy,
-      );
+  /// Relinks among [candidates]; returns the book id that was relinked.
+  Future<String?> relinkAmong(List<BookSourceRef> candidates,
+      {String? newLocator}) async {
+    final r = await BookImportFingerprint.relinkIfStale(
+      service,
+      candidates: candidates,
+      newSourceType: BookSourceType.filePath,
+      newSourceLocator: newLocator ?? readablePath,
+      newStorageType: BookStorageType.appPrivateCopy,
+    );
+    return r?.bookId;
+  }
+
+  Future<bool> relink(BookSourceRef existing, {String? newLocator}) async =>
+      await relinkAmong([existing], newLocator: newLocator) != null;
 
   BookSourceRef ref(String id, String locator, {String? type}) => BookSourceRef(
         bookId: id,
@@ -158,13 +165,70 @@ void main() {
     expect((await row('a'))['file_path'], missingPath);
   });
 
-  test('dedup index maps each signature back to its book', () async {
+  test('dedup index maps each signature back to its books', () async {
     await insertBook('a', locator: missingPath, sig: 'S1');
     await insertBook('b', locator: readablePath, sig: 'S2');
     final index = await BookImportFingerprint.buildExistingIndex(service);
     expect(index.signatures, {'S1', 'S2'});
-    expect(index.booksBySignature['S1']!.bookId, 'a');
-    expect(index.booksBySignature['S1']!.sourceLocator, missingPath);
-    expect(index.booksBySignature['S2']!.bookId, 'b');
+    expect(index.booksBySignature['S1']!.single.bookId, 'a');
+    expect(index.booksBySignature['S1']!.single.sourceLocator, missingPath);
+    expect(index.booksBySignature['S2']!.single.bookId, 'b');
+  });
+
+  group('several books sharing one signature', () {
+    late String otherPath;
+    late String otherPath2;
+
+    setUp(() async {
+      otherPath = '${tmp.path}${Platform.pathSeparator}other.txt';
+      otherPath2 = '${tmp.path}${Platform.pathSeparator}other2.txt';
+      await File(otherPath).writeAsString('o');
+      await File(otherPath2).writeAsString('o2');
+    });
+
+    test('index keeps every book, not just the first', () async {
+      await insertBook('a', locator: otherPath);
+      await insertBook('b', locator: missingPath);
+      final index = await BookImportFingerprint.buildExistingIndex(service);
+      expect(index.booksBySignature['S1']!.map((b) => b.bookId).toSet(),
+          {'a', 'b'});
+    });
+
+    test('readable A + stale B: B is relinked, A untouched', () async {
+      await insertBook('a', locator: otherPath);
+      await insertBook('b', locator: missingPath);
+      final id = await relinkAmong([
+        ref('a', otherPath),
+        ref('b', missingPath),
+      ]);
+      expect(id, 'b');
+      expect((await row('b'))['file_path'], readablePath);
+      expect((await row('a'))['file_path'], otherPath);
+      expect((await row('a'))['source_type'], BookSourceType.androidContentUri);
+    });
+
+    test('both readable: nothing is relinked', () async {
+      await insertBook('a', locator: otherPath);
+      await insertBook('b', locator: otherPath2);
+      expect(
+        await relinkAmong([ref('a', otherPath), ref('b', otherPath2)]),
+        isNull,
+      );
+      expect((await row('a'))['file_path'], otherPath);
+      expect((await row('b'))['file_path'], otherPath2);
+    });
+
+    test('both stale: only the first is relinked', () async {
+      final missing2 = '${tmp.path}${Platform.pathSeparator}gone2.txt';
+      await insertBook('a', locator: missingPath);
+      await insertBook('b', locator: missing2);
+      final id = await relinkAmong([
+        ref('a', missingPath),
+        ref('b', missing2),
+      ]);
+      expect(id, 'a');
+      expect((await row('a'))['file_path'], readablePath);
+      expect((await row('b'))['file_path'], missing2);
+    });
   });
 }

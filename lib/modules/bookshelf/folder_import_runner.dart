@@ -23,6 +23,15 @@ class FolderImportResult {
   final bool stoppedEarly;
 }
 
+/// Joins the non-empty [parts] of an import-result toast description with a
+/// space, or null when there is nothing to say. Used so the "re-linked" note
+/// never displaces the "cancelled" note: a cancel that left files behind must
+/// not read like a full import.
+String? joinToastDescription(Iterable<String?> parts) {
+  final kept = parts.whereType<String>().where((p) => p.isNotEmpty);
+  return kept.isEmpty ? null : kept.join(' ');
+}
+
 /// Imports [docs] one by one. [isCancelled] is checked before each document,
 /// so the one in flight always finishes and earlier imports are kept.
 /// Documents without a usable uri/name are skipped without a progress call.

@@ -317,9 +317,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       int relinkedCount = 0;
       final knownSignatures = <String>{...existingIndex.signatures};
       final knownLocators = <String>{...existingIndex.normalizedLocators};
-      final knownBooks = <String, BookSourceRef>{
-        ...existingIndex.booksBySignature,
-      };
+      final knownBooks = copyBooksBySignature(existingIndex.booksBySignature);
 
       for (final file in result.files) {
         final importSource = await _resolveImportedSource(file);
@@ -420,7 +418,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     required _ImportedBookSource importSource,
     required Set<String> knownLocators,
     required Set<String> knownSignatures,
-    required Map<String, BookSourceRef> knownBooks,
+    required Map<String, List<BookSourceRef>> knownBooks,
     required bool isPrivate,
     String? transientFilePath,
   }) async {
@@ -446,21 +444,21 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         // Same content under a new locator: the old book may just have lost
         // its source (SAF grant reclaimed, file moved). Locator-only hits are
         // the same source, whose grant was already re-persisted upstream.
-        final existing =
+        final candidates =
             contentSignature == null ? null : knownBooks[contentSignature];
-        if (!isLocatorHit && existing != null) {
+        if (!isLocatorHit && candidates != null) {
           final relinked = await BookImportFingerprint.relinkIfStale(
             db,
-            existing: existing,
+            candidates: candidates,
             newSourceType: importSource.sourceType,
             newSourceLocator: importSource.sourceLocator,
             newStorageType: importSource.storageType,
           );
-          if (relinked) {
+          if (relinked != null) {
             debugPrint('Relinked book source: $fileName');
             knownLocators.add(normalizedSourceLocator);
-            knownBooks[contentSignature!] = BookSourceRef(
-              bookId: existing.bookId,
+            candidates[candidates.indexOf(relinked)] = BookSourceRef(
+              bookId: relinked.bookId,
               sourceType: importSource.sourceType,
               sourceLocator: importSource.sourceLocator,
             );
@@ -502,11 +500,13 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
       knownLocators.add(normalizedSourceLocator);
       if (contentSignature != null) {
         knownSignatures.add(contentSignature);
-        knownBooks[contentSignature] = BookSourceRef(
-          bookId: book.id,
-          sourceType: importSource.sourceType,
-          sourceLocator: importSource.sourceLocator,
-        );
+        knownBooks.putIfAbsent(contentSignature, () => []).add(
+              BookSourceRef(
+                bookId: book.id,
+                sourceType: importSource.sourceType,
+                sourceLocator: importSource.sourceLocator,
+              ),
+            );
       }
       return ImportOutcome.imported;
     } catch (e) {
@@ -595,9 +595,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
 
       final knownSignatures = <String>{...existingIndex.signatures};
       final knownLocators = <String>{...existingIndex.normalizedLocators};
-      final knownBooks = <String, BookSourceRef>{
-        ...existingIndex.booksBySignature,
-      };
+      final knownBooks = copyBooksBySignature(existingIndex.booksBySignature);
 
       // ponytail: fingerprinting uses a native sampled read (full read only
       // for providers without random access), but EPUB metadata still copies
@@ -639,8 +637,10 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
         SnackBarUtils.show(
           context,
           loc.importedBooks(successCount, shelfLabel),
-          description:
-              relinkedCount > 0 ? loc.booksRelinked(relinkedCount) : cancelNote,
+          description: joinToastDescription([
+            relinkedCount > 0 ? loc.booksRelinked(relinkedCount) : null,
+            cancelNote,
+          ]),
           tone: NyanSnackTone.success,
         );
       } else if (relinkedCount > 0) {
