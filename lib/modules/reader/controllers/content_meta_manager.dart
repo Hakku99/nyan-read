@@ -406,7 +406,8 @@ class ContentMetaManager {
       _highlights.map((h) {
         if (h.id != highlightId) return h;
         return h.copyWith(
-          note: note ?? h.note,
+          note: note,
+          clearNote: note != null && note.isEmpty,
           colorCode: colorCode ?? h.colorCode,
           updatedAt: now,
         );

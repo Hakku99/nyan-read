@@ -1164,11 +1164,25 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     showHighlightNoteDialog(
       context,
       highlight: highlight,
-      onSave: (note, colorCode) => controller.updateHighlight(
-        highlight.id,
-        note: note,
-        colorCode: colorCode,
-      ),
+      onSave: (note, colorCode) async {
+        // The dialog does not await onSave, so surface a failed write here or
+        // the user would believe the note was saved.
+        try {
+          await controller.updateHighlight(
+            highlight.id,
+            note: note,
+            colorCode: colorCode,
+          );
+        } catch (e) {
+          debugPrint('[ReaderPage] Failed to save note: $e');
+          if (!mounted || !context.mounted) return;
+          SnackBarUtils.show(
+            context,
+            AppLocalizations.of(context)!.failedToSaveNote(e.toString()),
+            tone: NyanSnackTone.error,
+          );
+        }
+      },
       onDelete: () => controller.deleteHighlight(highlight.id),
     );
   }
