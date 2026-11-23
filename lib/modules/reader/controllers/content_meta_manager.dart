@@ -9,6 +9,36 @@ import '../../../core/services/database_service.dart';
 import '../../../core/utils/anchor_healer.dart';
 import '../reader_engine/reader_engine.dart';
 
+/// How many paragraphs either side of a highlight's stored paragraph the
+/// healer searches. 20 covers a book with a cover page plus a few dozen
+/// inline illustrations before the highlight; wider windows start to risk
+/// cross-paragraph false hits. ponytail: a fixed window, not an exact
+/// old→new index remap — add the remap if highlights past ~20 inserted
+/// slots go missing in real books.
+const int _kHealWindow = 20;
+
+typedef _HealRequest = ({
+  List<String?> window,
+  String pre,
+  String exact,
+  String post,
+});
+
+/// Top-level on purpose: an `Isolate.run` closure is sent together with the
+/// whole context it was created in. Created inside `_healHighlights` that
+/// context also holds the engine (via the paragraph-text closure), and real
+/// engines hold Futures, which cannot cross isolates, so every highlight
+/// silently failed to load on EPUB. Here the closure only captures
+/// [requests].
+Future<List<({int delta, int offset})?>> _healBatch(
+        List<_HealRequest> requests) =>
+    Isolate.run(
+      () => [
+        for (final r in requests)
+          AnchorHealer.findHealedInWindow(r.window, r.pre, r.exact, r.post),
+      ],
+    );
+
 class ContentMetaManager {
   final ReaderEngine engine;
   final Book book;
@@ -95,84 +125,102 @@ class ContentMetaManager {
     // used to spawn one isolate per highlight, serially, on book open.
     final results = List<Highlight?>.filled(raw.length, null);
     final slowIndexes = <int>[];
-    final slowParagraphTexts = <String>[];
+    final slowWindows = <List<String?>>[];
+    // Neighbouring highlights share most of their windows: decode each
+    // paragraph once per batch, and let the windows share the String objects
+    // (an isolate message copies a shared object once).
+    final textCache = <int, String?>{};
+    String? textAt(int index) => index < 0
+        ? null
+        : textCache.putIfAbsent(
+            index, () => textCapability.getParagraphText(index));
 
     for (var i = 0; i < raw.length; i++) {
       final h = raw[i];
-      final paragraphText = textCapability.getParagraphText(h.paragraphIndex);
-      if (paragraphText == null) {
-        // Paragraph unavailable (out of range / not loaded); keep as-is.
-        results[i] = h;
-        continue;
-      }
+      final paragraphText = textAt(h.paragraphIndex);
 
-      // Fast-Path: stored offsets still select the original text.
+      // Fast-Path: stored offsets still select the original text AND the
+      // stored context still surrounds it. The context check matters after
+      // an index shift: a short selection ("No.") can equal text at the same
+      // offsets of an unrelated paragraph that now sits at this index.
+      // Legacy rows have empty contexts, which trivially match.
       final start = h.startOffset;
       final end = h.endOffset;
-      final isOffsetValid = start >= 0 &&
+      final isOffsetValid = paragraphText != null &&
+          start >= 0 &&
           end <= paragraphText.length &&
           start < end &&
-          paragraphText.substring(start, end) == h.selectedText;
+          paragraphText.substring(start, end) == h.selectedText &&
+          paragraphText.substring(
+                  (start - h.preContext.length).clamp(0, start), start) ==
+              h.preContext &&
+          paragraphText.substring(end,
+                  (end + h.postContext.length).clamp(end, paragraphText.length)) ==
+              h.postContext;
 
       if (isOffsetValid) {
         results[i] = h;
         continue;
       }
 
-      // Legacy rows persisted before context capture have nothing to heal
-      // against; keep them unchanged rather than guessing.
-      if (h.preContext.isEmpty && h.postContext.isEmpty) {
-        debugPrint(
-            '[ContentMetaManager] Highlight has no pre/post context to heal against; keeping as-is: ${h.selectedText}');
-        results[i] = h;
-        continue;
-      }
-
+      // Texts are gathered here because the engine cannot cross into the
+      // isolate; unavailable slots (image paragraphs, out of range) are null.
+      // Rows without context go through the same path: the healer accepts
+      // them only when the text is unique in the window.
       slowIndexes.add(i);
-      slowParagraphTexts.add(paragraphText);
+      slowWindows.add([
+        for (var d = -_kHealWindow; d <= _kHealWindow; d++)
+          textAt(h.paragraphIndex + d),
+      ]);
     }
 
     // Pass 2: one isolate heals the whole batch.
     if (slowIndexes.isNotEmpty) {
-      final requests = <({String text, String pre, String exact, String post})>[
+      final requests = <_HealRequest>[
         for (var k = 0; k < slowIndexes.length; k++)
           (
-            text: slowParagraphTexts[k],
+            window: slowWindows[k],
             pre: raw[slowIndexes[k]].preContext,
             exact: raw[slowIndexes[k]].selectedText,
             post: raw[slowIndexes[k]].postContext,
           ),
       ];
-      final healedOffsets = await Isolate.run(
-        () => <int?>[
-          for (final r in requests)
-            AnchorHealer.findHealedOffset(r.text, r.pre, r.exact, r.post),
-        ],
-      );
+      final healed = await _healBatch(requests);
 
       for (var k = 0; k < slowIndexes.length; k++) {
         final h = raw[slowIndexes[k]];
-        final newStart = healedOffsets[k];
-        if (newStart == null) {
+        final result = healed[k];
+        if (result == null) {
+          if (slowWindows[k][_kHealWindow] == null) {
+            // The stored slot has no text (image paragraph / not loaded) and
+            // no neighbour matched: nothing was wrong that we can prove, so
+            // keep it as before.
+            results[slowIndexes[k]] = h;
+            continue;
+          }
           // Healing failed: drop from the render list (offsets would paint
           // in the wrong place) but leave the DB row so the user's note
           // text survives and healing can retry on the next open.
           debugPrint(
-              '[ContentMetaManager] Anchor healing failed; keeping stale offsets (may not render): ${h.selectedText}');
+              '[ContentMetaManager] Anchor healing failed; highlight ${h.id} will not render (row kept, retried on next open)');
           continue;
         }
 
+        final newStart = result.offset;
         final newEnd = newStart + h.selectedText.length;
+        final newParagraph = h.paragraphIndex + result.delta;
         debugPrint(
-            '[ContentMetaManager] Healed highlight anchor: "${h.selectedText}" ${h.startOffset} -> $newStart');
+            '[ContentMetaManager] Healed highlight ${h.id}: ${h.paragraphIndex}:${h.startOffset} -> $newParagraph:$newStart');
         results[slowIndexes[k]] = h.copyWith(
+          paragraphIndex: newParagraph,
           startOffset: newStart,
           endOffset: newEnd,
           isHealed: 1,
         );
         // Fire-and-forget write-back: a lost write only means healing
         // re-runs on the next open, so blocking the load loop is not worth it.
-        unawaited(_db.updateHighlightHealedOffset(h.id, newStart, newEnd));
+        unawaited(_db.updateHighlightHealedOffset(h.id, newStart, newEnd,
+            paragraphIndex: newParagraph));
       }
     }
 
