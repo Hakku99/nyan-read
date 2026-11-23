@@ -1156,6 +1156,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get searchRecent => '最近';
 
   @override
+  String get searchPrivateNotSaved => '私密书架中的搜索不会被保存。';
+
+  @override
   String get searchClear => '清除';
 
   @override

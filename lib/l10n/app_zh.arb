@@ -596,6 +596,7 @@
   },
   "searchHint": "搜索书名或作者",
   "searchRecent": "最近",
+  "searchPrivateNotSaved": "私密书架中的搜索不会被保存。",
   "searchClear": "清除",
   "searchResultCount": "{count, plural, one{找到 {count} 条\"{query}\"的结果} other{找到 {count} 条\"{query}\"的结果}}",
   "@searchResultCount": {

@@ -27,8 +27,10 @@ class PinService {
   // Every 5 wrong PINs lock the keypad, with the window escalating per
   // lockout (30s → 1m → 5m → 30m, capped); a correct PIN resets the level.
   // Persisted in secure storage so restarting the app does not reset the
-  // window. A 4-digit PIN is inherently weak (10^4 space); this only slows
-  // manual guessing (~17h at a flat 30s → days), not forensics.
+  // window. The level resets only on a correct PIN (or setPin/resetPin), not
+  // with time. A 4-digit PIN is inherently weak (10^4 space); this only slows
+  // manual guessing (~2000 rounds of 5 tries: ~17h at a flat 30s, ~41 days
+  // with the 30m cap), not forensics.
   static const int _maxFailedAttempts = 5;
   @visibleForTesting
   static const List<Duration> lockoutSchedule = [

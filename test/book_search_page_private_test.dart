@@ -61,5 +61,7 @@ void main() {
       (tester) async {
     await pumpPage(tester, isPrivate: true);
     expect(find.text('public term'), findsNothing);
+    expect(find.text('Searches in the private shelf are not saved.'),
+        findsOneWidget);
   });
 }

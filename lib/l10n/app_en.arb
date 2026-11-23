@@ -618,6 +618,7 @@
   },
   "searchHint": "Search title or author",
   "searchRecent": "Recent",
+  "searchPrivateNotSaved": "Searches in the private shelf are not saved.",
   "searchClear": "Clear",
   "searchResultCount": "{count, plural, one{{count} result for \"{query}\"} other{{count} results for \"{query}\"}}",
   "@searchResultCount": {
