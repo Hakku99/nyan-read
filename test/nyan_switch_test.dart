@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/theme/theme_presets.dart';
 import 'package:nyan_read/core/ui/components/nyan_switch.dart';
 
+/// NyanSwitch is a custom 44x26 pill + 20pt surface thumb (primitives.jsx),
+/// not a Material [Switch]; these tests read its decorated containers.
 void main() {
   final preset = themePresets[ThemePreset.creamLight]!;
 
@@ -10,87 +12,112 @@ void main() {
     WidgetTester tester, {
     required bool value,
     ValueChanged<bool>? onChanged,
+    bool disabled = false,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: preset.themeData,
         home: Scaffold(
           body: Center(
-            child: NyanSwitch(value: value, onChanged: onChanged ?? (_) {}),
+            child: NyanSwitch(
+              value: value,
+              onChanged: disabled ? null : (onChanged ?? (_) {}),
+            ),
           ),
         ),
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
   }
 
-  Switch readSwitch(WidgetTester tester) =>
-      tester.widget<Switch>(find.byType(Switch));
+  BoxDecoration trackDecoration(WidgetTester tester) => tester
+      .widget<AnimatedContainer>(find.byType(AnimatedContainer))
+      .decoration! as BoxDecoration;
 
-  // ── ON state ───────────────────────────────────────────────────────────────
-  group('NyanSwitch ON state', () {
-    testWidgets('active track is nyan.primary', (tester) async {
+  BoxDecoration thumbDecoration(WidgetTester tester) {
+    final thumb = tester.widget<Container>(
+      find.descendant(
+        of: find.byType(AnimatedAlign),
+        matching: find.byType(Container),
+      ),
+    );
+    return thumb.decoration! as BoxDecoration;
+  }
+
+  group('NyanSwitch track', () {
+    testWidgets('is a 44x26 pill', (tester) async {
       await pumpSwitch(tester, value: true);
-      expect(readSwitch(tester).activeTrackColor, preset.primary);
+      expect(tester.getSize(find.byType(AnimatedContainer)), const Size(44, 26));
+      expect(trackDecoration(tester).borderRadius, BorderRadius.circular(999));
     });
 
-    testWidgets('active thumb is white', (tester) async {
+    testWidgets('ON track is nyan.primary', (tester) async {
       await pumpSwitch(tester, value: true);
-      expect(readSwitch(tester).activeThumbColor, Colors.white);
+      expect(trackDecoration(tester).color, preset.primary);
     });
-  });
 
-  // ── OFF state ──────────────────────────────────────────────────────────────
-  group('NyanSwitch OFF state', () {
-    testWidgets('inactive track is nyan.surfaceMuted', (tester) async {
+    testWidgets('OFF track is nyan.divider', (tester) async {
       await pumpSwitch(tester, value: false);
-      expect(readSwitch(tester).inactiveTrackColor, preset.surfaceMuted);
+      expect(trackDecoration(tester).color, preset.divider);
     });
 
-    testWidgets('inactive thumb is white', (tester) async {
+    testWidgets('disabled track is dimmed to 45% alpha', (tester) async {
+      await pumpSwitch(tester, value: true, disabled: true);
+      expect(
+        trackDecoration(tester).color,
+        preset.primary.withValues(alpha: 0.45),
+      );
+    });
+  });
+
+  group('NyanSwitch thumb', () {
+    testWidgets('is a 20pt nyan.surface circle', (tester) async {
       await pumpSwitch(tester, value: false);
-      expect(readSwitch(tester).inactiveThumbColor, Colors.white);
+      final d = thumbDecoration(tester);
+      expect(d.shape, BoxShape.circle);
+      expect(d.color, preset.surface);
+      expect(
+        tester.getSize(
+          find.descendant(
+            of: find.byType(AnimatedAlign),
+            matching: find.byType(Container),
+          ),
+        ),
+        const Size(20, 20),
+      );
     });
-  });
 
-  // ── No Material splash ─────────────────────────────────────────────────────
-  group('NyanSwitch no splash', () {
-    testWidgets('overlayColor resolves to transparent', (tester) async {
+    testWidgets('sits on the right when ON, left when OFF', (tester) async {
       await pumpSwitch(tester, value: true);
-      final overlay = readSwitch(tester).overlayColor!;
-      expect(overlay.resolve({WidgetState.pressed}), Colors.transparent);
-      expect(overlay.resolve({WidgetState.hovered}), Colors.transparent);
-      expect(overlay.resolve({}), Colors.transparent);
-    });
-
-    testWidgets('splashRadius is 0', (tester) async {
-      await pumpSwitch(tester, value: true);
-      expect(readSwitch(tester).splashRadius, 0);
-    });
-  });
-
-  // ── Toggle behaviour ───────────────────────────────────────────────────────
-  testWidgets('onChanged fires with new value', (tester) async {
-    final captured = <bool>[];
-    await pumpSwitch(tester, value: false, onChanged: captured.add);
-    await tester.tap(find.byType(Switch));
-    await tester.pumpAndSettle();
-    expect(captured, [true]);
-  });
-
-  // ── Track outline ──────────────────────────────────────────────────────────
-  group('NyanSwitch track outline', () {
-    testWidgets('outline is primary when selected', (tester) async {
-      await pumpSwitch(tester, value: true);
-      final outline = readSwitch(tester).trackOutlineColor!;
-      expect(outline.resolve({WidgetState.selected}), preset.primary);
-    });
-
-    testWidgets('outline is divider when off', (tester) async {
+      expect(
+        tester.widget<AnimatedAlign>(find.byType(AnimatedAlign)).alignment,
+        Alignment.centerRight,
+      );
       await pumpSwitch(tester, value: false);
-      final outline = readSwitch(tester).trackOutlineColor!;
-      final expected = preset.divider.withValues(alpha: 0.6);
-      expect(outline.resolve({}), expected);
+      expect(
+        tester.widget<AnimatedAlign>(find.byType(AnimatedAlign)).alignment,
+        Alignment.centerLeft,
+      );
+    });
+  });
+
+  group('NyanSwitch behaviour', () {
+    testWidgets('onChanged fires with the toggled value', (tester) async {
+      final captured = <bool>[];
+      await pumpSwitch(tester, value: false, onChanged: captured.add);
+      await tester.tap(find.byType(NyanSwitch));
+      await tester.pumpAndSettle();
+      expect(captured, [true]);
+    });
+
+    testWidgets('disabled switch ignores taps', (tester) async {
+      await pumpSwitch(tester, value: false, disabled: true);
+      await tester.tap(find.byType(NyanSwitch));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<NyanSwitch>(find.byType(NyanSwitch)).onChanged,
+        isNull,
+      );
     });
   });
 }

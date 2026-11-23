@@ -118,7 +118,7 @@ void main() {
 
   // ── Padding ────────────────────────────────────────────────────────────────
   group('NyanPillButton padding', () {
-    testWidgets('padding is 8 vertical × 16 horizontal', (tester) async {
+    testWidgets('padding is 9 vertical × 16 horizontal (spec "9px 16px")', (tester) async {
       await pumpPill(tester);
       final paddings = tester.widgetList<Padding>(find.byType(Padding));
       final pillPadding = paddings.firstWhere(
@@ -126,7 +126,7 @@ void main() {
             p.padding ==
             const EdgeInsets.symmetric(
               horizontal: NyanSpacing.space16,
-              vertical: NyanSpacing.space8,
+              vertical: 9.0,
             ),
         orElse: () => throw TestFailure('pill padding not found'),
       );
@@ -134,7 +134,7 @@ void main() {
         pillPadding.padding,
         const EdgeInsets.symmetric(
           horizontal: NyanSpacing.space16,
-          vertical: NyanSpacing.space8,
+          vertical: 9.0,
         ),
       );
     });
@@ -161,14 +161,13 @@ void main() {
   });
 
   // ── Tap target ─────────────────────────────────────────────────────────────
+  // Visual chip is the spec's 36pt (+ border); the hit area is 44pt.
   testWidgets('respects minimum 44pt tap target', (tester) async {
     await pumpPill(tester);
     final box = tester.getSize(find.byType(NyanPillButton));
-    expect(
-      box.height,
-      greaterThanOrEqualTo(NyanSpacing.minTapTarget),
-      reason: 'AGENTS.md §4.3: min 44pt tap target',
-    );
+    expect(box.height, greaterThanOrEqualTo(NyanSpacing.minTapTarget));
+    final chip = tester.getSize(find.byType(AnimatedContainer));
+    expect(chip.height, greaterThanOrEqualTo(36.0 + 2 * 1.5));
   });
 
   // ── Tap ────────────────────────────────────────────────────────────────────

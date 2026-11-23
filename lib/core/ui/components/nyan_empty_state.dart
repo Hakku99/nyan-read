@@ -11,7 +11,7 @@ import '../../theme/theme_presets.dart';
 /// **Icon slot** — two paths, mutually exclusive (explicit [icon] wins):
 ///   • Pass [icon] (Widget) for mascot art or custom containers.
 ///   • Pass [iconData] (IconData) for the canonical rounded-square chip:
-///     radius-card (20pt) container, `primary` @ 8% fill, 34pt glyph at
+///     cardNested (16pt) container, `primary` @ 8% fill, 34pt glyph at
 ///     `primary` @ 80% — matching the spec exactly.
 ///
 /// **Default text styles** — applied when the caller does not pass
@@ -130,7 +130,7 @@ class NyanEmptyState extends StatelessWidget {
     );
   }
 
-  /// Spec canonical chip: radius-card (20pt) container, `primary` @ 8% fill,
+  /// Spec canonical chip: cardNested (16pt) container, `primary` @ 8% fill,
   /// 34pt glyph at `primary` @ 80%. Padding 14pt matches spec value;
   /// not on the 8-grid but is a design-system literal (documented here).
   Widget _buildIconChip(NyanTheme nyan) {

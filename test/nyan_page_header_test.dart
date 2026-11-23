@@ -38,10 +38,10 @@ void main() {
       expect(find.text('My Library'), findsOneWidget);
     });
 
-    testWidgets('title font size is NyanTypography.title (24)', (tester) async {
+    testWidgets('title font size is NyanTypography.section (20)', (tester) async {
       await pumpHeader(tester);
       final text = tester.widget<Text>(find.text('My Library'));
-      expect(text.style?.fontSize, NyanTypography.title);
+      expect(text.style?.fontSize, NyanTypography.section);
     });
 
     testWidgets('title font weight is w600', (tester) async {
@@ -117,15 +117,15 @@ void main() {
       expect(find.byKey(const Key('action')), findsOneWidget);
     });
 
-    testWidgets('default padding is l16 t16 r16 b12', (tester) async {
+    testWidgets('default padding is l12 t16 r12 b12 (_chrome.jsx PageHdr)', (tester) async {
       await pumpHeader(tester);
       final padding = tester.widget<Padding>(find.byType(Padding).first);
       expect(
         padding.padding,
         const EdgeInsets.fromLTRB(
+          NyanSpacing.space12,
           NyanSpacing.space16,
-          NyanSpacing.space16,
-          NyanSpacing.space16,
+          NyanSpacing.space12,
           NyanSpacing.space12,
         ),
       );

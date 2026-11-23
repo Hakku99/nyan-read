@@ -46,13 +46,13 @@ void main() {
 
   // ── Shape ──────────────────────────────────────────────────────────────────
   group('NyanFAB shape', () {
-    testWidgets('uses NyanRadius.input (16pt) corner radius', (tester) async {
+    testWidgets('uses NyanRadius.dock (24pt) corner radius', (tester) async {
       await pumpFab(tester);
       final shape = readFab(tester).shape as RoundedRectangleBorder;
       expect(
         shape.borderRadius,
-        BorderRadius.circular(NyanRadius.input),
-        reason: 'AGENTS.md §4.2.2: FAB uses NyanRadius.input (16pt)',
+        BorderRadius.circular(NyanRadius.dock),
+        reason: 'design-system parity (942c053): FAB uses NyanRadius.dock (24pt)',
       );
     });
   });

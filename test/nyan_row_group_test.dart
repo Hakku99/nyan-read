@@ -44,13 +44,13 @@ void main() {
 
   // ── Outer container ────────────────────────────────────────────────────────
   group('NyanRowGroup outer container', () {
-    testWidgets('uses NyanRadius.card border-radius', (tester) async {
+    testWidgets('uses NyanRadius.cardNested border-radius', (tester) async {
       await pumpGroup(tester, [
         const Text('a', key: Key('a')),
         const Text('b', key: Key('b')),
       ]);
       final d = outerDecoration(tester);
-      expect(d.borderRadius, BorderRadius.circular(NyanRadius.card));
+      expect(d.borderRadius, BorderRadius.circular(NyanRadius.cardNested));
     });
 
     testWidgets('background is nyan.surface', (tester) async {
@@ -59,24 +59,24 @@ void main() {
       expect(d.color, preset.surface);
     });
 
-    testWidgets('border uses nyan.divider token', (tester) async {
+    // AGENTS.md 4.3: chrome-edge is transparent in light, divider in dark.
+    testWidgets('border is transparent chrome-edge in light', (tester) async {
       await pumpGroup(tester, [const Text('a', key: Key('a'))]);
       final d = outerDecoration(tester);
       final border = d.border as Border;
-      final expected = preset.divider.withValues(alpha: 0.3);
-      expect(border.top.color, expected);
+      expect(border.top.color, Colors.transparent);
     });
   });
+
+  Iterable<SizedBox> separatorBoxes(WidgetTester tester) => tester
+      .widgetList<SizedBox>(find.byType(SizedBox))
+      .where((b) => b.height == 0.5 && b.child is ColoredBox);
 
   // ── Separators ─────────────────────────────────────────────────────────────
   group('NyanRowGroup separators', () {
     testWidgets('no separator with a single child', (tester) async {
       await pumpGroup(tester, [const Text('only', key: Key('a'))]);
-      // Find Containers with height=1 (separators)
-      final separators = tester
-          .widgetList<Container>(find.byType(Container))
-          .where((c) => c.constraints?.maxHeight == 1)
-          .toList();
+      final separators = separatorBoxes(tester).toList();
       expect(separators, isEmpty);
     });
 
@@ -86,24 +86,18 @@ void main() {
         const Text('b', key: Key('b')),
         const Text('c', key: Key('c')),
       ]);
-      // Look for 1px-tall Containers (separators)
-      final separators = tester
-          .widgetList<Container>(find.byType(Container))
-          .where((c) => c.constraints?.maxHeight == 1)
-          .toList();
+      final separators = separatorBoxes(tester).toList();
       expect(separators, hasLength(2));
     });
 
-    testWidgets('separator colour is nyan.divider', (tester) async {
+    testWidgets('separator colour is nyan.divider @ 34%', (tester) async {
       await pumpGroup(tester, [
         const Text('a', key: Key('a')),
         const Text('b', key: Key('b')),
       ]);
-      final separator = tester
-          .widgetList<Container>(find.byType(Container))
-          .firstWhere((c) => c.constraints?.maxHeight == 1);
-      final expected = preset.divider.withValues(alpha: 0.6);
-      expect(separator.color, expected);
+      final separator = separatorBoxes(tester).first;
+      final expected = preset.divider.withValues(alpha: 0.34);
+      expect((separator.child! as ColoredBox).color, expected);
     });
 
     testWidgets('does NOT use Material Divider widget', (tester) async {

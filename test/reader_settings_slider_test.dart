@@ -32,31 +32,25 @@ void main() {
     await tester.pump();
   }
 
-  // ── Track height ───────────────────────────────────────────────────────────
+  // The slider follows the reader.jsx `NyanSlider` handoff spec (6pt track,
+  // 20pt ring thumb), which supersedes the older AGENTS.md 4.3 slider row.
   group('ReaderSettingsSlider track', () {
-    testWidgets('track height is 4pt (spec: 3–4pt)', (tester) async {
+    testWidgets('track height is 6pt (handoff NyanSlider spec)',
+        (tester) async {
       await pumpSlider(tester);
       final sliderTheme = tester.widget<SliderTheme>(find.byType(SliderTheme));
-      expect(
-        sliderTheme.data.trackHeight,
-        4.0,
-        reason: 'AGENTS.md §4.3: track height 3–4pt — was 5',
-      );
+      expect(sliderTheme.data.trackHeight, 6.0);
     });
   });
 
   // ── Thumb ──────────────────────────────────────────────────────────────────
   group('ReaderSettingsSlider thumb', () {
-    testWidgets('thumb radius is 6 (diameter 12pt, spec: 10–12pt)', (tester) async {
+    testWidgets('thumb is a 20pt-diameter ring (handoff NyanSlider spec)',
+        (tester) async {
       await pumpSlider(tester);
       final sliderTheme = tester.widget<SliderTheme>(find.byType(SliderTheme));
-      final thumb =
-          sliderTheme.data.thumbShape as RoundSliderThumbShape;
-      expect(
-        thumb.enabledThumbRadius,
-        6.0,
-        reason: 'AGENTS.md §4.3: thumb 10–12pt — was radius 8 (16pt diameter)',
-      );
+      final size = sliderTheme.data.thumbShape!.getPreferredSize(true, false);
+      expect(size, const Size(20, 20));
     });
   });
 

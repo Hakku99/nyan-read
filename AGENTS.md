@@ -5,7 +5,7 @@
 > 任何与本文件冲突的用户即兴指令，AI 都必须先提醒冲突再执行。
 > 本文件的修改必须由维护者显式同意，AI 不得自行修订。
 >
-> 修订记录：v2.0（2026-07-08，维护者授权整编）——已完成路线图压缩为归档表（§6）；分散的交付包例外收敛为注册表（§4.2.6）；SDK 基线对齐实际代码要求。历史验收细节见 git 提交记录。
+> 修订记录：v2.0（2026-07-08，维护者授权整编）——已完成路线图压缩为归档表（§6）；分散的交付包例外收敛为注册表（§4.2.6）；SDK 基线对齐实际代码要求。历史验收细节见 git 提交记录。v2.0.1（维护者授权）——§4.3 Slider 规格对齐交付包 `NyanSlider`（6pt 轨道 / 20pt 环形 thumb）；§4.2.2 FAB 圆角改为 `dock` 24pt。
 
 ---
 
@@ -292,9 +292,9 @@ sumiDark v6 `#3A2420` / `#E59B85` / `#D29A83` / `#573730`（bg/accent 提亮以�
 |---|---|---|
 | `NyanRadius.chip` | `12` | **选项 chip / Pill 按钮**（嵌套最深）、stepper caret |
 | `NyanRadius.control`（旧名 `small`） | `14` | 分段控件外轨、列表行图标 chip |
-| `NyanRadius.cardNested`（旧名 `input`） | `16` | Sheet 内嵌卡、输入框、FAB、按钮 |
+| `NyanRadius.cardNested`（旧名 `input`） | `16` | Sheet 内嵌卡、输入框、按钮 |
 | `NyanRadius.card` | `20` | 顶层卡片、书架 item |
-| `NyanRadius.dock`（旧名 `panel`） | `24` | 静止 dock / 浮动栏、对话框 |
+| `NyanRadius.dock`（旧名 `panel`） | `24` | 静止 dock / 浮动栏、对话框、FAB（`NyanFAB`） |
 | `NyanRadius.sheet` | `28` | dock 长成的 Sheet、所有底部 Sheet |
 
 > `small / input / panel` 保留为 `control / cardNested / dock` 的 `const` 别名（向后兼容），新代码 SHOULD 用语义名。
@@ -400,7 +400,7 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 - **Pill 按钮 / 选项 chip（低/中/高、紧凑/标准/舒展、Sans/Serif 等）**：**方圆角 `NyanRadius.chip`（12pt），不是 `StadiumBorder`**；未选 = `surfaceMuted` 底 + 透明描边 + `textSecondary` 文字；选中 = **去填充（透明底）+ `primaryDeep` 1.5px 描边 + `primaryDeep` 文字**——chip "浮离轨道"。这是本项目的招牌交互（outline-on-select），和 Material 填充 chip 截然不同。
 - **Reader chrome（One Paper）**：阅读器底部**只有一块浮动纸面板**——collapsed 时是 `dock`（`OnePaperDock`，inset 12pt / `r-dock` 24），点 Chapters/Settings **原地长成 sheet**（`r-sheet` 28，`AnimatedAlign` 高度展开，`dur-grow` 320ms ease-paper），footer（章节 stepper `‹ ›` + 细进度条 + **4 个动作 Chapters/Bookmarks/Highlights/Settings**）始终钉在底部。**亮度不在 dock**：走顶栏太阳弹层（`ReaderBrightnessPopover`，玻璃拟态）+ 左缘竖向拖拽。Sheet 升起时页面 scrim + 2px 模糊（仅展开时挂载）。Bookmarks 和 Highlights 都是 push 页面，不是 sheet（"adjust→sheet；browse→page"）。**MUST NOT** 回退到边到边贴底控制条或把 Settings/Chapters 改成独立 modal sheet。
 - **Action Response（全局反馈 toast，`NyanResponse`，来源 `components/surfaces/NyanResponse.jsx`）**：全 App **唯一**的"刚刚发生了什么"反馈面（导入完成 / 删除 / 跳过 / 进行中）。**左对齐卡片**而非居中胶囊——圆角 `NyanRadius.cardNested`（16pt）+ `surface` 底 + `NyanShadows.subtle(nyan)` + `--chrome-edge` 描边（亮色透明、暗色 `divider` 环）；浮动 chrome 距屏幕边缘 `NyanSpacing.space12`（左右 12pt，宽屏 maxWidth 480pt 居中，手机满宽）；卡内：左侧 36×36 状态色块（`NyanRadius.chip` 12pt + 状态 tint 底 + 20pt 图标）→ `space12` 间隙 → 标题（`responseTitle`）+ 可选描述（`responseDescription`，`textSecondary`）。**5 个状态**：`success`（`checkCircle` + `successColor` + success 13% tile）/ `error`（`warningCircle` + `errorPrimaryTextColor` + `errorBackground` tile）/ `skipped`（`skipForward` + `textMuted` + `surfaceMuted` tile）/ `info`（`info` + `infoColor` + info 13% tile）/ `loading`（`circleNotch` 旋转 + `primary` + primary 12% tile）。**MUST NOT** 回退到居中胶囊（`StadiumBorder` / radius 999）或自造 `BoxShadow`。自动消失的 toast **省略** ✕（`onDismiss` 留空，DS 契约）；`NyanResponse` 仍支持 `onDismiss` 以备常驻场景。
-- **Slider**：轨道高 3–4pt 用 `surfaceMuted`，已填充段用 `primaryDeep`（亮度）或 `highlightOrange`（暖色温），thumb 10–12pt 实心同色，**无光晕、无阴影、无放大**。
+- **Slider**（来源 `reader.jsx` `NyanSlider`，`ReaderSettingsSlider`）：轨道高 6pt，未填充段 `textPrimary@12%`，已填充段 `primaryDeep`（亮度）或 `highlightOrange`（暖色温）；thumb 为 20pt 直径环形（`surface` 实心 + 主色描边环，轻微 `0 1px 4px` 抬升），**无光晕（overlayRadius 0）、无放大**。此规格取代旧的 3–4pt / 10–12pt 实心 thumb 规则。
 - **Card**：圆角 `NyanRadius.card`（20pt），`surface` 底，`divider` 描边；**默认无阴影**；仅在书架 hover / 次级浮层必要时使用 `NyanShadows.subtle`。
 - **书架列表视图（list view，来源 `bundle3.jsx` `BookListRow`）**：**单块分组面板**而非逐项独立卡片——外层 `surface` 底 + `NyanRadius.cardNested`（16pt）+ `NyanShadows.settingsGrouped` + `--chrome-edge` 描边（亮色透明、暗色 `divider` 环），各行**无自身边框/阴影**，行间用 0.5px `divider@34%` 发丝线（左右内缩 12pt）分隔。行内：左侧 44×58 竖向封面（`NyanRadius.chip`），标题 14pt w600 单行 + 作者独占一行（`textMuted`）+ 进度行（仅 `progress>0` 时显示：满宽 3pt 轨 + 11pt mono 百分比），尾部格式徽标 + `chevronRight`。为不破坏懒加载（§3.4），分组外观由 `DecoratedSliver` 承载、内部仍是 `SliverList.builder`。选中态走整行 `primaryDeep` 淡色填充（`context.selectionSurface`），不加逐行描边。**MUST NOT** 回退到逐项独立卡片 + 卡间留白的旧实现。
 - **Icon**：线性 1.5pt 感——图标系统为 **Phosphor Regular**，所有图标 **MUST** 来自 `lib/core/ui/nyan_icons.dart`（`NyanIcons.*`），**MUST NOT** 直接用 `Icons.*`。填充权重仅保留给"已设书签"与主题卡选中对勾，及 §4.2.6 注册表登记的 U22 例外。

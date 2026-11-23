@@ -7,7 +7,7 @@ import '../nyan_theme_context.dart';
 /// Themed [FloatingActionButton] aligned to Nyan tokens.
 ///
 /// Background/foreground use `nyan.fabBackground` / `nyan.fabForeground`;
-/// corner radius is [NyanRadius.input] (16pt) per AGENTS.md §4.2.2;
+/// corner radius is [NyanRadius.dock] (24pt) per the empty-shelf design-system parity pass;
 /// the soft lift comes from [NyanShadows.subtle] applied via an outer
 /// [DecoratedBox] so Material's own elevation shadow is suppressed.
 class NyanFAB extends StatelessWidget {
