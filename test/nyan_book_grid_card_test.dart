@@ -6,7 +6,7 @@ import 'package:nyan_read/core/theme/theme_presets.dart';
 import 'package:nyan_read/core/ui/components/nyan_book_grid_card.dart';
 
 /// Tracks the bundle3.jsx BookCard rewrite: portrait cover (120:156) with a
-/// format badge overlay, a 3pt progress bar, then title + author below — no
+/// format badge overlay, a 3pt progress bar (only once progress > 0), then the title below — no
 /// outer padded card box.
 void main() {
   Book makeBook({
@@ -69,27 +69,23 @@ void main() {
       expect(find.text('EPUB'), findsOneWidget);
     });
 
-    testWidgets('badge hidden in selection mode', (tester) async {
+    testWidgets('badge stays visible in selection mode', (tester) async {
       await pumpCard(
         tester,
         book: makeBook(format: 'epub'),
         isSelectionMode: true,
       );
-      expect(find.text('EPUB'), findsNothing);
+      expect(find.text('EPUB'), findsOneWidget);
     });
   });
 
   // ── Title + author ─────────────────────────────────────────────────────────
   group('NyanBookGridCard text', () {
-    testWidgets('renders title and author', (tester) async {
+    // Grid card shows the title only; the author lives in list rows.
+    testWidgets('renders title but not the author', (tester) async {
       await pumpCard(tester, book: makeBook(title: 'Genji', author: 'Murasaki'));
       expect(find.text('Genji'), findsOneWidget);
-      expect(find.text('Murasaki'), findsOneWidget);
-    });
-
-    testWidgets('author hidden when unknown', (tester) async {
-      await pumpCard(tester, book: makeBook(author: 'unknown'));
-      expect(find.text('unknown'), findsNothing);
+      expect(find.text('Murasaki'), findsNothing);
     });
 
     testWidgets('title reserves 32pt 2-line slot', (tester) async {
@@ -123,7 +119,7 @@ void main() {
 
   // ── Progress bar ───────────────────────────────────────────────────────────
   group('NyanBookGridCard progress bar', () {
-    testWidgets('always shown, 3pt tall, value matches progress',
+    testWidgets('3pt tall, value matches progress when started',
         (tester) async {
       await pumpCard(tester, book: makeBook(progress: 0.5));
       final bar = tester.widget<LinearProgressIndicator>(
@@ -134,9 +130,10 @@ void main() {
       expect(bar.value, closeTo(0.5, 0.001));
     });
 
-    testWidgets('shown even at 0% (empty track)', (tester) async {
+    testWidgets('hidden at 0% (spec: only once reading has started)',
+        (tester) async {
       await pumpCard(tester, book: makeBook(progress: 0.0));
-      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
     });
   });
 

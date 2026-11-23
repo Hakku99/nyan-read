@@ -65,7 +65,7 @@ void main() {
   });
 
   group('BookshelfSortSheet', () {
-    testWidgets('key chips + order segmented apply live via onChanged',
+    testWidgets('field rows + order segmented apply live via onChanged',
         (tester) async {
       final changes = <(SortBy, bool)>[];
       await tester.pumpWidget(
@@ -87,13 +87,14 @@ void main() {
         tester.element(find.byType(SegmentedTabControl)),
       )!;
 
-      // 3 key chips + the Ascending/Descending segmented control.
-      expect(find.byType(NyanPillButton), findsNWidgets(3));
+      // 3 radio field rows (ShelfSortSheet spec) + the Ascending/Descending
+      // segmented control; no pill chips any more.
+      expect(find.byType(NyanPillButton), findsNothing);
       expect(find.text(loc.lastRead), findsOneWidget);
       expect(find.text(loc.added), findsOneWidget);
       expect(find.text(loc.title), findsOneWidget);
 
-      // Tapping a key chip applies immediately, sheet stays open.
+      // Tapping a field row applies immediately, sheet stays open.
       await tester.tap(find.text(loc.title));
       await tester.pumpAndSettle();
       expect(changes.last, (SortBy.title, false));

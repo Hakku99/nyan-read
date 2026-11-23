@@ -31,7 +31,7 @@ void main() {
       expect(icon.size, 34);
     });
 
-    testWidgets('icon container uses NyanRadius.card (20pt)', (tester) async {
+    testWidgets('icon container uses NyanRadius.cardNested (16pt)', (tester) async {
       await pumpState(
         tester,
         const NyanEmptyState(
@@ -39,7 +39,7 @@ void main() {
           title: 'Empty',
         ),
       );
-      // The Container wrapping the icon uses border-radius card.
+      // The Container wrapping the icon uses border-radius cardNested.
       final container = tester.widget<Container>(
         find.ancestor(
           of: find.byIcon(NyanIcons.bookCollection),
@@ -49,7 +49,7 @@ void main() {
       final decoration = container.decoration as BoxDecoration;
       expect(
         decoration.borderRadius,
-        BorderRadius.circular(NyanRadius.card),
+        BorderRadius.circular(NyanRadius.cardNested),
       );
     });
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nyan_read/core/theme/theme_presets.dart';
 import 'package:nyan_read/core/ui/nyan_icons.dart';
 import 'package:nyan_read/modules/reader/widgets/reader_settings/reader_settings_progress_card.dart';
 
@@ -8,6 +9,7 @@ void main() {
       (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        theme: themePresets[ThemePreset.creamLight]!.themeData,
         home: Scaffold(
           body: Center(
             child: ReaderSettingsProgressCard(
@@ -33,6 +35,7 @@ void main() {
       (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        theme: themePresets[ThemePreset.creamLight]!.themeData,
         home: Scaffold(
           body: Center(
             child: ReaderSettingsProgressCard(
@@ -49,8 +52,8 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Icons.chevron_left_rounded), findsNothing);
-    expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
+    expect(find.byIcon(NyanIcons.chevronLeft), findsNothing);
+    expect(find.byIcon(NyanIcons.chevronRight), findsNothing);
     expect(find.byType(Slider), findsOneWidget);
   });
 
@@ -58,6 +61,7 @@ void main() {
       (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        theme: themePresets[ThemePreset.creamLight]!.themeData,
         home: Scaffold(
           body: Center(
             child: ReaderSettingsProgressCard(

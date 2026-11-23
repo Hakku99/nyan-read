@@ -32,11 +32,11 @@ void main() {
       expect(find.text('Sub'), findsOneWidget);
     });
 
-    testWidgets('title uses w600 + 1.2 line-height by default',
+    testWidgets('title uses w500 + 1.2 line-height by default',
         (tester) async {
       await pumpRow(tester, const NyanListRow(title: 'Hello'));
       final text = tester.widget<Text>(find.text('Hello'));
-      expect(text.style?.fontWeight, FontWeight.w600);
+      expect(text.style?.fontWeight, FontWeight.w500);
       expect(text.style?.height, 1.2);
     });
 
@@ -63,9 +63,9 @@ void main() {
     });
   });
 
-  // ── leadingIcon (built-in 36×36 chip) ───────────────────────────────────
+  // ── leadingIcon (built-in 32×32 chip) ───────────────────────────────────
   group('NyanListRow leadingIcon (built-in chip)', () {
-    testWidgets('renders 36×36 chip with primary tint when set',
+    testWidgets('renders 32×32 chip with primary tint when set',
         (tester) async {
       final nyan = themePresets[ThemePreset.creamLight]!;
       await pumpRow(
@@ -83,12 +83,12 @@ void main() {
           matching: find.byType(Container),
         ).first,
       );
-      expect(container.constraints?.maxWidth, 36);
-      expect(container.constraints?.maxHeight, 36);
+      expect(container.constraints?.maxWidth, 32);
+      expect(container.constraints?.maxHeight, 32);
 
-      // Icon is at 17pt in primary color.
+      // Icon is at 16pt in primary color.
       final icon = tester.widget<Icon>(find.byIcon(NyanIcons.file));
-      expect(icon.size, 17);
+      expect(icon.size, 16);
       expect(icon.color, nyan.primary);
     });
 
@@ -115,14 +115,14 @@ void main() {
 
   // ── showChevron (built-in trailing caret) ───────────────────────────────
   group('NyanListRow showChevron (built-in trailing caret)', () {
-    testWidgets('renders chevron at 18pt when showChevron is true',
+    testWidgets('renders chevron at 16pt when showChevron is true',
         (tester) async {
       await pumpRow(
         tester,
         const NyanListRow(title: 'Go', showChevron: true),
       );
       final icon = tester.widget<Icon>(find.byIcon(NyanIcons.chevronRight));
-      expect(icon.size, 18);
+      expect(icon.size, 16);
     });
 
     testWidgets('no chevron by default', (tester) async {

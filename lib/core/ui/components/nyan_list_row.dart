@@ -24,7 +24,7 @@ import '../nyan_icons.dart';
 class NyanListRow extends StatelessWidget {
   final Widget? leading;
 
-  /// Convenience: when set, renders a 36×36 primary-tinted icon chip on the
+  /// Convenience: when set, renders a 32×32 primary-tinted icon chip on the
   /// leading edge. Mutually exclusive with [leading] (the explicit widget
   /// wins if both are provided).
   final IconData? leadingIcon;
