@@ -179,6 +179,14 @@ Future<void> _handleImportData(BuildContext context, WidgetRef ref) async {
     if (context.mounted) _closeDialog(context);
     if (!context.mounted) return;
     if (restoredCount == -1) return;
+    if (restoredCount == 0) {
+      SnackBarUtils.show(
+        context,
+        loc.importNothingRestored,
+        tone: NyanSnackTone.skipped,
+      );
+      return;
+    }
     SnackBarUtils.show(
       context,
       loc.importSuccess(restoredCount),

@@ -291,8 +291,6 @@ class BookDetailsPage extends StatelessWidget {
                               size: NyanPrimaryButtonSize.comfortable,
                             ),
                           ),
-                          const SizedBox(width: NyanSpacing.space8),
-                          _HeroShareButton(book: book),
                         ],
                       ),
                       if (hasAvailability && !isAvailable) ...[
@@ -521,47 +519,6 @@ class _DetailRow extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Small share icon button beside the hero CTA.
-///
-/// Spec: 44×44, `surface` background, `divider` border, [NyanRadius.input] corners.
-/// Share action is deferred pending export/share implementation.
-class _HeroShareButton extends StatelessWidget {
-  const _HeroShareButton({required this.book});
-
-  final Book book;
-
-  @override
-  Widget build(BuildContext context) {
-    final nyan = context.nyanTheme;
-
-    return Material(
-      color: nyan.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(NyanRadius.cardNested),
-        // Spec (bundle3.jsx): 1px border at 60% divider alpha.
-        side: BorderSide(color: nyan.divider.withValues(alpha: 0.60)),
-      ),
-      child: InkWell(
-        // TODO(#share): implement book share / export.
-        onTap: null,
-        customBorder: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(NyanRadius.cardNested),
-        ),
-        child: SizedBox(
-          // Spec (bundle3.jsx): share button is 50×50, matching CTA height.
-          width: 50,
-          height: 50,
-          child: Icon(
-            NyanIcons.exportData,
-            size: 20,
-            color: nyan.textPrimary,
-          ),
-        ),
       ),
     );
   }

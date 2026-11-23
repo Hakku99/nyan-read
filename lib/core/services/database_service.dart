@@ -1131,15 +1131,20 @@ class DatabaseService {
         progressUpdate['last_read_at'] = backupReadAt;
       }
 
+      // Counts only books that actually changed, so a restore that kept every
+      // local progress and had no notes reports 0 instead of "restored N".
+      var wrote = false;
       if (progressUpdate.isNotEmpty) {
         batch.update('books', progressUpdate,
             where: 'id = ?', whereArgs: [localBookId]);
+        wrote = true;
       }
 
       // 4. Rebind highlights/bookmarks book_id to the local UUID before upsert.
       final highlights = (book['highlights'] as List?) ?? [];
       for (final h in highlights) {
         if (h is Map<String, dynamic>) {
+          wrote = true;
           final sanitized = sanitize(
             Map<String, dynamic>.from(h)..['book_id'] = localBookId,
             validHighlightCols,
@@ -1152,6 +1157,7 @@ class DatabaseService {
       final bookmarks = (book['bookmarks'] as List?) ?? [];
       for (final b in bookmarks) {
         if (b is Map<String, dynamic>) {
+          wrote = true;
           final sanitized = sanitize(
             Map<String, dynamic>.from(b)..['book_id'] = localBookId,
             validBookmarkCols,
@@ -1161,7 +1167,7 @@ class DatabaseService {
         }
       }
 
-      syncedBookCount++;
+      if (wrote) syncedBookCount++;
     }
 
     // 5. noResult: true avoids returning rowIds for every row and reduces memory pressure.

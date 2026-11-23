@@ -89,19 +89,16 @@ class ReadingProgressManager {
 
   Future<void> restoreLastPosition({VoidCallback? onResolved}) async {
     try {
-      debugPrint("DEBUG: restoreLastPosition called for book ${book.id}");
       final positionData = await _db.getBookPosition(book.id);
       if (_disposed) return;
       if (positionData == null) {
         onResolved?.call();
-        debugPrint("DEBUG: No saved position found in DB");
         return;
       }
 
       // fromJson compares the type case-sensitively; legacy rows are uppercase.
       final type = (positionData['position_type'] as String).toLowerCase();
       final payload = positionData['position_payload'] as String;
-      debugPrint("DEBUG: RESTORING position: type=$type, payload=$payload");
 
       final position = ReadingPosition.fromJson(type, payload);
 
@@ -119,14 +116,11 @@ class ReadingProgressManager {
             ((_currentPosition == null) || _progressNotifier.value <= 0.0);
 
         if (shouldFallbackToProgress) {
-          debugPrint(
-              "DEBUG: EPUB position restore did not advance, falling back to saved progress ${book.currentProgress}");
           await engine.seekToProgress(book.currentProgress);
           await Future<void>.delayed(const Duration(milliseconds: 120));
           refreshFromEngine();
         }
 
-        debugPrint("DEBUG: Position restored to engine successfully");
       }
     } catch (e) {
       debugPrint('Error restoring position: $e');
@@ -238,9 +232,6 @@ class ReadingProgressManager {
       _currentPosition = position;
       _progressNotifier.value = progress;
 
-      debugPrint(
-          "DEBUG: _saveCurrentPosition called. Engine returned: ${position?.toJson()}, progress: $progress");
-
       if (position != null) {
         await _db.updateBookPosition(
           book.id,
@@ -248,9 +239,6 @@ class ReadingProgressManager {
           position.toJson(),
           progress: progress,
         );
-        debugPrint("DEBUG: Position and progress saved to DB");
-      } else {
-        debugPrint("DEBUG: Engine returned null position, NOT saving.");
       }
     } catch (e) {
       debugPrint('Error saving position: $e');
