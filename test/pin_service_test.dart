@@ -103,6 +103,38 @@ void main() {
         reason: 'an attempt during lockout must not extend the window');
   });
 
+  test('repeated lockouts escalate; a correct PIN resets the level', () async {
+    FlutterSecureStorage.setMockInitialValues({});
+    const storage = FlutterSecureStorage();
+    final service = PinService();
+    await service.setPin('1234');
+
+    Future<Duration> lockOnce() async {
+      for (var i = 0; i < 5; i++) {
+        await service.verifyPin('0000');
+      }
+      final window = (await service.activeLockoutUntil())!
+          .difference(DateTime.now());
+      // Expire the window so the next round of guesses is accepted again.
+      await storage.write(
+        key: 'privacy_pin_lockout_until',
+        value:
+            '${DateTime.now().subtract(const Duration(seconds: 1)).millisecondsSinceEpoch}',
+      );
+      return window;
+    }
+
+    final first = await lockOnce();
+    final second = await lockOnce();
+    expect(first, lessThanOrEqualTo(PinService.lockoutSchedule[0]));
+    expect(second, greaterThan(PinService.lockoutSchedule[0]));
+    expect(second, lessThanOrEqualTo(PinService.lockoutSchedule[1]));
+
+    expect(await service.verifyPin('1234'), isTrue);
+    final afterReset = await lockOnce();
+    expect(afterReset, lessThanOrEqualTo(PinService.lockoutSchedule[0]));
+  });
+
   test('an expired retry deadline no longer blocks the correct PIN', () async {
     FlutterSecureStorage.setMockInitialValues({});
     final service = PinService();

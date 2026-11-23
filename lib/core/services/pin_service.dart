@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:crypto/crypto.dart';
 
@@ -16,17 +17,28 @@ class PinService {
   static const String _pinIterationsKey = 'privacy_pin_iterations';
   static const String _failedAttemptsKey = 'privacy_pin_failed_attempts';
   static const String _lockoutUntilKey = 'privacy_pin_lockout_until';
+  static const String _lockoutLevelKey = 'privacy_pin_lockout_level';
 
   // 10k rounds of SHA-256 (~ms on-device): raises a 10^4-space offline brute
   // force from trivial to mildly costly. Not a KDF-grade promise — the
   // private shelf is a visibility gate, not encryption (AGENTS §2.4).
   static const int _hashIterations = 10000;
 
-  // 5 wrong PINs → 30s lockout. Persisted in secure storage so restarting
-  // the app does not reset the window. A 4-digit PIN is inherently weak
-  // (10^4 space); this only stops casual rapid guessing, not forensics.
+  // Every 5 wrong PINs lock the keypad, with the window escalating per
+  // lockout (30s → 1m → 5m → 30m, capped); a correct PIN resets the level.
+  // Persisted in secure storage so restarting the app does not reset the
+  // window. The level resets only on a correct PIN (or setPin/resetPin), not
+  // with time. A 4-digit PIN is inherently weak (10^4 space); this only slows
+  // manual guessing (~2000 rounds of 5 tries: ~17h at a flat 30s, ~41 days
+  // with the 30m cap), not forensics.
   static const int _maxFailedAttempts = 5;
-  static const Duration _lockoutDuration = Duration(seconds: 30);
+  @visibleForTesting
+  static const List<Duration> lockoutSchedule = [
+    Duration(seconds: 30),
+    Duration(minutes: 1),
+    Duration(minutes: 5),
+    Duration(minutes: 30),
+  ];
 
   /// Check if a PIN has been set
   Future<bool> hasPinSet() async {
@@ -124,9 +136,14 @@ class PinService {
     final raw = await _storage.read(key: _failedAttemptsKey);
     final failures = (raw == null ? 0 : int.tryParse(raw) ?? 0) + 1;
     if (failures >= _maxFailedAttempts) {
-      final until = DateTime.now().add(_lockoutDuration);
+      final levelRaw = await _storage.read(key: _lockoutLevelKey);
+      final level = int.tryParse(levelRaw ?? '') ?? 0;
+      final window =
+          lockoutSchedule[level.clamp(0, lockoutSchedule.length - 1)];
+      final until = DateTime.now().add(window);
       await _storage.write(
           key: _lockoutUntilKey, value: '${until.millisecondsSinceEpoch}');
+      await _storage.write(key: _lockoutLevelKey, value: '${level + 1}');
       await _storage.delete(key: _failedAttemptsKey);
     } else {
       await _storage.write(key: _failedAttemptsKey, value: '$failures');
@@ -136,6 +153,7 @@ class PinService {
   Future<void> _clearFailureState() async {
     await _storage.delete(key: _failedAttemptsKey);
     await _storage.delete(key: _lockoutUntilKey);
+    await _storage.delete(key: _lockoutLevelKey);
   }
 
   /// Change the PIN (requires old PIN verification)

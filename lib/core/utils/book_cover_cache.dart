@@ -9,17 +9,20 @@ import 'package:path_provider/path_provider.dart';
 /// with LRU eviction). Keyed by book id; one JPEG per book.
 ///
 /// Lives under the application *cache* directory — deliberately NOT the
-/// temporary directory, which our own cache scavenger wipes after 24h, and
+/// temporary directory, whose files our scavenger ages out after 24h, and
 /// NOT documents, which iOS backs up to iCloud (covers are re-derivable).
+/// Caveat: on Android both directories are the same `cacheDir`, so the
+/// scavenger (BackupRecoveryService.cacheCleanupTask) skips `covers/`.
 class BookCoverCache {
   BookCoverCache._();
 
-  static const String _dirName = 'covers';
+  /// Also referenced by the cache scavenger, which must not age this out.
+  static const String dirName = 'covers';
   static const int _maxBytes = 100 * 1024 * 1024;
 
   static Future<File> _fileFor(String bookId) async {
     final cacheDir = await getApplicationCacheDirectory();
-    return File(path.join(cacheDir.path, _dirName, '$bookId.jpg'));
+    return File(path.join(cacheDir.path, dirName, '$bookId.jpg'));
   }
 
   /// Returns the cached cover JPEG, or null on miss. A hit refreshes the

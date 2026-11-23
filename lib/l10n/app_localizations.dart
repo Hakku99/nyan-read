@@ -2216,6 +2216,12 @@ abstract class AppLocalizations {
   /// **'Recent'**
   String get searchRecent;
 
+  /// No description provided for @searchPrivateNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Searches in the private shelf are not saved.'**
+  String get searchPrivateNotSaved;
+
   /// No description provided for @searchClear.
   ///
   /// In en, this message translates to:

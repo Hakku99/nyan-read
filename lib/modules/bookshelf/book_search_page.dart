@@ -212,6 +212,22 @@ class _BookSearchPageState extends ConsumerState<BookSearchPage> {
     NyanTheme nyan,
     bool isDark,
   ) {
+    // The recents list is the public shelf's; showing it here would imply
+    // private queries are remembered and expose the public ones behind the PIN.
+    if (widget.isPrivate) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(4, 8, 4, 10),
+        child: Text(
+          loc.searchPrivateNotSaved,
+          style: TextStyle(
+            fontFamily: NyanTypography.uiFontFamily,
+            fontSize: NyanTypography.meta,
+            fontWeight: FontWeight.w400,
+            color: nyan.textMuted,
+          ),
+        ),
+      );
+    }
     final prefs = ref.read(bookshelfPreferencesRpProvider);
     final recents = prefs.recentSearches;
     if (recents.isEmpty) return const SizedBox.shrink();

@@ -1219,6 +1219,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchRecent => 'Recent';
 
   @override
+  String get searchPrivateNotSaved =>
+      'Searches in the private shelf are not saved.';
+
+  @override
   String get searchClear => 'Clear';
 
   @override

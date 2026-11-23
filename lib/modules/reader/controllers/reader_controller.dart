@@ -228,7 +228,8 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void retry() {
-    _loadBook();
+    // Fire-and-forget: _loadBook reports failures through the error state.
+    unawaited(_loadBook());
   }
 
   Future<void> seekTo(double val) async {
