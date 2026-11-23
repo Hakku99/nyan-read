@@ -22,7 +22,8 @@ class AdsUI {
   static const _suggestionsEn = [
     NyanMiniSuggest(title: 'Star Ocean: Fleet Chronicles', author: 'Lin Shen'),
     NyanMiniSuggest(title: 'Farming at the End of Days', author: 'Su Wan'),
-    NyanMiniSuggest(title: "Chang'an: Twelve Hours Beyond", author: 'Ma Boyong'),
+    NyanMiniSuggest(
+        title: "Chang'an: Twelve Hours Beyond", author: 'Ma Boyong'),
   ];
 
   static void init() {
@@ -30,7 +31,6 @@ class AdsUI {
   }
 
   static bool shouldShowBookshelfInlineAd({
-    required bool adsEnabled,
     required bool isPrivateShelf,
     required bool isSelectionMode,
     required bool isProUser,
