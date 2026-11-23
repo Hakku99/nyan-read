@@ -57,6 +57,15 @@ void main() {
     await _expireToast(tester);
   });
 
+  testWidgets('empty backup (no books at all) is not "0 books not found"',
+      (tester) async {
+    await _show(tester,
+        const RestoreResult(matched: 0, written: 0, unmatched: 0));
+    expect(find.textContaining('Nothing to restore'), findsOneWidget);
+    expect(find.textContaining('Import the book files first'), findsNothing);
+    await _expireToast(tester);
+  });
+
   testWidgets('written shows success without extra notes when all matched',
       (tester) async {
     await _show(tester,

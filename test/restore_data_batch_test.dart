@@ -184,8 +184,25 @@ void main() {
       ]
     });
     expect(r.written, 1);
-    expect((r.matched, r.unmatched), (1, 1));
+    // The duplicate entry has a local book (already used): not "missing".
+    expect((r.matched, r.unmatched), (1, 0));
     expect(await hlCount('a'), 1);
+  });
+
+  test('duplicate same-signature backup entries match once, none unmatched',
+      () async {
+    await _insertBook(db, 'a', sig: 'S1', lastReadAt: 1000);
+    final r = await service.restoreDataBatch({
+      'books': [_backupBook(sig: 'S1'), _backupBook(sig: 'S1')]
+    });
+    expect((r.matched, r.written, r.unmatched), (1, 1, 0));
+  });
+
+  test('backup without a books list reports nothing matched or unmatched',
+      () async {
+    await _insertBook(db, 'a', sig: 'S1');
+    final r = await service.restoreDataBatch({'version': 1});
+    expect((r.matched, r.written, r.unmatched), (0, 0, 0));
   });
 
   group('is_private (tighten only)', () {

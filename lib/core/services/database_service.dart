@@ -1109,8 +1109,9 @@ class DatabaseService {
         }
       }
       if (localBookId != null && !claimed.add(localBookId)) {
+        // Duplicate backup entry for a book already restored: the local book
+        // exists, so it is neither matched again nor "missing on this device".
         debugPrint('--- [Restore] Skip book, local match already used ---');
-        unmatchedCount++;
         continue;
       }
       if (localBookId == null) {

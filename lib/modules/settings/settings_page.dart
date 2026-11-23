@@ -177,7 +177,8 @@ Future<void> _shareFile(String exportFilePath) async {
 void showRestoreResult(BuildContext context, RestoreResult? result) {
   if (result == null) return;
   final loc = AppLocalizations.of(context)!;
-  if (result.matched == 0) {
+  // matched == 0 && unmatched == 0: the file had no books at all (wrong JSON).
+  if (result.matched == 0 && result.unmatched > 0) {
     SnackBarUtils.show(
       context,
       loc.importNoLocalBooks(result.unmatched),
@@ -207,6 +208,8 @@ void showRestoreResult(BuildContext context, RestoreResult? result) {
 
 Future<void> _handleImportData(BuildContext context, WidgetRef ref) async {
   final loc = AppLocalizations.of(context)!;
+  // Read before the await: the page may be gone when the restore finishes.
+  final shelfVm = ref.read(bookshelfViewModelRpProvider);
   _showLoadingDialog(
     context,
     title: loc.importData,
@@ -220,7 +223,7 @@ Future<void> _handleImportData(BuildContext context, WidgetRef ref) async {
     // The shelf VM is app-lifetime, so is_private changes and fresh progress
     // only show up after an explicit reload.
     if (result != null && result.written > 0) {
-      unawaited(ref.read(bookshelfViewModelRpProvider).loadBooks());
+      unawaited(shelfVm.loadBooks());
     }
     if (!context.mounted) return;
     showRestoreResult(context, result);
