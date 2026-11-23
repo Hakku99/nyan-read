@@ -172,7 +172,7 @@ class _HomeScreenContentState extends ConsumerState<_HomeScreenContent>
     final result = await showNyanSheet<({bool confirmed, bool alsoDeleteFiles})>(
       context: context,
       isDismissible: false,
-      builder: (sheetCtx) => _DeleteBooksSheetContent(
+      builder: (sheetCtx) => DeleteBooksSheetContent(
         books: books,
         onDelete: (alsoDelete) =>
             Navigator.pop(sheetCtx, (confirmed: true, alsoDeleteFiles: alsoDelete)),
@@ -1601,8 +1601,15 @@ class _SelectActionBar extends StatelessWidget {
 ///
 /// Per bundle3.jsx `DeleteConfirmSheet`: 56×56 error icon container,
 /// 18pt/600 title, 13.5pt/400 body, full-width Delete and Cancel buttons.
-class _DeleteBooksSheetContent extends StatefulWidget {
-  const _DeleteBooksSheetContent({
+// 0.9 leaves a gap below the status bar. 0.3 keeps the list a peek of a few
+// rows so the surrounding chrome stays visible with hundreds selected.
+const double _kSheetMaxHeightFraction = 0.9;
+const double _kBookListMaxHeightFraction = 0.3;
+
+@visibleForTesting
+class DeleteBooksSheetContent extends StatefulWidget {
+  const DeleteBooksSheetContent({
+    super.key,
     required this.books,
     required this.onDelete,
     required this.onCancel,
@@ -1613,11 +1620,11 @@ class _DeleteBooksSheetContent extends StatefulWidget {
   final VoidCallback onCancel;
 
   @override
-  State<_DeleteBooksSheetContent> createState() =>
+  State<DeleteBooksSheetContent> createState() =>
       _DeleteBooksSheetContentState();
 }
 
-class _DeleteBooksSheetContentState extends State<_DeleteBooksSheetContent> {
+class _DeleteBooksSheetContentState extends State<DeleteBooksSheetContent> {
   bool _alsoDeleteFiles = false;
 
   @override
@@ -1644,7 +1651,14 @@ class _DeleteBooksSheetContentState extends State<_DeleteBooksSheetContent> {
               borderRadius: borderRadius,
               border: Border.all(color: chromeEdge, width: 1),
             ),
-            child: Column(
+            // Cap the whole sheet so it never outgrows short (landscape)
+            // screens; the middle section scrolls, buttons stay pinned.
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight:
+                    MediaQuery.sizeOf(context).height * _kSheetMaxHeightFraction,
+              ),
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -1666,6 +1680,12 @@ class _DeleteBooksSheetContentState extends State<_DeleteBooksSheetContent> {
                   ),
                 ),
 
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                 // ── Icon + title + body ───────────────────────────────────
                 // Spec: padding "18px 24px 4px".
                 Padding(
@@ -1753,6 +1773,14 @@ class _DeleteBooksSheetContentState extends State<_DeleteBooksSheetContent> {
                       child: ClipRRect(
                         borderRadius:
                             BorderRadius.circular(NyanRadius.cardNested),
+                        // ponytail: eager rows inside a scroll view; switch to a
+                        // builder if selections reach the thousands.
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: MediaQuery.sizeOf(context).height *
+                                _kBookListMaxHeightFraction,
+                          ),
+                          child: SingleChildScrollView(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -1769,6 +1797,8 @@ class _DeleteBooksSheetContentState extends State<_DeleteBooksSheetContent> {
                               _BookPreviewRow(book: widget.books[i]),
                             ],
                           ],
+                        ),
+                          ),
                         ),
                       ),
                     ),
@@ -1855,6 +1885,11 @@ class _DeleteBooksSheetContentState extends State<_DeleteBooksSheetContent> {
                   ),
                 ),
 
+                      ],
+                    ),
+                  ),
+                ),
+
                 // ── Buttons ───────────────────────────────────────────────
                 // Spec: padding 16px all sides; Cancel + Delete side by side, gap 9.
                 Padding(
@@ -1928,6 +1963,7 @@ class _DeleteBooksSheetContentState extends State<_DeleteBooksSheetContent> {
                   ),
                 ),
               ],
+            ),
             ),
           ),
         ),
