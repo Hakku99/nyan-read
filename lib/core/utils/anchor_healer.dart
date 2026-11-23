@@ -70,35 +70,59 @@ class AnchorHealer {
   /// index by one).
   ///
   /// [window] holds paragraph texts centred on the stored paragraph (odd
-  /// length; `null` = unavailable or an image slot). The stored paragraph is
-  /// tried first with the lenient [findHealedOffset]. Neighbours are then
-  /// searched nearest-first, forward before backward (inserted slots push
-  /// content forward), and ONLY accept the full `pre+exact+post` signature:
-  /// an exact-only match in a different paragraph is too likely a false hit.
+  /// length; `null` = unavailable or an image slot).
+  ///
+  /// With context, the full `pre+exact+post` signature is searched across the
+  /// WHOLE window first, nearest-first and forward before backward (inserted
+  /// slots push content forward). Only if that fails is the lenient
+  /// [findHealedOffset] tried on the stored paragraph: it trusts a lone
+  /// `exact` hit, so running it first would "heal" onto an unrelated
+  /// paragraph that merely contains the same word after a shift.
+  ///
+  /// Without context (legacy rows) nothing can tell paragraphs apart, so the
+  /// text is accepted only if it occurs exactly once in the whole window.
   /// Returns the paragraph delta from the centre plus the offset inside it.
   static ({int delta, int offset})? findHealedInWindow(
       List<String?> window, String pre, String exact, String post) {
     if (window.isEmpty || exact.isEmpty) return null;
     final center = window.length ~/ 2;
 
-    final centerText = window[center];
-    if (centerText != null) {
-      final offset = findHealedOffset(centerText, pre, exact, post);
-      if (offset != null) return (delta: 0, offset: offset);
+    if (pre.isEmpty && post.isEmpty) {
+      return _findUniqueInWindow(window, exact, center);
     }
-    // Nothing to tell paragraphs apart with: do not guess across them.
-    if (pre.isEmpty && post.isEmpty) return null;
 
     final signature = '$pre$exact$post';
-    for (var distance = 1; distance <= center; distance++) {
-      for (final delta in [distance, -distance]) {
+    for (var distance = 0; distance <= center; distance++) {
+      for (final delta in distance == 0 ? const [0] : [distance, -distance]) {
         final text = window[center + delta];
         if (text == null) continue;
         final index = text.indexOf(signature);
         if (index != -1) return (delta: delta, offset: index + pre.length);
       }
     }
-    return null;
+
+    final centerText = window[center];
+    if (centerText == null) return null;
+    final offset = findHealedOffset(centerText, pre, exact, post);
+    return offset == null ? null : (delta: 0, offset: offset);
+  }
+
+  static ({int delta, int offset})? _findUniqueInWindow(
+      List<String?> window, String exact, int center) {
+    ({int delta, int offset})? hit;
+    for (var i = 0; i < window.length; i++) {
+      final text = window[i];
+      if (text == null) continue;
+      var from = 0;
+      while (true) {
+        final index = text.indexOf(exact, from);
+        if (index == -1) break;
+        if (hit != null) return null; // second occurrence: ambiguous
+        hit = (delta: i - center, offset: index);
+        from = index + exact.length;
+      }
+    }
+    return hit;
   }
 
   static int _calculateOverlap(String target, String actual,

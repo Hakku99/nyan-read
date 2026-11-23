@@ -104,42 +104,51 @@ class ContentMetaManager {
     final results = List<Highlight?>.filled(raw.length, null);
     final slowIndexes = <int>[];
     final slowWindows = <List<String?>>[];
+    // Neighbouring highlights share most of their windows: decode each
+    // paragraph once per batch, and let the windows share the String objects
+    // (an isolate message copies a shared object once).
+    final textCache = <int, String?>{};
+    String? textAt(int index) => index < 0
+        ? null
+        : textCache.putIfAbsent(
+            index, () => textCapability.getParagraphText(index));
 
     for (var i = 0; i < raw.length; i++) {
       final h = raw[i];
-      final paragraphText = textCapability.getParagraphText(h.paragraphIndex);
+      final paragraphText = textAt(h.paragraphIndex);
 
-      // Fast-Path: stored offsets still select the original text.
+      // Fast-Path: stored offsets still select the original text AND the
+      // stored context still surrounds it. The context check matters after
+      // an index shift: a short selection ("No.") can equal text at the same
+      // offsets of an unrelated paragraph that now sits at this index.
+      // Legacy rows have empty contexts, which trivially match.
       final start = h.startOffset;
       final end = h.endOffset;
       final isOffsetValid = paragraphText != null &&
           start >= 0 &&
           end <= paragraphText.length &&
           start < end &&
-          paragraphText.substring(start, end) == h.selectedText;
+          paragraphText.substring(start, end) == h.selectedText &&
+          paragraphText.substring(
+                  (start - h.preContext.length).clamp(0, start), start) ==
+              h.preContext &&
+          paragraphText.substring(end,
+                  (end + h.postContext.length).clamp(end, paragraphText.length)) ==
+              h.postContext;
 
       if (isOffsetValid) {
         results[i] = h;
         continue;
       }
 
-      // Legacy rows persisted before context capture have nothing to heal
-      // against; keep them unchanged rather than guessing.
-      if (h.preContext.isEmpty && h.postContext.isEmpty) {
-        debugPrint(
-            '[ContentMetaManager] Highlight has no pre/post context to heal against; keeping as-is: ${h.selectedText}');
-        results[i] = h;
-        continue;
-      }
-
       // Texts are gathered here because the engine cannot cross into the
       // isolate; unavailable slots (image paragraphs, out of range) are null.
+      // Rows without context go through the same path: the healer accepts
+      // them only when the text is unique in the window.
       slowIndexes.add(i);
       slowWindows.add([
         for (var d = -_kHealWindow; d <= _kHealWindow; d++)
-          h.paragraphIndex + d < 0
-              ? null
-              : textCapability.getParagraphText(h.paragraphIndex + d),
+          textAt(h.paragraphIndex + d),
       ]);
     }
 
@@ -176,7 +185,7 @@ class ContentMetaManager {
           // in the wrong place) but leave the DB row so the user's note
           // text survives and healing can retry on the next open.
           debugPrint(
-              '[ContentMetaManager] Anchor healing failed; keeping stale offsets (may not render): ${h.selectedText}');
+              '[ContentMetaManager] Anchor healing failed; highlight ${h.id} will not render (row kept, retried on next open)');
           continue;
         }
 
@@ -184,7 +193,7 @@ class ContentMetaManager {
         final newEnd = newStart + h.selectedText.length;
         final newParagraph = h.paragraphIndex + result.delta;
         debugPrint(
-            '[ContentMetaManager] Healed highlight anchor: "${h.selectedText}" ${h.paragraphIndex}:${h.startOffset} -> $newParagraph:$newStart');
+            '[ContentMetaManager] Healed highlight ${h.id}: ${h.paragraphIndex}:${h.startOffset} -> $newParagraph:$newStart');
         results[slowIndexes[k]] = h.copyWith(
           paragraphIndex: newParagraph,
           startOffset: newStart,

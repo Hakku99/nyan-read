@@ -258,6 +258,31 @@ void main() {
       expect(result.paragraphCount, 1);
     });
 
+    test('decorative and non-archive svg images do not become slots',
+        () async {
+      final result = await computeEpubParseResultFromSources([
+        _chapter(
+            title: 'One',
+            fileName: 'ch1.xhtml',
+            html: _html([
+              '<p>text</p>',
+              // Resource containers: fills/masks, not page content.
+              '<svg xmlns="http://www.w3.org/2000/svg"><defs><pattern id="p">'
+                  '<image href="tile.png"/></pattern></defs>'
+                  '<mask id="m"><image href="mask.png"/></mask></svg>',
+              // Inline and remote URLs can never load from the archive.
+              '<svg xmlns="http://www.w3.org/2000/svg">'
+                  '<image href="data:image/png;base64,AAAA"/>'
+                  '<image href="https://example.com/x.png"/></svg>',
+              '<svg xmlns="http://www.w3.org/2000/svg"><image href="ok.png"/>'
+                  '</svg>',
+            ])),
+      ]);
+
+      expect(result.paragraphCount, 2);
+      expect(contentAt(result, 1), 'ok.png');
+    });
+
     test('ruby annotations (<rt>/<rp>) are dropped from the base text',
         () async {
       final result = await computeEpubParseResultFromSources([

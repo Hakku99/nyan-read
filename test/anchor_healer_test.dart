@@ -120,10 +120,55 @@ void main() {
           isNull);
     });
 
-    test('does not guess across paragraphs without any context', () {
+    test('a strict neighbour hit beats a lenient hit in the stored paragraph',
+        () {
+      // The stored paragraph merely contains the same word once; the real
+      // anchor moved one paragraph forward.
+      const decoy = 'He said hello to them';
+      const real = 'I said no more.';
+      final result = AnchorHealer.findHealedInWindow(
+          window({3: decoy, 4: real}), 'I ', 'said', ' no more.');
+      expect(result, (delta: 1, offset: real.indexOf('said')));
+    });
+
+    test('lenient same-paragraph healing still works when pre/post drifted',
+        () {
+      // No full signature anywhere, but the word is unique in the stored
+      // paragraph (the original decode-shift scenario).
+      const edited = 'the quick brown FOX leaps over the lazy dog';
+      final result = AnchorHealer.findHealedInWindow(
+          window({3: edited}), pre, exact, post);
+      expect(result, (delta: 0, offset: edited.indexOf(exact)));
+    });
+
+    test('context-free rows heal only when the text is unique in the window',
+        () {
       expect(
-          AnchorHealer.findHealedInWindow(window({4: 'FOX'}), '', exact, ''),
+          AnchorHealer.findHealedInWindow(
+              window({3: 'unrelated', 5: 'a lone FOX here'}), '', exact, ''),
+          (delta: 2, offset: 'a lone FOX here'.indexOf(exact)));
+      // Two hits (even in one paragraph) are ambiguous.
+      expect(
+          AnchorHealer.findHealedInWindow(
+              window({3: 'FOX and FOX'}), '', exact, ''),
           isNull);
+      expect(
+          AnchorHealer.findHealedInWindow(
+              window({2: 'a FOX', 4: 'another FOX'}), '', exact, ''),
+          isNull);
+      expect(
+          AnchorHealer.findHealedInWindow(window({3: 'nothing'}), '', exact, ''),
+          isNull);
+    });
+
+    test('the window edge is inclusive', () {
+      // 41-slot window (+-20), like ContentMetaManager uses.
+      List<String?> wide(int slot) =>
+          List<String?>.generate(41, (i) => i == slot ? text : null);
+      expect(AnchorHealer.findHealedInWindow(wide(40), pre, exact, post)?.delta,
+          20);
+      expect(AnchorHealer.findHealedInWindow(wide(0), pre, exact, post)?.delta,
+          -20);
     });
 
     test('returns null when nothing in the window matches', () {

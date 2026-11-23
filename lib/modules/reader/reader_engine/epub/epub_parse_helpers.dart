@@ -135,7 +135,9 @@ class EpubChapterSource {
 /// `<rt>`/`<rp>` text is dropped. Books containing svg images gain slots, so
 /// their stored positions/bookmarks drift once (a Sigil cover page shifts
 /// everything by 1); highlights re-locate via AnchorHealer's neighbour
-/// window. Books without svg images enumerate identically to version 2.
+/// window. Books without svg images keep version 2's paragraph indices, but
+/// ruby books change paragraph text (a highlight that included annotation
+/// text cannot heal).
 const int kEpubEnumerationVersion = 3;
 
 /// Walks an [EpubPackage] (own parser, P3c): content enumeration follows the
@@ -303,6 +305,24 @@ const Set<String> _headingTags = {'h1', 'h2', 'h3', 'h4', 'h5', 'h6'};
 
 const String _svgNamespace = 'http://www.w3.org/2000/svg';
 
+/// svg containers whose children are reusable resources, not page content.
+const Set<String> _svgResourceContainers = {
+  'defs', 'pattern', 'mask', 'clippath', 'symbol', 'marker',
+};
+
+// `data:`, `http(s):` and friends. Archive hrefs are relative paths, which
+// have no scheme before their first `/`.
+final RegExp _urlSchemePattern = RegExp(r'^[a-zA-Z][a-zA-Z0-9+.\-]*:');
+
+bool _isSvgResource(dom.Element node) {
+  for (var parent = node.parent; parent != null; parent = parent.parent) {
+    if (_svgResourceContainers.contains(parent.localName?.toLowerCase())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /// `package:html` keys `xlink:href` by an `AttributeName` object, not a
 /// String, so `attributes['xlink:href']` never matches; compare by text.
 String _svgImageHref(dom.Element node) {
@@ -359,7 +379,12 @@ _FileLinearization _linearizeChapterDocument(dom.Document document) {
     if (tag == 'image' && node.namespaceUri == _svgNamespace) {
       flush();
       final href = _svgImageHref(node);
-      if (href.isNotEmpty) {
+      // Only a picture the archive can serve is a page slot: not a
+      // fill/mask/symbol resource, and not an inline or remote URL (it would
+      // bloat the paragraph store and could never load).
+      if (href.isNotEmpty &&
+          !_urlSchemePattern.hasMatch(href) &&
+          !_isSvgResource(node)) {
         out.texts.add(href);
         out.kinds.add(EpubParagraphKind.image);
       }
