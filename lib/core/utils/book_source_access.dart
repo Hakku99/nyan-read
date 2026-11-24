@@ -1,7 +1,13 @@
+import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
+import 'dart:isolate';
+
+import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../models/book.dart';
+import 'book_cover_cache.dart';
 import 'book_source_platform.dart';
 
 class PdfCompatibleSource {
@@ -129,13 +135,75 @@ class BookSourceAccess {
         return PdfCompatibleSource(path: book.sourceLocator, isTemporary: false);
       case BookSourceType.androidContentUri:
       case BookSourceType.androidTreeUri:
-        final tempPath = await BookSourcePlatform.copyUriToTempFile(
-          book.sourceLocator,
-          extension: extension,
-        );
-        return PdfCompatibleSource(path: tempPath, isTemporary: true);
+        return _prepareUriSource(book, extension);
       default:
         throw UnsupportedError('Unsupported source type: ${book.sourceType}');
+    }
+  }
+
+  /// Directory (under the app cache dir) holding reusable SAF copies. The
+  /// cache scavenger must skip it (it has its own LRU cap), same as `covers/`.
+  static const String copyCacheDirName = 'book_copies';
+
+  @visibleForTesting
+  static int copyCacheMaxBytes = 500 * 1024 * 1024;
+
+  @visibleForTesting
+  static Future<String> Function(String uri, {required String extension})
+      copyUri = BookSourcePlatform.copyUriToTempFile;
+
+  @visibleForTesting
+  static Future<Directory> Function() cacheRoot = getApplicationCacheDirectory;
+
+  /// Keyed by content signature, not locator: the signature is what the book
+  /// IS, and it survives relinking (N2) to a different Uri. A source replaced
+  /// in place with different bytes keeps serving the old copy until evicted —
+  /// acceptable, since progress and anchors are tied to the imported content.
+  /// Books without a signature (legacy, not yet backfilled) are never cached.
+  static Future<PdfCompatibleSource> _prepareUriSource(
+    Book book,
+    String extension,
+  ) async {
+    final signature = book.contentSignature;
+    final safeSignature = signature == null
+        ? ''
+        : signature.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_');
+    if (safeSignature.isEmpty) {
+      final tempPath = await copyUri(book.sourceLocator, extension: extension);
+      return PdfCompatibleSource(path: tempPath, isTemporary: true);
+    }
+
+    final dir = p.join((await cacheRoot()).path, copyCacheDirName);
+    final cached = File(p.join(dir, '$safeSignature$extension'));
+    try {
+      if (await cached.exists() && await cached.length() > 0) {
+        // Touch for LRU; failure only makes the entry look older.
+        try {
+          await cached.setLastModified(DateTime.now());
+        } catch (_) {}
+        return PdfCompatibleSource(path: cached.path, isTemporary: false);
+      }
+    } catch (e) {
+      debugPrint('[BookSourceAccess] copy cache read failed: ${e.runtimeType}');
+    }
+
+    final tempPath = await copyUri(book.sourceLocator, extension: extension);
+    try {
+      await Directory(dir).create(recursive: true);
+      // rename is atomic on one filesystem (both live under the Android
+      // cacheDir), so a reader never sees a half-written cache entry.
+      await File(tempPath).rename(cached.path);
+      final max = copyCacheMaxBytes;
+      final keep = cached.path;
+      // keepPath: the prune must not delete the copy being handed out, or a
+      // book larger than the cap would vanish before it is opened.
+      unawaited(Isolate.run(
+              () => BookCoverCache.evictLruSync(dir, max, keepPath: keep))
+          .catchError((Object _) {})); // best-effort; next open prunes again
+      return PdfCompatibleSource(path: cached.path, isTemporary: false);
+    } catch (e) {
+      debugPrint('[BookSourceAccess] copy cache write failed: ${e.runtimeType}');
+      return PdfCompatibleSource(path: tempPath, isTemporary: true);
     }
   }
 }

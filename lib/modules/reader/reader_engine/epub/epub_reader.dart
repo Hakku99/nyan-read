@@ -22,6 +22,7 @@ import '../reader_engine.dart';
 import '../page_turn_request.dart';
 import '../page_presentation.dart';
 import '../text_layout_anchor.dart';
+import 'epub_image_worker.dart';
 import 'epub_parse_helpers.dart';
 
 /// Self-hosted EPUB renderer (2026-07, "EPUB 自研" P1).
@@ -141,8 +142,15 @@ class EpubReaderEngine
   /// re-copying 100+ MB per image was the alternative.
   Future<PdfCompatibleSource>? _readableSource;
 
-  Future<PdfCompatibleSource> _resolveReadableSource() => _readableSource ??=
-      BookSourceAccess.prepareReadableFile(book, extension: '.epub');
+  String? _readablePath;
+
+  Future<PdfCompatibleSource> _resolveReadableSource() =>
+      _readableSource ??= BookSourceAccess.prepareReadableFile(book,
+              extension: '.epub')
+          .then((source) {
+        _readablePath = source.path;
+        return source;
+      });
 
   final ValueNotifier<ReaderConfig> _configNotifier =
       ValueNotifier<ReaderConfig>(const ReaderConfig(
@@ -1021,6 +1029,10 @@ class EpubReaderEngine
     _highlightRenderVersion.dispose();
     // Reclaim the session temp copy for SAF sources. Fire-and-forget: a
     // missed delete ages out via the 24h cache scavenger.
+    // Close the image worker synchronously so its zip handle is released
+    // before (or while) the temp copy is removed below.
+    final readablePath = _readablePath;
+    if (readablePath != null) EpubImageWorker.close(readablePath);
     final pending = _readableSource;
     if (pending != null) {
       unawaited(pending.then((source) async {
@@ -1034,13 +1046,10 @@ class EpubReaderEngine
   }
 }
 
-Uint8List? _extractEpubImage((String, String) source) =>
-    extractEpubImageBytesFromFile(source.$1, source.$2);
-
-// Send only the book and entry paths to the isolate. Capturing the engine would
-// also send its live ScrollPosition and Futures.
+// Only paths cross to the worker; capturing the engine would also send its
+// live ScrollPosition and Futures. Released in dispose via EpubImageWorker.close.
 Future<Uint8List?> _extractImageInIsolate(String path, String entryPath) =>
-    compute(_extractEpubImage, (path, entryPath));
+    EpubImageWorker.extract(path, entryPath);
 
 final class _EpubImageData {
   const _EpubImageData(this.bytes, this.size);

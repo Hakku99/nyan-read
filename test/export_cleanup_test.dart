@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/services/backup_recovery_service.dart';
 import 'package:nyan_read/core/utils/book_cover_cache.dart';
+import 'package:nyan_read/core/utils/book_source_access.dart';
 import 'package:path/path.dart' hide equals;
 
 void main() {
@@ -39,5 +40,19 @@ void main() {
 
     expect(cover.existsSync(), isTrue);
     expect(stale.existsSync(), isFalse);
+  });
+
+  test('scavenger never ages out the SAF copy cache subdirectory', () {
+    final dir = Directory.systemTemp.createTempSync('scav_');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    Directory(join(dir.path, BookSourceAccess.copyCacheDirName)).createSync();
+    final copy = File(
+        join(dir.path, BookSourceAccess.copyCacheDirName, 'sig.epub'))
+      ..writeAsStringSync('x')
+      ..setLastModifiedSync(DateTime.now().subtract(const Duration(days: 3)));
+
+    BackupRecoveryService.cacheCleanupTask(dir.path);
+
+    expect(copy.existsSync(), isTrue);
   });
 }
