@@ -123,6 +123,7 @@ class BookshelfViewModel extends ChangeNotifier {
   // a kill inside the 8s window is finished by the next launch.
   List<String> _pendingGrantReleases = const [];
   Timer? _pendingFileDeleteTimer;
+  bool _orphanCopiesSwept = false;
 
   // Undo toast shows for 4s; leave margin so a last-moment tap still wins.
   static const _fileDeleteGraceWindow = Duration(seconds: 8);
@@ -165,6 +166,13 @@ class BookshelfViewModel extends ChangeNotifier {
       _privateBooks = results[1].map((e) => Book.fromMap(e)).toList();
       _rebuildVisibleBooks();
       _error = null;
+      if (!_orphanCopiesSwept) {
+        _orphanCopiesSwept = true;
+        // Fire-and-forget housekeeping (best-effort, logs its own failures):
+        // once per launch, from the first complete DB read.
+        unawaited(BookSourceAccess.sweepOrphanCopies(
+            [for (final b in _publicBooks.followedBy(_privateBooks)) b.contentSignature]));
+      }
     } catch (e) {
       _error = e.toString();
     } finally {

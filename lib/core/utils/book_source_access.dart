@@ -165,12 +165,34 @@ class BookSourceAccess {
   static Future<void> removeCachedCopies(Iterable<String?> signatures) async {
     final keys = {for (final s in signatures) _cacheKey(s)}..remove('');
     if (keys.isEmpty) return;
+    await _deleteCopies(keys.contains);
+  }
+
+  /// Deletes every cached copy whose signature is not in [liveSignatures].
+  /// Reclaims copies orphaned by a kill between a book's delete and its copy
+  /// removal, and by deletes made before copies were reclaimed at all. Run
+  /// with the full shelf (public and private) or live copies are lost; that
+  /// only costs one re-copy, never data.
+  static Future<void> sweepOrphanCopies(Iterable<String?> liveSignatures) {
+    final live = {for (final s in liveSignatures) _cacheKey(s)};
+    return _deleteCopies((key) => !live.contains(key));
+  }
+
+  static Future<void> _deleteCopies(bool Function(String key) shouldDelete) async {
     try {
       final dir = Directory(p.join((await cacheRoot()).path, copyCacheDirName));
       if (!await dir.exists()) return;
-      await for (final entity in dir.list()) {
-        if (entity is File && keys.contains(p.basenameWithoutExtension(entity.path))) {
-          await entity.delete();
+      // Collect first: deleting while the listing is open can skip entries.
+      final matches = [
+        for (final entity in await dir.list().toList())
+          if (entity is File && shouldDelete(p.basenameWithoutExtension(entity.path)))
+            entity,
+      ];
+      for (final file in matches) {
+        try {
+          await file.delete();
+        } catch (e) {
+          debugPrint('[BookSourceAccess] copy delete failed: ${e.runtimeType}');
         }
       }
     } catch (e) {

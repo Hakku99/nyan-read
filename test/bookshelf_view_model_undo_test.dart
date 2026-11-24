@@ -556,6 +556,8 @@ void main() {
     setUp(() {
       cacheRoot = Directory.systemTemp.createTempSync('nyan_vm_copies');
       addTearDown(() => cacheRoot.deleteSync(recursive: true));
+      final originalCacheRoot = BookSourceAccess.cacheRoot;
+      addTearDown(() => BookSourceAccess.cacheRoot = originalCacheRoot);
       BookSourceAccess.cacheRoot = () async => cacheRoot;
       db.books['b1'] = {..._bookRow('b1'), 'content_signature': 'sigA'};
       db.books['b2'] = {..._bookRow('b2'), 'content_signature': 'sigB'};
@@ -587,12 +589,36 @@ void main() {
     test('books without a signature delete cleanly with no cache dir',
         () async {
       db.books['b1'] = _bookRow('b1');
+      final other = copyFor('sigB');
       await vm.loadBooks();
 
       vm.toggleSelectionMode(active: true, initialBookId: 'b1');
       await vm.deleteSelectedBooks(false);
 
       expect(db.books.containsKey('b1'), isFalse);
+      expect(other.existsSync(), isTrue); // a null signature must match nothing
+    });
+
+    test('startup sweep removes orphan copies and keeps every shelf book',
+        () async {
+      db.books['b3'] = {
+        ..._bookRow('b3'),
+        'content_signature': 'sigC',
+        'is_private': 1,
+      };
+      final live = [copyFor('sigA'), copyFor('sigB'), copyFor('sigC')];
+      final orphan = copyFor('gone');
+
+      // A fresh VM stands in for the next launch: the sweep runs once, on
+      // its first complete load.
+      final launched = BookshelfViewModel(db, prefs);
+      addTearDown(launched.dispose);
+      for (var i = 0; i < 40 && orphan.existsSync(); i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+
+      expect(orphan.existsSync(), isFalse);
+      expect(live.every((f) => f.existsSync()), isTrue);
     });
 
     test('forgot-PIN erase also reclaims copies of private books', () async {
