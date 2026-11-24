@@ -226,6 +226,14 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   }
 
   @override
+  void didChangePlatformBrightness() {
+    // Under "match system" the app theme flips with the OS; the reading canvas
+    // follows it unless the user picked a colour by hand.
+    _boundController?.setAppBrightness(
+        ref.read(themeManagerRpProvider).effectiveBrightness);
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {

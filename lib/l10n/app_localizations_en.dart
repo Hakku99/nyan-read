@@ -779,6 +779,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get readingTheme => 'Reading Theme';
 
   @override
+  String get readerBackgroundFollowsTheme => 'Match app theme';
+
+  @override
   String readerSheetProgressSubtitle(String percent) {
     return 'Reading progress $percent';
   }

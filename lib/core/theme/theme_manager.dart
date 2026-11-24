@@ -33,6 +33,15 @@ class ThemeManager extends ChangeNotifier {
       ? ThemeMode.system
       : ThemeMode.light;
 
+  /// Light/dark the UI is actually showing right now. Needed outside the widget
+  /// tree (reader controller seeding), where no BuildContext is available.
+  Brightness get effectiveBrightness => switch (_currentPreset) {
+        ThemePreset.creamLight => Brightness.light,
+        ThemePreset.sumiDark => Brightness.dark,
+        ThemePreset.matchSystem =>
+          WidgetsBinding.instance.platformDispatcher.platformBrightness,
+      };
+
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     final presetName = prefs.getString('theme_preset');

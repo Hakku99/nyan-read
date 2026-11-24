@@ -1502,6 +1502,12 @@ abstract class AppLocalizations {
   /// **'Reading Theme'**
   String get readingTheme;
 
+  /// No description provided for @readerBackgroundFollowsTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Match app theme'**
+  String get readerBackgroundFollowsTheme;
+
   /// No description provided for @readerSheetProgressSubtitle.
   ///
   /// In en, this message translates to:

@@ -270,6 +270,15 @@ class MockReaderController extends ChangeNotifier
   void setBackground(Color color) {}
 
   @override
+  bool get backgroundFollowsTheme => true;
+
+  @override
+  void setBackgroundFollowsTheme(bool value) {}
+
+  @override
+  void setAppBrightness(Brightness brightness) {}
+
+  @override
   void setPageTurnMode(PageTurnMode mode) {}
 
   @override
@@ -328,6 +337,8 @@ class MockThemeManager extends ChangeNotifier implements ThemeManager {
   ThemeData get lightTheme => currentThemeData;
   @override
   ThemeMode get themeMode => ThemeMode.light;
+  @override
+  Brightness get effectiveBrightness => Brightness.light;
 
   @override
   Future<void> init() async {}
@@ -471,6 +482,9 @@ void main() {
 
     expect(find.text(loc.themeCream), findsOneWidget);
     expect(find.byKey(const Key('reader-menu-theme-grid')), findsOneWidget);
+    expect(find.text(loc.readerBackgroundFollowsTheme), findsOneWidget);
+    expect(find.byKey(const Key('reader-menu-theme-follow-switch')),
+        findsOneWidget);
     expect(find.text('Reset Theme'), findsOneWidget);
   });
 

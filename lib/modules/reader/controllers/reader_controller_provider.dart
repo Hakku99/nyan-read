@@ -35,6 +35,9 @@ final readerControllerRpProvider = Provider.autoDispose
     args.book,
     readerPreferencesService: ref.read(readerPreferencesRpProvider),
     databaseService: ref.read(databaseServiceRpProvider),
+    // Seeded here (no BuildContext) so the first frame already has the right
+    // canvas; live flips arrive via ReaderPage.didChangePlatformBrightness.
+    appBrightness: ref.read(themeManagerRpProvider).effectiveBrightness,
   );
   controller.attachBrightnessController(args.brightnessController);
   controller.init();
