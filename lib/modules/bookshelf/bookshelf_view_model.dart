@@ -7,6 +7,7 @@ import 'package:path/path.dart' as path;
 import '../../core/models/book.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/bookshelf_preferences_service.dart';
+import '../../core/utils/book_source_access.dart';
 import '../../core/utils/book_source_platform.dart';
 
 class BookshelfViewModel extends ChangeNotifier {
@@ -122,6 +123,7 @@ class BookshelfViewModel extends ChangeNotifier {
   // a kill inside the 8s window is finished by the next launch.
   List<String> _pendingGrantReleases = const [];
   Timer? _pendingFileDeleteTimer;
+  bool _orphanCopiesSwept = false;
 
   // Undo toast shows for 4s; leave margin so a last-moment tap still wins.
   static const _fileDeleteGraceWindow = Duration(seconds: 8);
@@ -164,6 +166,13 @@ class BookshelfViewModel extends ChangeNotifier {
       _privateBooks = results[1].map((e) => Book.fromMap(e)).toList();
       _rebuildVisibleBooks();
       _error = null;
+      if (!_orphanCopiesSwept) {
+        _orphanCopiesSwept = true;
+        // Fire-and-forget housekeeping (best-effort, logs its own failures):
+        // once per launch, from the first complete DB read.
+        unawaited(BookSourceAccess.sweepOrphanCopies(
+            [for (final b in _publicBooks.followedBy(_privateBooks)) b.contentSignature]));
+      }
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -256,6 +265,7 @@ class BookshelfViewModel extends ChangeNotifier {
 
     try {
       await _db.deleteBooksWithAssociatedData(idsToDelete);
+      await _dropCachedCopies(selectedBooks);
 
       // Independent of the "also delete files" toggle: the grant is ours to
       // give back either way (Android silently evicts the oldest grants once
@@ -371,6 +381,7 @@ class BookshelfViewModel extends ChangeNotifier {
       await loadBooks();
       throw StateError('Private books survived erase');
     }
+    await _dropCachedCopies(books);
     await _releaseGrants(_collectReleasableGrants(books));
 
     if (pathsToDelete.isNotEmpty) {
@@ -387,6 +398,21 @@ class BookshelfViewModel extends ChangeNotifier {
 
     await loadBooks();
     return ids.length;
+  }
+
+  /// Reclaims the SAF copy cache entries of [deleted]. Not deferred past the
+  /// undo window: an undone book just re-copies on its next open. Signatures
+  /// still held by a surviving book are kept.
+  Future<void> _dropCachedCopies(List<Book> deleted) {
+    final gone = {for (final b in deleted) b.id};
+    final kept = {
+      for (final b in _publicBooks.followedBy(_privateBooks))
+        if (!gone.contains(b.id)) b.contentSignature,
+    };
+    return BookSourceAccess.removeCachedCopies([
+      for (final b in deleted)
+        if (!kept.contains(b.contentSignature)) b.contentSignature,
+    ]);
   }
 
   void _clearUndoSnapshot() {

@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/core/services/bookshelf_preferences_service.dart';
 import 'package:nyan_read/core/services/database_service.dart';
+import 'package:nyan_read/core/utils/book_source_access.dart';
 import 'package:nyan_read/modules/bookshelf/bookshelf_view_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -540,6 +541,100 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 200));
 
       expect(released, isEmpty);
+    });
+  });
+
+  group('SAF copy cache is reclaimed with the book', () {
+    late Directory cacheRoot;
+
+    File copyFor(String signature) {
+      final dir = Directory('${cacheRoot.path}/${BookSourceAccess.copyCacheDirName}')
+        ..createSync(recursive: true);
+      return File('${dir.path}/$signature.epub')..writeAsStringSync('x');
+    }
+
+    setUp(() {
+      cacheRoot = Directory.systemTemp.createTempSync('nyan_vm_copies');
+      addTearDown(() => cacheRoot.deleteSync(recursive: true));
+      final originalCacheRoot = BookSourceAccess.cacheRoot;
+      addTearDown(() => BookSourceAccess.cacheRoot = originalCacheRoot);
+      BookSourceAccess.cacheRoot = () async => cacheRoot;
+      db.books['b1'] = {..._bookRow('b1'), 'content_signature': 'sigA'};
+      db.books['b2'] = {..._bookRow('b2'), 'content_signature': 'sigB'};
+    });
+
+    test('delete removes the copy of that book and leaves others', () async {
+      final a = copyFor('sigA');
+      final b = copyFor('sigB');
+      await vm.loadBooks();
+
+      vm.toggleSelectionMode(active: true, initialBookId: 'b1');
+      await vm.deleteSelectedBooks(false);
+
+      expect(a.existsSync(), isFalse);
+      expect(b.existsSync(), isTrue);
+    });
+
+    test('a signature still used by a surviving book is kept', () async {
+      db.books['b2'] = {..._bookRow('b2'), 'content_signature': 'sigA'};
+      final a = copyFor('sigA');
+      await vm.loadBooks();
+
+      vm.toggleSelectionMode(active: true, initialBookId: 'b1');
+      await vm.deleteSelectedBooks(false);
+
+      expect(a.existsSync(), isTrue);
+    });
+
+    test('books without a signature delete cleanly with no cache dir',
+        () async {
+      db.books['b1'] = _bookRow('b1');
+      final other = copyFor('sigB');
+      await vm.loadBooks();
+
+      vm.toggleSelectionMode(active: true, initialBookId: 'b1');
+      await vm.deleteSelectedBooks(false);
+
+      expect(db.books.containsKey('b1'), isFalse);
+      expect(other.existsSync(), isTrue); // a null signature must match nothing
+    });
+
+    test('startup sweep removes orphan copies and keeps every shelf book',
+        () async {
+      db.books['b3'] = {
+        ..._bookRow('b3'),
+        'content_signature': 'sigC',
+        'is_private': 1,
+      };
+      final live = [copyFor('sigA'), copyFor('sigB'), copyFor('sigC')];
+      final orphan = copyFor('gone');
+
+      // A fresh VM stands in for the next launch: the sweep runs once, on
+      // its first complete load.
+      final launched = BookshelfViewModel(db, prefs);
+      addTearDown(launched.dispose);
+      for (var i = 0; i < 40 && orphan.existsSync(); i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+
+      expect(orphan.existsSync(), isFalse);
+      expect(live.every((f) => f.existsSync()), isTrue);
+    });
+
+    test('forgot-PIN erase also reclaims copies of private books', () async {
+      db.books['b1'] = {
+        ..._bookRow('b1'),
+        'content_signature': 'sigA',
+        'is_private': 1,
+      };
+      final a = copyFor('sigA');
+      final b = copyFor('sigB');
+      await vm.loadBooks();
+
+      await vm.eraseAllPrivateBooks();
+
+      expect(a.existsSync(), isFalse);
+      expect(b.existsSync(), isTrue);
     });
   });
 }
