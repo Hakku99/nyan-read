@@ -155,6 +155,29 @@ class BookSourceAccess {
   @visibleForTesting
   static Future<Directory> Function() cacheRoot = getApplicationCacheDirectory;
 
+  static String _cacheKey(String? signature) =>
+      signature == null ? '' : signature.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_');
+
+  /// Deletes the cached copies of books that are gone from the shelf. Callers
+  /// must pass only signatures no remaining book shares (duplicates by
+  /// signature are deduped at import, but a sampled-signature collision could
+  /// still exist). Best-effort: a missed copy is LRU-evicted later.
+  static Future<void> removeCachedCopies(Iterable<String?> signatures) async {
+    final keys = {for (final s in signatures) _cacheKey(s)}..remove('');
+    if (keys.isEmpty) return;
+    try {
+      final dir = Directory(p.join((await cacheRoot()).path, copyCacheDirName));
+      if (!await dir.exists()) return;
+      await for (final entity in dir.list()) {
+        if (entity is File && keys.contains(p.basenameWithoutExtension(entity.path))) {
+          await entity.delete();
+        }
+      }
+    } catch (e) {
+      debugPrint('[BookSourceAccess] copy cache removal failed: ${e.runtimeType}');
+    }
+  }
+
   /// Keyed by content signature, not locator: the signature is what the book
   /// IS, and it survives relinking (N2) to a different Uri. A source replaced
   /// in place with different bytes keeps serving the old copy until evicted —
@@ -164,10 +187,7 @@ class BookSourceAccess {
     Book book,
     String extension,
   ) async {
-    final signature = book.contentSignature;
-    final safeSignature = signature == null
-        ? ''
-        : signature.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_');
+    final safeSignature = _cacheKey(book.contentSignature);
     if (safeSignature.isEmpty) {
       final tempPath = await copyUri(book.sourceLocator, extension: extension);
       return PdfCompatibleSource(path: tempPath, isTemporary: true);
