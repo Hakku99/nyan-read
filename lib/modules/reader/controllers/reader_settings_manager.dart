@@ -13,7 +13,8 @@ class ReaderSettingsManager {
     required this.lifecycle,
     required this.onSettingsChanged,
     required this.preferences,
-  }) {
+    Brightness appBrightness = Brightness.light,
+  }) : _appBrightness = appBrightness {
     preferences.addListener(_handlePreferencesChanged);
     _loadPreferences();
   }
@@ -32,12 +33,36 @@ class ReaderSettingsManager {
   double get lineHeight => _lineHeight;
   Color get backgroundColor => _backgroundColor;
   Color get textColor => _textColor;
+  bool get backgroundFollowsTheme => preferences.backgroundFollowsTheme;
+
+  /// Light/dark of the app UI; decides the canvas while following the theme.
+  Brightness _appBrightness;
+  bool _lastFollowsTheme = true;
+
+  /// The canvas actually painted: the manual pick, or cream / Sumi when the
+  /// reader follows the app theme.
+  Color _resolveBackground() {
+    if (!preferences.backgroundFollowsTheme) return preferences.backgroundColor;
+    return _appBrightness == Brightness.dark
+        ? NyanColors.readerBgSumi
+        : NyanColors.readerPaperDefault;
+  }
 
   void _loadPreferences() {
     _fontSize = preferences.fontSize;
     _lineHeight = preferences.lineHeight;
-    _backgroundColor = preferences.backgroundColor;
+    _lastFollowsTheme = preferences.backgroundFollowsTheme;
+    _backgroundColor = _resolveBackground();
     _updateEngineConfig();
+  }
+
+  /// Called when the app flips between light and dark while the reader is open
+  /// (system theme change under "match system").
+  void setAppBrightness(Brightness brightness) {
+    if (_appBrightness == brightness) return;
+    _appBrightness = brightness;
+    _backgroundColor = _resolveBackground();
+    if (_updateEngineConfig()) onSettingsChanged();
   }
 
   ReaderConfig? _lastConfig;
@@ -49,8 +74,12 @@ class ReaderSettingsManager {
   void _handlePreferencesChanged() {
     _fontSize = preferences.fontSize;
     _lineHeight = preferences.lineHeight;
-    _backgroundColor = preferences.backgroundColor;
-    if (_updateEngineConfig()) onSettingsChanged();
+    _backgroundColor = _resolveBackground();
+    // The toggle can flip without changing the painted colour (cream manual
+    // pick -> follow in a light app); the switch still has to redraw.
+    final followsChanged = _lastFollowsTheme != preferences.backgroundFollowsTheme;
+    _lastFollowsTheme = preferences.backgroundFollowsTheme;
+    if (_updateEngineConfig() || followsChanged) onSettingsChanged();
   }
 
   bool _updateEngineConfig() {
@@ -86,6 +115,15 @@ class ReaderSettingsManager {
 
   void setBackground(Color color) {
     unawaited(preferences.setBackgroundColor(color));
+  }
+
+  void setBackgroundFollowsTheme(bool value) {
+    unawaited(preferences.setBackgroundFollowsTheme(value));
+  }
+
+  /// Reset Theme: follow the app theme again and forget the manual pick.
+  void resetBackground() {
+    unawaited(preferences.resetBackground());
   }
 
   void setPageTurnMode(PageTurnMode mode) {

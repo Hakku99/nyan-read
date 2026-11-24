@@ -8,7 +8,6 @@ import '../../../core/models/book.dart';
 import '../../../core/models/highlight.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/services/reader_preferences_service.dart';
-import '../../../core/theme/nyan_colors.dart';
 import '../../../core/utils/book_source_access.dart';
 import '../../../core/utils/lifecycle_registry.dart';
 import 'brightness_controller.dart';
@@ -44,6 +43,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
     this.book, {
     required ReaderPreferencesService readerPreferencesService,
     required DatabaseService databaseService,
+    Brightness appBrightness = Brightness.light,
   })  : _readerPreferencesService = readerPreferencesService,
         _databaseService = databaseService {
     engine = ReaderEngineFactory.create(book);
@@ -54,6 +54,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       lifecycle: _lifecycle,
       onSettingsChanged: _safeNotifyListeners,
       preferences: _readerPreferencesService,
+      appBrightness: appBrightness,
     );
 
     metaManager = ContentMetaManager(
@@ -87,6 +88,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
       _brightnessControllerRef?.uiBrightnessValue.value ?? 0.5;
   Color get backgroundColor => settingsManager.backgroundColor;
   Color get textColor => settingsManager.textColor;
+  bool get backgroundFollowsTheme => settingsManager.backgroundFollowsTheme;
   bool get followSystem => _brightnessControllerRef?.followSystem ?? true;
   double get currentProgress => progressManager.currentProgress;
   ValueListenable<double> get progressListenable =>
@@ -328,6 +330,10 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   void setFontSize(double size) => settingsManager.setFontSize(size);
   void setLineHeight(double height) => settingsManager.setLineHeight(height);
   void setBackground(Color color) => settingsManager.setBackground(color);
+  void setBackgroundFollowsTheme(bool value) =>
+      settingsManager.setBackgroundFollowsTheme(value);
+  void setAppBrightness(Brightness brightness) =>
+      settingsManager.setAppBrightness(brightness);
   void setPageTurnMode(PageTurnMode mode) =>
       settingsManager.setPageTurnMode(mode);
   void setUseSerif(bool value) => settingsManager.setUseSerif(value);
@@ -353,7 +359,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> resetReaderAppearanceDefaults() async {
     settingsManager.setFontSize(18);
     settingsManager.setLineHeight(1.5);
-    settingsManager.setBackground(NyanColors.readerPaperDefault);
+    settingsManager.resetBackground();
     await setWarmth(0);
   }
 
@@ -368,7 +374,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void resetReaderThemeDefaults() {
-    setBackground(NyanColors.readerPaperDefault);
+    settingsManager.resetBackground();
   }
 
   Future<void> jumpToPreviousChapter() async {

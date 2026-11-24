@@ -7,6 +7,8 @@ import '../../../../core/theme/nyan_colors.dart';
 import '../../../../core/theme/nyan_radius.dart';
 import '../../../../core/theme/nyan_spacing.dart';
 import '../../../../core/theme/nyan_typography.dart';
+import '../../../../core/ui/components/nyan_switch.dart';
+import '../../../../core/ui/nyan_theme_context.dart';
 import 'reader_settings_common.dart';
 
 /// Reading background presets (Theme tab).
@@ -18,19 +20,29 @@ class ReaderSettingsThemePanel extends StatelessWidget {
     super.key,
     required this.currentBackground,
     required this.onSelectBackground,
+    required this.followsAppTheme,
+    required this.onToggleFollowsAppTheme,
     required this.loc,
   });
 
   final Color currentBackground;
   final ValueChanged<Color> onSelectBackground;
+
+  /// True while the canvas tracks the app theme; picking a swatch turns it off.
+  final bool followsAppTheme;
+  final ValueChanged<bool> onToggleFollowsAppTheme;
   final AppLocalizations loc;
 
-  static const _creamAlt = NyanColors.readerPaperDefault;
+  /// Written by the Cream swatch before it shared the factory canvas colour;
+  /// still shown as "Cream" for users who picked it back then.
+  static const _creamLegacy = NyanColors.readerBgCream;
 
   List<_ReaderThemeOption> _options(AppLocalizations loc) => [
         _ReaderThemeOption(
           label: loc.themeCream,
-          background: NyanColors.readerBgCream,
+          // Same colour the follow-theme mode paints in a light app, so
+          // tapping Cream while following changes nothing visible.
+          background: NyanColors.readerPaperDefault,
           preview: NyanColors.readerPreviewCream,
           ink: NyanColors.readerInkCream,
         ),
@@ -57,7 +69,7 @@ class ReaderSettingsThemePanel extends StatelessWidget {
   bool _isSelected(Color controllerBg, _ReaderThemeOption option) {
     if (controllerBg == option.background) return true;
     if (option.label == loc.themeCream) {
-      return controllerBg == _creamAlt;
+      return controllerBg == _creamLegacy;
     }
     return false;
   }
@@ -65,35 +77,69 @@ class ReaderSettingsThemePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final options = _options(loc);
+    final nyan = context.nyanTheme;
 
     return ReaderSettingsKnob(
       key: const Key('reader-menu-theme-grid'),
       label: loc.readingTheme,
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        // Explicit zero padding prevents Flutter from injecting MediaQuery
-        // safe-area insets into the grid's scroll viewport, which would inflate
-        // the Knob height (common in sheet/overlay contexts).
-        padding: EdgeInsets.zero,
-        itemCount: options.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          // Spec reader.jsx ThemePanel grid: gap 10 (§4.6 override of space12).
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          mainAxisExtent: 74,
-        ),
-        itemBuilder: (context, index) {
-          final option = options[index];
-          final selected = _isSelected(currentBackground, option);
-          return _ThemeCard(
-            option: option,
-            isSelected: selected,
-            onTap: () => onSelectBackground(option.background),
-            semanticsLabel: '${loc.readerMenuTheme}: ${option.label}',
-          );
-        },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            // Explicit zero padding prevents Flutter from injecting MediaQuery
+            // safe-area insets into the grid's scroll viewport, which would
+            // inflate the Knob height (common in sheet/overlay contexts).
+            padding: EdgeInsets.zero,
+            itemCount: options.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              // Spec reader.jsx ThemePanel grid: gap 10 (§4.6 override of
+              // space12).
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              mainAxisExtent: 74,
+            ),
+            itemBuilder: (context, index) {
+              final option = options[index];
+              final selected = _isSelected(currentBackground, option);
+              return _ThemeCard(
+                option: option,
+                isSelected: selected,
+                onTap: () => onSelectBackground(option.background),
+                semanticsLabel: '${loc.readerMenuTheme}: ${option.label}',
+              );
+            },
+          ),
+          const SizedBox(height: NyanSpacing.space12),
+          // Same row shape as the Display tab's "Follow system brightness".
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Text(
+                  loc.readerBackgroundFollowsTheme,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: NyanTypography.uiFontFamily,
+                    fontSize: NyanTypography.meta,
+                    fontWeight: FontWeight.w400,
+                    height: 1.35,
+                    color: nyan.textSecondary,
+                  ),
+                ),
+              ),
+              NyanSwitch(
+                key: const Key('reader-menu-theme-follow-switch'),
+                value: followsAppTheme,
+                onChanged: onToggleFollowsAppTheme,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

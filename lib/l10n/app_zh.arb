@@ -295,6 +295,7 @@
   "readerMenuText": "文本",
   "readerMenuTheme": "主题",
   "readingTheme": "阅读主题",
+  "readerBackgroundFollowsTheme": "跟随应用主题",
   "readerSheetProgressSubtitle": "阅读进度 {percent}",
   "@readerSheetProgressSubtitle": {
     "placeholders": {

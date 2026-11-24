@@ -300,6 +300,7 @@
   "readerMenuText": "Text",
   "readerMenuTheme": "Theme",
   "readingTheme": "Reading Theme",
+  "readerBackgroundFollowsTheme": "Match app theme",
   "readerSheetProgressSubtitle": "Reading progress {percent}",
   "@readerSheetProgressSubtitle": {
     "placeholders": {

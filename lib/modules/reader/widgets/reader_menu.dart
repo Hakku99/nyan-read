@@ -298,6 +298,8 @@ class _ReaderMenuState extends State<ReaderMenu> {
         return ReaderSettingsThemePanel(
           currentBackground: controller.backgroundColor,
           onSelectBackground: controller.setBackground,
+          followsAppTheme: controller.backgroundFollowsTheme,
+          onToggleFollowsAppTheme: controller.setBackgroundFollowsTheme,
           loc: loc,
         );
     }

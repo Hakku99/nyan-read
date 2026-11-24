@@ -68,6 +68,10 @@ class ReaderPreferencesService extends ChangeNotifier {
   double _fontSize = 18.0;
   double _lineHeight = 1.5;
   Color _backgroundColor = NyanColors.readerPaperDefault;
+
+  /// When true the reading canvas follows the app theme (cream in light, Sumi
+  /// in dark) and [_backgroundColor] is only the remembered manual pick.
+  bool _backgroundFollowsTheme = true;
   double? _brightness;
   double _warmth = 0.0; // 0.0 (Cool/None) to 1.0 (Max Warmth)
   double _minPhysicalBrightness = 0.10; // User preferred hardware floor
@@ -93,6 +97,7 @@ class ReaderPreferencesService extends ChangeNotifier {
   double get fontSize => _fontSize;
   double get lineHeight => _lineHeight;
   Color get backgroundColor => _backgroundColor;
+  bool get backgroundFollowsTheme => _backgroundFollowsTheme;
   double? get brightness => _brightness;
   double get warmth => _warmth;
   double get minPhysicalBrightness => _minPhysicalBrightness;
@@ -137,6 +142,13 @@ class ReaderPreferencesService extends ChangeNotifier {
     if (bgColorInt != null) {
       _backgroundColor = Color(bgColorInt);
     }
+    // Upgrade path: only the untouched factory canvas starts out following the
+    // app theme. Any colour a user tapped before this flag existed counts as
+    // an explicit pick and stays manual — including the old Cream swatch
+    // (#F7F5EF), so their canvas does not shift on upgrade.
+    _backgroundFollowsTheme =
+        _prefs?.getBool('reader_background_follows_theme') ??
+            (_backgroundColor == NyanColors.readerPaperDefault);
     _brightness = _prefs?.getDouble('reader_brightness');
     _warmth = _prefs?.getDouble('reader_warmth') ?? 0.0;
     _minPhysicalBrightness =
@@ -184,11 +196,40 @@ class ReaderPreferencesService extends ChangeNotifier {
 
   // Set background color
   Future<void> setBackgroundColor(Color color) async {
-    if (_backgroundColor == color) return;
+    // A manual pick always ends "follow app theme", even when the colour is
+    // the one already stored — so only bail out when nothing would change.
+    if (_backgroundColor == color && !_backgroundFollowsTheme) return;
     _backgroundColor = color;
+    _backgroundFollowsTheme = false;
     // toARGB32() 返回与 Flutter 3.27 前 Color.value 相同的 32-bit int，
     // 因此不会破坏老用户已经持久化的 'reader_background_color' 字段。
     _schedulePrefWrite('reader_background_color', color.toARGB32());
+    _schedulePrefWrite('reader_background_follows_theme', false);
+    notifyListeners();
+  }
+
+  /// Switches the reading canvas between "follow app theme" and the stored
+  /// manual colour. The manual colour itself is left untouched.
+  Future<void> setBackgroundFollowsTheme(bool value) async {
+    if (_backgroundFollowsTheme == value) return;
+    _backgroundFollowsTheme = value;
+    _schedulePrefWrite('reader_background_follows_theme', value);
+    notifyListeners();
+  }
+
+  /// Back to the factory canvas: following the app theme, with the stored
+  /// manual colour cleared too, so turning the switch off later does not
+  /// resurrect an old pick.
+  Future<void> resetBackground() async {
+    if (_backgroundFollowsTheme &&
+        _backgroundColor == NyanColors.readerPaperDefault) {
+      return;
+    }
+    _backgroundColor = NyanColors.readerPaperDefault;
+    _backgroundFollowsTheme = true;
+    _schedulePrefWrite(
+        'reader_background_color', NyanColors.readerPaperDefault.toARGB32());
+    _schedulePrefWrite('reader_background_follows_theme', true);
     notifyListeners();
   }
 
@@ -252,6 +293,7 @@ class ReaderPreferencesService extends ChangeNotifier {
     _fontSize = 18.0;
     _lineHeight = 1.5;
     _backgroundColor = NyanColors.readerPaperDefault;
+    _backgroundFollowsTheme = true;
     _warmth = 0.0;
     _followSystemOffset = 0.0;
     _useSerif = false;
@@ -270,6 +312,7 @@ class ReaderPreferencesService extends ChangeNotifier {
       await prefs.setDouble('reader_line_height', 1.5);
       await prefs.setInt('reader_background_color',
           NyanColors.readerPaperDefault.toARGB32());
+      await prefs.setBool('reader_background_follows_theme', true);
       await prefs.setDouble('reader_warmth', 0.0);
       await prefs.setDouble('reader_follow_system_offset', 0.0);
       await prefs.setBool('reader_use_serif', false);
