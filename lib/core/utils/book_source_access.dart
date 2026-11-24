@@ -194,7 +194,11 @@ class BookSourceAccess {
       // cacheDir), so a reader never sees a half-written cache entry.
       await File(tempPath).rename(cached.path);
       final max = copyCacheMaxBytes;
-      unawaited(Isolate.run(() => BookCoverCache.evictLruSync(dir, max))
+      final keep = cached.path;
+      // keepPath: the prune must not delete the copy being handed out, or a
+      // book larger than the cap would vanish before it is opened.
+      unawaited(Isolate.run(
+              () => BookCoverCache.evictLruSync(dir, max, keepPath: keep))
           .catchError((Object _) {})); // best-effort; next open prunes again
       return PdfCompatibleSource(path: cached.path, isTemporary: false);
     } catch (e) {

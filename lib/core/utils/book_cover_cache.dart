@@ -53,7 +53,7 @@ class BookCoverCache {
       await file.parent.create(recursive: true);
       await file.writeAsBytes(jpegBytes, flush: true);
       final dirPath = file.parent.path;
-      await Isolate.run(() => _evictLruSync(dirPath, _maxBytes));
+      await Isolate.run(() => _evictLruSync(dirPath, _maxBytes, null));
     } catch (e) {
       debugPrint('[BookCoverCache] write failed: $e');
     }
@@ -61,10 +61,14 @@ class BookCoverCache {
 
   /// Oldest-mtime-first prune of [dirPath] to [maxBytes]. Also used by the SAF
   /// copy cache (`BookSourceAccess`), which has the same eviction rule.
-  static void evictLruSync(String dirPath, int maxBytes) =>
-      _evictLruSync(dirPath, maxBytes);
+  ///
+  /// [keepPath] is never deleted, even if it alone exceeds [maxBytes]: the SAF
+  /// copy cache passes the file it just handed to a reader, and a book bigger
+  /// than the cap must stay openable (the cap is soft for that one entry).
+  static void evictLruSync(String dirPath, int maxBytes, {String? keepPath}) =>
+      _evictLruSync(dirPath, maxBytes, keepPath);
 
-  static void _evictLruSync(String dirPath, int maxBytes) {
+  static void _evictLruSync(String dirPath, int maxBytes, String? keepPath) {
     final dir = Directory(dirPath);
     if (!dir.existsSync()) return;
 
@@ -83,6 +87,7 @@ class BookCoverCache {
     stats.sort((a, b) => a.modified.compareTo(b.modified));
     for (final entry in stats) {
       if (total <= maxBytes) break;
+      if (entry.file.path == keepPath) continue;
       try {
         entry.file.deleteSync();
         total -= entry.size;

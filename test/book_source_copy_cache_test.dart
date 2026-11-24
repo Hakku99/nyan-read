@@ -86,4 +86,44 @@ void main() {
     expect(copies, 2);
     expect(File(again.path).lengthSync(), greaterThan(0));
   });
+
+  group('size cap', () {
+    late int originalCap;
+    setUp(() => originalCap = BookSourceAccess.copyCacheMaxBytes);
+    tearDown(() => BookSourceAccess.copyCacheMaxBytes = originalCap);
+
+    test('a single copy bigger than the cap is kept and still openable',
+        () async {
+      BookSourceAccess.copyCacheMaxBytes = 1; // every copy is oversized
+      final src = await BookSourceAccess.prepareReadableFile(book(),
+          extension: '.epub');
+      // Give the background prune time to run (it must spare this file).
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+
+      expect(File(src.path).existsSync(), isTrue);
+      final again = await BookSourceAccess.prepareReadableFile(book(),
+          extension: '.epub');
+      expect(copies, 1); // second open is a cache hit, not a re-copy
+      expect(again.path, src.path);
+    });
+
+    test('opening another book prunes older copies but not the new one',
+        () async {
+      BookSourceAccess.copyCacheMaxBytes = 1;
+      final first = await BookSourceAccess.prepareReadableFile(book(),
+          extension: '.epub');
+      File(first.path)
+          .setLastModifiedSync(DateTime.now().subtract(const Duration(hours: 1)));
+      final second = await BookSourceAccess.prepareReadableFile(
+          book(signature: 'sig-2'),
+          extension: '.epub');
+
+      // Poll: the prune runs in a background isolate.
+      for (var i = 0; i < 40 && File(first.path).existsSync(); i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+      expect(File(first.path).existsSync(), isFalse);
+      expect(File(second.path).existsSync(), isTrue);
+    });
+  });
 }

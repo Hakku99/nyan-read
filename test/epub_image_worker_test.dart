@@ -46,4 +46,25 @@ void main() {
     expect(await EpubImageWorker.extract(path, 'x.png'), isNull);
     EpubImageWorker.close(path);
   });
+
+  test('a crashed worker fails its pending requests and is replaced', () async {
+    final dir = Directory.systemTemp.createTempSync('img_worker_');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final archive = Archive()..addFile(ArchiveFile('a.png', 3, [1, 2, 3]));
+    final path = p.join(dir.path, 'book.epub');
+    File(path).writeAsBytesSync(ZipEncoder().encode(archive));
+
+    expect(await EpubImageWorker.extract(path, 'a.png'), [1, 2, 3]);
+
+    EpubImageWorker.killForTest(path);
+    // Sent to the dying worker: must resolve (null), never hang.
+    final during = await EpubImageWorker.extract(path, 'a.png')
+        .timeout(const Duration(seconds: 5));
+    expect(during, anyOf(isNull, [1, 2, 3]));
+
+    // After the exit is observed, the next request gets a fresh worker.
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    expect(await EpubImageWorker.extract(path, 'a.png'), [1, 2, 3]);
+    EpubImageWorker.close(path);
+  });
 }

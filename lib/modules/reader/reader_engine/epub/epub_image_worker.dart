@@ -37,20 +37,31 @@ class EpubImageWorker {
   final String _path;
   final Map<int, Completer<Uint8List?>> _pending = {};
   final ReceivePort _replies = ReceivePort();
+  final ReceivePort _exitPort = ReceivePort();
   final Completer<SendPort?> _ready = Completer<SendPort?>();
+  Isolate? _isolate;
   SendPort? _port;
   int _nextId = 0;
   bool _closed = false;
 
-  // Handshake and replies are port callbacks, not awaited continuations: in a
-  // widget test's fake zone a continuation after `await Isolate.spawn` may
-  // never run, and a worker closed while still spawning must still be stopped.
+  // Handshake, replies and exit are port callbacks, not awaited continuations:
+  // in a widget test's fake zone a continuation after `await Isolate.spawn`
+  // may never run, and a worker closed while still spawning must still stop.
   Future<void> _start() async {
+    _exitPort.listen((message) {
+      // onExit sends null; onError sends [error, stack] and, because errors
+      // are fatal by default, is followed by exit.
+      if (message is List) {
+        debugPrint('[EpubImageWorker] worker error: ${message.first.runtimeType}');
+      } else {
+        _gone();
+      }
+    });
     _replies.listen((message) {
       if (message is SendPort) {
         _port = message;
         if (_closed) {
-          message.send(null);
+          message.send(null); // closed while still spawning: stop it now
         } else if (!_ready.isCompleted) {
           _ready.complete(message);
         }
@@ -63,12 +74,27 @@ class EpubImageWorker {
       }
     });
     try {
-      await Isolate.spawn(_workerMain, (_path, _replies.sendPort));
+      _isolate = await Isolate.spawn(_workerMain, (_path, _replies.sendPort),
+          onExit: _exitPort.sendPort, onError: _exitPort.sendPort);
     } catch (e) {
       debugPrint('[EpubImageWorker] spawn failed: ${e.runtimeType}');
-      _replies.close();
-      if (!_ready.isCompleted) _ready.complete(null);
+      _gone();
     }
+  }
+
+  /// The worker is no longer running (clean stop, crash or failed spawn):
+  /// fail everything still waiting so no image slot hangs, and drop it from
+  /// the registry so the next request spawns a fresh one.
+  void _gone() {
+    _closed = true;
+    if (identical(_workers[_path], this)) _workers.remove(_path);
+    _replies.close();
+    _exitPort.close();
+    for (final c in _pending.values) {
+      if (!c.isCompleted) c.complete(null);
+    }
+    _pending.clear();
+    if (!_ready.isCompleted) _ready.complete(null);
   }
 
   Future<Uint8List?> _request(String entryPath) async {
@@ -83,14 +109,18 @@ class EpubImageWorker {
   void _shutdown() {
     if (_closed) return;
     _closed = true;
-    _port?.send(null); // the worker closes its port and exits
-    _replies.close();
+    _port?.send(null); // the worker closes its port and exits; _gone follows
     for (final c in _pending.values) {
       if (!c.isCompleted) c.complete(null);
     }
     _pending.clear();
     if (!_ready.isCompleted) _ready.complete(null);
   }
+
+  /// Simulates a crashed worker.
+  @visibleForTesting
+  static void killForTest(String path) =>
+      _workers[path]?._isolate?.kill(priority: Isolate.immediate);
 }
 
 void _workerMain((String, SendPort) args) {
