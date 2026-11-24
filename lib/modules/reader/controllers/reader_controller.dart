@@ -359,7 +359,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> resetReaderAppearanceDefaults() async {
     settingsManager.setFontSize(18);
     settingsManager.setLineHeight(1.5);
-    settingsManager.setBackgroundFollowsTheme(true);
+    settingsManager.resetBackground();
     await setWarmth(0);
   }
 
@@ -374,7 +374,7 @@ class ReaderController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void resetReaderThemeDefaults() {
-    setBackgroundFollowsTheme(true);
+    settingsManager.resetBackground();
   }
 
   Future<void> jumpToPreviousChapter() async {

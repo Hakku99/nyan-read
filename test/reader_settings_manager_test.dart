@@ -139,12 +139,13 @@ void main() {
       expect(notified, 1);
     });
 
-    test('upgrade: cream/absent colour follows, explicit picks do not',
+    test('upgrade: only the factory canvas follows, explicit picks do not',
         () async {
       for (final (color, follows) in [
         (null, true),
         (NyanColors.readerPaperDefault, true),
-        (NyanColors.readerBgCream, true),
+        // Written by the old Cream swatch: an explicit pick, kept as-is.
+        (NyanColors.readerBgCream, false),
         (NyanColors.readerBgSepia, false),
         (NyanColors.readerBgSumi, false),
         (NyanColors.readerBgCharcoal, false),
@@ -156,6 +157,40 @@ void main() {
         await prefs.initialize();
         expect(prefs.backgroundFollowsTheme, follows, reason: '$color');
       }
+    });
+
+    test('tapping the Cream swatch while following keeps the same canvas',
+        () async {
+      final (prefs, _, manager) = await build({});
+      final before = manager.backgroundColor;
+      manager.setBackground(NyanColors.readerPaperDefault);
+      expect(manager.backgroundColor, before);
+      expect(prefs.backgroundFollowsTheme, isFalse);
+    });
+
+    test('resetBackground follows again and forgets the manual colour',
+        () async {
+      final (prefs, _, manager) = await build({}, app: Brightness.dark);
+      manager.setBackground(NyanColors.readerBgSepia);
+      manager.resetBackground();
+      expect(prefs.backgroundFollowsTheme, isTrue);
+      expect(prefs.backgroundColor, NyanColors.readerPaperDefault);
+      expect(manager.backgroundColor, NyanColors.readerBgSumi);
+      // Turning follow off now yields the default, not the old Sepia.
+      manager.setBackgroundFollowsTheme(false);
+      expect(manager.backgroundColor, NyanColors.readerPaperDefault);
+    });
+
+    test('resetBackground persists both keys', () async {
+      final (prefs, _, _) = await build({
+        'reader_background_color': NyanColors.readerBgSepia.toARGB32(),
+      });
+      await prefs.resetBackground();
+      await prefs.flushPendingWrites();
+      final stored = await SharedPreferences.getInstance();
+      expect(stored.getInt('reader_background_color'),
+          NyanColors.readerPaperDefault.toARGB32());
+      expect(stored.getBool('reader_background_follows_theme'), isTrue);
     });
 
     test('resetToDefaults restores following', () async {

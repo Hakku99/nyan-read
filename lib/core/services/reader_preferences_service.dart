@@ -142,13 +142,13 @@ class ReaderPreferencesService extends ChangeNotifier {
     if (bgColorInt != null) {
       _backgroundColor = Color(bgColorInt);
     }
-    // Upgrade path: users from before this flag existed keep an explicit
-    // colour pick (Sepia, Sumi, ...), but anyone still on the cream default
-    // starts out following the app theme.
+    // Upgrade path: only the untouched factory canvas starts out following the
+    // app theme. Any colour a user tapped before this flag existed counts as
+    // an explicit pick and stays manual — including the old Cream swatch
+    // (#F7F5EF), so their canvas does not shift on upgrade.
     _backgroundFollowsTheme =
         _prefs?.getBool('reader_background_follows_theme') ??
-            (_backgroundColor == NyanColors.readerPaperDefault ||
-                _backgroundColor == NyanColors.readerBgCream);
+            (_backgroundColor == NyanColors.readerPaperDefault);
     _brightness = _prefs?.getDouble('reader_brightness');
     _warmth = _prefs?.getDouble('reader_warmth') ?? 0.0;
     _minPhysicalBrightness =
@@ -214,6 +214,22 @@ class ReaderPreferencesService extends ChangeNotifier {
     if (_backgroundFollowsTheme == value) return;
     _backgroundFollowsTheme = value;
     _schedulePrefWrite('reader_background_follows_theme', value);
+    notifyListeners();
+  }
+
+  /// Back to the factory canvas: following the app theme, with the stored
+  /// manual colour cleared too, so turning the switch off later does not
+  /// resurrect an old pick.
+  Future<void> resetBackground() async {
+    if (_backgroundFollowsTheme &&
+        _backgroundColor == NyanColors.readerPaperDefault) {
+      return;
+    }
+    _backgroundColor = NyanColors.readerPaperDefault;
+    _backgroundFollowsTheme = true;
+    _schedulePrefWrite(
+        'reader_background_color', NyanColors.readerPaperDefault.toARGB32());
+    _schedulePrefWrite('reader_background_follows_theme', true);
     notifyListeners();
   }
 

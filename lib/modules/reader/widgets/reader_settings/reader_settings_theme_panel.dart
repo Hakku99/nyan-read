@@ -33,12 +33,16 @@ class ReaderSettingsThemePanel extends StatelessWidget {
   final ValueChanged<bool> onToggleFollowsAppTheme;
   final AppLocalizations loc;
 
-  static const _creamAlt = NyanColors.readerPaperDefault;
+  /// Written by the Cream swatch before it shared the factory canvas colour;
+  /// still shown as "Cream" for users who picked it back then.
+  static const _creamLegacy = NyanColors.readerBgCream;
 
   List<_ReaderThemeOption> _options(AppLocalizations loc) => [
         _ReaderThemeOption(
           label: loc.themeCream,
-          background: NyanColors.readerBgCream,
+          // Same colour the follow-theme mode paints in a light app, so
+          // tapping Cream while following changes nothing visible.
+          background: NyanColors.readerPaperDefault,
           preview: NyanColors.readerPreviewCream,
           ink: NyanColors.readerInkCream,
         ),
@@ -65,7 +69,7 @@ class ReaderSettingsThemePanel extends StatelessWidget {
   bool _isSelected(Color controllerBg, _ReaderThemeOption option) {
     if (controllerBg == option.background) return true;
     if (option.label == loc.themeCream) {
-      return controllerBg == _creamAlt;
+      return controllerBg == _creamLegacy;
     }
     return false;
   }

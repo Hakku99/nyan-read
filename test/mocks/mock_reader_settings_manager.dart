@@ -46,6 +46,9 @@ class MockReaderSettingsManager implements ReaderSettingsManager {
   void setBackgroundFollowsTheme(bool value) {}
 
   @override
+  void resetBackground() {}
+
+  @override
   void setAppBrightness(Brightness brightness) {}
 
   @override

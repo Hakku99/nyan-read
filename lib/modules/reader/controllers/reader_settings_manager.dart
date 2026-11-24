@@ -121,6 +121,11 @@ class ReaderSettingsManager {
     unawaited(preferences.setBackgroundFollowsTheme(value));
   }
 
+  /// Reset Theme: follow the app theme again and forget the manual pick.
+  void resetBackground() {
+    unawaited(preferences.resetBackground());
+  }
+
   void setPageTurnMode(PageTurnMode mode) {
     // Persisting fires _handlePreferencesChanged, which re-calls
     // _updateEngineConfig + onSettingsChanged — no need to duplicate here.
