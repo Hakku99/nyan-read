@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../utils/book_cover_cache.dart';
+import '../utils/book_source_access.dart';
 import 'database_service.dart';
 
 class BackupRecoveryService extends WidgetsBindingObserver {
@@ -206,10 +207,15 @@ class BackupRecoveryService extends WidgetsBindingObserver {
       // On Android getTemporaryDirectory() and getApplicationCacheDirectory()
       // are the same cacheDir, so BookCoverCache's `covers/` lives under the
       // directory swept here. It has its own LRU cap; never age it out.
+      // Same for the SAF copy cache (`book_copies/`, own 500 MB LRU).
       final coversPrefix = '${join(tempDirPath, BookCoverCache.dirName)}$separator';
+      final copiesPrefix =
+          '${join(tempDirPath, BookSourceAccess.copyCacheDirName)}$separator';
 
       for (final entity in entities) {
-        if (entity is File && !entity.path.startsWith(coversPrefix)) {
+        if (entity is File &&
+            !entity.path.startsWith(coversPrefix) &&
+            !entity.path.startsWith(copiesPrefix)) {
           try {
             // 敌我识别：获取最后修改时间
             final lastModified = entity.lastModifiedSync();

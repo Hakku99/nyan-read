@@ -59,7 +59,8 @@ class BookCoverCache {
     }
   }
 
-  @visibleForTesting
+  /// Oldest-mtime-first prune of [dirPath] to [maxBytes]. Also used by the SAF
+  /// copy cache (`BookSourceAccess`), which has the same eviction rule.
   static void evictLruSync(String dirPath, int maxBytes) =>
       _evictLruSync(dirPath, maxBytes);
 
