@@ -203,23 +203,24 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
       FocusScope.of(context).unfocus();
       return;
     }
-    if (_lastTapLogicAt != null &&
-        at.difference(_lastTapLogicAt!) <
-            _ReaderPageState._tapLogicDedupWindow) {
-      return;
-    }
-    if (_isPageTurning) {
-      return;
-    }
-    if (_lastPageTurnAt != null &&
-        at.difference(_lastPageTurnAt!) <
-            _ReaderPageState._pageTurnMinInterval) {
-      return;
-    }
+    if (!_pageTurnGate.offer(forward: forward, at: at)) return;
+    _drainQueuedPageTurn(controller);
+  }
 
-    _lastTapLogicAt = at;
-    _lastPageTurnAt = at;
-    _isPageTurning = true;
+  /// Starts the queued turn if the gate allows it; otherwise re-arms a timer
+  /// for the interval, or waits for [_completePageTurn] to call back.
+  void _drainQueuedPageTurn(ReaderController controller) {
+    if (!mounted) return;
+    final next = _pageTurnGate.take(DateTime.now());
+    final forward = next.forward;
+    if (forward == null) {
+      if (next.retryAfter > Duration.zero) {
+        _queuedPageTurnTimer?.cancel();
+        _queuedPageTurnTimer =
+            Timer(next.retryAfter, () => _drainQueuedPageTurn(controller));
+      }
+      return;
+    }
 
     final request = _pageTurnRequest = PageTurnRequest();
     _pageTurnLockTimer?.cancel();
@@ -233,9 +234,11 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
 
   Future<void> _completePageTurn(ReaderController controller, bool forward,
       PageTurnRequest request) async {
+    var succeeded = false;
     try {
       await request.wait(
           _dispatchPageTurn(controller, forward: forward, request: request));
+      succeeded = true;
     } on PageTurnCancelled {
       // A changed layout, route or deadline supersedes this presentation.
     } catch (error) {
@@ -251,12 +254,14 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
       if (identical(_pageTurnRequest, request)) {
         _pageTurnLockTimer?.cancel();
         _pageTurnRequest = null;
-        _isPageTurning = false;
+        _pageTurnGate.finish(succeeded: succeeded);
+        _drainQueuedPageTurn(controller);
       }
     }
   }
 
   void _showReaderControls(BuildContext context, ReaderController controller) {
+    _pageTurnGate.clearQueue();
     _pageTurnRequest?.cancel();
     unawaited(_showQuickActionsBottomSheet(context, controller));
   }

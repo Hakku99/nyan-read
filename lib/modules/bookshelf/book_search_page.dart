@@ -72,6 +72,8 @@ class _BookSearchPageState extends ConsumerState<BookSearchPage> {
   late ViewMode _resultView;
   // Live query driven by controller; no debounce (in-memory list).
   String _query = '';
+  // Filtered off the build path (§3.4): recomputed only when the query changes.
+  List<Book> _results = const [];
 
   @override
   void initState() {
@@ -79,7 +81,11 @@ class _BookSearchPageState extends ConsumerState<BookSearchPage> {
     _resultView = ref.read(bookshelfPreferencesRpProvider).viewMode;
     _controller.addListener(() {
       final q = _controller.text;
-      if (q != _query) setState(() => _query = q);
+      if (q == _query) return;
+      setState(() {
+        _query = q;
+        _results = _filteredBooks();
+      });
     });
     // Auto-focus so the keyboard appears immediately.
     WidgetsBinding.instance.addPostFrameCallback((_) => _focusNode.requestFocus());
@@ -134,7 +140,7 @@ class _BookSearchPageState extends ConsumerState<BookSearchPage> {
     final nyan = context.nyanTheme;
     final loc = AppLocalizations.of(context)!;
     final isDark = nyan.brightness == Brightness.dark;
-    final results = _filteredBooks();
+    final results = _results;
     final hasQuery = _query.trim().isNotEmpty;
 
     return Scaffold(
@@ -237,7 +243,7 @@ class _BookSearchPageState extends ConsumerState<BookSearchPage> {
       children: [
         // Header row: "RECENT" eyebrow + "Clear" link
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 8, 4, 10),
+          padding: const EdgeInsets.symmetric(horizontal: NyanSpacing.space4),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -252,19 +258,28 @@ class _BookSearchPageState extends ConsumerState<BookSearchPage> {
                 ),
               ),
               GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () async {
                   await ref
                       .read(bookshelfPreferencesRpProvider)
                       .clearRecentSearches();
                   setState(() {});
                 },
-                child: Text(
-                  loc.searchClear,
-                  style: TextStyle(
-                    fontFamily: NyanTypography.uiFontFamily,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: nyan.textMuted,
+                // 44pt hit area around the text link (§4.3).
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minWidth: NyanSpacing.minTapTarget,
+                    minHeight: NyanSpacing.minTapTarget,
+                  ),
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    loc.searchClear,
+                    style: TextStyle(
+                      fontFamily: NyanTypography.uiFontFamily,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: nyan.textMuted,
+                    ),
                   ),
                 ),
               ),
@@ -554,25 +569,32 @@ class _SearchFieldState extends State<_SearchField> {
               onSubmitted: widget.onSubmitted,
             ),
           ),
-          if (hasText) ...[
+          if (hasText)
+            // 22pt glyph centred in a 44pt hit box (§4.3).
             GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: () => widget.controller.clear(),
-              child: Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: nyan.textPrimary.withValues(alpha: 0.12),
-                ),
-                child: Icon(
-                  NyanIcons.close,
-                  size: 12,
-                  color: nyan.surface,
+              child: SizedBox(
+                width: NyanSpacing.minTapTarget,
+                height: NyanSpacing.minTapTarget,
+                child: Center(
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: nyan.textPrimary.withValues(alpha: 0.12),
+                    ),
+                    child: Icon(
+                      NyanIcons.close,
+                      size: 12,
+                      color: nyan.surface,
+                    ),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-          ] else
+            )
+          else
             const SizedBox(width: 12),
         ],
       ),

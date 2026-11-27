@@ -17,6 +17,7 @@ import '../bookmark/bookmark_list_page.dart';
 import '../notes/notes_list_page.dart';
 import 'reader_engine/reader_engine.dart';
 import 'reader_engine/page_turn_request.dart';
+import 'page_turn_input_gate.dart';
 import 'reader_error.dart';
 import 'widgets/reader_error_view.dart';
 import 'widgets/highlight_note_dialog.dart';
@@ -102,11 +103,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   // are suppressed so text-selection long-press-drags don't turn pages.
   static const double _swipeMinVelocity = 200.0;
   static const double _swipeMinDelta = 60.0;
-  static const Duration _tapLogicDedupWindow = Duration(milliseconds: 350);
-  static const Duration _pageTurnMinInterval = Duration(milliseconds: 220);
-  DateTime? _lastTapLogicAt;
-  DateTime? _lastPageTurnAt;
-  bool _isPageTurning = false;
+  final PageTurnInputGate _pageTurnGate = PageTurnInputGate();
+  Timer? _queuedPageTurnTimer;
   PageTurnRequest? _pageTurnRequest;
   Timer? _pageTurnLockTimer;
   static const Duration _pageTurnLockTimeout = Duration(seconds: 3);
@@ -164,6 +162,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     _reminderService.removeListener(_onReminderSettingsChanged);
     WidgetsBinding.instance.removeObserver(this);
     _pageTurnLockTimer?.cancel();
+    _queuedPageTurnTimer?.cancel();
     _chapterSyncDebounce?.cancel();
     _sheetCloseTimer?.cancel();
     _boundController = null;
@@ -178,6 +177,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     if (!mounted) return;
     if (_brightnessController.isAdjusting.value) {
       if (_brightnessPopoverOpen) return;
+      _dismissTextSelection();
       setState(() {
         _brightnessPopoverOpen = true;
         if (_openSheet != null) {
@@ -997,6 +997,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
       // Freshen the current-chapter highlight before the list appears.
       unawaited(controller.syncChapterAfterScroll());
     }
+    if (willOpen) _dismissTextSelection();
     _sheetCloseTimer?.cancel();
     setState(() {
       if (willOpen) {
@@ -1032,6 +1033,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
 
   /// Toggle the top-bar brightness popover (mutually exclusive with a sheet).
   void _toggleBrightnessPopover() {
+    if (!_brightnessPopoverOpen) _dismissTextSelection();
     setState(() {
       _brightnessPopoverOpen = !_brightnessPopoverOpen;
       if (_brightnessPopoverOpen && _openSheet != null) {
@@ -1148,7 +1150,15 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     }
   }
 
+  /// The selection toolbar lives in the text's own overlay, so chrome or a
+  /// sheet rising over the page would otherwise leave it floating on top
+  /// (audit N14). Focus loss is what collapses a reader selection.
+  void _dismissTextSelection() {
+    if (_textSelections.hasSelection) FocusScope.of(context).unfocus();
+  }
+
   void _setControlsVisible(bool visible) {
+    if (visible) _dismissTextSelection();
     // Hiding chrome also collapses any grown sheet / brightness popover.
     if (_showControls == visible &&
         (visible || (_openSheet == null && !_brightnessPopoverOpen))) {

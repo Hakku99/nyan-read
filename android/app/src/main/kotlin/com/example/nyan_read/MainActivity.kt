@@ -1,5 +1,7 @@
 package com.example.nyan_read
 
+import android.app.SearchManager
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -23,6 +25,7 @@ class MainActivity : FlutterFragmentActivity() {
     companion object {
         private const val CHANNEL = "com.example.nyan_read/book_source"
         private const val PRIVACY_CHANNEL = "com.example.nyan_read/privacy"
+        private const val SYSTEM_CHANNEL = "com.example.nyan_read/system"
         // readUriBytes loads the whole file into a ByteArray; guard against
         // OOM on unusually large files (>100 MB). Callers that need to handle
         // larger files should use copyUriToTempFile + stream-read instead.
@@ -71,6 +74,26 @@ class MainActivity : FlutterFragmentActivity() {
                             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
                         }
                         result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+
+        // Selection "Search": defer to the user's default search app rather
+        // than a hard-coded engine (google.com is blocked in mainland China).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SYSTEM_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "webSearch" -> {
+                        val intent = Intent(Intent.ACTION_WEB_SEARCH)
+                            .putExtra(SearchManager.QUERY, call.argument<String>("query"))
+                        val opened = try {
+                            startActivity(intent)
+                            true
+                        } catch (e: ActivityNotFoundException) {
+                            false
+                        }
+                        result.success(opened)
                     }
                     else -> result.notImplemented()
                 }
