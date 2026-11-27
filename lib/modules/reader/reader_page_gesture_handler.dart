@@ -104,7 +104,6 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
 
     if (height <= 0 || width <= 0) return;
 
-    final now = DateTime.now();
     final turnMode = c.settingsManager.preferences.pageTurnMode;
 
     // Disabled mode: no tap-to-turn; any tap toggles the overlay instead.
@@ -116,9 +115,9 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     if (turnMode == PageTurnMode.tap) {
       final ratioX = localX / width;
       if (ratioX < 0.20) {
-        _triggerPageTurn(c, forward: false, at: now);
+        _triggerPageTurn(c, forward: false);
       } else if (ratioX > 0.80) {
-        _triggerPageTurn(c, forward: true, at: now);
+        _triggerPageTurn(c, forward: true);
       } else {
         _showReaderControls(context, c);
       }
@@ -129,9 +128,9 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     if (ratioY < 0.40) {
       // Up/down mode expects top-tap and bottom-tap to move by symmetric
       // viewport distance; engine-level logic enforces that invariant.
-      _triggerPageTurn(c, forward: false, at: now);
+      _triggerPageTurn(c, forward: false);
     } else if (ratioY > 0.60) {
-      _triggerPageTurn(c, forward: true, at: now);
+      _triggerPageTurn(c, forward: true);
     } else {
       _showReaderControls(context, c);
     }
@@ -149,7 +148,6 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     final delta = end - start;
     if (delta.distance < _ReaderPageState._swipeThreshold) return;
 
-    final now = DateTime.now();
     final mode = controller.settingsManager.preferences.pageTurnMode;
     final velocity = details.velocity.pixelsPerSecond;
 
@@ -170,9 +168,9 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
       final signedDx =
           vx >= _ReaderPageState._swipeMinVelocity ? velocity.dx : delta.dx;
       if (signedDx < 0) {
-        _triggerPageTurn(controller, forward: true, at: now);
+        _triggerPageTurn(controller, forward: true);
       } else if (signedDx > 0) {
-        _triggerPageTurn(controller, forward: false, at: now);
+        _triggerPageTurn(controller, forward: false);
       }
       return;
     }
@@ -188,30 +186,39 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     final signedDy =
         vy >= _ReaderPageState._swipeMinVelocity ? velocity.dy : delta.dy;
     if (signedDy < 0) {
-      _triggerPageTurn(controller, forward: true, at: now);
+      _triggerPageTurn(controller, forward: true);
     } else if (signedDy > 0) {
-      _triggerPageTurn(controller, forward: false, at: now);
+      _triggerPageTurn(controller, forward: false);
     }
   }
 
-  void _triggerPageTurn(
-    ReaderController controller, {
-    required bool forward,
-    required DateTime at,
-  }) {
+  void _triggerPageTurn(ReaderController controller, {required bool forward}) {
     if (_textSelections.hasSelection) {
       FocusScope.of(context).unfocus();
       return;
     }
-    if (!_pageTurnGate.offer(forward: forward, at: at)) return;
+    if (!_pageTurnGate.offer(forward: forward, at: _pageTurnClock.elapsed)) {
+      return;
+    }
     _drainQueuedPageTurn(controller);
   }
 
+  /// Drops any waiting turn: exits, sheets and chrome outrank a stale tap.
+  void _cancelQueuedPageTurns() {
+    _pageTurnGate.clearQueue();
+    _queuedPageTurnTimer?.cancel();
+  }
+
   /// Starts the queued turn if the gate allows it; otherwise re-arms a timer
-  /// for the interval, or waits for [_completePageTurn] to call back.
+  /// for the interval, or waits for [_releasePageTurn] to call back.
   void _drainQueuedPageTurn(ReaderController controller) {
     if (!mounted) return;
-    final next = _pageTurnGate.take(DateTime.now());
+    // A selection made after the tap was queued owns the page now.
+    if (_textSelections.hasSelection) {
+      _cancelQueuedPageTurns();
+      return;
+    }
+    final next = _pageTurnGate.take(_pageTurnClock.elapsed);
     final forward = next.forward;
     if (forward == null) {
       if (next.retryAfter > Duration.zero) {
@@ -223,24 +230,36 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
     }
 
     final request = _pageTurnRequest = PageTurnRequest();
+    final dispatch =
+        _dispatchPageTurn(controller, forward: forward, request: request);
     _pageTurnLockTimer?.cancel();
     _pageTurnLockTimer = Timer(_ReaderPageState._pageTurnLockTimeout, () {
-      // Invalidate late capture/queued navigation before releasing input.
+      // Invalidate late capture/queued navigation, and release input even if
+      // a hung engine never settles [dispatch].
       request.cancel();
+      _releasePageTurn(controller, request, succeeded: false);
     });
     // The handler owns completion and user-visible failure feedback.
-    unawaited(_completePageTurn(controller, forward, request));
+    unawaited(_completePageTurn(controller, dispatch, request));
   }
 
-  Future<void> _completePageTurn(ReaderController controller, bool forward,
-      PageTurnRequest request) async {
+  Future<void> _completePageTurn(ReaderController controller,
+      Future<void> dispatch, PageTurnRequest request) async {
     var succeeded = false;
     try {
-      await request.wait(
-          _dispatchPageTurn(controller, forward: forward, request: request));
+      await request.wait(dispatch);
       succeeded = true;
     } on PageTurnCancelled {
-      // A changed layout, route or deadline supersedes this presentation.
+      // A changed layout, route or deadline supersedes this presentation, but
+      // never rolls back accepted navigation: keep the gate busy (and the
+      // scroll-mode list shielded) until it lands, or a touch would stop its
+      // animateTo halfway (audit N17).
+      try {
+        await dispatch;
+      } catch (error) {
+        debugPrint(
+            'Reader page turn failed after cancel (${error.runtimeType}).');
+      }
     } catch (error) {
       debugPrint('Reader page turn failed (${error.runtimeType}).');
       if (mounted) {
@@ -248,21 +267,24 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
             context, AppLocalizations.of(context)!.errorUnknownBody,
             tone: NyanSnackTone.error);
       }
-    } finally {
-      request.cancel();
-      // A late completion cannot unlock a newer input or cancel its deadline,
-      // nor touch the gate's notifier after dispose.
-      if (mounted && identical(_pageTurnRequest, request)) {
-        _pageTurnLockTimer?.cancel();
-        _pageTurnRequest = null;
-        _pageTurnGate.finish(succeeded: succeeded);
-        _drainQueuedPageTurn(controller);
-      }
     }
+    _releasePageTurn(controller, request, succeeded: succeeded);
+  }
+
+  void _releasePageTurn(ReaderController controller, PageTurnRequest request,
+      {required bool succeeded}) {
+    request.cancel();
+    // A late completion cannot unlock a newer input or cancel its deadline,
+    // nor touch the gate's notifier after dispose.
+    if (!mounted || !identical(_pageTurnRequest, request)) return;
+    _pageTurnLockTimer?.cancel();
+    _pageTurnRequest = null;
+    _pageTurnGate.finish(succeeded: succeeded);
+    _drainQueuedPageTurn(controller);
   }
 
   void _showReaderControls(BuildContext context, ReaderController controller) {
-    _pageTurnGate.clearQueue();
+    _cancelQueuedPageTurns();
     _pageTurnRequest?.cancel();
     unawaited(_showQuickActionsBottomSheet(context, controller));
   }

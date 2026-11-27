@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart';
 /// turn, so a tap that lands during an animation is deferred, not dropped.
 ///
 /// Pure (clock passed in) so the timing rules are unit-testable without
-/// pumping the whole reader page.
+/// pumping the whole reader page. Times are offsets on a monotonic clock
+/// (a `Stopwatch`), never wall-clock `DateTime`s, which can jump backward.
 class PageTurnInputGate {
   /// One physical tap can reach both the outer detector and a paragraph
   /// recognizer within the same pointer-up dispatch. 50ms covers that
@@ -15,8 +16,8 @@ class PageTurnInputGate {
   /// Minimum spacing between turn starts so snapshot capture can settle.
   static const Duration minInterval = Duration(milliseconds: 220);
 
-  DateTime? _lastInputAt;
-  DateTime? _lastStartAt;
+  Duration? _lastInputAt;
+  Duration? _lastStartAt;
   bool? _queuedForward;
   final ValueNotifier<bool> _running = ValueNotifier(false);
 
@@ -31,9 +32,9 @@ class PageTurnInputGate {
 
   /// Records an input. Returns false when it is a duplicate of the last one.
   /// A newer input replaces an older queued one: only one turn ever waits.
-  bool offer({required bool forward, required DateTime at}) {
+  bool offer({required bool forward, required Duration at}) {
     final last = _lastInputAt;
-    if (last != null && at.difference(last) < dedupWindow) return false;
+    if (last != null && at - last < dedupWindow) return false;
     _lastInputAt = at;
     _queuedForward = forward;
     return true;
@@ -42,14 +43,14 @@ class PageTurnInputGate {
   /// Returns the direction to start now, or null. When null and a turn is
   /// still queued, [retryAfter] says how long until the interval allows it
   /// (zero while a turn is running: the caller retries on completion).
-  ({bool? forward, Duration retryAfter}) take(DateTime now) {
+  ({bool? forward, Duration retryAfter}) take(Duration now) {
     final queued = _queuedForward;
     if (queued == null || _running.value) {
       return (forward: null, retryAfter: Duration.zero);
     }
     final last = _lastStartAt;
     final wait =
-        last == null ? Duration.zero : minInterval - now.difference(last);
+        last == null ? Duration.zero : minInterval - (now - last);
     if (wait > Duration.zero) return (forward: null, retryAfter: wait);
     _queuedForward = null;
     _lastStartAt = now;

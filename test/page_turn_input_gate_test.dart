@@ -2,8 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nyan_read/modules/reader/page_turn_input_gate.dart';
 
 void main() {
-  final t0 = DateTime(2026);
-  DateTime at(int ms) => t0.add(Duration(milliseconds: ms));
+  Duration at(int ms) => Duration(milliseconds: ms);
 
   test('duplicate dispatch of one tap is dropped', () {
     final gate = PageTurnInputGate();

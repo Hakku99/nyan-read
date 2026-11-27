@@ -15,6 +15,7 @@ import '../../core/ui/components/nyan_book_grid_card.dart';
 import '../../core/ui/nyan_icons.dart';
 import '../../core/ui/nyan_theme_context.dart';
 import '../../l10n/app_localizations.dart';
+import 'bookshelf_view_model.dart';
 import 'bookshelf_view_model_provider.dart';
 import '../privacy/private_content_scope.dart';
 
@@ -72,13 +73,17 @@ class _BookSearchPageState extends ConsumerState<BookSearchPage> {
   late ViewMode _resultView;
   // Live query driven by controller; no debounce (in-memory list).
   String _query = '';
-  // Filtered off the build path (§3.4): recomputed only when the query changes.
+  // Filtered off the build path (§3.4): recomputed when the query changes or
+  // the shelf replaces its book list (reload after reading, import, delete).
   List<Book> _results = const [];
+  late final BookshelfViewModel _shelf;
+  List<Book>? _filteredFrom;
 
   @override
   void initState() {
     super.initState();
     _resultView = ref.read(bookshelfPreferencesRpProvider).viewMode;
+    _shelf = ref.read(bookshelfViewModelRpProvider)..addListener(_onShelfChanged);
     _controller.addListener(() {
       final q = _controller.text;
       if (q == _query) return;
@@ -91,16 +96,26 @@ class _BookSearchPageState extends ConsumerState<BookSearchPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _focusNode.requestFocus());
   }
 
+  // The view model also notifies for selection mode, sorting and the like;
+  // only a replaced list can change the results.
+  void _onShelfChanged() {
+    if (identical(_shelfBooks, _filteredFrom)) return;
+    setState(() => _results = _filteredBooks());
+  }
+
+  List<Book> get _shelfBooks =>
+      widget.isPrivate ? _shelf.privateBooks : _shelf.publicBooks;
+
   @override
   void dispose() {
+    _shelf.removeListener(_onShelfChanged);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
   List<Book> _filteredBooks() {
-    final vm = ref.read(bookshelfViewModelRpProvider);
-    final books = widget.isPrivate ? vm.privateBooks : vm.publicBooks;
+    final books = _filteredFrom = _shelfBooks;
     final q = _query.trim().toLowerCase();
     if (q.isEmpty) return const [];
     return books

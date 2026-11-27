@@ -104,6 +104,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   static const double _swipeMinVelocity = 200.0;
   static const double _swipeMinDelta = 60.0;
   final PageTurnInputGate _pageTurnGate = PageTurnInputGate();
+  // Monotonic: a wall-clock jump must not stall or delay queued turns.
+  final Stopwatch _pageTurnClock = Stopwatch()..start();
   Timer? _queuedPageTurnTimer;
   PageTurnRequest? _pageTurnRequest;
   Timer? _pageTurnLockTimer;
@@ -493,14 +495,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                     _triggerPageTurn(
                                                       controller,
                                                       forward: false,
-                                                      at: DateTime.now(),
                                                     );
                                                   },
                                                   onNextTap: () {
                                                     _triggerPageTurn(
                                                       controller,
                                                       forward: true,
-                                                      at: DateTime.now(),
                                                     );
                                                   },
                                                   onCenterTap: () {
@@ -1019,7 +1019,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
       // Freshen the current-chapter highlight before the list appears.
       unawaited(controller.syncChapterAfterScroll());
     }
-    if (willOpen) _dismissTextSelection();
+    if (willOpen) {
+      _dismissTextSelection();
+      _cancelQueuedPageTurns();
+    }
     _sheetCloseTimer?.cancel();
     setState(() {
       if (willOpen) {
@@ -1100,6 +1103,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   ) async {
     if (_exiting) return;
     _exiting = true;
+    // A queued turn starting now would move the page under the exit save.
+    _cancelQueuedPageTurns();
     try {
       await controller.saveBeforeExit();
       await _brightnessController.shutdown();
