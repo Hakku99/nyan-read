@@ -58,4 +58,18 @@ void main() {
     gate.finish(succeeded: false);
     expect(gate.take(at(400)).forward, isNull);
   });
+
+  test('running is listenable and cleared on every finish', () {
+    final gate = PageTurnInputGate();
+    addTearDown(gate.dispose);
+    final seen = <bool>[];
+    gate.running.addListener(() => seen.add(gate.running.value));
+    gate.offer(forward: true, at: at(0));
+    gate.take(at(0));
+    gate.finish(succeeded: true);
+    gate.offer(forward: true, at: at(400));
+    gate.take(at(400));
+    gate.finish(succeeded: false);
+    expect(seen, [true, false, true, false]);
+  });
 }

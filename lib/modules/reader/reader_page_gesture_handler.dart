@@ -250,8 +250,9 @@ extension _ReaderPageGestureHandler on _ReaderPageState {
       }
     } finally {
       request.cancel();
-      // A late completion cannot unlock a newer input or cancel its deadline.
-      if (identical(_pageTurnRequest, request)) {
+      // A late completion cannot unlock a newer input or cancel its deadline,
+      // nor touch the gate's notifier after dispose.
+      if (mounted && identical(_pageTurnRequest, request)) {
         _pageTurnLockTimer?.cancel();
         _pageTurnRequest = null;
         _pageTurnGate.finish(succeeded: succeeded);

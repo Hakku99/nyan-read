@@ -163,6 +163,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     WidgetsBinding.instance.removeObserver(this);
     _pageTurnLockTimer?.cancel();
     _queuedPageTurnTimer?.cancel();
+    _pageTurnGate.dispose();
     _chapterSyncDebounce?.cancel();
     _sheetCloseTimer?.cancel();
     _boundController = null;
@@ -543,8 +544,29 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                     onEnd: (details) =>
                                                         _handlePanEnd(
                                                             context, details),
-                                                    child: controller.engine
-                                                        .buildReader(context),
+                                                    // Scroll mode only: a touch
+                                                    // landing on the list mid-turn
+                                                    // would stop animateTo halfway
+                                                    // (audit N17). Absorbed taps and
+                                                    // pans still reach the outer
+                                                    // detector and queue a turn.
+                                                    child: ValueListenableBuilder<
+                                                        bool>(
+                                                      valueListenable:
+                                                          _pageTurnGate.running,
+                                                      child: controller.engine
+                                                          .buildReader(context),
+                                                      builder: (context,
+                                                              running, child) =>
+                                                          AbsorbPointer(
+                                                        absorbing: running &&
+                                                            readerPrefs
+                                                                    .pageTurnMode ==
+                                                                PageTurnMode
+                                                                    .swipe,
+                                                        child: child,
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
                                               ),

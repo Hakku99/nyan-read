@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Turns raw page-turn inputs into at most one running turn plus one queued
 /// turn, so a tap that lands during an animation is deferred, not dropped.
 ///
@@ -16,9 +18,15 @@ class PageTurnInputGate {
   DateTime? _lastInputAt;
   DateTime? _lastStartAt;
   bool? _queuedForward;
-  bool _busy = false;
+  final ValueNotifier<bool> _running = ValueNotifier(false);
 
-  bool get busy => _busy;
+  bool get busy => _running.value;
+
+  /// True while a started turn is in flight. The reader shields the text
+  /// list from touches meanwhile (audit N17): in scroll mode a touch-down
+  /// holds the Scrollable, which ends the turn's animateTo halfway yet still
+  /// reports success, leaving a misaligned page.
+  ValueListenable<bool> get running => _running;
   bool get hasQueued => _queuedForward != null;
 
   /// Records an input. Returns false when it is a duplicate of the last one.
@@ -36,7 +44,7 @@ class PageTurnInputGate {
   /// (zero while a turn is running: the caller retries on completion).
   ({bool? forward, Duration retryAfter}) take(DateTime now) {
     final queued = _queuedForward;
-    if (queued == null || _busy) {
+    if (queued == null || _running.value) {
       return (forward: null, retryAfter: Duration.zero);
     }
     final last = _lastStartAt;
@@ -45,16 +53,18 @@ class PageTurnInputGate {
     if (wait > Duration.zero) return (forward: null, retryAfter: wait);
     _queuedForward = null;
     _lastStartAt = now;
-    _busy = true;
+    _running.value = true;
     return (forward: queued, retryAfter: Duration.zero);
   }
 
   /// Marks the running turn finished. A cancelled or failed turn also drops
   /// the queue: the layout/route that cancelled it outranks the stale tap.
   void finish({required bool succeeded}) {
-    _busy = false;
+    _running.value = false;
     if (!succeeded) _queuedForward = null;
   }
 
   void clearQueue() => _queuedForward = null;
+
+  void dispose() => _running.dispose();
 }
