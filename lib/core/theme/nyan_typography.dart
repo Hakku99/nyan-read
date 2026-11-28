@@ -203,6 +203,15 @@ class NyanTypography {
   ///   `font: "600 21px/1.25 var(--font-ui)"`
   static const double restReminderTitle = 21.0;
 
+  /// Shelf search "Clear" recent-searches link — design-system handoff
+  /// exception (see AGENTS.md §4.2.6). Reserved for the recents header link
+  /// in `BookSearchPage` ONLY. Sits between [caption] 11 and [meta] 13; it
+  /// MUST NOT appear in body copy, list rows, or any other surface.
+  ///
+  /// Source: `screens/bundle3.jsx` `BookshelfSearch` recents header
+  ///   `font: "500 12px/1 var(--font-ui)"`
+  static const double searchClearLink = 12.0;
+
   /// Olive uppercase eyebrow label — 11pt / w500 / +0.22 letter-spacing.
   /// Pass [color] as `nyan.primaryDeep` from the active [NyanTheme].
   /// Use only for section eyebrows above grouped cards / reader settings headers.

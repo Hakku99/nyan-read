@@ -21,8 +21,6 @@ class PageTurnInputGate {
   bool? _queuedForward;
   final ValueNotifier<bool> _running = ValueNotifier(false);
 
-  bool get busy => _running.value;
-
   /// True while a started turn is in flight. The reader shields the text
   /// list from touches meanwhile (audit N17): in scroll mode a touch-down
   /// holds the Scrollable, which ends the turn's animateTo halfway yet still

@@ -56,6 +56,11 @@ SliverGridDelegateWithFixedCrossAxisCount _bookshelfGridDelegate(
 /// Height of the search-bar row (back button 40 + top 14 + bottom 12).
 const double _kBarHeight = 66.0;
 
+/// Search-field clear button glyph: 22px circle, 12px close icon.
+/// Source: `components/primitives/SearchField.jsx` clear `<button>`.
+const double _kClearGlyphSize = 22.0;
+const double _kClearIconSize = 12.0;
+
 class BookSearchPage extends ConsumerStatefulWidget {
   const BookSearchPage({super.key, required this.isPrivate});
 
@@ -291,7 +296,7 @@ class _BookSearchPageState extends ConsumerState<BookSearchPage> {
                     loc.searchClear,
                     style: TextStyle(
                       fontFamily: NyanTypography.uiFontFamily,
-                      fontSize: 12,
+                      fontSize: NyanTypography.searchClearLink,
                       fontWeight: FontWeight.w500,
                       color: nyan.textMuted,
                     ),
@@ -594,15 +599,15 @@ class _SearchFieldState extends State<_SearchField> {
                 height: NyanSpacing.minTapTarget,
                 child: Center(
                   child: Container(
-                    width: 22,
-                    height: 22,
+                    width: _kClearGlyphSize,
+                    height: _kClearGlyphSize,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: nyan.textPrimary.withValues(alpha: 0.12),
                     ),
                     child: Icon(
                       NyanIcons.close,
-                      size: 12,
+                      size: _kClearIconSize,
                       color: nyan.surface,
                     ),
                   ),
