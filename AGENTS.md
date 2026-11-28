@@ -369,6 +369,7 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 | `miniSuggestTitle 11.5` w600 / `miniSuggestAuthor 10.5` w400 | 书格标题 / 作者 | `_MiniSuggestTile`（U22） | `U22.html` |
 | `restReminderTimer 46` **w300** | 倒计时数字；**全库唯一 w300 例外**（轻字重=平静感） | `RestReminderOverlay` 倒计时（U23） | `U23.html` `RestCountdown` |
 | `restReminderTitle 21` w600 | 覆层标题 | `RestReminderOverlay` "Rest your eyes"（U23） | `U23.html` |
+| `searchClearLink 12` w500 `textMuted` | 文字链接 | `BookSearchPage` 最近搜索标题行 "Clear" | `bundle3.jsx` `BookshelfSearch` |
 
 **间距（非 8pt 网格）：**
 
