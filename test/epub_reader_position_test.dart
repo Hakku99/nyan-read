@@ -100,7 +100,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       expectSameViewport(chapter, engine.getCurrentPosition()!);
       await perform(tester, () => engine.seekToProgress(.8));
-      expect(engine.getCurrentPosition()!.paragraphIndex, 79);
+      // Byte-weighted: oversized paragraph 20 counts as ~10 normal ones.
+      expect(engine.getCurrentPosition()!.paragraphIndex, 78);
       final before = engine.getCurrentPosition()!;
       await perform(tester, engine.nextPage);
       expect(advanced(before, engine.getCurrentPosition()!), isTrue);
@@ -189,7 +190,9 @@ void main() {
         path: file!.path, initialIndex: 0);
     await perform(tester, () => engine.seekToProgress(1));
     expect(engine.getCurrentPosition()!.paragraphIndex, 100);
-    expect(engine.getProgress(), closeTo(100 / 101, .00001));
+    // Byte-weighted: the 100 short paragraphs are a small share of the text.
+    final atStart = engine.getProgress()!;
+    expect(atStart, lessThan(.25));
     final scroll =
         tester.state<ScrollableState>(find.byType(Scrollable).first).position;
     scroll.jumpTo(scroll.maxScrollExtent - 1);
@@ -198,9 +201,11 @@ void main() {
     final position = engine.getCurrentPosition()!;
     final leading = position.paragraphLeadingEdge!;
     final trailing = position.paragraphTrailingEdge!;
-    final uncapped = (100 - leading / (trailing - leading)) / 101;
-    expect((uncapped * 100).round(), 100);
-    expect(almostFinished, greaterThan(100 / 101));
+    // The last paragraph spans [atStart, 1] of the byte scale.
+    final uncapped =
+        atStart + (1 - atStart) * (-leading / (trailing - leading));
+    expect(almostFinished, closeTo(uncapped.clamp(0, .9949), .00001));
+    expect(almostFinished, greaterThan(atStart));
     expect((almostFinished * 100).round(), lessThan(100));
 
     await perform(tester, engine.nextPage);
@@ -217,6 +222,34 @@ void main() {
     expect(engine.getProgress(), 0);
     await perform(tester, engine.nextPage);
     expect(engine.getProgress(), 0);
+  });
+
+  test('progress is weighted by text volume and seek inverts it', () async {
+    // 10 one-word paragraphs (headings, image slots) then 10 long ones.
+    final file = await writeFixture('epub', [
+      ...List.filled(10, 'Short.'),
+      ...List.filled(10, 'A long paragraph of ordinary prose. ' * 20),
+    ]);
+    final engine = EpubReaderEngine(Book(
+      id: 'progress-weight',
+      title: 'Fixture',
+      author: '',
+      filePath: file.path,
+      format: 'epub',
+    ));
+    addTearDown(engine.dispose);
+    await engine.initialize();
+    await engine.goToPosition(const ReadingPosition(paragraphIndex: 10));
+    // By paragraph count this was 50%; the short ones hold under 1% of text.
+    final firstLong = engine.getProgress()!;
+    expect(firstLong, lessThan(.01));
+    for (final p in [0.0, firstLong, .25, .5, .9]) {
+      await engine.seekToProgress(p);
+      // Nearest paragraph start: off by at most half a long paragraph (5%).
+      expect(engine.getProgress(), closeTo(p, .05), reason: 'p=$p');
+    }
+    await engine.seekToProgress(1);
+    expect(engine.getCurrentPosition()!.paragraphIndex, 19);
   });
 
   test('progress uses the accepted restore target before geometry is mounted',

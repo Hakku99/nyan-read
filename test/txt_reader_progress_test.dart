@@ -48,6 +48,10 @@ void main() {
     await engine.goToPosition(TxtReadingPosition(paragraphIndex: 50));
     expect(engine.getProgress()!, lessThan(0.1));
 
+    await engine.goToPosition(TxtReadingPosition(paragraphIndex: 98));
+    // Rounded labels must not read "100%" while a paragraph remains.
+    expect((engine.getProgress()! * 100).round(), lessThan(100));
+
     await engine.goToPosition(TxtReadingPosition(paragraphIndex: 99));
     expect(engine.getProgress(), 1.0);
   });
