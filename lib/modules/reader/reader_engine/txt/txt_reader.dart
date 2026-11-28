@@ -791,8 +791,10 @@ class TxtReaderEngine
     if (clamped == _lineCount - 1) return 1.0;
     // A short last paragraph can never reach the top, so also report the end
     // when scrolled to the bottom. The list can have a temporary scroll limit
-    // before the tail is laid out, so confirm the last item is visible (same
-    // check as EPUB). Skipped during a restore: that viewport is temporary.
+    // before the tail is laid out, so confirm the last item is laid out and
+    // visible. No upper bound on its trailing edge: at fractional DPRs it can
+    // end slightly past the viewport (1.0004 at DPR 2.75) even at the true
+    // end. Skipped during a restore: that viewport is temporary.
     final scroll = _scrollPosition;
     if (_pendingRestore == null &&
         scroll != null &&
@@ -802,7 +804,7 @@ class TxtReaderEngine
         _itemPositionsListener.itemPositions.value.any((item) =>
             item.index == _lineCount - 1 &&
             item.itemTrailingEdge > 0 &&
-            item.itemTrailingEdge <= 1)) {
+            item.itemLeadingEdge < 1)) {
       return 1.0;
     }
     // Labels round to whole percent; reserve 100% for the last paragraph so

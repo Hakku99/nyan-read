@@ -76,8 +76,10 @@ void _endOfBookTest() {
     addTearDown(() => tempDir!.delete(recursive: true));
     final file = File('${tempDir!.path}/short_tail.txt');
     // The one-word last paragraph can never scroll to the top of the viewport.
-    await tester.runAsync(() =>
-        file.writeAsString([...List.filled(60, 'c' * 200), 'end'].join('\n')));
+    // The trailing newline adds an empty last item; at DPR 2.75 its trailing
+    // edge lands at 1.0004 when scrolled to the end (seen on a real device).
+    await tester.runAsync(() => file
+        .writeAsString([...List.filled(60, 'c' * 200), 'end', ''].join('\n')));
     final engine = TxtReaderEngine(Book(
       id: 'txt-end-book',
       title: 'TXT End Test',
@@ -94,8 +96,8 @@ void _endOfBookTest() {
       lineHeight: 1.5,
     ));
 
-    tester.view.physicalSize = const Size(320, 640);
-    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(1080, 2408);
+    tester.view.devicePixelRatio = 2.75;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
