@@ -103,13 +103,15 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   // are suppressed so text-selection long-press-drags don't turn pages.
   static const double _swipeMinVelocity = 200.0;
   static const double _swipeMinDelta = 60.0;
-  final PageTurnInputGate _pageTurnGate = PageTurnInputGate();
-  // Monotonic: a wall-clock jump must not stall or delay queued turns.
-  final Stopwatch _pageTurnClock = Stopwatch()..start();
-  Timer? _queuedPageTurnTimer;
-  PageTurnRequest? _pageTurnRequest;
-  Timer? _pageTurnLockTimer;
-  static const Duration _pageTurnLockTimeout = Duration(seconds: 3);
+  late final PageTurnRunner _pageTurns = PageTurnRunner(
+    dispatch: (forward, request) {
+      final controller = _boundController;
+      if (controller == null) return Future<void>.value();
+      return _dispatchPageTurn(controller, forward: forward, request: request);
+    },
+    canStart: () => mounted && !_exiting && !_textSelections.hasSelection,
+    onFailure: (error) => _onPageTurnFailed(error),
+  );
   Timer? _chapterSyncDebounce;
   bool _isChapterJumping = false;
   final GlobalKey<SmoothPageReaderState> _smoothPageReaderKey =
@@ -157,15 +159,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
 
   @override
   void dispose() {
-    _pageTurnRequest?.cancel();
+    _pageTurns.dispose();
     _readingIntervalTimer?.cancel();
     _countdownTimer?.cancel();
     _restSecondsRemaining.dispose();
     _reminderService.removeListener(_onReminderSettingsChanged);
     WidgetsBinding.instance.removeObserver(this);
-    _pageTurnLockTimer?.cancel();
-    _queuedPageTurnTimer?.cancel();
-    _pageTurnGate.dispose();
     _chapterSyncDebounce?.cancel();
     _sheetCloseTimer?.cancel();
     _boundController = null;
@@ -240,7 +239,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
-      _pageTurnRequest?.cancel();
+      _pageTurns
+        ..cancelQueue()
+        ..cancelPresentation();
       _readingIntervalTimer?.cancel();
     } else if (state == AppLifecycleState.resumed && !_showRestReminder) {
       _setupReadingTimer();
@@ -492,16 +493,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                       PageTurnMode.tap,
                                                   key: _smoothPageReaderKey,
                                                   onPreviousTap: () {
-                                                    _triggerPageTurn(
-                                                      controller,
-                                                      forward: false,
-                                                    );
+                                                    _triggerPageTurn(forward: false);
                                                   },
                                                   onNextTap: () {
-                                                    _triggerPageTurn(
-                                                      controller,
-                                                      forward: true,
-                                                    );
+                                                    _triggerPageTurn(forward: true);
                                                   },
                                                   onCenterTap: () {
                                                     _showReaderControls(
@@ -512,8 +507,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                   child: ReaderTextGestures(
                                                     selections: _textSelections,
                                                     onCenterInteraction: () =>
-                                                        _pageTurnRequest
-                                                            ?.cancel(),
+                                                        _pageTurns
+                                                            .cancelPresentation(),
                                                     isTurnZone: (position) {
                                                       final box =
                                                           _smoothPageReaderKey
@@ -553,7 +548,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                     child: ValueListenableBuilder<
                                                         bool>(
                                                       valueListenable:
-                                                          _pageTurnGate.running,
+                                                          _pageTurns.running,
                                                       child: controller.engine
                                                           .buildReader(context),
                                                       builder: (context,
@@ -1002,9 +997,11 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     switch (action) {
       case DockAction.bookmarks:
         _collapseSheet();
+        _pageTurns.cancelQueue();
         unawaited(_openBookmarksPage(context, controller));
       case DockAction.highlights:
         _collapseSheet();
+        _pageTurns.cancelQueue();
         unawaited(_openHighlightsPage(context, controller));
       case DockAction.chapters:
       case DockAction.settings:
@@ -1021,7 +1018,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     }
     if (willOpen) {
       _dismissTextSelection();
-      _cancelQueuedPageTurns();
+      _pageTurns.cancelQueue();
     }
     _sheetCloseTimer?.cancel();
     setState(() {
@@ -1103,8 +1100,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   ) async {
     if (_exiting) return;
     _exiting = true;
-    // A queued turn starting now would move the page under the exit save.
-    _cancelQueuedPageTurns();
+    // Nothing may move the page under the exit save: `_exiting` now blocks
+    // new turns, the queue is dropped, and a turn in flight lands first.
+    _pageTurns.cancelQueue();
+    await _pageTurns.settled();
     try {
       await controller.saveBeforeExit();
       await _brightnessController.shutdown();

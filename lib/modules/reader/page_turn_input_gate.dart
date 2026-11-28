@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+
+import 'reader_engine/page_turn_request.dart';
 
 /// Turns raw page-turn inputs into at most one running turn plus one queued
 /// turn, so a tap that lands during an animation is deferred, not dropped.
@@ -66,4 +70,140 @@ class PageTurnInputGate {
   void clearQueue() => _queuedForward = null;
 
   void dispose() => _running.dispose();
+}
+
+/// Runs page turns through a [PageTurnInputGate]: starts queued turns, arms
+/// the deadline, waits out cancellation and releases input. Lives outside
+/// the reader widget so this lifecycle is unit-testable.
+class PageTurnRunner {
+  PageTurnRunner({
+    required Future<void> Function(bool forward, PageTurnRequest request)
+        dispatch,
+    required bool Function() canStart,
+    required void Function(Object error) onFailure,
+    Duration Function()? clock,
+    this.deadline = const Duration(seconds: 3),
+  })  : _dispatch = dispatch,
+        _canStart = canStart,
+        _onFailure = onFailure,
+        _clock = clock ?? _monotonicClock();
+
+  /// Releases input even if an engine never settles a dispatch.
+  final Duration deadline;
+
+  final Future<void> Function(bool forward, PageTurnRequest request) _dispatch;
+  // False drops the queue instead of starting: a selection owns the page,
+  // and nothing may move it under the exit save.
+  final bool Function() _canStart;
+  final void Function(Object error) _onFailure;
+  // Monotonic: a wall-clock jump must not stall or delay queued turns.
+  final Duration Function() _clock;
+  final PageTurnInputGate _gate = PageTurnInputGate();
+
+  PageTurnRequest? _request;
+  Completer<void>? _turnDone;
+  Timer? _deadlineTimer;
+  Timer? _retryTimer;
+  bool _disposed = false;
+
+  static Duration Function() _monotonicClock() {
+    final watch = Stopwatch()..start();
+    return () => watch.elapsed;
+  }
+
+  ValueListenable<bool> get running => _gate.running;
+
+  /// Completes once the turn in flight (if any) has landed, failed or hit
+  /// its deadline. Never throws.
+  Future<void> settled() => _turnDone?.future ?? Future<void>.value();
+
+  void offer({required bool forward}) {
+    if (_gate.offer(forward: forward, at: _clock())) _drain();
+  }
+
+  /// Drops any waiting turn: exits, sheets and chrome outrank a stale tap.
+  void cancelQueue() {
+    _gate.clearQueue();
+    _retryTimer?.cancel();
+  }
+
+  /// Cancels the running turn's presentation. Its navigation still lands,
+  /// and input stays held until it does.
+  void cancelPresentation() => _request?.cancel();
+
+  void _drain() {
+    if (_disposed) return;
+    if (!_canStart()) {
+      cancelQueue();
+      return;
+    }
+    final next = _gate.take(_clock());
+    final forward = next.forward;
+    if (forward == null) {
+      if (next.retryAfter > Duration.zero) {
+        _retryTimer?.cancel();
+        _retryTimer = Timer(next.retryAfter, _drain);
+      }
+      return;
+    }
+    final request = _request = PageTurnRequest();
+    _turnDone = Completer<void>();
+    final dispatch = Future<void>.sync(() => _dispatch(forward, request));
+    _deadlineTimer?.cancel();
+    _deadlineTimer = Timer(deadline, () {
+      request.cancel();
+      _release(request, succeeded: false);
+    });
+    unawaited(_complete(dispatch, request));
+  }
+
+  Future<void> _complete(Future<void> dispatch, PageTurnRequest request) async {
+    var succeeded = false;
+    try {
+      await request.wait(dispatch);
+      succeeded = true;
+    } on PageTurnCancelled {
+      // A changed layout, route or deadline supersedes this presentation, but
+      // never rolls back accepted navigation: keep the gate busy (and the
+      // scroll-mode list shielded) until it lands, or a touch would stop its
+      // animateTo halfway (audit N17).
+      try {
+        await dispatch;
+      } catch (error) {
+        _report(error);
+      }
+    } catch (error) {
+      _report(error);
+    }
+    _release(request, succeeded: succeeded);
+  }
+
+  void _report(Object error) {
+    if (!_disposed) _onFailure(error);
+  }
+
+  void _release(PageTurnRequest request, {required bool succeeded}) {
+    request.cancel();
+    // A late completion cannot unlock a newer turn or cancel its deadline.
+    if (_disposed || !identical(_request, request)) return;
+    _deadlineTimer?.cancel();
+    _request = null;
+    _gate.finish(succeeded: succeeded);
+    _completeTurnDone();
+    _drain();
+  }
+
+  void _completeTurnDone() {
+    final done = _turnDone;
+    if (done != null && !done.isCompleted) done.complete();
+  }
+
+  void dispose() {
+    _disposed = true;
+    _request?.cancel();
+    _deadlineTimer?.cancel();
+    _retryTimer?.cancel();
+    _completeTurnDone();
+    _gate.dispose();
+  }
 }
