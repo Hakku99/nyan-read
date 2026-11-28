@@ -216,7 +216,11 @@ class _PageTurnModeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final modes = PageTurnMode.values;
+    // Explicit, not `PageTurnMode.values`: the enum's index order
+    // (swipe, tap, disabled) is persisted and must not change, while the
+    // chips follow the design pack's order (`DisplayPanel.jsx`). Pairing
+    // them by index labelled each mode with the other's name (audit N16).
+    const modes = [PageTurnMode.tap, PageTurnMode.swipe, PageTurnMode.disabled];
     final labels = [tapLabel, swipeLabel, disabledLabel];
 
     return Row(
