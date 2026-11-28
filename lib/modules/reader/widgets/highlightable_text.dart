@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../../core/utils/text_search_launcher.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/models/highlight.dart';
@@ -390,21 +390,21 @@ class _HighlightableTextState extends State<HighlightableText> {
   }
 
   Future<void> _searchInBrowser(String query) async {
-    final url = Uri.parse(
-        'https://www.google.com/search?q=${Uri.encodeComponent(query)}');
+    var opened = false;
     try {
-      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-        throw 'Could not launch $url';
-      }
+      opened = await TextSearchLauncher.search(query);
     } catch (e) {
-      debugPrint('Error launching URL: $e');
-      // Fallback: copy to clipboard
-      await Clipboard.setData(ClipboardData(text: url.toString()));
-      if (mounted) {
-        final loc = AppLocalizations.of(context)!;
-        SnackBarUtils.show(context, loc.couldNotOpenBrowserSearchCopied,
-            tone: NyanSnackTone.error);
-      }
+      // The query is book text; log only the failure type (§2.2.4).
+      debugPrint('Selection search failed (${e.runtimeType})');
+    }
+    if (opened) return;
+    // Fallback: copy the search link so the user can paste it themselves.
+    await Clipboard.setData(
+        ClipboardData(text: TextSearchLauncher.fallbackUrl(query).toString()));
+    if (mounted) {
+      final loc = AppLocalizations.of(context)!;
+      SnackBarUtils.show(context, loc.couldNotOpenBrowserSearchCopied,
+          tone: NyanSnackTone.error);
     }
   }
 }

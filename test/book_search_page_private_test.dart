@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nyan_read/core/models/book.dart';
 import 'package:nyan_read/core/services/bookshelf_preferences_service.dart';
 import 'package:nyan_read/core/services/feature_manager.dart';
 import 'package:nyan_read/core/services/privacy_screen_service.dart';
@@ -17,15 +18,21 @@ import 'package:nyan_read/modules/bookshelf/bookshelf_view_model.dart';
 import 'package:nyan_read/modules/bookshelf/bookshelf_view_model_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class _FakeVm extends Fake implements BookshelfViewModel {
+class _FakeVm extends Fake with ChangeNotifier implements BookshelfViewModel {
   @override
-  List<Never> get publicBooks => const [];
+  List<Book> publicBooks = const [];
   @override
-  List<Never> get privateBooks => const [];
+  List<Book> get privateBooks => const [];
+
+  void replacePublic(List<Book> books) {
+    publicBooks = books;
+    notifyListeners();
+  }
 }
 
 void main() {
-  Future<void> pumpPage(WidgetTester tester, {required bool isPrivate}) async {
+  Future<void> pumpPage(WidgetTester tester,
+      {required bool isPrivate, _FakeVm? vm}) async {
     SharedPreferences.setMockInitialValues({
       // Purge flag set so the seeded public term survives initialize().
       'bookshelf_recent_searches_purged_v1': true,
@@ -36,7 +43,7 @@ void main() {
     await tester.pumpWidget(ProviderScope(
       overrides: [
         bookshelfPreferencesRpProvider.overrideWithValue(prefs),
-        bookshelfViewModelRpProvider.overrideWithValue(_FakeVm()),
+        bookshelfViewModelRpProvider.overrideWithValue(vm ?? _FakeVm()),
         featureManagerRpProvider
             .overrideWithValue(FeatureManager()..unlockPrivateShelf()),
         privacyScreenRpProvider
@@ -63,5 +70,25 @@ void main() {
     expect(find.text('public term'), findsNothing);
     expect(find.text('Searches in the private shelf are not saved.'),
         findsOneWidget);
+  });
+
+  testWidgets('results refresh when the shelf replaces its book list',
+      (tester) async {
+    final vm = _FakeVm();
+    await pumpPage(tester, isPrivate: false, vm: vm);
+    await tester.enterText(find.byType(TextField), 'cat');
+    await tester.pumpAndSettle();
+    expect(find.text('Paper Cat'), findsNothing);
+
+    vm.replacePublic([
+      Book(
+          id: 'b1',
+          title: 'Paper Cat',
+          author: 'A',
+          filePath: 'x.txt',
+          format: 'txt'),
+    ]);
+    await tester.pumpAndSettle();
+    expect(find.text('Paper Cat'), findsWidgets);
   });
 }

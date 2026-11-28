@@ -17,6 +17,7 @@ import '../bookmark/bookmark_list_page.dart';
 import '../notes/notes_list_page.dart';
 import 'reader_engine/reader_engine.dart';
 import 'reader_engine/page_turn_request.dart';
+import 'page_turn_input_gate.dart';
 import 'reader_error.dart';
 import 'widgets/reader_error_view.dart';
 import 'widgets/highlight_note_dialog.dart';
@@ -102,14 +103,15 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   // are suppressed so text-selection long-press-drags don't turn pages.
   static const double _swipeMinVelocity = 200.0;
   static const double _swipeMinDelta = 60.0;
-  static const Duration _tapLogicDedupWindow = Duration(milliseconds: 350);
-  static const Duration _pageTurnMinInterval = Duration(milliseconds: 220);
-  DateTime? _lastTapLogicAt;
-  DateTime? _lastPageTurnAt;
-  bool _isPageTurning = false;
-  PageTurnRequest? _pageTurnRequest;
-  Timer? _pageTurnLockTimer;
-  static const Duration _pageTurnLockTimeout = Duration(seconds: 3);
+  late final PageTurnRunner _pageTurns = PageTurnRunner(
+    dispatch: (forward, request) {
+      final controller = _boundController;
+      if (controller == null) return Future<void>.value();
+      return _dispatchPageTurn(controller, forward: forward, request: request);
+    },
+    canStart: () => mounted && !_exiting && !_textSelections.hasSelection,
+    onFailure: (error) => _onPageTurnFailed(error),
+  );
   Timer? _chapterSyncDebounce;
   bool _isChapterJumping = false;
   final GlobalKey<SmoothPageReaderState> _smoothPageReaderKey =
@@ -157,13 +159,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
 
   @override
   void dispose() {
-    _pageTurnRequest?.cancel();
+    _pageTurns.dispose();
     _readingIntervalTimer?.cancel();
     _countdownTimer?.cancel();
     _restSecondsRemaining.dispose();
     _reminderService.removeListener(_onReminderSettingsChanged);
     WidgetsBinding.instance.removeObserver(this);
-    _pageTurnLockTimer?.cancel();
     _chapterSyncDebounce?.cancel();
     _sheetCloseTimer?.cancel();
     _boundController = null;
@@ -178,6 +179,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     if (!mounted) return;
     if (_brightnessController.isAdjusting.value) {
       if (_brightnessPopoverOpen) return;
+      _dismissTextSelection();
       setState(() {
         _brightnessPopoverOpen = true;
         if (_openSheet != null) {
@@ -237,7 +239,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
-      _pageTurnRequest?.cancel();
+      _pageTurns
+        ..cancelQueue()
+        ..cancelPresentation();
       _readingIntervalTimer?.cancel();
     } else if (state == AppLifecycleState.resumed && !_showRestReminder) {
       _setupReadingTimer();
@@ -489,18 +493,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                       PageTurnMode.tap,
                                                   key: _smoothPageReaderKey,
                                                   onPreviousTap: () {
-                                                    _triggerPageTurn(
-                                                      controller,
-                                                      forward: false,
-                                                      at: DateTime.now(),
-                                                    );
+                                                    _triggerPageTurn(forward: false);
                                                   },
                                                   onNextTap: () {
-                                                    _triggerPageTurn(
-                                                      controller,
-                                                      forward: true,
-                                                      at: DateTime.now(),
-                                                    );
+                                                    _triggerPageTurn(forward: true);
                                                   },
                                                   onCenterTap: () {
                                                     _showReaderControls(
@@ -511,8 +507,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                   child: ReaderTextGestures(
                                                     selections: _textSelections,
                                                     onCenterInteraction: () =>
-                                                        _pageTurnRequest
-                                                            ?.cancel(),
+                                                        _pageTurns
+                                                            .cancelPresentation(),
                                                     isTurnZone: (position) {
                                                       final box =
                                                           _smoothPageReaderKey
@@ -543,8 +539,29 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                     onEnd: (details) =>
                                                         _handlePanEnd(
                                                             context, details),
-                                                    child: controller.engine
-                                                        .buildReader(context),
+                                                    // Scroll mode only: a touch
+                                                    // landing on the list mid-turn
+                                                    // would stop animateTo halfway
+                                                    // (audit N17). Absorbed taps and
+                                                    // pans still reach the outer
+                                                    // detector and queue a turn.
+                                                    child: ValueListenableBuilder<
+                                                        bool>(
+                                                      valueListenable:
+                                                          _pageTurns.running,
+                                                      child: controller.engine
+                                                          .buildReader(context),
+                                                      builder: (context,
+                                                              running, child) =>
+                                                          AbsorbPointer(
+                                                        absorbing: running &&
+                                                            readerPrefs
+                                                                    .pageTurnMode ==
+                                                                PageTurnMode
+                                                                    .swipe,
+                                                        child: child,
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
                                               ),
@@ -980,9 +997,11 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     switch (action) {
       case DockAction.bookmarks:
         _collapseSheet();
+        _pageTurns.cancelQueue();
         unawaited(_openBookmarksPage(context, controller));
       case DockAction.highlights:
         _collapseSheet();
+        _pageTurns.cancelQueue();
         unawaited(_openHighlightsPage(context, controller));
       case DockAction.chapters:
       case DockAction.settings:
@@ -996,6 +1015,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     if (willOpen && action == DockAction.chapters) {
       // Freshen the current-chapter highlight before the list appears.
       unawaited(controller.syncChapterAfterScroll());
+    }
+    if (willOpen) {
+      _dismissTextSelection();
+      _pageTurns.cancelQueue();
     }
     _sheetCloseTimer?.cancel();
     setState(() {
@@ -1032,6 +1055,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
 
   /// Toggle the top-bar brightness popover (mutually exclusive with a sheet).
   void _toggleBrightnessPopover() {
+    if (!_brightnessPopoverOpen) _dismissTextSelection();
     setState(() {
       _brightnessPopoverOpen = !_brightnessPopoverOpen;
       if (_brightnessPopoverOpen && _openSheet != null) {
@@ -1076,6 +1100,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   ) async {
     if (_exiting) return;
     _exiting = true;
+    // Nothing may move the page under the exit save: `_exiting` now blocks
+    // new turns, the queue is dropped, and a turn in flight lands first.
+    _pageTurns.cancelQueue();
+    await _pageTurns.settled();
     try {
       await controller.saveBeforeExit();
       await _brightnessController.shutdown();
@@ -1148,7 +1176,15 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     }
   }
 
+  /// The selection toolbar lives in the text's own overlay, so chrome or a
+  /// sheet rising over the page would otherwise leave it floating on top
+  /// (audit N14). Focus loss is what collapses a reader selection.
+  void _dismissTextSelection() {
+    if (_textSelections.hasSelection) FocusScope.of(context).unfocus();
+  }
+
   void _setControlsVisible(bool visible) {
+    if (visible) _dismissTextSelection();
     // Hiding chrome also collapses any grown sheet / brightness popover.
     if (_showControls == visible &&
         (visible || (_openSheet == null && !_brightnessPopoverOpen))) {

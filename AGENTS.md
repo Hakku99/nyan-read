@@ -369,6 +369,7 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 | `miniSuggestTitle 11.5` w600 / `miniSuggestAuthor 10.5` w400 | 书格标题 / 作者 | `_MiniSuggestTile`（U22） | `U22.html` |
 | `restReminderTimer 46` **w300** | 倒计时数字；**全库唯一 w300 例外**（轻字重=平静感） | `RestReminderOverlay` 倒计时（U23） | `U23.html` `RestCountdown` |
 | `restReminderTitle 21` w600 | 覆层标题 | `RestReminderOverlay` "Rest your eyes"（U23） | `U23.html` |
+| `searchClearLink 12` w500 `textMuted` | 文字链接 | `BookSearchPage` 最近搜索标题行 "Clear" | `bundle3.jsx` `BookshelfSearch` |
 
 **间距（非 8pt 网格）：**
 
@@ -392,6 +393,7 @@ Pill 按钮 / 分段控件指示器**不再是 stadium 胶囊**：选项 chip **
 | 填充图标 | `compassFilled / leafFilled / sparkleFilled / checkCircleFilled` | `NyanShelfDiscoverBlock` / `NyanShelfProNudge`（U22） | `U22.html` |
 | 顶层书架切换器（`SegmentedTabStyle.shelf`） | 指示器 `surface` 实心 + `settingsGrouped`；选中 `textPrimary` w600、未选 `textMuted` w500；内边距 3pt——页面级导航语义，**MUST NOT** "修正"回 `primaryDeep` | 书架 Public / Private 切换器 | `BookshelfScreen.jsx` / `bundle3.jsx` |
 | 选择模式 open-detail 快捷按钮 | 书格：24×24 圆形 ↗（`arrowUpRight`，`primaryDeep`，`surface@90%` 毛玻璃 + `divider@50%` 描边 + `0 1px 3px black@12%`）；列表行：32×32 圆形 ›（`caretRight`，`textSecondary`，`surfaceMuted` + `divider@44%` 描边）；点击导航详情页、**不改变选中状态** | 书架选择模式（U21） | `bundle3.jsx` `SelectBookCard` / `SelectBookListRow` |
+| 搜索框清除按钮尺寸 | 22×22 圆形（`textPrimary@12%`）+ 12pt `close` 图标（`_kClearGlyphSize` / `_kClearIconSize`），外包 44pt 命中区 | `BookSearchPage` 搜索框清除按钮 | `components/primitives/SearchField.jsx` |
 
 ### 4.3 组件样式底线（MUST）
 
