@@ -343,6 +343,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
               canPop: false,
               onPopInvokedWithResult: (didPop, result) async {
                 if (didPop) return;
+                // System back peels one layer at a time: a grown sheet or the
+                // brightness popover closes first; only a resting dock exits.
+                if (_openSheet != null) return _collapseSheet();
+                if (_brightnessPopoverOpen) return _closeBrightnessPopover();
                 await _exitReader(context, controller);
               },
               // Minimal subscription (P0-2, restored after the Riverpod
