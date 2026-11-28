@@ -656,7 +656,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                                                   controller.progressListenable,
                                               builder: (context, progress, _) =>
                                                   Text(
-                                                "${(progress * 100).toInt()}%",
+                                                "${(progress * 100).round()}%",
                                                 style: TextStyle(
                                                   fontSize: 10,
                                                   color: Theme.of(context)

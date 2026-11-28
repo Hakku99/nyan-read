@@ -705,8 +705,51 @@ class EpubReaderEngine
       final extent = trailing - leading;
       if (extent.isFinite) fraction = -leading / extent;
     }
-    return ((index + fraction) / _paragraphCount)
+    final total = _totalBytes;
+    if (total <= 0) {
+      return ((index + fraction) / _paragraphCount)
+          .clamp(0.0, _maxIncompleteProgress);
+    }
+    // Weighted by text volume so an illustration or heading counts like the
+    // short line it is, not like a full paragraph. Divided by the total (not
+    // the last start, as TXT does) so a long final paragraph still advances;
+    // 100% stays reserved for the scroll-end check in getProgress().
+    // ponytail: UTF-8 bytes, not chars: CJK weighs 3x ASCII in mixed-script
+    // books. Decode once at open into char offsets if that skew matters.
+    final start = _paragraphRanges[index * 2];
+    final length = _paragraphRanges[index * 2 + 1] - start;
+    return ((start + fraction * length) / total)
         .clamp(0.0, _maxIncompleteProgress);
+  }
+
+  /// Total text bytes, or 0 when byte weighting is unusable (no text, or
+  /// ranges missing) and progress falls back to paragraph counts.
+  int get _totalBytes => _paragraphRanges.length >= _paragraphCount * 2
+      ? _paragraphRanges[_paragraphCount * 2 - 1]
+      : 0;
+
+  /// Inverse of [_estimateProgress] at paragraph starts: the paragraph whose
+  /// start byte is nearest to [progress].
+  int _paragraphIndexForProgress(double progress) {
+    final total = _totalBytes;
+    if (total <= 0) return (progress * (_paragraphCount - 1)).round();
+    final target = progress * total;
+    // First paragraph starting at or after target (ranges are contiguous).
+    var lo = 0, hi = _paragraphCount - 1;
+    while (lo < hi) {
+      final mid = (lo + hi) >> 1;
+      if (_paragraphRanges[mid * 2] < target) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    if (lo > 0 &&
+        target - _paragraphRanges[(lo - 1) * 2] <
+            _paragraphRanges[lo * 2] - target) {
+      return lo - 1;
+    }
+    return lo;
   }
 
   @override
@@ -754,7 +797,7 @@ class EpubReaderEngine
   Future<void> seekToProgress(double progress) async {
     if (_disposed || _paragraphCount <= 0 || !progress.isFinite) return;
     final clamped = progress.clamp(0.0, 1.0);
-    final targetIndex = (clamped * (_paragraphCount - 1)).round();
+    final targetIndex = _paragraphIndexForProgress(clamped);
     await goToPosition(ReadingPosition(paragraphIndex: targetIndex));
   }
 

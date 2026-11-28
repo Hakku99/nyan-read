@@ -787,7 +787,11 @@ class TxtReaderEngine
     // Divided by the last paragraph's start (not total length) so the scale
     // is exactly 0..1 and invertible. The anchor is the topmost visible
     // paragraph, so 1.0 is only reported when the last item is at the top.
-    return _paragraphOffsets[index.clamp(0, _lineCount - 1)] / lastOffset;
+    final clamped = index.clamp(0, _lineCount - 1);
+    if (clamped == _lineCount - 1) return 1.0;
+    // Labels round to whole percent; reserve 100% for the last paragraph so
+    // "100%" never shows while text remains (same cap as EPUB).
+    return (_paragraphOffsets[clamped] / lastOffset).clamp(0.0, .9949);
   }
 
   /// Greatest paragraph index whose start offset is <= [target].
@@ -908,7 +912,7 @@ class TxtReaderEngine
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        '${progressPercent.toInt()}%',
+                                        '${progressPercent.round()}%',
                                         textAlign: TextAlign.left,
                                         style: TextStyle(
                                           color: config.textColor
