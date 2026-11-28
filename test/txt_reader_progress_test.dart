@@ -8,6 +8,8 @@ import 'package:nyan_read/modules/reader/reader_engine/txt/txt_position.dart';
 import 'package:nyan_read/modules/reader/reader_engine/txt/txt_reader.dart';
 
 void main() {
+  _endOfBookTest();
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   // 50 short lines followed by 50 long ones: line-based progress would put
@@ -63,5 +65,59 @@ void main() {
       // (~1% of this book); a floor would allow ~2%.
       expect(engine.getProgress(), closeTo(p, 0.01), reason: 'p=$p');
     }
+  });
+}
+
+void _endOfBookTest() {
+  testWidgets('scrolled to the end reports 1.0 with a short last paragraph',
+      (tester) async {
+    final tempDir = await tester
+        .runAsync(() => Directory.systemTemp.createTemp('nyan_txt_end'));
+    addTearDown(() => tempDir!.delete(recursive: true));
+    final file = File('${tempDir!.path}/short_tail.txt');
+    // The one-word last paragraph can never scroll to the top of the viewport.
+    // The trailing newline adds an empty last item; at DPR 2.75 its trailing
+    // edge lands at 1.0004 when scrolled to the end (seen on a real device).
+    await tester.runAsync(() => file
+        .writeAsString([...List.filled(60, 'c' * 200), 'end', ''].join('\n')));
+    final engine = TxtReaderEngine(Book(
+      id: 'txt-end-book',
+      title: 'TXT End Test',
+      author: 'Tester',
+      filePath: file.path,
+      format: 'txt',
+    ));
+    addTearDown(engine.dispose);
+    await tester.runAsync(engine.initialize);
+    engine.setConfig(const ReaderConfig(
+      backgroundColor: Colors.white,
+      textColor: Colors.black,
+      fontSize: 18,
+      lineHeight: 1.5,
+    ));
+
+    tester.view.physicalSize = const Size(1080, 2408);
+    tester.view.devicePixelRatio = 2.75;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Builder(builder: (context) => engine.buildReader(context)),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    final list = find.byType(Scrollable).first;
+    // Drag until the list stops moving: its scroll limit grows as items lay out.
+    for (var i = 0; i < 200; i++) {
+      final position = tester.state<ScrollableState>(list).position;
+      if (position.extentAfter == 0 && i > 0) break;
+      await tester.drag(list, const Offset(0, -2000));
+      await tester.pumpAndSettle();
+    }
+    expect(engine.getProgress(), 1.0);
+
+    await tester.drag(list, const Offset(0, 300));
+    await tester.pumpAndSettle();
+    expect((engine.getProgress()! * 100).round(), lessThan(100));
   });
 }
